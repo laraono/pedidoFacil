@@ -1,0 +1,24 @@
+{
+  "name": "pedidofacil",
+  "version": "1.0.0",
+  "description": "Projeto de TCC 2",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/laraono/pedidoFacil.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/laraono/pedidoFacil/issues"
+  },
+  "homepage": "https://github.com/laraono/pedidoFacil#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
