@@ -8,7 +8,7 @@ const onboardingStore = useOnboardingStore();
 const nomeEstabelecimento = ref('');
 
 // caminho ok
-const BG_WAVES_URL = '/assets/image 4.png';
+const BG_WAVES_URL = '../../assets/image 4.png';
 
 onMounted(() => {
   // 🔒 PROTEÇÃO TOTAL CONTRA undefined

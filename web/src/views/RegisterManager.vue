@@ -20,7 +20,7 @@ const isLoading = ref(false);
 const localError = ref(null); 
 const serverError = ref(null); 
 
-const BG_WAVES_URL = '/assets/bg-waves.jpg'; // URL de fundo
+const BG_WAVES_URL = '../assets/image 4.png'; // URL de fundo
 
 // VERIFICAÇÃO CRÍTICA: Se logado, redireciona.
 if (authStore.isAuthenticated) {

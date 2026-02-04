@@ -14,7 +14,6 @@ function setItem(key, value) {
 }
 
 export default {
-  // Usuários
   getUsers() {
     return getItem(STORAGE_KEYS.USERS, []);
   },
@@ -31,7 +30,6 @@ export default {
     );
   },
 
-  // Sessão
   setSession(user) {
     setItem(STORAGE_KEYS.SESSION, user);
   },
@@ -53,23 +51,3 @@ export default {
     return getItem(STORAGE_KEYS.ONBOARDING, {});
   }
 };
-
-function initMockData() {
-  const users = localStorage.getItem("users");
-
-  if (!users) {
-    const defaultUser = [
-      {
-        id: 1,
-        name: "Admin",
-        email: "admin@email.com",
-        password: "123456",
-        role: "ADMIN"
-      }
-    ];
-
-    localStorage.setItem("users", JSON.stringify(defaultUser));
-  }
-}
-
-initMockData();

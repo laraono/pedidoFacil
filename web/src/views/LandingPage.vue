@@ -6,10 +6,10 @@ import { User, Mail, Instagram, Phone, Menu } from 'lucide-vue-next';
 const router = useRouter();
 
 // URLs de Assets (Certifique-se que estas URLs existam na sua pasta public/assets)
-const BG_WAVES_URL = '/assets/bg-waves.png';
-const MOCKUP_TOTEM_URL = '/assets/image 3.png';
-const MOCKUP_CHARTS_URL = '/assets/image 8.png';
-const MOCKUP_KDS_URL = '/assets/image 9.png'; 
+const BG_WAVES_URL = '../assets/image 4.png';
+const MOCKUP_TOTEM_URL = '../assets/image 3.png';
+const MOCKUP_CHARTS_URL = '../assets/image 8.png';
+const MOCKUP_KDS_URL = '../assets/image 9.png'; 
 
 // Funções de Navegação
 const navigateToPlans = () => {

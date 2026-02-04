@@ -29,14 +29,46 @@ const routes = [
 
   {
     path: '/app',
-    component: ManagerLayout,
+    component: ManagerLayout, // O Layout com a Navbar e o Drawer
     meta: { requiresAuth: true },
     children: [
-      { path: 'dashboard', component: ManagerDashboard },
-      { path: 'settings/establishment', component: EstablishmentInfo },
-      { path: 'settings/roles', component: RolePermissions },
-      { path: 'settings/menu', component: MenuPersonalization },
-      { path: '', redirect: 'dashboard' }
+      // DASHBOARD PRINCIPAL (path: '') - Renderizado em /app
+      { 
+        path: 'dashboard', 
+        name: 'Dashboard', 
+        component: ManagerDashboard, 
+      },
+      
+      // Rotas de Configuração (Settings)
+      { 
+        path: 'settings/establishment', 
+        name: 'EstablishmentInfo', 
+        component: EstablishmentInfo, 
+      },
+      {
+        path: 'settings',
+        redirect: 'settings/establishment'
+      },
+      { 
+        path: 'settings/roles', 
+        name: 'RolePermissions', 
+        component: RolePermissions, 
+      },
+      { 
+        path: 'settings/menu', 
+        name: 'MenuPersonalization', 
+        component: MenuPersonalization, 
+      },
+      
+      // Outras Rotas Internas (Exemplo: Pedidos)
+      { 
+        path: 'orders/queue', 
+        name: 'OrderQueue', 
+        component: { template: '<main class="max-w-7xl mx-auto py-12 px-4"><h1 class="text-3xl font-bold text-gray-800">Fila de Pedidos</h1></main>' }, 
+      },
+
+      // Redirecionamento da rota base /app para /app/dashboard
+      { path: '', redirect: 'dashboard' } 
     ]
   }
 ];

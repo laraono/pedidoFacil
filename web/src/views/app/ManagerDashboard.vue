@@ -12,9 +12,9 @@ const mockConfigStatus = {
 };
 
 // URLs de Assets
-const MOCKUP_INFO_URL = '/assets/image 29.png';
-const MOCKUP_ROLES_URL = '/assets/image 27.png';
-const MOCKUP_MENU_URL = '/assets/image 28.png';
+const MOCKUP_INFO_URL = '../../assets/image 29.png';
+const MOCKUP_ROLES_URL = '../../assets/image 27.png';
+const MOCKUP_MENU_URL = '../../assets/image 28.png';
 
 const configCards = [
   {

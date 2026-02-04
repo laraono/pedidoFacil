@@ -6,9 +6,9 @@ import { useAuthStore } from '@/stores/auth';
 import { Check } from 'lucide-vue-next';
 
 // Assets
-const BG_WAVES_URL = '/assets/bg-waves.jpg'; 
-const MOCKUP_TOTEM_URL = '/assets/image-3-totem.jpg'; 
-const MOCKUP_GARCOM_URL = '/assets/image-25-garcom.jpg'; 
+const BG_WAVES_URL = '../../assets/image 4.png'; 
+const MOCKUP_TOTEM_URL = '../../assets/image 3.png'; 
+const MOCKUP_GARCOM_URL = '../../assets/image 25.png'; 
 
 // Router & Stores
 const router = useRouter();
