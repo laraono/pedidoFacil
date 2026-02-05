@@ -1,64 +1,70 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import { useOnboardingStore } from '@/stores/onboarding'; // Para pré-preencher dados
+import { useOnboardingStore } from '@/stores/onboarding';
 import { ArrowLeft, CheckCircle, Upload } from 'lucide-vue-next';
+import { maskCNPJ, isValidCNPJ } from '@/utils/validator';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const onboardingStore = useOnboardingStore();
 
-// Dados do Formulário (Inicializados com o valor 'ref()' para reatividade)
 const nomeEstabelecimento = ref('');
 const cnpj = ref('');
 const endereco = ref('');
 const metodosPagamento = ref([]);
 const formasAtendimento = ref([]);
 const isLoading = ref(false);
+const localError = ref(null);
 
-// Opções
+watch(cnpj, (value) => {
+    const masked = maskCNPJ(value);
+    if (masked !== value) {
+        cnpj.value = masked;
+    }
+});
+
 const paymentOptions = ['Crédito', 'Débito', 'Dinheiro', 'Pix'];
-const serviceOptions = ['Autoatendimento (totens)', 'Atendimento por garçons (tablets)', 'Atendimento no caixa'];
+const serviceOptions = [
+    'Autoatendimento (totens)',
+    'Atendimento por garçons (tablets)',
+    'Atendimento no caixa'
+];
 
 onMounted(() => {
-    // PRÉ-PREENCHIMENTO COM DADOS DO ONBOARDING
-    
-    // 1. Nome do Estabelecimento (Etapa 2 do Onboarding)
     const nomeOnboarding = onboardingStore.estabelecimentoData.nome_estabelecimento;
     if (nomeOnboarding) {
-        // Inicializa o ref com o nome salvo no Onboarding, tornando-o editável via v-model
         nomeEstabelecimento.value = nomeOnboarding;
     }
-    
-    // 2. Tipos de Atendimento (Etapa 3 do Onboarding)
-    const tiposAtendimentoOnboarding = onboardingStore.estabelecimentoData.tipo_atendimento; 
-    
-    if (tiposAtendimentoOnboarding && tiposAtendimentoOnboarding.length > 0) {
-        // Mapeia os tipos simples ('Autoatendimento', 'Garçom') para as opções completas do formulário
-        const selectedForms = tiposAtendimentoOnboarding.map(tipo => {
-            if (tipo === 'Autoatendimento') return 'Autoatendimento (totens)';
-            if (tipo === 'Garçom') return 'Atendimento por garçons (tablets)';
-            return '';
-        }).filter(Boolean); // Filtra quaisquer valores vazios
-        
-        // Define o estado das checkboxes
-        formasAtendimento.value = selectedForms;
+
+    const tiposAtendimentoOnboarding = onboardingStore.estabelecimentoData.tipo_atendimento;
+    if (tiposAtendimentoOnboarding?.length) {
+        formasAtendimento.value = tiposAtendimentoOnboarding
+            .map(tipo => {
+                if (tipo === 'Autoatendimento') return 'Autoatendimento (totens)';
+                if (tipo === 'Garçom') return 'Atendimento por garçons (tablets)';
+                return '';
+            })
+            .filter(Boolean);
     }
 });
 
 const saveInfo = () => {
+    localError.value = null;
     isLoading.value = true;
-    
-    // LÓGICA DE BYPASS: Simula a chamada e sucesso
-    
-    // 1. Marca o passo 'info' como concluído na Auth Store
-    authStore.setConfigStepComplete('info'); 
-    
-    // 2. Redireciona para o Dashboard
-    router.push('/app/dashboard'); 
+
+    if (!isValidCNPJ(cnpj.value)) {
+        localError.value = 'CNPJ inválido.';
+        isLoading.value = false;
+        return;
+    }
+
+    authStore.setConfigStepComplete('info');
+    router.push('/app/dashboard');
 };
 </script>
+
 
 <template>
   <main class="max-w-4xl mx-auto py-12 px-4">
@@ -93,6 +99,7 @@ const saveInfo = () => {
             <label for="cnpj" class="block text-gray-600 font-semibold mb-2">CNPJ:</label>
             <input type="text" id="cnpj" v-model="cnpj" placeholder="Digite o CNPJ"
                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500" />
+            <p v-if="localError" class="text-red-500 text-sm mt-2">{{ localError }}</p>
           </div>
 
           <div class="mb-6">

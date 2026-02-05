@@ -42,7 +42,6 @@ export default {
     localStorage.removeItem(STORAGE_KEYS.SESSION);
   },
 
-  // Onboarding
   saveOnboarding(data) {
     setItem(STORAGE_KEYS.ONBOARDING, data);
   },

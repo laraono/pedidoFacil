@@ -1,19 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 
-// Páginas públicas
 import LandingPage from '@/views/LandingPage.vue';
 import Planos from '@/views/Planos.vue';
 import RegisterManager from '@/views/RegisterManager.vue';
 import Login from '@/views/Login.vue';
 
-// Layout privado
 import ManagerLayout from '@/views/app/ManagerLayout.vue';
 
 import EstabelecimentoName from '@/views/onboarding/EstabelecimentoName.vue'; 
 import AtendimentoType from '@/views/onboarding/AtendimentoType.vue';
 
-// Internas
 import ManagerDashboard from '@/views/app/ManagerDashboard.vue';
 import EstablishmentInfo from '@/views/app/settings/EstablishmentInfo.vue';
 import RolePermissions from '@/views/app/settings/RolePermissions.vue';
@@ -29,17 +26,14 @@ const routes = [
 
   {
     path: '/app',
-    component: ManagerLayout, // O Layout com a Navbar e o Drawer
+    component: ManagerLayout,
     meta: { requiresAuth: true },
     children: [
-      // DASHBOARD PRINCIPAL (path: '') - Renderizado em /app
       { 
         path: 'dashboard', 
         name: 'Dashboard', 
         component: ManagerDashboard, 
       },
-      
-      // Rotas de Configuração (Settings)
       { 
         path: 'settings/establishment', 
         name: 'EstablishmentInfo', 
@@ -59,15 +53,11 @@ const routes = [
         name: 'MenuPersonalization', 
         component: MenuPersonalization, 
       },
-      
-      // Outras Rotas Internas (Exemplo: Pedidos)
       { 
         path: 'orders/queue', 
         name: 'OrderQueue', 
         component: { template: '<main class="max-w-7xl mx-auto py-12 px-4"><h1 class="text-3xl font-bold text-gray-800">Fila de Pedidos</h1></main>' }, 
       },
-
-      // Redirecionamento da rota base /app para /app/dashboard
       { path: '', redirect: 'dashboard' } 
     ]
   }
