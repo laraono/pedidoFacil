@@ -12,17 +12,22 @@ const isLoading = ref(false);
 const serverError = ref(null);
 
 const handleLogin = async () => {
+  isLoading.value = true;
+  serverError.value = null;
+
   try {
-    authStore.login({
+    await authStore.login({
       email: email.value,
       senha: senha.value
     });
-
     router.push("/app/dashboard");
   } catch (err) {
     serverError.value = "Email ou senha inválidos.";
+  } finally {
+    isLoading.value = false;
   }
 };
+
 
 </script>
 

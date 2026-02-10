@@ -117,7 +117,6 @@ const saveInfo = () => {
           </div>
         </div>
 
-        <!-- Coluna 2: Configurações de Operação -->
         <div>
           <h2 class="text-2xl font-bold text-gray-800 mb-4">Configurações de Operação</h2>
 
