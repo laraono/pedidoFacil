@@ -3,9 +3,11 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { ArrowLeft, CheckCircle, HelpCircle, Palette } from 'lucide-vue-next';
+import { useColorStore } from '@/utils/store';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const colorStore = useColorStore();
 
 const isLoading = ref(false);
 
@@ -25,16 +27,36 @@ const observacoesPermitidas = ref(true);
 
 // Funções
 const savePersonalization = () => {
+    console.log("oi")
     isLoading.value = true;
     
     // LÓGICA DE BYPASS: Simula a chamada e sucesso no frontend
     
     // 1. Marca o passo 'menu' como concluído na Auth Store
     authStore.setConfigStepComplete('menu'); 
+
+    colorStore.updateCorFundo(corFundo.value)
+    colorStore.updateCorBotoes(corBotoes.value)
+    colorStore.updateCorCategorias(corCategorias.value)
+
+    console.log(corBotoes.value)
     
     // 2. Redireciona para o Dashboard
     router.push('/app/dashboard');
 };
+
+const setCorFundo = (event) => {
+    corFundo.value = event.target.value
+}
+
+const setCorBotoes = (event) => {
+    corBotoes.value = event.target.value
+}
+
+const setCorCategorias = (event) => {
+    corCategorias.value = event.target.value
+}
+
 </script>
 
 <template>
@@ -62,7 +84,7 @@ const savePersonalization = () => {
             <div class="mb-6">
               <label for="fundo" class="block text-gray-600 font-semibold mb-2">Cor de fundo:</label>
               <div class="flex items-center">
-                  <input type="color" v-model="corFundo" class="w-10 h-10 p-0 border-none mr-3" />
+                  <input type="color" v-model="corFundo" class="w-10 h-10 p-0 border-none mr-3" @click="setCorFundo" />
                   <input type="text" id="fundo" v-model="corFundo"
                          placeholder="#0060A9" required maxlength="7"
                          class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500" />
@@ -73,7 +95,7 @@ const savePersonalization = () => {
             <div class="mb-6">
               <label for="botoes" class="block text-gray-600 font-semibold mb-2">Cor dos botões:</label>
               <div class="flex items-center">
-                  <input type="color" v-model="corBotoes" class="w-10 h-10 p-0 border-none mr-3" />
+                  <input type="color" v-model="corBotoes" class="w-10 h-10 p-0 border-none mr-3" @click="setCorBotoes" />
                   <input type="text" id="botoes" v-model="corBotoes"
                          placeholder="#009DFF" required maxlength="7"
                          class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500" />
@@ -83,7 +105,7 @@ const savePersonalization = () => {
             <div class="mb-6">
               <label for="categorias" class="block text-gray-600 font-semibold mb-2">Cor das categorias:</label>
               <div class="flex items-center">
-                  <input type="color" v-model="corCategorias" class="w-10 h-10 p-0 border-none mr-3" />
+                  <input type="color" v-model="corCategorias" class="w-10 h-10 p-0 border-none mr-3" @click="setCorCategorias"/>
                   <input type="text" id="categorias" v-model="corCategorias"
                          placeholder="#009DFF" required maxlength="7"
                          class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500" />

@@ -17,6 +17,7 @@ const metodosPagamento = ref([]);
 const formasAtendimento = ref([]);
 const isLoading = ref(false);
 const localError = ref(null);
+const fileInput = ref(null);
 
 watch(cnpj, (value) => {
     const masked = maskCNPJ(value);
@@ -63,6 +64,25 @@ const saveInfo = () => {
     authStore.setConfigStepComplete('info');
     router.push('/app/dashboard');
 };
+
+const triggerFileInput = () => {
+  fileInput.value.click()
+}
+
+const uploadImage = (event) => {
+  file.value = event.target.files[0]
+  console.log('File selected:', file.value?.name)
+  
+  // Optional: Show preview
+  if (file.value) {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      // If you want to display image preview
+      // imagePreview.value = e.target.result
+    }
+    reader.readAsDataURL(file.value)
+  }
+}
 </script>
 
 
@@ -110,10 +130,21 @@ const saveInfo = () => {
 
           <div class="mb-6">
             <label class="block text-gray-600 font-semibold mb-2">Logo da Marca:</label>
-            <div class="p-3 border border-gray-300 rounded-lg bg-gray-50 flex justify-between items-center text-gray-900 cursor-pointer hover:bg-gray-100 transition-colors">
-              <span>Fazer upload</span>
+            <div class="p-3 border border-gray-300 rounded-lg bg-gray-50 flex justify-between items-center text-gray-900 cursor-pointer hover:bg-gray-100 transition-colors" @click="triggerFileInput">
+            <span> Fazer Upload </span>
               <Upload :size="20" class="text-gray-500" />
+              <input ref="fileInput" type="file" accept="image/jpeg, image/png" @change=uploadImage class="hidden">
             </div>
+          </div>
+
+          <div class="mb-6">
+            <label for="cor-primaria" class="block text-gray-600 font-semibold mb-2"> Cor primária: </label>
+            <input id="cor-primaria" type="color" v-model="primaryColor" @click="setPrimaryColor"/>
+          </div>
+
+          <div class="mb-6">
+            <label for="cor-secundaria" class="block text-gray-600 font-semibold mb-2"> Cor secundária: </label>
+            <input id="cor-secundaria" type="color" v-model="secondaryColor" @click="setSecundaryColor"/>
           </div>
         </div>
 
