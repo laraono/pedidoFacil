@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useOnboardingStore } from '@/stores/onboarding';
 import { ArrowLeft, CheckCircle, Upload } from 'lucide-vue-next';
 import { maskCNPJ, isValidCNPJ } from '@/utils/validator';
+import localStorageService from '@/services/localStorageService';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -69,18 +70,18 @@ const triggerFileInput = () => {
   fileInput.value.click()
 }
 
-const uploadImage = (event) => {
-  file.value = event.target.files[0]
-  console.log('File selected:', file.value?.name)
-  
-  // Optional: Show preview
-  if (file.value) {
-    const reader = new FileReader()
+const uploadImage = (event) => {  
+  const file = event.target.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const reader = new FileReader();
+
     reader.onload = (e) => {
-      // If you want to display image preview
-      // imagePreview.value = e.target.result
-    }
-    reader.readAsDataURL(file.value)
+      const base64String = e.target.result;
+      localStorageService.saveImage(base64String);
+      fileInput.value = base64String;
+    };
+
+    reader.readAsDataURL(file);
   }
 }
 </script>
@@ -135,16 +136,6 @@ const uploadImage = (event) => {
               <Upload :size="20" class="text-gray-500" />
               <input ref="fileInput" type="file" accept="image/jpeg, image/png" @change=uploadImage class="hidden">
             </div>
-          </div>
-
-          <div class="mb-6">
-            <label for="cor-primaria" class="block text-gray-600 font-semibold mb-2"> Cor primária: </label>
-            <input id="cor-primaria" type="color" v-model="primaryColor" @click="setPrimaryColor"/>
-          </div>
-
-          <div class="mb-6">
-            <label for="cor-secundaria" class="block text-gray-600 font-semibold mb-2"> Cor secundária: </label>
-            <input id="cor-secundaria" type="color" v-model="secondaryColor" @click="setSecundaryColor"/>
           </div>
         </div>
 
