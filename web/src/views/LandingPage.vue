@@ -15,6 +15,12 @@ const isMenuOpen = ref(false);
 const navigateToLogin = () => { router.push('/login'); };
 const toggleMenu = () => { isMenuOpen.value = !isMenuOpen.value; };
 
+// Função para levar ao registro ao clicar no plano
+const navigateToRegister = () => {
+  // Verifique se o caminho no seu router/index.js é '/register' ou '/cadastro'
+  router.push('/register'); 
+};
+
 const scrollToPlans = () => {
   const element = document.getElementById('planos');
   if (element) element.scrollIntoView({ behavior: 'smooth' });
@@ -25,7 +31,7 @@ const scrollToPlans = () => {
   <div class="min-h-screen bg-black font-inter relative overflow-hidden">
     
     <div 
-      class="absolute left-0 w-full z-0 pointer-events-none opacity-90 top-[15%] h-[12vh] lg:top-[30%] lg:h-[60vh]"
+      class="absolute left-0 w-full z-0 pointer-events-none opacity-90 top-[5%] h-[12vh] lg:top-[12%] lg:h-[60vh]"
       :style="{ backgroundImage: `url(${imgOndas})` }"
       style="background-size: 100% 100%; background-repeat: no-repeat;"
     ></div>
@@ -51,7 +57,7 @@ const scrollToPlans = () => {
         <div class="flex-[2] flex justify-center items-center hidden lg:flex">
           <nav class="space-x-10 text-lg font-bold text-white">
             <a href="#sobre" class="hover:text-[#00D26A] transition-colors">Sobre</a>
-            <a href="#planos" @click.prevent="scrollToPlans" class="hover:text-[#00D26A] transition-colors cursor-pointer">Planos</a>
+            <a href="#planos" class="hover:text-[#00D26A] transition-colors cursor-pointer">Planos</a>
             <a href="#contato" class="hover:text-[#00D26A] transition-colors">Contato</a>
           </nav>
         </div>
@@ -196,7 +202,7 @@ const scrollToPlans = () => {
                     </div>
                  </div>
 
-                 <button class="bg-white text-black font-extrabold py-5 px-12 rounded-xl w-full hover:bg-gray-200 transition-colors mt-auto text-lg">
+                 <button @click="navigateToRegister" class="bg-white text-black font-extrabold py-5 px-12 rounded-xl w-full hover:bg-gray-200 transition-colors mt-auto text-lg">
                     Confirmar
                  </button>
               </div>
@@ -217,7 +223,7 @@ const scrollToPlans = () => {
                     <div class="flex items-center gap-4 text-white font-bold"><Check class="text-[#00D26A] w-6 h-6 flex-shrink-0" /> Maior Estabilidade</div>
                  </div>
 
-                 <button class="bg-white text-black font-extrabold py-5 px-12 rounded-xl w-full hover:bg-gray-200 transition-colors mt-auto text-lg">
+                 <button @click="navigateToRegister" class="bg-white text-black font-extrabold py-5 px-12 rounded-xl w-full hover:bg-gray-200 transition-colors mt-auto text-lg">
                     Confirmar
                  </button>
               </div>
@@ -252,3 +258,5 @@ const scrollToPlans = () => {
     </div>
   </div>
 </template>
+
+

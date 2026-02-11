@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 
 import LandingPage from '@/views/LandingPage.vue';
-import Planos from '@/views/Planos.vue';
 import RegisterManager from '@/views/RegisterManager.vue';
 import Login from '@/views/Login.vue';
 
@@ -20,7 +19,6 @@ import { PERMISSIONS } from '@/utils/permissions';
 
 const routes = [
   { path: '/', component: LandingPage },
-  { path: '/planos', component: Planos },
   { path: '/login', component: Login },
   { path: '/register', component: RegisterManager },
   { path: '/onboarding/name', name: 'OnboardingName', component: EstabelecimentoName },
