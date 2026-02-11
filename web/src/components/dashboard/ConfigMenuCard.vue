@@ -2,7 +2,7 @@
 import { useRouter } from 'vue-router'
 import { Briefcase } from 'lucide-vue-next'
 
-import rolesImage from '@/assets/image 28.png'
+import rolesImage from '@/assets/atendimento1.png'
 
 const router = useRouter()
 

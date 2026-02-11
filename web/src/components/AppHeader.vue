@@ -2,16 +2,25 @@
 import { computed, ref, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { LogOut } from 'lucide-vue-next';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router'; // 1. Adicione useRoute
 import { getEstablishmentMock, initMockEstablishment } from '@/mock/stablishmentmock'; 
 
 const authStore = useAuthStore();
 const router = useRouter();
+const route = useRoute(); // 2. Instancie a rota atual
 
 const userName = computed(() => authStore.user?.name || '');
 const roleName = computed(() => authStore.role?.name || '');
-
 const establishmentName = ref('Carregando...');
+
+// 3. Crie uma lista das rotas onde a Navbar NÃO deve aparecer
+const publicRoutes = ['home', 'login', 'register', 'landing']; 
+
+// 4. Crie uma computed que verifica se deve mostrar a barra
+const shouldShowNavbar = computed(() => {
+  // Deve estar autenticado E o nome da rota atual NÃO pode estar na lista pública
+  return authStore.isAuthenticated && !publicRoutes.includes(route.name);
+});
 
 onMounted(async () => {
   initMockEstablishment(); 
@@ -35,7 +44,7 @@ const logout = () => {
 
 <template>
   <header
-    v-if="authStore.isAuthenticated"
+    v-if="shouldShowNavbar"
     class="bg-blue-600 text-white px-6 py-3 flex justify-between items-center"
   >
     <div>
