@@ -1,7 +1,8 @@
 const STORAGE_KEYS = {
   USERS: "users",
   SESSION: "session",
-  ONBOARDING: "onboarding"
+  ONBOARDING: "onboarding",
+  IMAGE: "logo"
 };
 
 function getItem(key, defaultValue = null) {
@@ -48,5 +49,13 @@ export default {
 
   getOnboarding() {
     return getItem(STORAGE_KEYS.ONBOARDING, {});
+  },
+
+  saveImage(base64String) {
+    setItem(STORAGE_KEYS.IMAGE, base64String)
+  },
+
+  getImage() {
+    return getItem(STORAGE_KEYS.IMAGE)
   }
 };
