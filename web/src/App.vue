@@ -1,30 +1,36 @@
-<script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+<script setup>
+// O componente RouterView é importado automaticamente em projetos Vite+Vue Router 
+import { RouterView } from 'vue-router'; 
+// Importe a Store de Autenticação para usá-la globalmente se precisar de um header
+// import { useAuthStore } from '@/stores/auth'; 
+// const authStore = useAuthStore();
 </script>
 
 <template>
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
-  </div>
-  <HelloWorld msg="Vite + Vue" />
+  <!-- 
+    RouterView irá renderizar o componente da rota atual (ex: LandingPage, Login.vue, OrderQueue.vue)
+    O restante do app deve ser construído dentro dos componentes de rota.
+  -->
+  <RouterView />
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+<style>
+/* Estilos globais para garantir que o Tailwind CSS e a fonte Inter funcionem */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+/* Configuração básica para o corpo da página */
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+
+/* Opcional: Estilo de transição para as rotas */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.5s ease;
 }
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>
