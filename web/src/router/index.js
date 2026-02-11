@@ -15,6 +15,7 @@ import ManagerDashboard from '@/views/app/ManagerDashboard.vue';
 import EstablishmentInfo from '@/views/app/settings/EstablishmentInfo.vue';
 import RolePermissions from '@/views/app/settings/RolePermissions.vue';
 import MenuPersonalization from '@/views/app/settings/MenuPersonalization.vue';
+import Menu from '@/views/app/Menu.vue';
 
 const routes = [
   { path: '/', component: LandingPage },
@@ -58,7 +59,12 @@ const routes = [
         name: 'OrderQueue', 
         component: { template: '<main class="max-w-7xl mx-auto py-12 px-4"><h1 class="text-3xl font-bold text-gray-800">Fila de Pedidos</h1></main>' }, 
       },
-      { path: '', redirect: 'dashboard' } 
+      { path: '', redirect: 'dashboard' },
+      {
+        path: 'menu',
+        name: 'Menu',
+        component: Menu
+      }
     ]
   }
 ];

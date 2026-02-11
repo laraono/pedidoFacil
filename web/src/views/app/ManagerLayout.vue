@@ -111,6 +111,7 @@ const handleNavigation = (route) => {
           <router-link to="/app/orders/queue" class="hover:underline">Pedidos</router-link>
           <router-link to="/app/inventory/control" class="hover:underline">Estoque</router-link>
           <router-link to="/app/settings/establishment" class="hover:underline">Configurações</router-link>
+          <router-link to="/app/menu" class="hover:underline">Cardápio</router-link>
         </nav>
 
         <button

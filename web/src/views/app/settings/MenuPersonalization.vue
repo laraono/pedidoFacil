@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { ArrowLeft, CheckCircle, HelpCircle, Palette } from 'lucide-vue-next';
-import { useColorStore } from '@/utils/store';
+import { useColorStore } from '@/stores/color';
 
 const router = useRouter();
 const authStore = useAuthStore();
