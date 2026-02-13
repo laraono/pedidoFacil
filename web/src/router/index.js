@@ -14,6 +14,8 @@ import ManagerDashboard from '@/views/app/ManagerDashboard.vue';
 import EstablishmentInfo from '@/views/app/settings/EstablishmentInfo.vue';
 import RolePermissions from '@/views/app/settings/RolePermissions.vue';
 import MenuPersonalization from '@/views/app/settings/MenuPersonalization.vue';
+import MenuProducts from '@/views/app/settings/ProductsManagement.vue';
+import MenuCategories from '@/views/app/settings/CategoriesManagement.vue';
 
 import { PERMISSIONS } from '@/utils/permissions';
 
@@ -33,7 +35,9 @@ const routes = [
       { path: 'settings/establishment', name: 'establishment-settings', component: EstablishmentInfo, meta: { permission: PERMISSIONS.CONFIGURACAO } },
       { path: 'settings/roles', component: RolePermissions, meta: { permission: PERMISSIONS.CONFIGURACAO } },
       { path: 'settings/menu', component: MenuPersonalization, meta: { permission: PERMISSIONS.CONFIGURACAO } },
-      { path: '', redirect: 'dashboard' }
+      { path: '', redirect: 'dashboard'},
+      { path: 'settings/categories', component: MenuCategories, meta: { permission: PERMISSIONS.CONFIGURACAO }},
+      { path: 'settings/products', component: MenuProducts, meta: { permission: PERMISSIONS.CONFIGURACAO }},
     ]
   }
 ];
@@ -53,5 +57,6 @@ router.beforeEach(async (to, from, next) => {
 
   next();
 });
+
 
 export default router;
