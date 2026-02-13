@@ -5,6 +5,8 @@ import { PERMISSIONS } from '@/utils/permissions';
 import CardEstabelecimento from '@/components/dashboard/ConfigEstablishmentCard.vue';
 import CardCargos from '@/components/dashboard/ConfigRolesCard.vue';
 import CardCardapio from '@/components/dashboard/ConfigMenuCard.vue';
+import CardCategorias from '@/components/dashboard/ConfigCategoriesCard.vue';
+import CardProdutos from '@/components/dashboard/ConfigProductsCard.vue';
 
 const auth = useAuthStore();
 </script>
@@ -15,10 +17,12 @@ const auth = useAuthStore();
       Personalize seu Sistema
     </h2>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-10 justify-items-center">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 items-stretch">
       <CardEstabelecimento v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
       <CardCargos v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
       <CardCardapio v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
+      <CardCategorias v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
+      <CardProdutos v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
     </div>
   </main>
 </template>
