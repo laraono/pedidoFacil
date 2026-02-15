@@ -1,4 +1,5 @@
 import { PERMISSIONS } from '@/utils/permissions';
+
 const ROLES_KEY = 'roles';
 
 export function initMockRoles() {
@@ -9,16 +10,12 @@ export function initMockRoles() {
     JSON.stringify([
       {
         id: 1,
-        name: 'Admin',
-        role: 'GERENTE',
-        permissions: [
-          PERMISSIONS.CONFIGURACAO
-        ]
+        name: 'Gerente',
+        permissions: [PERMISSIONS.CONFIGURACAO]
       },
       {
-        id: 4,
+        id: 2,
         name: 'Garçom',
-        role: 'GARCOM',
         permissions: [
           PERMISSIONS.CRIAR_PEDIDO,
           PERMISSIONS.NOTIFICACOES
@@ -29,6 +26,7 @@ export function initMockRoles() {
 }
 
 export function getRolesMock() {
+  initMockRoles();
   return JSON.parse(localStorage.getItem(ROLES_KEY)) || [];
 }
 

@@ -14,6 +14,7 @@ import ManagerDashboard from '@/views/app/ManagerDashboard.vue';
 import EstablishmentInfo from '@/views/app/settings/EstablishmentInfo.vue';
 import RolePermissions from '@/views/app/settings/RolePermissions.vue';
 import MenuPersonalization from '@/views/app/settings/MenuPersonalization.vue';
+import CreateUsers from '@/views/app/settings/UsersConfig.vue'
 
 import { PERMISSIONS } from '@/utils/permissions';
 
@@ -30,9 +31,10 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       { path: 'dashboard', component: ManagerDashboard },
-      { path: 'settings/establishment', name: 'establishment-settings', component: EstablishmentInfo, meta: { permission: PERMISSIONS.CONFIGURACAO } },
+      { path: 'settings/establishment', component: EstablishmentInfo, meta: { permission: PERMISSIONS.CONFIGURACAO } },
       { path: 'settings/roles', component: RolePermissions, meta: { permission: PERMISSIONS.CONFIGURACAO } },
       { path: 'settings/menu', component: MenuPersonalization, meta: { permission: PERMISSIONS.CONFIGURACAO } },
+      { path: 'settings/users', component: CreateUsers, meta: { permission: PERMISSIONS.CONFIGURACAO } },
       { path: '', redirect: 'dashboard' }
     ]
   }
