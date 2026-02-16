@@ -15,9 +15,7 @@ const isMenuOpen = ref(false);
 const navigateToLogin = () => { router.push('/login'); };
 const toggleMenu = () => { isMenuOpen.value = !isMenuOpen.value; };
 
-// Função para levar ao registro ao clicar no plano
 const navigateToRegister = () => {
-  // Verifique se o caminho no seu router/index.js é '/register' ou '/cadastro'
   router.push('/register'); 
 };
 

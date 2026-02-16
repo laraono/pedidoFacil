@@ -61,7 +61,6 @@ async function handleSubmit() {
         return;
     };
 
-    // Simulando processamento
     localStorage.setItem('onboarding_personal', JSON.stringify({
         nome: nome.value,
         email: email.value,

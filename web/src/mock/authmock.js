@@ -20,6 +20,13 @@ export function initMockUsers() {
           email: "garcom@email.com",
           password: "123456",
           roleId: 4
+        },
+        {
+          id: 3,
+          name: "João Cozinha",
+          email: "cozinha@email.com",
+          password: "123456",
+          roleId: 5
         }
       ])
     );

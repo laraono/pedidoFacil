@@ -23,15 +23,22 @@ const handleLogin = async () => {
       email: email.value,
       senha: senha.value
     });
-    router.push("/app/dashboard");
+
+    if (authStore.hasPermission(PERMISSIONS.COZINHA)) {
+      router.push("/app/kitchen"); 
+    } else {
+      router.push("/app/dashboard"); 
+    }
+
+
   } catch (err) {
+    console.error(err);
     serverError.value = "Email ou senha incorretos.";
   } finally {
     isLoading.value = false;
   }
 };
 
-// Função para levar à seção de planos da Landing Page
 const goToPlans = () => {
   router.push({ path: '/', hash: '#planos' });
 };
@@ -114,6 +121,7 @@ const goToPlans = () => {
       <div class="mt-10 pt-6 border-t border-white/5 text-center">
           <p class="text-gray-400 text-sm mb-3">Ainda não é cliente?</p>
           <a  
+            @click.prevent="goToPlans"
             href="/#planos"
             class="inline-flex items-center gap-2 text-[#00D26A] font-bold hover:text-[#00b058] transition-all group cursor-pointer"
           >

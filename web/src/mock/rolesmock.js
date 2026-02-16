@@ -12,7 +12,9 @@ export function initMockRoles() {
         name: 'Admin',
         role: 'GERENTE',
         permissions: [
-          PERMISSIONS.CONFIGURACAO
+          PERMISSIONS.CONFIGURACAO,
+          PERMISSIONS.COZINHA, 
+          PERMISSIONS.CRIAR_PEDIDO
         ]
       },
       {
@@ -21,6 +23,15 @@ export function initMockRoles() {
         role: 'GARCOM',
         permissions: [
           PERMISSIONS.CRIAR_PEDIDO,
+          PERMISSIONS.NOTIFICACOES
+        ]
+      },
+      {
+        id: 5,
+        name: 'Cozinheiro',
+        role: 'COZINHA',
+        permissions: [
+          PERMISSIONS.COZINHA, 
           PERMISSIONS.NOTIFICACOES
         ]
       }

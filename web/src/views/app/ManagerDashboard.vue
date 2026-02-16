@@ -48,7 +48,6 @@ const auth = useAuthStore();
 </template>
 
 <style scoped>
-/* Animações sutis de entrada */
 @keyframes fadeInDown {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -70,15 +69,10 @@ const auth = useAuthStore();
   animation-fill-mode: forwards;
 }
 
-/* DICA EXTRA:
-   Se os botões dentro dos componentes (CardEstabelecimento, etc) não estiverem
-   descendo para o fundo, você pode forçar via CSS profundo (deep selector)
-   assumindo que o botão seja a última tag ou tenha uma classe específica.
-*/
 :deep(.card-content) {
-    flex-grow: 1; /* Força o texto a ocupar o espaço, empurrando o botão pra baixo */
+    flex-grow: 1; 
 }
 :deep(button), :deep(a.button) {
-    margin-top: auto; /* Garante margem automática no topo do botão */
+    margin-top: auto; 
 }
 </style>
