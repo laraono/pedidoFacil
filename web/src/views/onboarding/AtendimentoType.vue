@@ -96,7 +96,7 @@ const finalizeRegistration = async () => {
     <div class="z-10 w-full max-w-5xl text-center">
       
       <div class="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-6 md:mb-8 backdrop-blur-md">
-        <span class="text-[#00D26A] text-[10px] md:text-xs font-bold uppercase tracking-widest">Etapa Final</span>
+        <span class="text-[#00D26A] text-[10px] md:text-xs font-bold uppercase tracking-widest">Etapa 3 de 3</span>
       </div>
 
       <h1 class="text-2xl md:text-5xl font-bold text-white mb-4 md:mb-6 tracking-tight leading-tight">
