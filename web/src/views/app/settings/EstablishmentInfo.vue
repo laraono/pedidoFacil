@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useOnboardingStore } from '@/stores/onboarding';
 import { ArrowLeft, CheckCircle, Upload } from 'lucide-vue-next';
 import { maskCNPJ, isValidCNPJ } from '@/utils/validator';
+import { getEstablishmentMock, updateEstablishmentMock } from '@/mock/stablishmentmock';
 import localStorageService from '@/services/localStorageService';
 
 const router = useRouter();
@@ -20,50 +21,72 @@ const isLoading = ref(false);
 const localError = ref(null);
 const fileInput = ref(null);
 
-watch(cnpj, (value) => {
-    const masked = maskCNPJ(value);
-    if (masked !== value) {
-        cnpj.value = masked;
-    }
-});
-
 const paymentOptions = ['Crédito', 'Débito', 'Dinheiro', 'Pix'];
+
 const serviceOptions = [
-    'Autoatendimento (totens)',
-    'Atendimento por garçons (tablets)',
-    'Atendimento no caixa'
+  'Autoatendimento (totens)',
+  'Atendimento por garçons (tablets)',
+  'Atendimento no caixa'
 ];
 
-onMounted(() => {
-    const nomeOnboarding = onboardingStore.estabelecimentoData.nome_estabelecimento;
-    if (nomeOnboarding) {
-        nomeEstabelecimento.value = nomeOnboarding;
-    }
-
-    const tiposAtendimentoOnboarding = onboardingStore.estabelecimentoData.tipo_atendimento;
-    if (tiposAtendimentoOnboarding?.length) {
-        formasAtendimento.value = tiposAtendimentoOnboarding
-            .map(tipo => {
-                if (tipo === 'Autoatendimento') return 'Autoatendimento (totens)';
-                if (tipo === 'Garçom') return 'Atendimento por garçons (tablets)';
-                return '';
-            })
-            .filter(Boolean);
-    }
+watch(cnpj, (value) => {
+  if (!value) return;
+  const masked = maskCNPJ(value);
+  if (masked !== value) {
+    cnpj.value = masked;
+  }
 });
 
-const saveInfo = () => {
-    localError.value = null;
-    isLoading.value = true;
+onMounted(async () => {
+  const data = await getEstablishmentMock();
 
-    if (!isValidCNPJ(cnpj.value)) {
-        localError.value = 'CNPJ inválido.';
-        isLoading.value = false;
-        return;
-    }
+  if (data?.info) {
+    nomeEstabelecimento.value = data.info.name || '';
+    cnpj.value = data.info.cnpj || '';
+    endereco.value = data.info.address || '';
+    metodosPagamento.value = data.info.paymentMethods || [];
+    formasAtendimento.value = data.info.serviceMethods || [];
+  }
 
-    authStore.setConfigStepComplete('info');
-    router.push('/app/dashboard');
+  const nomeOnboarding = onboardingStore.estabelecimentoData.nome_estabelecimento;
+  if (nomeOnboarding) {
+    nomeEstabelecimento.value = nomeOnboarding;
+  }
+
+  const tiposAtendimentoOnboarding = onboardingStore.estabelecimentoData.tipo_atendimento;
+  if (tiposAtendimentoOnboarding?.length) {
+    formasAtendimento.value = tiposAtendimentoOnboarding
+      .map(tipo => {
+        if (tipo === 'Autoatendimento') return 'Autoatendimento (totens)';
+        if (tipo === 'Garçom') return 'Atendimento por garçons (tablets)';
+        return '';
+      })
+      .filter(Boolean);
+  }
+});
+
+const saveInfo = async () => {
+  localError.value = null;
+  isLoading.value = true;
+
+  if (!isValidCNPJ(cnpj.value)) {
+    localError.value = 'CNPJ inválido.';
+    isLoading.value = false;
+    return;
+  }
+
+  await updateEstablishmentMock({
+    name: nomeEstabelecimento.value,
+    cnpj: cnpj.value,
+    address: endereco.value,
+    paymentMethods: metodosPagamento.value,
+    serviceMethods: formasAtendimento.value
+  });
+
+  authStore.setConfigStepComplete('info');
+
+  isLoading.value = false;
+  router.push('/app/dashboard');
 };
 
 const triggerFileInput = () => {
@@ -86,7 +109,6 @@ const uploadImage = (event) => {
 }
 </script>
 
-
 <template>
   <main class="max-w-4xl mx-auto py-12 px-4">
     
@@ -96,22 +118,17 @@ const uploadImage = (event) => {
         </button>
         <h1 class="text-3xl font-bold text-gray-800 flex items-center">
           Informações do Estabelecimento
-          <!-- Ícone de Check se o passo estiver completo -->
           <CheckCircle v-if="authStore.configStatus.info" :size="24" class="text-green-500 ml-4" />
         </h1>
     </div>
 
     <form @submit.prevent="saveInfo" class="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-      
       <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-        
-        <!-- Coluna 1: Informações Gerais -->
         <div>
           <h2 class="text-2xl font-bold text-gray-800 mb-4">Informações gerais</h2>
           
           <div class="mb-6">
             <label for="nome" class="block text-gray-600 font-semibold mb-2">Nome do Estabelecimento:</label>
-            <!-- v-model ligado ao ref inicializado com o valor da store, garantindo editabilidade -->
             <input type="text" id="nome" v-model="nomeEstabelecimento" placeholder="Digite o nome" required
                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500" />
           </div>
@@ -139,7 +156,6 @@ const uploadImage = (event) => {
           </div>
         </div>
 
-        <!-- Coluna 2: Configurações de Operação -->
         <div>
           <h2 class="text-2xl font-bold text-gray-800 mb-4">Configurações de Operação</h2>
 
@@ -163,7 +179,6 @@ const uploadImage = (event) => {
         </div>
       </div>
 
-      <!-- Botão de Ação -->
       <div class="mt-8 pt-6 border-t border-gray-200">
         <button type="submit" :disabled="isLoading"
                 class="py-3 px-8 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400">

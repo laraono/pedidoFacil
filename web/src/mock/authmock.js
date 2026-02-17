@@ -9,24 +9,33 @@ export function initMockUsers() {
       JSON.stringify([
         {
           id: 1,
-          name: "Admin",
+          name: "Gerente",
           email: "admin@email.com",
           password: "123456",
-          role: "ADMIN"
+          roleId: 1
+        },
+        {
+          id: 2,
+          name: "Pedro Garçom",
+          email: "garcom@email.com",
+          password: "123456",
+          roleId: 4
         }
       ])
     );
   }
 }
 
-export function loginMock(email, password) {
+export async function loginMock(email, password) {
+  initMockUsers();
+
   const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
 
-  const user = users.find(
-    u => u.email === email && u.password === password
-  );
+  const user = users.find(u => u.email === email && u.password === password);
 
-  if (!user) throw new Error("Credenciais inválidas");
+  if (!user) {
+    throw new Error("Credenciais inválidas");
+  }
 
   localStorage.setItem(USER_KEY, JSON.stringify(user));
   localStorage.setItem(TOKEN_KEY, "mock-token");
@@ -34,9 +43,6 @@ export function loginMock(email, password) {
   return user;
 }
 
-export function getSessionMock() {
-  return JSON.parse(localStorage.getItem(USER_KEY));
-}
 
 export function logoutMock() {
   localStorage.removeItem(USER_KEY);

@@ -1,52 +1,33 @@
+import { PERMISSIONS } from '@/utils/permissions';
+
 const ROLES_KEY = 'roles';
 
 export function initMockRoles() {
-  if (!localStorage.getItem(ROLES_KEY)) {
-    localStorage.setItem(
-      ROLES_KEY,
-      JSON.stringify([
-        {
-          id: 1,
-          name: 'Gerente',
-          permissions: [
-            'Controle de Estoque',
-            'Acesso a Histórico de Pedidos',
-            'Enviar notificações'
-          ]
-        },
-        {
-          id: 2,
-          name: 'Caixa',
-          permissions: [
-            'Acesso à lista de Pedidos Prontos',
-            'Enviar notificações'
-          ]
-        },
-        {
-          id: 3,
-          name: 'Cozinha',
-          permissions: [
-            'Acesso à lista de Pedidos em preparo',
-            'Acesso à lista de Pedidos Prontos'
-          ]
-        },
-        {
-          id: 4,
-          name: 'Garçom',
-          permissions: [
-            'Pode criar Pedidos (Garçom)',
-            'Enviar notificações'
-          ]
-        }
-      ])
-    );
-  }
+  if (localStorage.getItem(ROLES_KEY)) return;
+
+  localStorage.setItem(
+    ROLES_KEY,
+    JSON.stringify([
+      {
+        id: 1,
+        name: 'Gerente',
+        permissions: [PERMISSIONS.CONFIGURACAO]
+      },
+      {
+        id: 2,
+        name: 'Garçom',
+        permissions: [
+          PERMISSIONS.CRIAR_PEDIDO,
+          PERMISSIONS.NOTIFICACOES
+        ]
+      }
+    ])
+  );
 }
 
 export function getRolesMock() {
-  return Promise.resolve(
-    JSON.parse(localStorage.getItem(ROLES_KEY))
-  );
+  initMockRoles();
+  return JSON.parse(localStorage.getItem(ROLES_KEY)) || [];
 }
 
 export function saveRolesMock(data) {

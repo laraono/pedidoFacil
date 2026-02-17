@@ -2,26 +2,21 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useOnboardingStore } from '@/stores/onboarding';
+import { Store, ArrowRight } from 'lucide-vue-next';
+import imgOndas from '@/assets/ondas.png';
 
 const router = useRouter();
 const onboardingStore = useOnboardingStore();
 const nomeEstabelecimento = ref('');
 
-// caminho ok
-const BG_WAVES_URL = '../../assets/image 4.png';
-
 onMounted(() => {
-  // 🔒 PROTEÇÃO TOTAL CONTRA undefined
-  const nomeOnboarding =
-    onboardingStore.estabelecimentoData?.nome_estabelecimento ?? '';
-
+  const nomeOnboarding = onboardingStore.estabelecimentoData?.nome_estabelecimento ?? '';
   nomeEstabelecimento.value = nomeOnboarding;
 });
 
 const handleSubmit = () => {
   if (!nomeEstabelecimento.value.trim()) return;
 
-  // 🔒 GARANTE QUE O OBJETO EXISTE
   onboardingStore.setEstabelecimentoData(
     'nome_estabelecimento',
     nomeEstabelecimento.value.trim()
@@ -32,43 +27,55 @@ const handleSubmit = () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-black relative flex flex-col items-center justify-center p-6 md:p-12 overflow-hidden">
+  <div class="min-h-screen bg-[#050505] font-inter relative flex flex-col items-center justify-center p-6 md:p-12 overflow-hidden">
     
-    <!-- FUNDO -->
     <div 
-      class="absolute inset-0 z-0 opacity-10 md:opacity-15" 
-      :style="{ backgroundImage: `url(${BG_WAVES_URL})` }"
-      style="background-size: cover; background-position: center;"
+      class="absolute top-1/2 left-0 w-full -translate-y-1/2 z-0 pointer-events-none opacity-40"
+      :style="{ backgroundImage: `url(${imgOndas})` }"
+      style="height: 70vh; background-size: cover; background-position: center; background-repeat: no-repeat;"
     ></div>
-    
-    <div class="absolute inset-0 z-10 bg-black/95"></div> 
 
-    <!-- CONTEÚDO -->
-    <div class="z-20 w-full max-w-2xl text-center">
-      <p class="text-xl text-[#00ff6a] font-semibold mb-4">
-        Agora, algumas perguntas para melhorar sua experiência...
-      </p>
+    <div class="z-10 w-full max-w-2xl bg-[#121212]/90 border border-white/10 p-8 md:p-16 rounded-[2.5rem] shadow-2xl relative backdrop-blur-xl text-center">
       
-      <h1 class="text-5xl font-black text-white mb-12">
-        Qual o nome do seu Estabelecimento?
+      <div class="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-8">
+        <span class="text-[#00D26A] text-xs font-bold uppercase tracking-widest">Passo 1 de 3</span>
+      </div>
+      
+      <h1 class="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight leading-tight">
+        Qual o nome do seu <br class="hidden md:block" />
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#00D26A] to-[#00ff88]">estabelecimento?</span>
       </h1>
       
-      <form @submit.prevent="handleSubmit" class="flex flex-col items-center space-y-8">
-        <input
-          type="text"
-          v-model="nomeEstabelecimento"
-          placeholder="Ex: Sabor de Casa..."
-          required
-          class="w-full max-w-lg p-4 bg-white text-black rounded-xl border-none text-lg placeholder-gray-500 focus:ring-4 focus:ring-[#00ff6a] focus:border-transparent"
-        />
+      <p class="text-gray-400 text-lg mb-12 max-w-lg mx-auto leading-relaxed">
+        Esse é o nome que seus clientes verão ao acessar seu cardápio digital.
+      </p>
+      
+      <form @submit.prevent="handleSubmit" class="flex flex-col items-center w-full">
+        
+        <div class="relative w-full max-w-lg group">
+            <div class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#00D26A] transition-colors duration-300">
+                <Store class="w-6 h-6" />
+            </div>
+            
+            <input
+              type="text"
+              v-model="nomeEstabelecimento"
+              placeholder="Ex: Pizzaria Sabor de Casa"
+              required
+              autofocus
+              class="w-full p-6 pl-16 bg-white/5 text-white rounded-2xl border border-white/10 text-xl placeholder-gray-600 focus:outline-none focus:border-[#00D26A]/50 focus:bg-white/10 focus:shadow-[0_0_30px_rgba(0,210,106,0.1)] transition-all duration-300"
+            />
+        </div>
         
         <button
           type="submit"
           :disabled="!nomeEstabelecimento.trim()"
-          class="py-3 px-12 bg-white text-black font-bold rounded-full text-xl hover:bg-gray-200 transition-colors duration-300 disabled:opacity-50"
+          class="mt-12 py-4 px-10 bg-[#00D26A] text-black font-bold rounded-full text-xl hover:bg-[#00b058] hover:shadow-[0_0_25px_rgba(0,210,106,0.4)] transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none flex items-center gap-3 group"
         >
-          Próximo
+          <span>Continuar</span>
+          <ArrowRight class="w-6 h-6 transition-transform group-hover:translate-x-1" />
         </button>
+
       </form>
     </div>
   </div>
