@@ -1,9 +1,6 @@
 <script setup>
 import localStorageService from '@/services/localStorageService';
-import { useColorStore } from '@/stores/color';
 import { ref, computed, onMounted } from 'vue';
-
-const colorStore = useColorStore()
 
 const imageUrl = ref('');
 
@@ -21,7 +18,6 @@ const backgroundStyle = computed(() => {
 onMounted(() => {
   const savedImage = localStorageService.getImage();
 
-  console.log(colorStore.corCategorias)
   
   if (savedImage) {
     imageUrl.value = savedImage;
@@ -50,13 +46,13 @@ onMounted(() => {
   <div class="flex w-full h-screen">
         <div 
             class="w-60 h-full transform transition-all duration-300"
-            :style="{ background: colorStore.corCategorias }"
+            :style="{ background: localStorageService.getCategoryColors() }"
         >
         
         </div>
         <div 
             class="flex-1 h-full transform transition-all duration-300"
-            :style="{ background: colorStore.corFundo }"
+            :style="{ background: localStorageService.getBackgroundColors() }"
         >
         
         </div>

@@ -2,7 +2,10 @@ const STORAGE_KEYS = {
   USERS: "users",
   SESSION: "session",
   ONBOARDING: "onboarding",
-  IMAGE: "logo"
+  IMAGE: "logo",
+  BUTTONS: "buttons",
+  CATEGORY: "category",
+  BACKGROUND: "background"
 };
 
 function getItem(key, defaultValue = null) {
@@ -57,5 +60,30 @@ export default {
 
   getImage() {
     return getItem(STORAGE_KEYS.IMAGE)
-  }
+  },
+
+  saveButtonColors(value) {
+    setItem(STORAGE_KEYS.BUTTONS, value)
+  },
+
+  getButtonColors() {
+    return getItem(STORAGE_KEYS.BUTTONS)
+  },
+
+  saveBackgroundColors(value) {
+    setItem(STORAGE_KEYS.BACKGROUND, value)
+  },
+
+  getBackgroundColors() {
+    return getItem(STORAGE_KEYS.BACKGROUND)
+  },
+
+  saveCategoryColors(value) {
+    setItem(STORAGE_KEYS.CATEGORY, value)
+  },
+
+  getCategoryColors() {
+    return getItem(STORAGE_KEYS.CATEGORY)
+  },
+  
 };

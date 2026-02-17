@@ -3,11 +3,10 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { ArrowLeft, CheckCircle, HelpCircle, Palette } from 'lucide-vue-next';
-import { useColorStore } from '@/stores/color';
+import localStorageService from '@/services/localStorageService';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const colorStore = useColorStore();
 
 const isLoading = ref(false);
 
@@ -35,9 +34,9 @@ const savePersonalization = () => {
     // 1. Marca o passo 'menu' como concluído na Auth Store
     authStore.setConfigStepComplete('menu'); 
 
-    colorStore.updateCorFundo(corFundo.value)
-    colorStore.updateCorBotoes(corBotoes.value)
-    colorStore.updateCorCategorias(corCategorias.value)
+    localStorageService.saveBackgroundColors(corFundo.value)
+    localStorageService.saveButtonColors(corBotoes.value)
+    localStorageService.saveCategoryColors(corCategorias.value)
 
     console.log(corBotoes.value)
     
