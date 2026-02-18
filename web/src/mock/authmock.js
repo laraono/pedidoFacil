@@ -9,7 +9,7 @@ export function initMockUsers() {
       JSON.stringify([
         {
           id: 1,
-          name: "Admin",
+          name: "Gerente",
           email: "admin@email.com",
           password: "123456",
           roleId: 1
