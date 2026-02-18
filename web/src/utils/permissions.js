@@ -1,13 +1,14 @@
 export const PERMISSIONS = {
-  //ESTOQUE: "Controle de Estoque",
-  //HISTORICO_PEDIDOS: "Acesso a Histórico de Pedidos",
-  //PEDIDOS_PRONTOS: "Acesso à lista de Pedidos Prontos",
-  //PEDIDOS_EM_PREPARO: "Acesso à lista de Pedidos em preparo",
-  //NOTIFICACOES: "Enviar notificações",
-  //CRIAR_PEDIDO: "Pode criar Pedidos (Garçom)",
-  //CONFIGURACAO: "Configura o restaurante"
-  CONFIGURACAO: 'CONFIGURACAO',
+  // Menu Principal
+  RELATORIOS: 'RELATORIOS',       // Dashboard
+  COZINHA: 'COZINHA',             // Fila de Pedidos
+  ESTOQUE: 'ESTOQUE',             // Estoque
+  CARDAPIO: 'CARDAPIO',           // Cardápio
+  FUNCIONARIOS: 'FUNCIONARIOS',   // Equipe/Cargos
+  CONFIGURACAO: 'CONFIGURACAO',   // Dados do Restaurante
+  ASSINATURA: 'ASSINATURA',       // Planos
+  
+  // Operacionais (Internos)
   CRIAR_PEDIDO: 'CRIAR_PEDIDO',
-  NOTIFICACOES: 'NOTIFICACOES',
-  COZINHA: 'COZINHA'
+  NOTIFICACOES: 'NOTIFICACOES'
 };

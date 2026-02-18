@@ -72,12 +72,6 @@ const handleFinish = (id) => kitchenStore.finishOrder(id);
           <VolumeX v-else :size="18" class="md:w-5 md:h-5" />
         </button>
         
-        <button 
-          @click="router.push('/app/dashboard')" 
-          class="p-2 text-gray-400 hover:text-red-500 transition-colors"
-        >
-            <LogOut :size="20"/>
-        </button>
       </div>
     </header>
 

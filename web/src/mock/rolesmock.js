@@ -10,11 +10,33 @@ export function initMockRoles() {
       {
         id: 1,
         name: 'Admin',
+        role: 'ADMIN',
+        permissions: [
+          PERMISSIONS.RELATORIOS,
+          PERMISSIONS.COZINHA,
+          PERMISSIONS.ESTOQUE,
+          PERMISSIONS.CARDAPIO,
+          PERMISSIONS.FUNCIONARIOS,
+          PERMISSIONS.CONFIGURACAO,
+          PERMISSIONS.ASSINATURA,
+          PERMISSIONS.CRIAR_PEDIDO,
+          PERMISSIONS.NOTIFICACOES 
+        ]
+      },
+      {
+        id: 2,
+        name: 'Gerente',
         role: 'GERENTE',
         permissions: [
+          PERMISSIONS.RELATORIOS,
+          PERMISSIONS.COZINHA,
+          PERMISSIONS.ESTOQUE,
+          PERMISSIONS.CARDAPIO,
+          PERMISSIONS.FUNCIONARIOS,
           PERMISSIONS.CONFIGURACAO,
-          PERMISSIONS.COZINHA, 
-          PERMISSIONS.CRIAR_PEDIDO
+          PERMISSIONS.ASSINATURA,
+          PERMISSIONS.CRIAR_PEDIDO,
+          PERMISSIONS.NOTIFICACOES 
         ]
       },
       {
@@ -32,7 +54,7 @@ export function initMockRoles() {
         role: 'COZINHA',
         permissions: [
           PERMISSIONS.COZINHA, 
-          PERMISSIONS.NOTIFICACOES
+          PERMISSIONS.ESTOQUE
         ]
       }
     ])
