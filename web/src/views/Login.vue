@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth';
 // Ícones para enriquecer a interface
 import { LogIn, Lock, Mail, AlertCircle, Loader2, ArrowRight } from 'lucide-vue-next';
 import imgOndas from '@/assets/ondas.png';
+import { PERMISSIONS } from '@/utils/permissions';
 
 const authStore = useAuthStore();
 const router = useRouter();
