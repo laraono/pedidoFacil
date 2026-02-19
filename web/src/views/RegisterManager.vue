@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { UserPlus, Info, AlertCircle, Loader2 } from 'lucide-vue-next'; 
+import { UserPlus, Info, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-vue-next'; 
 import { useAuthStore } from '@/stores/auth'; 
 import { isValidCPF, maskCPF } from '@/utils/validator';
 import imgOndas from '@/assets/ondas.png';
@@ -14,6 +14,9 @@ const email = ref('');
 const cpf = ref('');
 const senha = ref('');
 const confirmar_senha = ref('');
+
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
 
 const isLoading = ref(false);
 const localError = ref(null); 
@@ -149,6 +152,7 @@ async function handleSubmit() {
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            
             <div class="space-y-2">
                 <div class="flex items-center justify-between ml-2">
                     <label for="senha" class="text-sm font-medium text-gray-300">Senha</label>
@@ -159,18 +163,48 @@ async function handleSubmit() {
                         </div>
                     </div>
                 </div>
-                <input id="senha" type="password" v-model="senha" required 
-                       placeholder="******"
-                       class="w-full p-4 bg-white/5 rounded-2xl border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-[#00D26A]/50 focus:bg-white/10 transition-all duration-300" />
+                <div class="relative">
+                    <input 
+                        id="senha" 
+                        :type="showPassword ? 'text' : 'password'" 
+                        v-model="senha" 
+                        required 
+                        placeholder="******"
+                        class="w-full p-4 pr-12 bg-white/5 rounded-2xl border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-[#00D26A]/50 focus:bg-white/10 transition-all duration-300" 
+                    />
+                    <button 
+                        type="button" 
+                        @click="showPassword = !showPassword"
+                        class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors focus:outline-none"
+                    >
+                        <Eye v-if="!showPassword" class="w-5 h-5" />
+                        <EyeOff v-else class="w-5 h-5" />
+                    </button>
+                </div>
             </div>
 
             <div class="space-y-2">
                 <div class="flex items-center justify-between ml-2">
                     <label for="confirmar_senha" class="text-sm font-medium text-gray-300">Confirmar senha</label>
                 </div>
-                <input id="confirmar_senha" type="password" v-model="confirmar_senha" required 
-                       placeholder="******"
-                       class="w-full p-4 bg-white/5 rounded-2xl border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-[#00D26A]/50 focus:bg-white/10 transition-all duration-300" />
+                <div class="relative">
+                    <input 
+                        id="confirmar_senha" 
+                        :type="showConfirmPassword ? 'text' : 'password'" 
+                        v-model="confirmar_senha" 
+                        required 
+                        placeholder="******"
+                        class="w-full p-4 pr-12 bg-white/5 rounded-2xl border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-[#00D26A]/50 focus:bg-white/10 transition-all duration-300" 
+                    />
+                    <button 
+                        type="button" 
+                        @click="showConfirmPassword = !showConfirmPassword"
+                        class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors focus:outline-none"
+                    >
+                        <Eye v-if="!showConfirmPassword" class="w-5 h-5" />
+                        <EyeOff v-else class="w-5 h-5" />
+                    </button>
+                </div>
             </div>
         </div>
 

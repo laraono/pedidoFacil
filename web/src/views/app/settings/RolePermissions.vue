@@ -19,8 +19,14 @@ const roleDescriptions = {
 };
 
 const ALL_PERMISSIONS = [
-  { key: PERMISSIONS.CONFIGURACAO, label: "Configuração do sistema" },
-  { key: PERMISSIONS.CRIAR_PEDIDO, label: "Criar Pedido" },
+  { key: PERMISSIONS.RELATORIOS, label: "Acessar Dashboard e Relatórios" },
+  { key: PERMISSIONS.COZINHA, label: "Acessar Pedidos (Cozinha)" },
+  { key: PERMISSIONS.ESTOQUE, label: "Gerenciar Estoque" },
+  { key: PERMISSIONS.CARDAPIO, label: "Gerenciar Cardápio" },
+  { key: PERMISSIONS.FUNCIONARIOS, label: "Gerenciar Funcionários" },
+  { key: PERMISSIONS.CONFIGURACAO, label: "Configuração do Sistema" },
+  { key: PERMISSIONS.ASSINATURA, label: "Gerenciar Assinatura" },
+  { key: PERMISSIONS.CRIAR_PEDIDO, label: "Criar Pedido (Garçom)" },
   { key: PERMISSIONS.NOTIFICACOES, label: "Enviar Notificações" }
 ];
 

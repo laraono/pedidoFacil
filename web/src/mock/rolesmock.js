@@ -10,8 +10,35 @@ export function initMockRoles() {
     JSON.stringify([
       {
         id: 1,
+        name: 'Admin',
+        role: 'ADMIN',
+        permissions: [
+          PERMISSIONS.RELATORIOS,
+          PERMISSIONS.COZINHA,
+          PERMISSIONS.ESTOQUE,
+          PERMISSIONS.CARDAPIO,
+          PERMISSIONS.FUNCIONARIOS,
+          PERMISSIONS.CONFIGURACAO,
+          PERMISSIONS.ASSINATURA,
+          PERMISSIONS.CRIAR_PEDIDO,
+          PERMISSIONS.NOTIFICACOES 
+        ]
+      },
+      {
+        id: 2,
         name: 'Gerente',
-        permissions: [PERMISSIONS.CONFIGURACAO]
+        role: 'GERENTE',
+        permissions: [
+          PERMISSIONS.RELATORIOS,
+          PERMISSIONS.COZINHA,
+          PERMISSIONS.ESTOQUE,
+          PERMISSIONS.CARDAPIO,
+          PERMISSIONS.FUNCIONARIOS,
+          PERMISSIONS.CONFIGURACAO,
+          PERMISSIONS.ASSINATURA,
+          PERMISSIONS.CRIAR_PEDIDO,
+          PERMISSIONS.NOTIFICACOES 
+        ]
       },
       {
         id: 2,
@@ -19,6 +46,15 @@ export function initMockRoles() {
         permissions: [
           PERMISSIONS.CRIAR_PEDIDO,
           PERMISSIONS.NOTIFICACOES
+        ]
+      },
+      {
+        id: 5,
+        name: 'Cozinheiro',
+        role: 'COZINHA',
+        permissions: [
+          PERMISSIONS.COZINHA, 
+          PERMISSIONS.ESTOQUE
         ]
       }
     ])

@@ -15,15 +15,17 @@ const isMenuOpen = ref(false);
 const navigateToLogin = () => { router.push('/login'); };
 const toggleMenu = () => { isMenuOpen.value = !isMenuOpen.value; };
 
-// Função para levar ao registro ao clicar no plano
 const navigateToRegister = () => {
-  // Verifique se o caminho no seu router/index.js é '/register' ou '/cadastro'
   router.push('/register'); 
 };
 
-const scrollToPlans = () => {
-  const element = document.getElementById('planos');
-  if (element) element.scrollIntoView({ behavior: 'smooth' });
+// Função unificada para rolagem suave
+const scrollToSection = (sectionId) => {
+  const element = document.getElementById(sectionId);
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth' });
+    isMenuOpen.value = false; // Fecha o menu mobile se estiver aberto
+  }
 };
 </script>
 
@@ -56,9 +58,9 @@ const scrollToPlans = () => {
         
         <div class="flex-[2] flex justify-center items-center hidden lg:flex">
           <nav class="space-x-10 text-lg font-bold text-white">
-            <a href="#sobre" class="hover:text-[#00D26A] transition-colors">Sobre</a>
-            <a href="#planos" class="hover:text-[#00D26A] transition-colors cursor-pointer">Planos</a>
-            <a href="#contato" class="hover:text-[#00D26A] transition-colors">Contato</a>
+            <a @click.prevent="scrollToSection('sobre')" href="#sobre" class="hover:text-[#00D26A] transition-colors cursor-pointer">Sobre</a>
+            <a @click.prevent="scrollToSection('planos')" href="#planos" class="hover:text-[#00D26A] transition-colors cursor-pointer">Planos</a>
+            <a @click.prevent="scrollToSection('contato')" href="#contato" class="hover:text-[#00D26A] transition-colors cursor-pointer">Contato</a>
           </nav>
         </div>
         
@@ -71,9 +73,9 @@ const scrollToPlans = () => {
       </header>
 
       <div v-if="isMenuOpen" class="lg:hidden bg-[#050F0D]/95 backdrop-blur-md border-b border-[#111] p-5 absolute top-[60px] left-0 w-full z-40 shadow-2xl">
-        <a href="#sobre" @click="isMenuOpen = false" class="block py-4 border-b border-[#1A1A1A] text-white text-base font-bold text-center">Sobre nós</a>
-        <a href="#planos" @click="isMenuOpen = false; scrollToPlans()" class="block py-4 border-b border-[#1A1A1A] text-white text-base font-bold text-center">Planos</a>
-        <a href="#contato" @click="isMenuOpen = false" class="block py-4 border-b border-[#1A1A1A] text-white text-base font-bold text-center">Contato</a>
+        <a href="#sobre" @click.prevent="scrollToSection('sobre')" class="block py-4 border-b border-[#1A1A1A] text-white text-base font-bold text-center">Sobre nós</a>
+        <a href="#planos" @click.prevent="scrollToSection('planos')" class="block py-4 border-b border-[#1A1A1A] text-white text-base font-bold text-center">Planos</a>
+        <a href="#contato" @click.prevent="scrollToSection('contato')" class="block py-4 border-b border-[#1A1A1A] text-white text-base font-bold text-center">Contato</a>
          <a @click="navigateToLogin" class="block py-4 text-[#00D26A] text-base font-bold text-center flex justify-center items-center gap-2 cursor-pointer hover:bg-[#00D26A]/10 rounded-lg mt-2">
             <User :size="18" /> Login
         </a>
@@ -94,12 +96,13 @@ const scrollToPlans = () => {
             <h1 class="text-white font-extrabold mb-4 lg:mb-8 text-lg lg:text-[60px] leading-tight lg:leading-[1.1]">
               Personalize a experiência do seu restaurante
             </h1>
-            <p class="text-gray-200 mb-6 lg:mb-12 text-[11px] lg:text-[22px] leading-normal lg:leading-[34px] max-w-full lg:max-w-[650px]">
+            
+            <p class="text-gray-200 mb-6 lg:mb-12 text-[15px] lg:text-[22px] leading-relaxed lg:leading-[34px] max-w-full lg:max-w-[650px]">
               Bem-vindo ao PedidoFácil. Nossa plataforma é a <strong class="text-[#00D26A]">solução ideal</strong> para <strong class="text-white">restaurantes</strong> que querem <strong class="text-white">modernizar</strong> sua operação e <strong class="text-[#00D26A]">aumentar as vendas</strong>.
             </p>
             
             <div class="flex flex-col lg:flex-row gap-3 w-full lg:w-auto">
-              <button @click="scrollToPlans" class="bg-[#00D26A] text-black font-bold py-2 px-5 lg:py-4 lg:px-12 rounded-lg lg:rounded-xl text-xs lg:text-lg hover:bg-[#00b058] transition-all shadow-[0_0_20px_rgba(0,210,106,0.3)] w-auto transform hover:-translate-y-1">
+              <button @click="scrollToSection('planos')" class="bg-[#00D26A] text-black font-bold py-2 px-5 lg:py-4 lg:px-12 rounded-lg lg:rounded-xl text-xs lg:text-lg hover:bg-[#00b058] transition-all shadow-[0_0_20px_rgba(0,210,106,0.3)] w-auto transform hover:-translate-y-1">
                 Ver Planos e Começar
               </button>
             </div>
@@ -135,9 +138,9 @@ const scrollToPlans = () => {
             <p>Uma <strong class="text-[#00D26A]">plataforma completa para a gestão do seu restaurante</strong>.</p>
           </div>
 
-          <div class="flex flex-col lg:flex-row gap-8 justify-center items-stretch mt-5">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 max-w-[760px] mx-auto">
             
-            <div class="flex-1 bg-[#111] py-12 px-6 rounded-3xl border border-gray-800 hover:border-[#00D26A] transition-all duration-300 group max-w-[320px] mx-auto flex flex-col items-center h-full hover:shadow-[0_0_30px_rgba(0,210,106,0.1)]">
+            <div class="w-full bg-[#111] py-12 px-6 rounded-3xl border border-gray-800 hover:border-[#00D26A] transition-all duration-300 group flex flex-col items-center h-full hover:shadow-[0_0_30px_rgba(0,210,106,0.1)]">
               <h3 class="text-[#00D26A] text-2xl lg:text-3xl font-bold mb-6 group-hover:scale-105 transition-transform">
                 Reduza erros e otimize o tempo
               </h3>
@@ -149,7 +152,7 @@ const scrollToPlans = () => {
               </div>
             </div>
 
-            <div class="flex-1 bg-[#111] py-12 px-6 rounded-3xl border border-gray-800 hover:border-[#00D26A] transition-all duration-300 group max-w-[320px] mx-auto flex flex-col items-center h-full hover:shadow-[0_0_30px_rgba(0,210,106,0.1)]">
+            <div class="w-full bg-[#111] py-12 px-6 rounded-3xl border border-gray-800 hover:border-[#00D26A] transition-all duration-300 group flex flex-col items-center h-full hover:shadow-[0_0_30px_rgba(0,210,106,0.1)]">
               <h3 class="text-[#00D26A] text-2xl lg:text-3xl font-bold mb-6 group-hover:scale-105 transition-transform">
                 Tenha total controle
               </h3>
@@ -258,5 +261,3 @@ const scrollToPlans = () => {
     </div>
   </div>
 </template>
-
-

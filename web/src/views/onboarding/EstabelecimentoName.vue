@@ -38,7 +38,7 @@ const handleSubmit = () => {
     <div class="z-10 w-full max-w-2xl bg-[#121212]/90 border border-white/10 p-8 md:p-16 rounded-[2.5rem] shadow-2xl relative backdrop-blur-xl text-center">
       
       <div class="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-8">
-        <span class="text-[#00D26A] text-xs font-bold uppercase tracking-widest">Passo 1 de 3</span>
+        <span class="text-[#00D26A] text-xs font-bold uppercase tracking-widest">Etapa 2 de 3</span>
       </div>
       
       <h1 class="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight leading-tight">

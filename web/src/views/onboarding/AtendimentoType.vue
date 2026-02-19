@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { useOnboardingStore } from '@/stores/onboarding';
 import { useAuthStore } from '@/stores/auth';
 import { Check, ArrowRight, Loader2, MonitorSmartphone, Users } from 'lucide-vue-next';
+import { getRolesMock, initMockRoles } from '@/mock/rolesmock';
 
 import imgOndas from '@/assets/ondas.png';
 import imgTotemMockup from '@/assets/atendimento2.png'; 
@@ -48,39 +49,62 @@ const finalizeRegistration = async () => {
 
   setTimeout(() => {
     try {
-        let tipo_atendimento = 'Mesa';
-        if (totens.value && garcons.value) tipo_atendimento = 'Híbrido';
-        else if (totens.value) tipo_atendimento = 'Autoatendimento';
-        else if (garcons.value) tipo_atendimento = 'Garçom';
+      initMockRoles();
+      const roles = getRolesMock();
 
-        const mockUser = {
-          id: Date.now(),
-          nome: pessoalData.nome,
-          email: pessoalData.email,
-          estabelecimento: {
-            nome: nomeEstabelecimento.value,
-            tipo_atendimento,
-            usa_totens: totens.value,
-            usa_garcons: garcons.value
-          }
-        };
+      const gerenteRole = roles.find(
+        r => r.role === 'GERENTE' || r.name.toLowerCase().includes('gerente')
+      );
 
-        localStorage.setItem('user', JSON.stringify(mockUser));
-        localStorage.removeItem('onboarding_personal');
-        onboardingStore.clearOnboarding();
+      if (!gerenteRole) {
+        throw new Error('Cargo gerente não encontrado.');
+      }
 
-        authStore.user = mockUser;
-        authStore.isAuthenticated = true;
+      let tipo_atendimento = 'Mesa';
+      if (totens.value && garcons.value) tipo_atendimento = 'Híbrido';
+      else if (totens.value) tipo_atendimento = 'Autoatendimento';
+      else if (garcons.value) tipo_atendimento = 'Garçom';
 
-        router.push('/app/dashboard');
+      const mockUser = {
+        id: Date.now(),
+        name: pessoalData.nome,
+        email: pessoalData.email,
+        password: pessoalData.password,
+        roleId: gerenteRole.id,
+        permissions: gerenteRole.permissions,
+        estabelecimento: {
+          nome: nomeEstabelecimento.value,
+          tipo_atendimento,
+          usa_totens: totens.value,
+          usa_garcons: garcons.value
+        }
+      };
+
+      localStorage.setItem('user', JSON.stringify(mockUser));
+      localStorage.removeItem('onboarding_personal');
+      onboardingStore.clearOnboarding();
+
+      const userWithRole = {
+        ...mockUser,
+        role: gerenteRole
+      };
+
+      localStorage.setItem('user', JSON.stringify(userWithRole));
+      localStorage.setItem('userToken', 'mock-token');
+
+      authStore.user = userWithRole;
+      authStore.roles = roles;
+      authStore.isAuthenticated = true;
+
+      router.push('/app/dashboard');
 
     } catch (err) {
-        console.error(err);
-        serverError.value = 'Erro ao finalizar cadastro.';
+      console.error(err);
+      serverError.value = 'Erro ao finalizar cadastro.';
     } finally {
-        isLoading.value = false;
+      isLoading.value = false;
     }
-  }, 1500);
+  }, 1000);
 };
 </script>
 
@@ -96,7 +120,7 @@ const finalizeRegistration = async () => {
     <div class="z-10 w-full max-w-5xl text-center">
       
       <div class="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-6 md:mb-8 backdrop-blur-md">
-        <span class="text-[#00D26A] text-[10px] md:text-xs font-bold uppercase tracking-widest">Etapa Final</span>
+        <span class="text-[#00D26A] text-[10px] md:text-xs font-bold uppercase tracking-widest">Etapa 3 de 3</span>
       </div>
 
       <h1 class="text-2xl md:text-5xl font-bold text-white mb-4 md:mb-6 tracking-tight leading-tight">
