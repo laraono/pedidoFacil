@@ -1,14 +1,30 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMenuStore } from '@/stores/productsManagement.js';
-import { ArrowLeft, PlusCircle, Edit, Trash, Image as ImageIcon, X } from 'lucide-vue-next';
+import { 
+  ArrowLeft, PlusCircle, Edit, 
+  Image as ImageIcon, X, Archive, 
+  RotateCcw, Trash2 
+} from 'lucide-vue-next';
 
 const router = useRouter();
 const menuStore = useMenuStore();
 
+// Estado para controlar visualização de itens deletados
+const showDeleted = ref(false);
+
+// Computed baseado no filtro
+const displayedCategories = computed(() => 
+  showDeleted.value ? menuStore.deletedCategories : menuStore.activeCategories
+);
+
 const showModal = ref(false);
 const isEditing = ref(false);
+
+// Validação
+const errors = ref({});
+const touched = ref({});
 
 const form = ref({
   id: null,
@@ -17,9 +33,63 @@ const form = ref({
   imagePreview: null
 });
 
+// Modal de confirmação
+const confirmModal = ref({
+  show: false,
+  title: '',
+  message: '',
+  onConfirm: null,
+  data: null,
+  isError: false
+});
+
+const showConfirm = (title, message, onConfirm, data = null, options = {}) => {
+  confirmModal.value = { 
+    show: true, 
+    title, 
+    message, 
+    onConfirm, 
+    data,
+    isError: options.isError || false 
+  };
+};
+
+const closeConfirm = () => {
+  confirmModal.value.show = false;
+};
+
+const handleConfirm = () => {
+  if (confirmModal.value.onConfirm) {
+    confirmModal.value.onConfirm(confirmModal.value.data);
+  }
+  if (!confirmModal.value.isError) {
+    closeConfirm();
+  } else {
+    // Se for erro, apenas fecha ao clicar OK
+    closeConfirm();
+  }
+};
+
+const validateField = (field) => {
+  if (field === 'name') {
+    if (!form.value.name.trim()) {
+      errors.value.name = 'O nome da categoria é obrigatório.';
+    } else {
+      delete errors.value.name;
+    }
+  }
+};
+
+const touchField = (field) => {
+  touched.value[field] = true;
+  validateField(field);
+};
+
 const openAddModal = () => {
   isEditing.value = false;
   form.value = { id: null, name: '', image: null, imagePreview: null };
+  errors.value = {};
+  touched.value = {};
   showModal.value = true;
 };
 
@@ -31,6 +101,8 @@ const openEditModal = (category) => {
     image: category.image,
     imagePreview: category.image 
   };
+  errors.value = {};
+  touched.value = {};
   showModal.value = true;
 };
 
@@ -43,7 +115,12 @@ const handleImageUpload = (event) => {
 };
 
 const saveCategory = () => {
-  if (!form.value.name) return alert('Nome é obrigatório');
+  touchField('name');
+  
+  if (Object.keys(errors.value).length) {
+    document.querySelector('[name="name"]')?.focus();
+    return;
+  }
 
   const payload = {
     id: form.value.id,
@@ -58,22 +135,90 @@ const saveCategory = () => {
   }
   showModal.value = false;
 };
+
+const handleDelete = (category) => {
+  showConfirm(
+    'Arquivar Categoria',
+    `Deseja arquivar a categoria "${category.name}"?`,
+    (cat) => {
+      const result = menuStore.softDeleteCategory(cat.id);
+      if (!result.success) {
+        showConfirm('Erro', result.message, null, null, { isError: true });
+      }
+    },
+    category
+  );
+};
+
+const handleRestore = (category) => {
+  showConfirm(
+    'Restaurar Categoria',
+    `Restaurar categoria "${category.name}"?`,
+    (cat) => {
+      menuStore.restoreCategory(cat.id);
+    },
+    category
+  );
+};
+
+const handlePermanentDelete = (category) => {
+  showConfirm(
+    'Excluir Permanentemente',
+    `Tem certeza? Esta ação é irreversível! A categoria "${category.name}" será excluída permanentemente, junto com seus produtos.`,
+    (cat) => {
+      menuStore.permanentlyDeleteCategory(cat.id);
+    },
+    category
+  );
+};
 </script>
 
 <template>
   <main class="max-w-6xl mx-auto py-12 px-4">
-    <div class="flex items-center justify-between mb-8">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
       <div class="flex items-center">
         <button @click="router.back()" class="p-2 text-gray-500 hover:text-gray-800 mr-4">
           <ArrowLeft :size="30" />
         </button>
-        <h1 class="text-3xl font-bold text-gray-800">Gerenciar Categorias</h1>
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">Gerenciar Categorias</h1>
       </div>
       
-      <button @click="openAddModal" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg flex items-center shadow-lg transition-transform hover:scale-105">
-        <PlusCircle class="mr-2" :size="24" />
-        Nova Categoria
-      </button>
+      <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+        <button 
+          @click="showDeleted = !showDeleted"
+          class="px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors w-full sm:w-auto"
+          :class="showDeleted 
+            ? 'bg-gray-600 text-white hover:bg-gray-700' 
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+        >
+          <Archive :size="20" />
+          {{ showDeleted ? 'Ver Ativas' : 'Ver Arquivadas' }}
+          <span v-if="!showDeleted && menuStore.deletedCategories.length" 
+                class="ml-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {{ menuStore.deletedCategories.length }}
+          </span>
+        </button>
+
+        <button 
+          v-if="!showDeleted"
+          @click="openAddModal" 
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
+        >
+          <PlusCircle :size="20" />
+          <span>Nova Categoria</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Aviso de modo de visualização -->
+    <div v-if="showDeleted" class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+      <p class="text-yellow-800 flex items-center">
+        <Archive class="mr-2" :size="20" />
+        Você está visualizando categorias arquivadas. 
+        <button @click="showDeleted = false" class="ml-2 text-blue-600 hover:underline">
+          Ver ativas
+        </button>
+      </p>
     </div>
 
     <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
@@ -82,11 +227,14 @@ const saveCategory = () => {
           <tr>
             <th class="p-4 border-b">Ícone</th>
             <th class="p-4 border-b">Nome</th>
+            <th class="p-4 border-b">Status</th>
             <th class="p-4 border-b text-right">Ações</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="cat in menuStore.categories" :key="cat.id" class="hover:bg-gray-50 border-b last:border-0 transition-colors">
+          <tr v-for="cat in displayedCategories" :key="cat.id" 
+              class="hover:bg-gray-50 border-b last:border-0 transition-colors"
+              :class="{ 'opacity-60 bg-gray-50': cat.deletedAt }">
             <td class="p-4">
               <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200">
                 <img v-if="cat.image" :src="cat.image" class="w-full h-full object-cover" />
@@ -94,22 +242,46 @@ const saveCategory = () => {
               </div>
             </td>
             <td class="p-4 font-medium text-gray-800 text-lg">{{ cat.name }}</td>
+            <td class="p-4">
+              <span v-if="cat.deletedAt" class="px-2 py-1 bg-gray-200 text-gray-700 rounded-full text-xs">
+                Arquivada em {{ new Date(cat.deletedAt).toLocaleDateString() }}
+              </span>
+              <span v-else class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
+                Ativa
+              </span>
+            </td>
             <td class="p-4 text-right space-x-2">
-              <button @click="openEditModal(cat)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
-                <Edit :size="20" />
-              </button>
-              <button @click="menuStore.removeCategory(cat.id)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Excluir">
-                <Trash :size="20" />
-              </button>
+              <!-- Ações para itens ativos -->
+              <template v-if="!cat.deletedAt">
+                <button @click="openEditModal(cat)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
+                  <Edit :size="20" />
+                </button>
+                <button @click="handleDelete(cat)" class="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors" title="Arquivar">
+                  <Archive :size="20" />
+                </button>
+              </template>
+
+              <!-- Ações para itens arquivados -->
+              <template v-else>
+                <button @click="handleRestore(cat)" class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Restaurar">
+                  <RotateCcw :size="20" />
+                </button>
+                <button @click="handlePermanentDelete(cat)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Deletar permanentemente">
+                  <Trash2 :size="20" />
+                </button>
+              </template>
             </td>
           </tr>
-          <tr v-if="menuStore.categories.length === 0">
-            <td colspan="3" class="p-8 text-center text-gray-500">Nenhuma categoria cadastrada.</td>
+          <tr v-if="displayedCategories.length === 0">
+            <td colspan="4" class="p-8 text-center text-gray-500">
+              {{ showDeleted ? 'Nenhuma categoria arquivada.' : 'Nenhuma categoria cadastrada.' }}
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
 
+    <!-- Modal de Categoria -->
     <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
         <div class="p-6 border-b border-gray-100 flex justify-between items-center">
@@ -134,7 +306,17 @@ const saveCategory = () => {
 
           <div>
             <label class="block text-gray-600 font-semibold mb-2">Nome da Categoria <span class="text-red-500">*</span></label>
-            <input type="text" v-model="form.name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: Bebidas" />
+            <input 
+              type="text" 
+              v-model="form.name" 
+              name="name"
+              @blur="touchField('name')"
+              @input="() => { if(touched.name) validateField('name'); }"
+              :class="{ 'border-red-500': errors.name }"
+              class="text-gray-900 w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" 
+              placeholder="Ex: Bebidas" 
+            />
+            <p v-if="errors.name" class="text-red-500 text-xs mt-1">{{ errors.name }}</p>
           </div>
         </div>
 
@@ -142,6 +324,33 @@ const saveCategory = () => {
           <button @click="showModal = false" class="px-4 py-2 text-gray-600 font-semibold hover:bg-gray-200 rounded-lg transition-colors">Cancelar</button>
           <button @click="saveCategory" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors">
             {{ isEditing ? 'Salvar Alterações' : 'Criar Categoria' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="confirmModal.show" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-sm overflow-hidden">
+        <div class="p-4" :class="{ 'bg-red-50': confirmModal.isError }">
+          <h3 class="text-lg font-semibold" :class="{ 'text-red-800': confirmModal.isError }">
+            {{ confirmModal.title }}
+          </h3>
+          <p class="text-gray-600 text-sm mt-2">{{ confirmModal.message }}</p>
+        </div>
+        <div class="px-4 py-3 bg-gray-50 flex justify-end gap-2">
+          <button 
+            v-if="!confirmModal.isError" 
+            @click="closeConfirm" 
+            class="px-4 py-2 text-sm text-gray-600 font-medium hover:bg-gray-200 rounded transition-colors"
+          >
+            Cancelar
+          </button>
+          <button 
+            @click="handleConfirm" 
+            class="px-4 py-2 text-sm text-white font-medium rounded transition-colors"
+            :class="confirmModal.isError ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'"
+          >
+            {{ confirmModal.isError ? 'OK' : 'Confirmar' }}
           </button>
         </div>
       </div>
