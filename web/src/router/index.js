@@ -16,6 +16,8 @@ import EstablishmentInfo from '@/views/app/settings/EstablishmentInfo.vue';
 import RolePermissions from '@/views/app/settings/RolePermissions.vue';
 import MenuPersonalization from '@/views/app/settings/MenuPersonalization.vue';
 
+import { PERMISSIONS } from '@/utils/permissions';
+
 const routes = [
   { path: '/', component: LandingPage },
   { path: '/planos', component: Planos },
@@ -29,36 +31,11 @@ const routes = [
     component: ManagerLayout,
     meta: { requiresAuth: true },
     children: [
-      { 
-        path: 'dashboard', 
-        name: 'Dashboard', 
-        component: ManagerDashboard, 
-      },
-      { 
-        path: 'settings/establishment', 
-        name: 'EstablishmentInfo', 
-        component: EstablishmentInfo, 
-      },
-      {
-        path: 'settings',
-        redirect: 'settings/establishment'
-      },
-      { 
-        path: 'settings/roles', 
-        name: 'RolePermissions', 
-        component: RolePermissions, 
-      },
-      { 
-        path: 'settings/menu', 
-        name: 'MenuPersonalization', 
-        component: MenuPersonalization, 
-      },
-      { 
-        path: 'orders/queue', 
-        name: 'OrderQueue', 
-        component: { template: '<main class="max-w-7xl mx-auto py-12 px-4"><h1 class="text-3xl font-bold text-gray-800">Fila de Pedidos</h1></main>' }, 
-      },
-      { path: '', redirect: 'dashboard' } 
+      { path: 'dashboard', component: ManagerDashboard },
+      { path: 'settings/establishment', name: 'establishment-settings', component: EstablishmentInfo, meta: { permission: PERMISSIONS.CONFIGURACAO } },
+      { path: 'settings/roles', component: RolePermissions, meta: { permission: PERMISSIONS.CONFIGURACAO } },
+      { path: 'settings/menu', component: MenuPersonalization, meta: { permission: PERMISSIONS.CONFIGURACAO } },
+      { path: '', redirect: 'dashboard' }
     ]
   }
 ];
@@ -68,22 +45,15 @@ const router = createRouter({
   routes
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore();
-  const requiresAuth = to.matched.some(r => r.meta.requiresAuth);
+  auth.loadSession();
 
-  if (requiresAuth && !auth.isAuthenticated) {
-    next('/login');
-  } 
-  else if (
-    auth.isAuthenticated &&
-    (to.path === '/login' || to.path === '/register')
-  ) {
-    next('/app/dashboard');
-  } 
-  else {
-    next();
+  if (to.meta.requiresAuth && !auth.isAuthenticated) {
+    return next('/login');
   }
+
+  next();
 });
 
 export default router;

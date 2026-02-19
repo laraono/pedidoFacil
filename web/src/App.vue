@@ -4,6 +4,7 @@ import { RouterView } from 'vue-router';
 // Importe a Store de Autenticação para usá-la globalmente se precisar de um header
 // import { useAuthStore } from '@/stores/auth'; 
 // const authStore = useAuthStore();
+import AppHeader from '@/components/AppHeader.vue';
 </script>
 
 <template>
@@ -11,6 +12,7 @@ import { RouterView } from 'vue-router';
     RouterView irá renderizar o componente da rota atual (ex: LandingPage, Login.vue, OrderQueue.vue)
     O restante do app deve ser construído dentro dos componentes de rota.
   -->
+  <AppHeader />
   <RouterView />
 </template>
 

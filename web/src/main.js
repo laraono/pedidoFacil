@@ -5,22 +5,20 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router/index.js'
 
-// 🚨 LÓGICA CRÍTICA DE LIMPEZA PARA TESTES INICIAIS 🚨
-// COMENTE OU REMOVA ESTE BLOCO QUANDO O BACKEND ESTIVER ESTÁVEL!
-const resetLocalStorageForTesting = () => {
-    console.warn("MODO DE TESTE ATIVO: Limpando dados de Autenticação/Onboarding.");
-    localStorage.removeItem('userToken');
-    localStorage.removeItem('user');
-    localStorage.removeItem('onboarding_personal'); // Dados pessoais temporários
-    localStorage.removeItem('configStatus'); // Status das 3 etapas de config
-    // Isso garante que cada "npm run dev" inicia o fluxo do zero.
-};
-//resetLocalStorageForTesting();
-// 🚨 FIM DO BLOCO DE TESTE 🚨
+import { initMockUsers } from '@/mock/authmock'
+import { initMockRoles } from '@/mock/rolesmock'
+import { useAuthStore } from '@/stores/auth'
+
+initMockUsers();
+initMockRoles();
 
 const app = createApp(App)
+const pinia = createPinia();
 
-app.use(createPinia())
-app.use(router)
+app.use(pinia);
 
-app.mount('#app')
+const authStore = useAuthStore(pinia);
+authStore.loadSession();
+
+app.use(router);
+app.mount('#app');

@@ -1,57 +1,72 @@
-import { defineStore } from "pinia";
-import {
-  loginMock,
-  getSessionMock
-} from "@/mock/authmock";
-import {
-  getConfigStatusMock,
-  saveConfigStatusMock
-} from "@/mock/configStatusmock";
+import { defineStore } from 'pinia';
+import { loginMock, logoutMock } from '@/mock/authmock';
+import { getRolesMock } from '@/mock/rolesmock';
 
-export const useAuthStore = defineStore("auth", {
+export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
+    roles: [],
     isAuthenticated: false,
     configStatus: {
-      establishment: false,
+      info: false,
       roles: false,
       menu: false
     }
   }),
 
   actions: {
-    login({ email, senha }) {
-      const user = loginMock(email, senha);
-      if (!user) throw new Error("Credenciais inválidas");
-
-      this.user = user;
-      this.isAuthenticated = true;
-      localStorage.setItem("user", JSON.stringify(user));
-
-      const status = getConfigStatusMock();
-      if (status) this.configStatus = status;
-    },
-
-    loadSession() {
-      const user = getSessionMock();
-      if (user) {
+    async login({ email, senha }) {
+      try {
+        const user = await loginMock(email, senha);
         this.user = user;
         this.isAuthenticated = true;
-
-        const status = getConfigStatusMock();
-        if (status) this.configStatus = status;
+        this.roles = await getRolesMock();
+      } catch (err) {
+        throw err;
       }
     },
 
-    setConfigStepComplete(step) {
-      this.configStatus[step] = true;
-      saveConfigStatusMock(this.configStatus);
+    loadSession() {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (!user) return;
+
+      this.user = user;
+      this.roles = JSON.parse(localStorage.getItem('roles')) || [];
+      this.isAuthenticated = true;
+
+      const savedConfigStatus = JSON.parse(localStorage.getItem('configStatus'));
+      if (savedConfigStatus) {
+        this.configStatus = savedConfigStatus;
+      }
+    },
+
+    hasPermission(permission) {
+      if (!this.user || !this.user.roleId) return false;
+
+      const role = this.roles.find(r => r.id === this.user.roleId);
+      if (!role) return false;
+
+      return role.permissions.includes(permission);
     },
 
     logout() {
-      localStorage.removeItem("user");
+      logoutMock();
       this.user = null;
+      this.roles = [];
       this.isAuthenticated = false;
+      this.configStatus = {
+        info: false,
+        roles: false,
+        menu: false
+      };
+    },
+
+    setConfigStepComplete(step) {
+      if (this.configStatus.hasOwnProperty(step)) {
+        this.configStatus[step] = true;
+
+        localStorage.setItem('configStatus', JSON.stringify(this.configStatus));
+      }
     }
   }
 });
