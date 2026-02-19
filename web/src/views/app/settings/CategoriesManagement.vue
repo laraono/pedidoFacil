@@ -11,10 +11,8 @@ import {
 const router = useRouter();
 const menuStore = useMenuStore();
 
-// Estado para controlar visualização de itens deletados
 const showDeleted = ref(false);
 
-// Computed baseado no filtro
 const displayedCategories = computed(() =>
   showDeleted.value ? menuStore.deletedCategories : menuStore.activeCategories
 );
@@ -22,7 +20,6 @@ const displayedCategories = computed(() =>
 const showModal = ref(false);
 const isEditing = ref(false);
 
-// Validação
 const errors = ref({});
 const touched = ref({});
 
@@ -33,7 +30,6 @@ const form = ref({
   imagePreview: null
 });
 
-// Modal de confirmação
 const confirmModal = ref({
   show: false,
   title: '',
@@ -62,12 +58,7 @@ const handleConfirm = () => {
   if (confirmModal.value.onConfirm) {
     confirmModal.value.onConfirm(confirmModal.value.data);
   }
-  if (!confirmModal.value.isError) {
     closeConfirm();
-  } else {
-    // Se for erro, apenas fecha ao clicar OK
-    closeConfirm();
-  }
 };
 
 const validateField = (field) => {

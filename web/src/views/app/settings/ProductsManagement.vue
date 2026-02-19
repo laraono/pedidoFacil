@@ -92,14 +92,9 @@ const handleConfirm = () => {
   if (confirmModal.value.onConfirm) {
     confirmModal.value.onConfirm(confirmModal.value.data);
   }
-  if (!confirmModal.value.isError) {
     closeConfirm();
-  } else {
-    closeConfirm(); // para erro, apenas fecha
-  }
 };
 
-// Validação de campos
 const validateField = (field) => {
   if (field === 'name') {
     if (!form.value.name.trim()) {
@@ -137,7 +132,6 @@ const touchField = (field) => {
   validateField(field);
 };
 
-// Máscara de preço
 const updatePrice = (index, event, type = 'sizes') => {
   let rawValue = event.target.value.replace(/\D/g, '');
   if (rawValue === '') rawValue = '0';
