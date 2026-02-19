@@ -1,12 +1,14 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import imgFood from '@/assets/food.jpg';
+import imgHamburguer from '@/assets/hamburguer.png'
 
 export const useMenuStore = defineStore('menu', () => {
 
   const categories = ref([
-    { id: 1, name: 'Lanches', image: null },
-    { id: 2, name: 'Bebidas', image: null },
-    { id: 3, name: 'Sobremesas', image: null }
+    { id: 1, name: 'Lanches', image: imgFood },
+    { id: 2, name: 'Bebidas', image: imgFood },
+    { id: 3, name: 'Sobremesas', image: imgFood }
   ]);
 
   const toggleAvailability = (productId) => {
@@ -21,7 +23,7 @@ export const useMenuStore = defineStore('menu', () => {
       id: 1,
       name: 'X-Bacon',
       description: 'Hambúrguer com muito bacon crocante.',
-      image: null,
+      image: imgHamburguer,
       categoryId: 1,
       isAvailable: true,
 
