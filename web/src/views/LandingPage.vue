@@ -19,18 +19,17 @@ const navigateToRegister = () => {
   router.push('/register'); 
 };
 
-// Função unificada para rolagem suave
 const scrollToSection = (sectionId) => {
   const element = document.getElementById(sectionId);
   if (element) {
     element.scrollIntoView({ behavior: 'smooth' });
-    isMenuOpen.value = false; // Fecha o menu mobile se estiver aberto
+    isMenuOpen.value = false; 
   }
 };
 </script>
 
 <template>
-  <div class="min-h-screen bg-black font-inter relative overflow-hidden">
+  <div class="min-h-screen bg-dark-bg font-inter relative overflow-hidden">
     
     <div 
       class="absolute left-0 w-full z-0 pointer-events-none opacity-90 top-[5%] h-[12vh] lg:top-[12%] lg:h-[60vh]"
@@ -52,31 +51,31 @@ const scrollToSection = (sectionId) => {
           <img :src="imgLogo" alt="Logo PedidoFácil" class="h-9 lg:h-32 w-auto object-contain" />
           
           <button @click="toggleMenu" class="lg:hidden p-1 ml-auto z-50 relative">
-            <component :is="isMenuOpen ? X : Menu" class="w-7 h-7 text-[#00D26A]" />
+            <component :is="isMenuOpen ? X : Menu" class="w-7 h-7 text-brand-green" />
           </button>
         </div>
         
         <div class="flex-[2] flex justify-center items-center hidden lg:flex">
           <nav class="space-x-10 text-lg font-bold text-white">
-            <a @click.prevent="scrollToSection('sobre')" href="#sobre" class="hover:text-[#00D26A] transition-colors cursor-pointer">Sobre</a>
-            <a @click.prevent="scrollToSection('planos')" href="#planos" class="hover:text-[#00D26A] transition-colors cursor-pointer">Planos</a>
-            <a @click.prevent="scrollToSection('contato')" href="#contato" class="hover:text-[#00D26A] transition-colors cursor-pointer">Contato</a>
+            <a @click.prevent="scrollToSection('sobre')" href="#sobre" class="hover:text-brand-green transition-colors cursor-pointer">Sobre</a>
+            <a @click.prevent="scrollToSection('planos')" href="#planos" class="hover:text-brand-green transition-colors cursor-pointer">Planos</a>
+            <a @click.prevent="scrollToSection('contato')" href="#contato" class="hover:text-brand-green transition-colors cursor-pointer">Contato</a>
           </nav>
         </div>
         
         <div class="flex-1 flex justify-end hidden lg:flex">
-          <a @click.prevent="navigateToLogin" class="flex items-center space-x-2 text-white font-semibold text-lg cursor-pointer hover:text-[#00D26A]">
+          <a @click.prevent="navigateToLogin" class="flex items-center space-x-2 text-white font-semibold text-lg cursor-pointer hover:text-brand-green group">
             <span>Login</span>
-            <User class="text-white" :size="24" />
+            <User class="text-white group-hover:text-brand-green transition-colors" :size="24" />
           </a>
         </div>
       </header>
 
-      <div v-if="isMenuOpen" class="lg:hidden bg-[#050F0D]/95 backdrop-blur-md border-b border-[#111] p-5 absolute top-[60px] left-0 w-full z-40 shadow-2xl">
-        <a href="#sobre" @click.prevent="scrollToSection('sobre')" class="block py-4 border-b border-[#1A1A1A] text-white text-base font-bold text-center">Sobre nós</a>
-        <a href="#planos" @click.prevent="scrollToSection('planos')" class="block py-4 border-b border-[#1A1A1A] text-white text-base font-bold text-center">Planos</a>
-        <a href="#contato" @click.prevent="scrollToSection('contato')" class="block py-4 border-b border-[#1A1A1A] text-white text-base font-bold text-center">Contato</a>
-         <a @click="navigateToLogin" class="block py-4 text-[#00D26A] text-base font-bold text-center flex justify-center items-center gap-2 cursor-pointer hover:bg-[#00D26A]/10 rounded-lg mt-2">
+      <div v-if="isMenuOpen" class="lg:hidden bg-dark-bg/95 backdrop-blur-md border-b border-white/5 p-5 absolute top-[60px] left-0 w-full z-40 shadow-2xl">
+        <a href="#sobre" @click.prevent="scrollToSection('sobre')" class="block py-4 border-b border-white/5 text-white text-base font-bold text-center">Sobre nós</a>
+        <a href="#planos" @click.prevent="scrollToSection('planos')" class="block py-4 border-b border-white/5 text-white text-base font-bold text-center">Planos</a>
+        <a href="#contato" @click.prevent="scrollToSection('contato')" class="block py-4 border-b border-white/5 text-white text-base font-bold text-center">Contato</a>
+         <a @click="navigateToLogin" class="block py-4 text-brand-green text-base font-bold text-center flex justify-center items-center gap-2 cursor-pointer hover:bg-brand-green/10 rounded-lg mt-2 transition-all">
             <User :size="18" /> Login
         </a>
       </div>
@@ -98,69 +97,69 @@ const scrollToSection = (sectionId) => {
             </h1>
             
             <p class="text-gray-200 mb-6 lg:mb-12 text-[15px] lg:text-[22px] leading-relaxed lg:leading-[34px] max-w-full lg:max-w-[650px]">
-              Bem-vindo ao PedidoFácil. Nossa plataforma é a <strong class="text-[#00D26A]">solução ideal</strong> para <strong class="text-white">restaurantes</strong> que querem <strong class="text-white">modernizar</strong> sua operação e <strong class="text-[#00D26A]">aumentar as vendas</strong>.
+              Bem-vindo ao PedidoFácil. Nossa plataforma é a <strong class="text-brand-green">solução ideal</strong> para <strong class="text-white">restaurantes</strong> que querem <strong class="text-white">modernizar</strong> sua operação e <strong class="text-brand-green">aumentar as vendas</strong>.
             </p>
             
             <div class="flex flex-col lg:flex-row gap-3 w-full lg:w-auto">
-              <button @click="scrollToSection('planos')" class="bg-[#00D26A] text-black font-bold py-2 px-5 lg:py-4 lg:px-12 rounded-lg lg:rounded-xl text-xs lg:text-lg hover:bg-[#00b058] transition-all shadow-[0_0_20px_rgba(0,210,106,0.3)] w-auto transform hover:-translate-y-1">
+              <button @click="scrollToSection('planos')" class="bg-brand-green text-black font-extrabold py-2 px-5 lg:py-5 lg:px-14 rounded-lg lg:rounded-2xl text-xs lg:text-xl hover:bg-brand-green-hover transition-all shadow-xl shadow-brand-green/20 w-auto transform hover:-translate-y-1 active:scale-95">
                 Ver Planos e Começar
               </button>
             </div>
           </div>
         </section>
 
-        <section class="w-full max-w-[1200px] px-5 lg:px-0 py-16 flex flex-col lg:flex-row justify-around items-center gap-12 lg:gap-0 bg-white/5 rounded-3xl backdrop-blur-sm border border-white/10 mx-5 lg:mx-0">
+        <section class="w-full max-w-[1200px] px-5 lg:px-0 py-16 flex flex-col lg:flex-row justify-around items-center gap-12 lg:gap-0 bg-white/[0.03] rounded-[2.5rem] backdrop-blur-sm border border-white/5 mx-5 lg:mx-0 shadow-2xl">
             <div class="flex flex-col items-center text-center">
-              <span class="text-gray-400 text-lg font-bold mb-1">Diversos</span>
-              <span class="text-[#00D26A] text-[56px] font-extrabold mb-2 leading-tight">Benefícios</span>
+              <span class="text-gray-500 text-lg font-bold mb-1 uppercase tracking-widest">Diversos</span>
+              <span class="text-brand-green text-[56px] font-black mb-2 leading-tight">Benefícios</span>
               <span class="text-white text-xl font-medium max-w-[250px]">Para Aproveitar</span>
             </div>
-            <div class="hidden lg:block w-px h-24 bg-gray-700"></div>
+            <div class="hidden lg:block w-px h-24 bg-white/10"></div>
             <div class="flex flex-col items-center text-center">
-              <span class="text-gray-400 text-lg font-bold mb-1">Maior</span>
-              <span class="text-[#00D26A] text-[56px] font-extrabold mb-2 leading-tight">Praticidade</span>
+              <span class="text-gray-500 text-lg font-bold mb-1 uppercase tracking-widest">Maior</span>
+              <span class="text-brand-green text-[56px] font-black mb-2 leading-tight">Praticidade</span>
               <span class="text-white text-xl font-medium max-w-[250px]">Com os pedidos</span>
             </div>
-            <div class="hidden lg:block w-px h-24 bg-gray-700"></div>
+            <div class="hidden lg:block w-px h-24 bg-white/10"></div>
             <div class="flex flex-col items-center text-center">
-              <span class="text-gray-400 text-lg font-bold mb-1">Gestão</span>
-              <span class="text-[#00D26A] text-[56px] font-extrabold mb-2 leading-tight">Fácil</span>
+              <span class="text-gray-500 text-lg font-bold mb-1 uppercase tracking-widest">Gestão</span>
+              <span class="text-brand-green text-[56px] font-black mb-2 leading-tight">Fácil</span>
               <span class="text-white text-xl font-medium max-w-[250px]">De onde você estiver</span>
             </div>
         </section>
 
         <section id="sobre" class="w-full max-w-[1200px] px-5 lg:px-0 py-24 text-center">
-          <h2 class="text-white text-3xl lg:text-[42px] font-bold mb-10 leading-tight">
+          <h2 class="text-white text-3xl lg:text-[42px] font-bold mb-10 leading-tight tracking-tight">
             Otimize seu restaurante e aumente as vendas
           </h2>
 
           <div class="text-gray-300 text-lg lg:text-xl leading-[30px] mb-16 max-w-[800px] mx-auto space-y-6">
-            <p>Uma <strong class="text-[#00D26A]">plataforma completa para a gestão do seu restaurante</strong>.</p>
+            <p>Uma <strong class="text-brand-green">plataforma completa para a gestão do seu restaurante</strong>.</p>
           </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 max-w-[760px] mx-auto">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-[850px] mx-auto">
             
-            <div class="w-full bg-[#111] py-12 px-6 rounded-3xl border border-gray-800 hover:border-[#00D26A] transition-all duration-300 group flex flex-col items-center h-full hover:shadow-[0_0_30px_rgba(0,210,106,0.1)]">
-              <h3 class="text-[#00D26A] text-2xl lg:text-3xl font-bold mb-6 group-hover:scale-105 transition-transform">
+            <div class="w-full bg-dark-card py-12 px-8 rounded-[2.5rem] border border-white/5 hover:border-brand-green/30 transition-all duration-500 group flex flex-col items-center h-full hover:shadow-2xl hover:shadow-brand-green/5">
+              <h3 class="text-brand-green text-2xl lg:text-3xl font-bold mb-6 group-hover:scale-105 transition-transform">
                 Reduza erros e otimize o tempo
               </h3>
-              <p class="text-white text-base lg:text-lg leading-relaxed flex-grow mb-8">
-                Os pedidos feitos nos <strong class="font-bold">totens, tablets ou no caixa</strong> são enviados diretamente e sem erros para a cozinha, eliminando a confusão de comandas de papel.
+              <p class="text-gray-300 text-base lg:text-lg leading-relaxed flex-grow mb-8">
+                Os pedidos feitos nos <strong class="text-white">totens, tablets ou no caixa</strong> são enviados diretamente e sem erros para a cozinha, eliminando a confusão de comandas de papel.
               </p>
-              <div class="p-4 bg-gray-900 rounded-full group-hover:bg-[#00D26A]/10 transition-colors mt-auto">
-                 <Check class="w-8 h-8 text-[#00D26A]" />
+              <div class="p-4 bg-white/5 rounded-full group-hover:bg-brand-green/10 transition-colors mt-auto shadow-inner">
+                 <Check class="w-8 h-8 text-brand-green" stroke-width="3" />
               </div>
             </div>
 
-            <div class="w-full bg-[#111] py-12 px-6 rounded-3xl border border-gray-800 hover:border-[#00D26A] transition-all duration-300 group flex flex-col items-center h-full hover:shadow-[0_0_30px_rgba(0,210,106,0.1)]">
-              <h3 class="text-[#00D26A] text-2xl lg:text-3xl font-bold mb-6 group-hover:scale-105 transition-transform">
+            <div class="w-full bg-dark-card py-12 px-8 rounded-[2.5rem] border border-white/5 hover:border-brand-green/30 transition-all duration-500 group flex flex-col items-center h-full hover:shadow-2xl hover:shadow-brand-green/5">
+              <h3 class="text-brand-green text-2xl lg:text-3xl font-bold mb-6 group-hover:scale-105 transition-transform">
                 Tenha total controle
               </h3>
-              <p class="text-white text-base lg:text-lg leading-relaxed flex-grow mb-8">
-                Altere preços, adicione ou remova produtos e personalize o cardápio em tempo real, de forma <strong class="font-bold">simples e rápida</strong>, direto do painel administrativo.
+              <p class="text-gray-300 text-base lg:text-lg leading-relaxed flex-grow mb-8">
+                Altere preços, adicione ou remova produtos e personalize o cardápio em tempo real, de forma <strong class="text-white">simples e rápida</strong>, direto do painel administrativo.
               </p>
-              <div class="p-4 bg-gray-900 rounded-full group-hover:bg-[#00D26A]/10 transition-colors mt-auto">
-                 <Check class="w-8 h-8 text-[#00D26A]" />
+              <div class="p-4 bg-white/5 rounded-full group-hover:bg-brand-green/10 transition-colors mt-auto shadow-inner">
+                 <Check class="w-8 h-8 text-brand-green" stroke-width="3" />
               </div>
             </div>
 
@@ -170,14 +169,14 @@ const scrollToSection = (sectionId) => {
         <section class="w-full max-w-[1200px] px-5 lg:px-0 py-20">
           <div class="flex flex-col lg:flex-row gap-16 items-center">
             <div class="flex-1 group w-full">
-               <h3 class="text-white text-2xl lg:text-[32px] font-bold mb-8 text-center group-hover:text-[#00D26A] transition-colors">Soluções Rápidas</h3>
-               <div class="w-full flex items-center justify-center rounded-xl bg-transparent overflow-hidden">
+               <h3 class="text-white text-2xl lg:text-[32px] font-bold mb-8 text-center group-hover:text-brand-green transition-colors tracking-tight">Soluções Rápidas</h3>
+               <div class="w-full flex items-center justify-center rounded-3xl bg-white/[0.02] border border-white/5 p-4 md:p-8 overflow-hidden shadow-2xl">
                  <img :src="imgInterface" class="w-full h-auto object-contain hover:scale-105 transition-transform duration-500 max-h-[400px]" />
                </div>
             </div>
             <div class="flex-1 group w-full">
-               <h3 class="text-white text-2xl lg:text-[32px] font-bold mb-8 text-center group-hover:text-[#00D26A] transition-colors">Relatórios de Desempenho</h3>
-               <div class="w-full flex items-center justify-center rounded-xl bg-transparent overflow-hidden">
+               <h3 class="text-white text-2xl lg:text-[32px] font-bold mb-8 text-center group-hover:text-brand-green transition-colors tracking-tight">Relatórios de Desempenho</h3>
+               <div class="w-full flex items-center justify-center rounded-3xl bg-white/[0.02] border border-white/5 p-4 md:p-8 overflow-hidden shadow-2xl">
                  <img :src="imgGraficos" class="w-full h-auto object-contain hover:scale-105 transition-transform duration-500 max-h-[400px]" />
                </div>
             </div>
@@ -185,48 +184,48 @@ const scrollToSection = (sectionId) => {
         </section>
 
         <section id="planos" class="w-full max-w-[1000px] px-5 lg:px-0 py-24 text-center">
-           <h2 class="text-white text-3xl lg:text-[42px] font-bold mb-16">Escolha seu plano</h2>
+           <h2 class="text-white text-3xl lg:text-[42px] font-bold mb-16 tracking-tight">Escolha seu plano</h2>
            
            <div class="flex flex-col lg:flex-row gap-8 justify-center items-stretch">
               
-              <div class="flex-1 bg-[#111] px-8 py-12 rounded-[32px] border border-gray-800 flex flex-col items-center hover:border-[#00D26A] transition-all max-w-md mx-auto w-full h-full hover:shadow-[0_0_40px_rgba(0,0,0,0.5)]">
-                 <h3 class="text-[#00D26A] text-3xl font-bold mb-4">Mensal</h3>
-                 <div class="text-white text-5xl lg:text-6xl font-bold mb-2">R$79,90<span class="text-xl font-normal text-gray-500">/mês</span></div>
+              <div class="flex-1 bg-dark-card px-8 py-12 rounded-[2.5rem] border border-white/5 flex flex-col items-center hover:border-brand-green/20 transition-all max-w-md mx-auto w-full h-full hover:shadow-2xl">
+                 <h3 class="text-brand-green text-3xl font-black mb-4">Mensal</h3>
+                 <div class="text-white text-5xl lg:text-6xl font-black mb-2 tracking-tighter">R$79,90<span class="text-xl font-normal text-gray-500 tracking-normal">/mês</span></div>
                  
-                 <div class="w-full h-px bg-gray-800 my-8"></div>
+                 <div class="w-full h-px bg-white/5 my-8"></div>
 
                  <div class="flex flex-col gap-5 mb-10 w-full px-2 text-left">
-                    <div class="flex items-center gap-4 text-gray-300"><Check class="text-[#00D26A] w-6 h-6 flex-shrink-0" /> Suporte ao Usuário</div>
-                    <div class="flex items-center gap-4 text-gray-300"><Check class="text-[#00D26A] w-6 h-6 flex-shrink-0" /> Relatórios de Desempenho</div>
-                    <div class="flex items-center gap-4 text-gray-300"><Check class="text-[#00D26A] w-6 h-6 flex-shrink-0" /> Automação do Sistema</div>
+                    <div class="flex items-center gap-4 text-gray-300 font-medium"><Check class="text-brand-green w-6 h-6 flex-shrink-0" stroke-width="3" /> Suporte ao Usuário</div>
+                    <div class="flex items-center gap-4 text-gray-300 font-medium"><Check class="text-brand-green w-6 h-6 flex-shrink-0" stroke-width="3" /> Relatórios de Desempenho</div>
+                    <div class="flex items-center gap-4 text-gray-300 font-medium"><Check class="text-brand-green w-6 h-6 flex-shrink-0" stroke-width="3" /> Automação do Sistema</div>
                     
                     <div class="flex items-center gap-4 text-transparent opacity-0 select-none">
                       <Check class="w-6 h-6 flex-shrink-0" /> Maior Estabilidade
                     </div>
                  </div>
 
-                 <button @click="navigateToRegister" class="bg-white text-black font-extrabold py-5 px-12 rounded-xl w-full hover:bg-gray-200 transition-colors mt-auto text-lg">
+                 <button @click="navigateToRegister" class="bg-white text-black font-black py-5 px-12 rounded-2xl w-full hover:bg-gray-100 transition-colors mt-auto text-lg active:scale-95">
                     Confirmar
                  </button>
               </div>
 
-              <div class="flex-1 bg-[#111] px-8 py-12 rounded-[32px] border-2 border-[#00D26A]/30 flex flex-col items-center hover:border-[#00D26A] transition-all max-w-md mx-auto w-full h-full hover:shadow-[0_0_40px_rgba(0,210,106,0.1)] relative">
+              <div class="flex-1 bg-dark-card px-8 py-12 rounded-[2.5rem] border-2 border-brand-green/30 flex flex-col items-center hover:border-brand-green transition-all max-w-md mx-auto w-full h-full hover:shadow-2xl hover:shadow-brand-green/10 relative">
                  
-                 <div class="absolute top-0 right-0 bg-[#00D26A] text-black font-bold text-xs px-4 py-2 rounded-bl-xl rounded-tr-[30px]">RECOMENDADO</div>
+                 <div class="absolute top-0 right-0 bg-brand-green text-black font-black text-[10px] px-5 py-2.5 rounded-bl-2xl rounded-tr-[2.5rem] uppercase tracking-wider">RECOMENDADO</div>
 
-                 <h3 class="text-[#00D26A] text-3xl font-bold mb-4">Anual</h3>
-                 <div class="text-white text-5xl lg:text-6xl font-bold mb-2">R$49,90<span class="text-xl font-normal text-gray-500">/mês</span></div>
+                 <h3 class="text-brand-green text-3xl font-black mb-4">Anual</h3>
+                 <div class="text-white text-5xl lg:text-6xl font-black mb-2 tracking-tighter">R$49,90<span class="text-xl font-normal text-gray-500 tracking-normal">/mês</span></div>
                  
-                 <div class="w-full h-px bg-gray-800 my-8"></div>
+                 <div class="w-full h-px bg-white/5 my-8"></div>
 
                  <div class="flex flex-col gap-5 mb-10 w-full px-2 text-left">
-                    <div class="flex items-center gap-4 text-gray-300"><Check class="text-[#00D26A] w-6 h-6 flex-shrink-0" /> Suporte ao Usuário</div>
-                    <div class="flex items-center gap-4 text-gray-300"><Check class="text-[#00D26A] w-6 h-6 flex-shrink-0" /> Relatórios de Desempenho</div>
-                    <div class="flex items-center gap-4 text-gray-300"><Check class="text-[#00D26A] w-6 h-6 flex-shrink-0" /> Automação do Sistema</div>
-                    <div class="flex items-center gap-4 text-white font-bold"><Check class="text-[#00D26A] w-6 h-6 flex-shrink-0" /> Maior Estabilidade</div>
+                    <div class="flex items-center gap-4 text-gray-300 font-medium"><Check class="text-brand-green w-6 h-6 flex-shrink-0" stroke-width="3" /> Suporte ao Usuário</div>
+                    <div class="flex items-center gap-4 text-gray-300 font-medium"><Check class="text-brand-green w-6 h-6 flex-shrink-0" stroke-width="3" /> Relatórios de Desempenho</div>
+                    <div class="flex items-center gap-4 text-gray-300 font-medium"><Check class="text-brand-green w-6 h-6 flex-shrink-0" stroke-width="3" /> Automação do Sistema</div>
+                    <div class="flex items-center gap-4 text-white font-bold"><Check class="text-brand-green w-6 h-6 flex-shrink-0" stroke-width="3" /> Maior Estabilidade</div>
                  </div>
 
-                 <button @click="navigateToRegister" class="bg-white text-black font-extrabold py-5 px-12 rounded-xl w-full hover:bg-gray-200 transition-colors mt-auto text-lg">
+                 <button @click="navigateToRegister" class="bg-white text-black font-black py-5 px-12 rounded-2xl w-full hover:bg-brand-green-hover transition-colors mt-auto text-lg shadow-lg shadow-brand-green/20 active:scale-95">
                     Confirmar
                  </button>
               </div>
@@ -234,24 +233,24 @@ const scrollToSection = (sectionId) => {
            </div>
         </section>
         
-        <section id="contato" class="w-full max-w-[650px] px-5 lg:px-0 mt-20 mb-32 text-center">
-          <h2 class="text-white text-3xl lg:text-[42px] font-bold mb-12">Fale Conosco</h2>
+        <section id="contato" class="w-full max-w-[700px] px-5 lg:px-0 mt-20 mb-32 text-center">
+          <h2 class="text-white text-3xl lg:text-[42px] font-bold mb-12 tracking-tight">Fale Conosco</h2>
           
-          <div class="bg-[#1A1A1A] rounded-[32px] p-8 lg:p-12 shadow-2xl border border-gray-800">
-              <form class="flex flex-col text-left">
-                  <h3 class="text-[#00D26A] text-xl font-bold mb-8 text-center uppercase tracking-wider">Envie uma mensagem</h3>
+          <div class="bg-dark-card rounded-[3rem] p-8 lg:p-14 shadow-2xl border border-white/5">
+              <form class="flex flex-col text-left" @submit.prevent>
+                  <h3 class="text-brand-green text-xs font-black mb-10 text-center uppercase tracking-[0.2em]">Envie uma mensagem</h3>
                   
-                  <label class="text-gray-400 text-sm font-bold ml-1 mb-2">SEU NOME</label>
-                  <input type="text" placeholder="Ex: João Silva" class="bg-[#2C2C2E] border border-gray-700 rounded-xl p-5 text-white placeholder-gray-500 mb-6 focus:outline-none focus:border-[#00D26A] focus:ring-1 focus:ring-[#00D26A] transition-all" />
+                  <label class="text-gray-500 text-[10px] font-black ml-2 mb-2 uppercase tracking-widest">Seu Nome</label>
+                  <input type="text" required maxlength="100" placeholder="Ex: João Silva" class="bg-white/5 border border-white/10 rounded-2xl p-5 text-white placeholder-gray-600 mb-6 focus:outline-none focus:border-brand-green/50 focus:ring-1 focus:ring-brand-green/50 transition-all font-medium" />
 
-                  <label class="text-gray-400 text-sm font-bold ml-1 mb-2">SEU EMAIL</label>
-                  <input type="email" placeholder="Ex: contato@email.com" class="bg-[#2C2C2E] border border-gray-700 rounded-xl p-5 text-white placeholder-gray-500 mb-6 focus:outline-none focus:border-[#00D26A] focus:ring-1 focus:ring-[#00D26A] transition-all" />
+                  <label class="text-gray-500 text-[10px] font-black ml-2 mb-2 uppercase tracking-widest">Seu Email</label>
+                  <input type="email" required maxlength="255" placeholder="Ex: contato@email.com" class="bg-white/5 border border-white/10 rounded-2xl p-5 text-white placeholder-gray-600 mb-6 focus:outline-none focus:border-brand-green/50 focus:ring-1 focus:ring-brand-green/50 transition-all font-medium" />
 
-                  <label class="text-gray-400 text-sm font-bold ml-1 mb-2">MENSAGEM</label>
-                  <textarea rows="5" placeholder="Como podemos ajudar?" class="bg-[#2C2C2E] border border-gray-700 rounded-xl p-5 text-white placeholder-gray-500 mb-8 focus:outline-none focus:border-[#00D26A] focus:ring-1 focus:ring-[#00D26A] resize-none transition-all"></textarea>
+                  <label class="text-gray-500 text-[10px] font-black ml-2 mb-2 uppercase tracking-widest">Mensagem</label>
+                  <textarea rows="4" required maxlength="1000" placeholder="Como podemos ajudar?" class="bg-white/5 border border-white/10 rounded-2xl p-5 text-white placeholder-gray-600 mb-10 focus:outline-none focus:border-brand-green/50 focus:ring-1 focus:ring-brand-green/50 resize-none transition-all font-medium"></textarea>
 
-                  <button type="submit" class="bg-[#00D26A] text-white font-extrabold text-xl py-5 rounded-xl hover:bg-[#00b058] transition-all shadow-lg hover:shadow-[0_0_20px_rgba(0,210,106,0.4)]">
-                      Enviar
+                  <button type="submit" class="bg-brand-green text-black font-black text-xl py-5 rounded-2xl hover:bg-brand-green-hover transition-all shadow-xl shadow-brand-green/20 active:scale-95">
+                      Enviar Mensagem
                   </button>
               </form>
           </div>

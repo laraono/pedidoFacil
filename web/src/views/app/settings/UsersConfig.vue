@@ -137,130 +137,141 @@ function isActive(status) {
 <template>
   <main class="max-w-5xl mx-auto py-6 md:py-12 px-3 md:px-4 text-black">
     <div class="flex flex-col sm:flex-row sm:items-center mb-6 gap-4">
-      <button @click="router.back()" class="p-2 text-black mr-4">
+      <button @click="router.back()" class="p-2 text-black mr-4 outline-none">
         <ArrowLeft :size="28" />
       </button>
 
-      <h1 class="text-3xl font-bold text-black">
+      <h1 class="text-3xl font-bold text-black tracking-tight">
         Usuários
       </h1>
 
       <button
         @click="openForm()"
-        class="sm:ml-auto flex items-center justify-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+        class="sm:ml-auto flex items-center justify-center bg-brand-green text-white px-5 py-2.5 rounded-xl font-bold hover:bg-brand-green-hover transition-all active:scale-95 shadow-sm"
       >
         <PlusCircle :size="18" class="mr-2" />
         Novo Usuário
       </button>
     </div>
 
-    <div v-if="showForm" class="bg-white p-6 rounded-xl shadow-md border mb-8">
-      <div class="flex justify-between items-center mb-4">
+    <div v-if="showForm" class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100 mb-8">
+      <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl font-bold text-black">
           {{ editingUser ? 'Editar Usuário' : 'Cadastrar Usuário' }}
         </h2>
-        <button @click="closeForm" class="text-black">
-          <X :size="20" />
+        <button @click="closeForm" class="text-gray-400 hover:text-black transition-colors">
+          <X :size="24" />
         </button>
       </div>
 
       <form @submit.prevent="saveUser" class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         <div>
-          <label class="block font-semibold mb-1 text-black">Nome</label>
+          <label class="block font-bold mb-1.5 text-gray-700 ml-1">Nome Completo</label>
           <input v-model="form.name" required type="text"
-                 class="w-full p-2 border rounded-lg text-black" />
+                 minlength="5" maxlength="100"
+                 placeholder="Ex: João Silva"
+                 class="w-full p-3 border border-gray-300 rounded-xl text-black focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green outline-none transition-all" />
         </div>
 
         <div>
-          <label class="block font-semibold mb-1 text-black">Email</label>
+          <label class="block font-bold mb-1.5 text-gray-700 ml-1">Email Profissional</label>
           <input v-model="form.email" required type="email"
-                 class="w-full p-2 border rounded-lg text-black" />
+                 maxlength="255"
+                 placeholder="exemplo@email.com"
+                 class="w-full p-3 border border-gray-300 rounded-xl text-black focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green outline-none transition-all" />
         </div>
 
         <div>
-          <label class="block font-semibold mb-1 text-black">CPF</label>
+          <label class="block font-bold mb-1.5 text-gray-700 ml-1">CPF</label>
           <input v-model="form.cpf" required type="text"
-                 class="w-full p-2 border rounded-lg text-black" />
-          <p v-if="localError" class="text-red-500 text-sm mt-2">
-            {{ localError }}
+                 maxlength="14"
+                 placeholder="000.000.000-00"
+                 class="w-full p-3 border border-gray-300 rounded-xl text-black focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green outline-none transition-all" />
+          <p v-if="localError" class="text-red-500 text-xs mt-2 font-semibold ml-1">
+            ⚠️ {{ localError }}
           </p>
         </div>
 
         <div>
-          <label class="block font-semibold mb-1 text-black">Senha</label>
+          <label class="block font-bold mb-1.5 text-gray-700 ml-1">Senha</label>
           <input v-model="form.password" required type="password"
-                 class="w-full p-2 border rounded-lg text-black" />
+                 minlength="6" maxlength="64"
+                 placeholder="••••••••"
+                 class="w-full p-3 border border-gray-300 rounded-xl text-black focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green outline-none transition-all" />
         </div>
 
         <div class="md:col-span-2">
-          <label class="block font-semibold mb-1 text-black">Cargo</label>
+          <label class="block font-bold mb-1.5 text-gray-700 ml-1">Cargo</label>
           <select
             v-model.number="form.roleId"
             required
             :disabled="editingUser === currentUser?.id"
-            class="w-full p-2 border rounded-lg text-black disabled:bg-gray-200"
+            class="w-full p-3 border border-gray-300 rounded-xl text-black focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green outline-none transition-all disabled:bg-gray-100 disabled:text-gray-400 cursor-pointer"
           >
-            <option disabled value="">Selecione</option>
+            <option disabled value="">Selecione o cargo</option>
             <option v-for="role in roles" :key="role.id" :value="role.id">
               {{ role.name }}
             </option>
           </select>
         </div>
 
-        <div class="md:col-span-2 flex gap-4">
+        <div class="md:col-span-2 flex gap-4 pt-2">
           <button type="submit"
                   :disabled="isLoading"
-                  class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
-            {{ isLoading ? 'Salvando...' : 'Salvar' }}
+                  class="bg-brand-green text-white px-8 py-3 rounded-xl font-bold hover:bg-brand-green-hover transition-all shadow-md active:scale-95 disabled:opacity-50">
+            {{ isLoading ? 'Salvando...' : 'Salvar Usuário' }}
           </button>
 
           <button type="button"
                   @click="closeForm"
-                  class="bg-gray-300 px-6 py-2 rounded-lg">
+                  class="bg-gray-200 text-gray-700 px-8 py-3 rounded-xl font-bold hover:bg-gray-300 transition-all active:scale-95">
             Cancelar
           </button>
         </div>
       </form>
     </div>
 
-    <div class="bg-white p-4 md:p-6 rounded-xl shadow-md border">
-      <h2 class="text-xl font-bold mb-4 text-black">
-        Lista de Usuários
-      </h2>
+    <div class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+      <div class="p-6 border-b border-gray-50">
+        <h2 class="text-xl font-bold text-black">
+          Lista de Usuários
+        </h2>
+      </div>
 
-      <div class="hidden md:block">
+      <div class="hidden md:block overflow-x-auto">
         <table class="w-full text-black">
-          <thead>
-            <tr class="border-b">
-              <th class="px-4 py-3 text-left">Nome</th>
-              <th class="px-4 py-3 text-left">Email</th>
-              <th class="px-4 py-3 text-left">Status</th>
-              <th class="px-4 py-3 text-left">Cargo</th>
-              <th class="px-4 py-3 text-right">Ações</th>
+          <thead class="bg-gray-50/50">
+            <tr class="text-gray-500 text-sm uppercase tracking-wider">
+              <th class="px-6 py-4 text-left font-bold">Nome</th>
+              <th class="px-6 py-4 text-left font-bold">Email</th>
+              <th class="px-6 py-4 text-center font-bold">Status</th>
+              <th class="px-6 py-4 text-center font-bold">Cargo</th>
+              <th class="px-6 py-4 text-right font-bold pr-10">Ações</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="user in users" :key="user.id" class="border-b">
-              <td class="px-4 py-4">{{ user.name }}</td>
-              <td class="px-4 py-4">{{ user.email }}</td>
-              <td class="px-4 py-4">
+          <tbody class="divide-y divide-gray-100">
+            <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50/50 transition-colors">
+              <td class="px-6 py-4 font-medium">{{ user.name }}</td>
+              <td class="px-6 py-4 text-gray-600">{{ user.email }}</td>
+              <td class="px-6 py-4 text-center">
                 <span
                   :class="isActive(user.status)
-                    ? 'text-green-600 font-semibold'
-                    : 'text-red-600 font-semibold'"
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700'"
+                  class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter"
                 >
                   {{ user.status || 'ATIVO' }}
                 </span>
               </td>
-              <td class="px-4 py-4">
+              <td class="px-6 py-4 text-center font-semibold text-gray-600">
                 {{ roles.find(r => r.id === user.roleId)?.name || '-' }}
               </td>
-              <td class="px-4 py-4 text-right">
+              <td class="px-6 py-4 text-right pr-10">
                 <div class="flex justify-end gap-3">
                   <button
                     @click="openForm(user)"
-                    class="text-blue-600"
+                    class="p-2 hover:bg-dark/10 rounded-lg transition-colors"
                   >
                     <Pencil :size="18" />
                   </button>
@@ -268,7 +279,7 @@ function isActive(status) {
                   <button
                     v-if="user.id !== currentUser?.id"
                     @click="toggleStatus(user)"
-                    class="text-red-600"
+                    class="text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors"
                   >
                     <Trash :size="18" />
                   </button>
@@ -279,49 +290,41 @@ function isActive(status) {
         </table>
       </div>
 
-      <div class="md:hidden space-y-4">
+      <div class="md:hidden divide-y divide-gray-100">
         <div
           v-for="user in users"
           :key="user.id"
-          class="border rounded-lg p-4 shadow-sm"
+          class="p-5"
         >
-          <div class="flex justify-between items-start">
+          <div class="flex justify-between items-start mb-3">
             <div>
-              <p class="font-bold text-lg">{{ user.name }}</p>
-              <p class="text-sm text-gray-600">{{ user.email }}</p>
+              <p class="font-bold text-lg leading-tight">{{ user.name }}</p>
+              <p class="text-sm text-gray-500">{{ user.email }}</p>
             </div>
 
             <span
               :class="isActive(user.status)
-                ? 'text-green-600 font-semibold'
-                : 'text-red-600 font-semibold'"
+                ? 'bg-green-100 text-green-700'
+                : 'bg-red-100 text-red-700'"
+              class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
             >
               {{ user.status || 'ATIVO' }}
             </span>
           </div>
 
-          <div class="mt-3 text-sm">
-            <p>
-              <span class="font-semibold">Cargo:</span>
+          <div class="flex justify-between items-center mt-4">
+            <span class="text-sm font-semibold text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
               {{ roles.find(r => r.id === user.roleId)?.name || '-' }}
-            </p>
-          </div>
-
-          <div class="flex justify-end gap-4 mt-4">
-            <button
-              @click="openForm(user)"
-              class="text-blue-600"
-            >
-              <Pencil :size="18" />
-            </button>
-
-            <button
-              v-if="user.id !== currentUser?.id"
-              @click="toggleStatus(user)"
-              class="text-red-600"
-            >
-              <Trash :size="18" />
-            </button>
+            </span>
+            
+            <div class="flex gap-4">
+              <button @click="openForm(user)">
+                <Pencil :size="18" />
+              </button>
+              <button v-if="user.id !== currentUser?.id" @click="toggleStatus(user)" class="text-red-500">
+                <Trash :size="18" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
