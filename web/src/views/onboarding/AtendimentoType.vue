@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router';
 import { useOnboardingStore } from '@/stores/onboarding';
 import { useAuthStore } from '@/stores/auth';
 import { Check, ArrowRight, Loader2, MonitorSmartphone, Users } from 'lucide-vue-next';
-import { getRolesMock, initMockRoles } from '@/mock/rolesmock';
+import { getRolesMock, initMockRoles } from '@/mock/authmock';
 
 import imgOndas from '@/assets/ondas.png';
 import imgTotemMockup from '@/assets/atendimento2.png'; 

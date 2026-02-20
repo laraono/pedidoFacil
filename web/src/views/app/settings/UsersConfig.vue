@@ -1,13 +1,15 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
 import { isValidCPF, maskCPF } from '@/utils/validator';
 import { ArrowLeft, PlusCircle, Trash, Pencil, X } from 'lucide-vue-next';
-import { getRolesMock } from '@/mock/rolesmock';
+import { getRolesMock, initMockRoles } from '@/mock/authmock'; 
 
 const USERS_KEY = "users";
 
 const router = useRouter();
+const authStore = useAuthStore();
 
 const users = ref([]);
 const roles = ref([]);
@@ -15,6 +17,8 @@ const isLoading = ref(false);
 const showForm = ref(false);
 const editingUser = ref(null);
 const localError = ref(null);
+
+const currentUser = computed(() => authStore.user);
 
 const form = ref({
   id: null,
@@ -40,6 +44,7 @@ watch(
 );
 
 onMounted(() => {
+  initMockRoles();
   loadUsers();
   roles.value = getRolesMock();
 });
@@ -73,24 +78,34 @@ function closeForm() {
 }
 
 function saveUser() {
+  localError.value = null;
+
+  if (!isValidCPF(form.value.cpf)) {
+    localError.value = 'O CPF inserido é inválido.';
+    return;
+  }
+
   isLoading.value = true;
 
   const list = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
 
   if (form.value.id) {
     const index = list.findIndex(u => u.id === form.value.id);
-    list[index] = { ...list[index], ...form.value };
+
+    if (form.value.id === currentUser.value?.id) {
+      form.value.roleId = list[index].roleId;
+    }
+
+    list[index] = {
+      ...list[index],
+      ...form.value
+    };
   } else {
     list.push({
       ...form.value,
       id: Date.now(),
       status: 'ATIVO'
     });
-    if (!isValidCPF(form.value.cpf)) {
-        localError.value = 'O CPF inserido é inválido.';
-        isLoading.value = false;
-        return;
-    };
   }
 
   localStorage.setItem(USERS_KEY, JSON.stringify(list));
@@ -101,24 +116,27 @@ function saveUser() {
 }
 
 function toggleStatus(user) {
+  if (user.id === currentUser.value?.id) return;
+
   const list = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
   const index = list.findIndex(u => u.id === user.id);
 
-  list[index].status = user.status === 'ATIVO' ? 'INATIVO' : 'ATIVO';
+  list[index].status =
+    user.status === 'ATIVO' ? 'INATIVO' : 'ATIVO';
 
   localStorage.setItem(USERS_KEY, JSON.stringify(list));
   loadUsers();
 }
 
-const activeUsersCount = computed(() =>
-  users.value.filter(u => u.status === 'ATIVO').length
-);
+function isActive(status) {
+  if (!status) return true;
+  return status.toString().trim().toUpperCase() === 'ATIVO';
+}
 </script>
 
 <template>
-  <main class="max-w-5xl mx-auto py-12 px-4 text-black">
-
-    <div class="flex items-center mb-8">
+  <main class="max-w-5xl mx-auto py-6 md:py-12 px-3 md:px-4 text-black">
+    <div class="flex flex-col sm:flex-row sm:items-center mb-6 gap-4">
       <button @click="router.back()" class="p-2 text-black mr-4">
         <ArrowLeft :size="28" />
       </button>
@@ -129,7 +147,7 @@ const activeUsersCount = computed(() =>
 
       <button
         @click="openForm()"
-        class="ml-auto flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+        class="sm:ml-auto flex items-center justify-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
       >
         <PlusCircle :size="18" class="mr-2" />
         Novo Usuário
@@ -147,7 +165,7 @@ const activeUsersCount = computed(() =>
       </div>
 
       <form @submit.prevent="saveUser" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
+
         <div>
           <label class="block font-semibold mb-1 text-black">Nome</label>
           <input v-model="form.name" required type="text"
@@ -164,7 +182,9 @@ const activeUsersCount = computed(() =>
           <label class="block font-semibold mb-1 text-black">CPF</label>
           <input v-model="form.cpf" required type="text"
                  class="w-full p-2 border rounded-lg text-black" />
-          <p v-if="localError" class="text-red-500 text-sm mt-2">{{ localError }}</p>
+          <p v-if="localError" class="text-red-500 text-sm mt-2">
+            {{ localError }}
+          </p>
         </div>
 
         <div>
@@ -175,8 +195,12 @@ const activeUsersCount = computed(() =>
 
         <div class="md:col-span-2">
           <label class="block font-semibold mb-1 text-black">Cargo</label>
-          <select v-model="form.roleId" required
-                  class="w-full p-2 border rounded-lg text-black">
+          <select
+            v-model.number="form.roleId"
+            required
+            :disabled="editingUser === currentUser?.id"
+            class="w-full p-2 border rounded-lg text-black disabled:bg-gray-200"
+          >
             <option disabled value="">Selecione</option>
             <option v-for="role in roles" :key="role.id" :value="role.id">
               {{ role.name }}
@@ -200,55 +224,107 @@ const activeUsersCount = computed(() =>
       </form>
     </div>
 
-    <div class="bg-white p-6 rounded-xl shadow-md border">
+    <div class="bg-white p-4 md:p-6 rounded-xl shadow-md border">
       <h2 class="text-xl font-bold mb-4 text-black">
         Lista de Usuários
       </h2>
 
-      <table class="w-full text-black">
-        <thead>
+      <div class="hidden md:block">
+        <table class="w-full text-black">
+          <thead>
             <tr class="border-b">
-            <th class="px-6 py-3 text-left">Nome</th>
-            <th class="px-6 py-3 text-left">Email</th>
-            <th class="px-6 py-3 text-left">Status</th>
-            <th class="px-6 py-3 text-left">Cargo</th>
-            <th class="px-6 py-3 text-right">Ações</th>
+              <th class="px-4 py-3 text-left">Nome</th>
+              <th class="px-4 py-3 text-left">Email</th>
+              <th class="px-4 py-3 text-left">Status</th>
+              <th class="px-4 py-3 text-left">Cargo</th>
+              <th class="px-4 py-3 text-right">Ações</th>
             </tr>
-        </thead>
-
-        <tbody>
+          </thead>
+          <tbody>
             <tr v-for="user in users" :key="user.id" class="border-b">
-            <td class="px-6 py-4"> {{ user.name }} </td>
-            <td class="px-6 py-4"> {{ user.email }} </td>
-            <td class="px-6 py-4">
-                <span :class="user.status === 'ATIVO'
+              <td class="px-4 py-4">{{ user.name }}</td>
+              <td class="px-4 py-4">{{ user.email }}</td>
+              <td class="px-4 py-4">
+                <span
+                  :class="isActive(user.status)
                     ? 'text-green-600 font-semibold'
-                    : 'text-red-600 font-semibold'">
-                {{ user.status }}
+                    : 'text-red-600 font-semibold'"
+                >
+                  {{ user.status || 'ATIVO' }}
                 </span>
-            </td>
-            <td class="px-6 py-4">
+              </td>
+              <td class="px-4 py-4">
                 {{ roles.find(r => r.id === user.roleId)?.name || '-' }}
-            </td>
-            <td class="px-6 py-4 text-right">
+              </td>
+              <td class="px-4 py-4 text-right">
                 <div class="flex justify-end gap-3">
-                <button
+                  <button
                     @click="openForm(user)"
-                    class="text-blue-600 hover:text-blue-800 transition-colors"
-                >
+                    class="text-blue-600"
+                  >
                     <Pencil :size="18" />
-                </button>
-                <button
+                  </button>
+
+                  <button
+                    v-if="user.id !== currentUser?.id"
                     @click="toggleStatus(user)"
-                    class="text-red-600 hover:text-red-800 transition-colors"
-                >
+                    class="text-red-600"
+                  >
                     <Trash :size="18" />
-                </button>
+                  </button>
                 </div>
-            </td>
+              </td>
             </tr>
-        </tbody>
+          </tbody>
         </table>
+      </div>
+
+      <div class="md:hidden space-y-4">
+        <div
+          v-for="user in users"
+          :key="user.id"
+          class="border rounded-lg p-4 shadow-sm"
+        >
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="font-bold text-lg">{{ user.name }}</p>
+              <p class="text-sm text-gray-600">{{ user.email }}</p>
+            </div>
+
+            <span
+              :class="isActive(user.status)
+                ? 'text-green-600 font-semibold'
+                : 'text-red-600 font-semibold'"
+            >
+              {{ user.status || 'ATIVO' }}
+            </span>
+          </div>
+
+          <div class="mt-3 text-sm">
+            <p>
+              <span class="font-semibold">Cargo:</span>
+              {{ roles.find(r => r.id === user.roleId)?.name || '-' }}
+            </p>
+          </div>
+
+          <div class="flex justify-end gap-4 mt-4">
+            <button
+              @click="openForm(user)"
+              class="text-blue-600"
+            >
+              <Pencil :size="18" />
+            </button>
+
+            <button
+              v-if="user.id !== currentUser?.id"
+              @click="toggleStatus(user)"
+              class="text-red-600"
+            >
+              <Trash :size="18" />
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 </template>

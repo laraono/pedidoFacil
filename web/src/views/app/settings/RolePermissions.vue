@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/auth';
 import { ArrowLeft, CheckCircle, Trash, HelpCircle, PlusCircle, Users } from 'lucide-vue-next';
 
 import { PERMISSIONS } from '@/utils/permissions';
-import { getRolesMock, saveRolesMock } from '@/mock/rolesmock';
+import { getRolesMock, saveRolesMock } from '@/mock/authmock';
 
 const router = useRouter();
 const authStore = useAuthStore();

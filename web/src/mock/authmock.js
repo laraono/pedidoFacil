@@ -72,28 +72,32 @@ export function initMockUsers() {
       name: "Admin",
       email: "admin@email.com",
       password: "123456",
-      roleId: 1 
+      roleId: 1,
+      status: "ATIVO"
     },
     {
       id: 2,
       name: "Gerente da Loja",
       email: "gerente@email.com",
       password: "123456",
-      roleId: 2 
+      roleId: 2,
+      status: "ATIVO"
     },
     {
       id: 4,
       name: "Pedro Garçom",
       email: "garcom@email.com",
       password: "123456",
-      roleId: 4
+      roleId: 4,
+      status: "ATIVO"
     },
     {
       id: 5,
       name: "João Cozinha",
       email: "cozinha@email.com",
       password: "123456",
-      roleId: 5
+      roleId: 5,
+      status: "ATIVO"
     }
   ];
 
@@ -113,6 +117,10 @@ export async function loginMock(email, password) {
     throw new Error("Credenciais inválidas");
   }
 
+  if (user.status?.toUpperCase() !== "ATIVO") {
+    throw new Error("Usuário inativo. Entre em contato com o administrador.");
+  }
+
   const userRole = roles.find(r => r.id === user.roleId);
 
   if (!userRole) {
@@ -122,7 +130,7 @@ export async function loginMock(email, password) {
 
   const userWithRole = {
     ...user,
-    role: userRole 
+    role: userRole
   };
 
   localStorage.setItem(USER_KEY, JSON.stringify(userWithRole));
