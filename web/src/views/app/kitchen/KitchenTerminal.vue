@@ -48,17 +48,18 @@ const handleFinish = (id) => kitchenStore.finishOrder(id);
 <template>
   <div class="h-screen bg-gray-50 flex flex-col font-inter overflow-hidden">
     
-    <header class="h-16 md:h-20 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 shadow-sm z-20 shrink-0">
+    <header class="h-16 md:h-20 bg-header-kitchen border-b border-black/20 flex items-center justify-between px-4 md:px-8 shadow-md z-20 shrink-0">
       <div class="flex items-center gap-3 md:gap-4">
-        <div class="bg-[#00D26A] p-1.5 md:p-2 rounded-xl text-white shadow-lg shadow-green-200">
+        <div class="bg-brand-green p-1.5 md:p-2 rounded-xl text-black shadow-lg shadow-brand-green/30">
              <UtensilsCrossed :size="20" class="md:w-6 md:h-6" />
         </div>
+        <h1 class="text-white/90 font-bold text-lg hidden sm:block">Fila de Pedidos</h1>
       </div>
 
       <div class="flex items-center gap-2 md:gap-4">
         <button 
           @click="simulateSocketEvent" 
-          class="px-3 py-2 md:px-5 md:py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs md:text-sm font-bold transition-colors flex items-center gap-2"
+          class="px-3 py-2 md:px-5 md:py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs md:text-sm font-bold transition-colors flex items-center gap-2 border border-white/5"
         >
           <Bell :size="16" /> <span class="hidden md:inline">Simular</span>
         </button>
@@ -66,7 +67,7 @@ const handleFinish = (id) => kitchenStore.finishOrder(id);
         <button 
           @click="toggleAudio" 
           class="p-2 md:p-2.5 rounded-xl transition-colors border"
-          :class="audioEnabled ? 'bg-green-50 text-green-600 border-green-200' : 'bg-red-50 text-red-500 border-red-200'"
+          :class="audioEnabled ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'"
         >
           <Volume2 v-if="audioEnabled" :size="18" class="md:w-5 md:h-5" />
           <VolumeX v-else :size="18" class="md:w-5 md:h-5" />
@@ -124,10 +125,10 @@ const handleFinish = (id) => kitchenStore.finishOrder(id);
       >
         <header class="p-4 md:p-5 flex justify-between items-center bg-gray-100/50 backdrop-blur-sm z-10 border-b border-gray-200/50">
           <div class="flex items-center gap-3">
-             <div class="w-2 md:w-3 h-6 md:h-8 bg-[#00D26A] rounded-full"></div>
+             <div class="w-2 md:w-3 h-6 md:h-8 bg-brand-green rounded-full"></div>
              <h2 class="font-extrabold text-gray-700 text-base md:text-lg uppercase tracking-wide">Pronto</h2>
           </div>
-          <span class="bg-[#00D26A] text-white font-bold px-3 py-1 rounded-full text-sm shadow-sm shadow-green-200">
+          <span class="bg-brand-green text-white font-bold px-3 py-1 rounded-full text-sm shadow-sm shadow-green-200">
             {{ kitchenStore.readyOrders.length }}
           </span>
         </header>

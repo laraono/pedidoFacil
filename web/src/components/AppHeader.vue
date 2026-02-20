@@ -45,7 +45,7 @@ const shouldShowNavbar = computed(() => {
 
 const allMenuItems = [
   { 
-    label: 'Dashboard', 
+    label: establishmentName, 
     route: '/app/dashboard', 
     icon: BarChart3,
     permission: PERMISSIONS.RELATORIOS 
@@ -77,7 +77,7 @@ const allMenuItems = [
     permission: PERMISSIONS.FUNCIONARIOS,
     children: [
       { label: 'Cargos e Permissões', route: '/app/settings/roles', icon: Shield }, 
-      { label: 'Controle de Usuários', route: '/app/...', icon: UserCog }
+      { label: 'Controle de Usuários', route: '/app/settings/users', icon: UserCog }
     ]
   },
   { 
@@ -110,7 +110,7 @@ const headerColorClass = computed(() => {
     return 'bg-black border-b border-gray-800'; 
   }
   
-  return 'bg-[#2c2c2c] border-b border-gray-700'; 
+  return 'bg-header-default border-b border-gray-700'; 
 });
 
 onMounted(async () => {
@@ -254,7 +254,7 @@ const navigateTo = (path) => {
 
       <div class="p-4 border-t border-gray-100 bg-gray-50">
          <p class="text-center text-[10px] text-gray-400 uppercase tracking-widest font-bold">
-           PedidoFácil v1.0
+           PedidoFácil
          </p>
       </div>
     </aside>

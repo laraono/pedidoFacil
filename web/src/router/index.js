@@ -25,7 +25,6 @@ const routes = [
   { path: '/register', name: 'register', component: RegisterManager },
   { path: '/onboarding/name', name: 'OnboardingName', component: EstabelecimentoName },
   { path: '/onboarding/type', name: 'OnboardingType', component: AtendimentoType }, 
-  { path: '/app/kitchen', name: 'kitchen', component: KitchenTerminal, meta: { requiresAuth: true, permission: PERMISSIONS.COZINHA } },
 
   {
     path: '/app',
@@ -37,7 +36,9 @@ const routes = [
       { path: 'settings/roles', name: 'roles-settings', component: RolePermissions, meta: { permission: PERMISSIONS.CONFIGURACAO } },
       { path: 'settings/menu', name: 'menu-settings', component: MenuPersonalization, meta: { permission: PERMISSIONS.CONFIGURACAO } },
       { path: 'settings/users', name: 'users-settings', component: CreateUsers, meta: { permission: PERMISSIONS.CONFIGURACAO } },
-      { path: '', redirect: { name: 'dashboard' } }
+      { path: '', redirect: { name: 'dashboard' } },
+      { path: '/app/kitchen', name: 'kitchen', component: KitchenTerminal, meta: { requiresAuth: true, permission: PERMISSIONS.COZINHA } },
+
     ]
   }
 ];
