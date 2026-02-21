@@ -28,7 +28,8 @@ export const useMenuStore = defineStore('menu', () => {
       isAvailable: true,
 
       sizes: [
-        { name: 'Padrão', price: 25.00 }
+        { name: 'Padrão', price: 25.00 },
+        { name: 'Grande', price: 30.00 }
       ],
 
       addons: [
