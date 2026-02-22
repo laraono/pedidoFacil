@@ -147,7 +147,7 @@ const updatePrice = (index, event, type = 'sizes') => {
 const openAddModal = () => {
   isEditing.value = false;
   form.value = JSON.parse(JSON.stringify(defaultForm));
-  form.value.categoryId = menuStore.categories.length ? menuStore.categories[0].id : '';
+  form.value.categoryId = menuStore.categories?.length ? menuStore.categories[0].id : '';
   errors.value = {};
   touched.value = {};
   showModal.value = true;
@@ -266,10 +266,6 @@ const handlePermanentDelete = (product) => {
         >
           <Archive :size="20" />
           {{ showDeleted ? 'Ver Ativos' : 'Ver Arquivados' }}
-          <span v-if="!showDeleted && menuStore.deletedProducts.length" 
-                class="ml-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-            {{ menuStore.deletedProducts.length }}
-          </span>
         </button>
 
         <button 
@@ -316,89 +312,89 @@ const handlePermanentDelete = (product) => {
     </div>
 
     <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-x-auto">
-  <table class="w-full text-left border-collapse min-w-[740px]">
-    <thead class="bg-gray-50 text-gray-600 uppercase text-xs sm:text-sm font-semibold">
-      <tr>
-        <th class="p-2 sm:p-4 border-b w-16">Imagem</th>
-        <th class="p-2 sm:p-4 border-b">Produto</th>
-        <th class="p-2 sm:p-4 border-b whitespace-nowrap">Categoria</th>
-        <th class="p-2 sm:p-4 border-b whitespace-nowrap">Preço (Base)</th>
-        <th class="p-2 sm:p-4 border-b text-center whitespace-nowrap">Disponível</th>
-        <th class="p-2 sm:p-4 border-b whitespace-nowrap">Status</th>
-        <th class="p-2 sm:p-4 border-b text-right whitespace-nowrap">Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="prod in filteredProducts" :key="prod.id" 
-          class="hover:bg-gray-50 border-b last:border-0 transition-colors"
-          :class="{ 'opacity-60 bg-gray-50': prod.deletedAt }">
-        <td class="p-2 sm:p-4 w-16">
-          <div class="w-10 h-10 sm:w-16 sm:h-16 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
-            <img v-if="prod.image" :src="prod.image" class="w-full h-full object-cover" />
-            <ImageIcon v-else class="text-gray-400 w-full h-full p-2" />
-          </div>
-        </td>
-        <td class="p-2 sm:p-4">
-          <p class="font-bold text-gray-800 text-sm truncate max-w-[120px] sm:max-w-none">{{ prod.name }}</p>
-          <p class="text-xs text-gray-500 truncate max-w-[120px] sm:max-w-[200px]">{{ prod.description }}</p>
-        </td>
-        <td class="p-2 sm:p-4 whitespace-nowrap">
-          <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-            {{ menuStore.getCategoryName(prod.categoryId) }}
-          </span>
-        </td>
-        <td class="p-2 sm:p-4 text-gray-700 font-mono text-sm whitespace-nowrap">
-          {{ formatCurrency(prod.sizes[0]?.price || 0) }}
-          <span v-if="prod.sizes.length > 1" class="text-xs text-gray-500">(+{{ prod.sizes.length -1 }})</span>
-        </td>
-        <td class="p-2 sm:p-4 text-center whitespace-nowrap">
-          <div class="flex flex-col items-center">
-            <button 
-              @click="menuStore.toggleAvailability(prod.id)"
-              class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in focus:outline-none"
-              :disabled="prod.deletedAt"
-            >
-              <div :class="`w-10 h-5 rounded-full p-1 duration-300 ease-in-out ${prod.isAvailable ? 'bg-green-500' : 'bg-gray-300'} ${prod.deletedAt ? 'opacity-50 cursor-not-allowed' : ''}`">
-                <div :class="`bg-white w-3 h-3 rounded-full shadow-md transform duration-300 ease-in-out ${prod.isAvailable ? 'translate-x-5' : 'translate-x-0'}`"></div>
+      <table class="w-full text-left border-collapse min-w-[740px]">
+        <thead class="bg-gray-50 text-gray-600 uppercase text-xs sm:text-sm font-semibold">
+          <tr>
+            <th class="p-2 sm:p-4 border-b w-16">Imagem</th>
+            <th class="p-2 sm:p-4 border-b">Produto</th>
+            <th class="p-2 sm:p-4 border-b whitespace-nowrap">Categoria</th>
+            <th class="p-2 sm:p-4 border-b whitespace-nowrap">Preço (Base)</th>
+            <th class="p-2 sm:p-4 border-b text-center whitespace-nowrap">Disponível</th>
+            <th class="p-2 sm:p-4 border-b whitespace-nowrap">Status</th>
+            <th class="p-2 sm:p-4 border-b text-right whitespace-nowrap">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="prod in filteredProducts" :key="prod.id" 
+              class="hover:bg-gray-50 border-b last:border-0 transition-colors"
+              :class="{ 'opacity-60 bg-gray-50': prod.deletedAt }">
+            <td class="p-2 sm:p-4 w-16">
+              <div class="w-10 h-10 sm:w-16 sm:h-16 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                <img v-if="prod.image" :src="prod.image" class="w-full h-full object-cover" />
+                <ImageIcon v-else class="text-gray-400 w-full h-full p-2" />
               </div>
-            </button>
-            <span class="text-[8px] mt-1 font-semibold uppercase" :class="prod.isAvailable ? 'text-green-600' : 'text-gray-400'">
-              {{ prod.isAvailable ? 'Ativo' : 'Inativo' }}
-            </span>
-          </div>
-        </td>
-        <td class="p-2 sm:p-4 whitespace-nowrap">
-          <span v-if="prod.deletedAt" class="px-2 py-1 bg-gray-200 text-gray-700 rounded-full text-xs">
-            Arquivado
-          </span>
-          <span v-else class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
-            Ativo
-          </span>
-        </td>
-        <td class="p-2 sm:p-4 text-right whitespace-nowrap">
-          <div class="flex justify-end gap-1 sm:gap-2">
-            <template v-if="!prod.deletedAt">
-              <button @click="openEditModal(prod)" class="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="Editar">
-                <Edit :size="16" class="sm:w-5 sm:h-5" />
-              </button>
-              <button @click="handleSoftDelete(prod)" class="p-1.5 sm:p-2 text-orange-600 hover:bg-orange-50 rounded-lg" title="Arquivar">
-                <Archive :size="16" class="sm:w-5 sm:h-5" />
-              </button>
-            </template>
-            <template v-else>
-              <button @click="handleRestore(prod)" class="p-1.5 sm:p-2 text-green-600 hover:bg-green-50 rounded-lg" title="Restaurar">
-                <RotateCcw :size="16" class="sm:w-5 sm:h-5" />
-              </button>
-              <button @click="handlePermanentDelete(prod)" class="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg" title="Deletar permanentemente">
-                <Trash2 :size="16" class="sm:w-5 sm:h-5" />
-              </button>
-            </template>
-          </div>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+            </td>
+            <td class="p-2 sm:p-4">
+              <p class="font-bold text-gray-800 text-sm truncate max-w-[120px] sm:max-w-none">{{ prod.name }}</p>
+              <p class="text-xs text-gray-500 truncate max-w-[120px] sm:max-w-[200px]">{{ prod.description }}</p>
+            </td>
+            <td class="p-2 sm:p-4 whitespace-nowrap">
+              <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                {{ menuStore.getCategoryName(prod.categoryId) }}
+              </span>
+            </td>
+            <td class="p-2 sm:p-4 text-gray-700 font-mono text-sm whitespace-nowrap">
+              {{ formatCurrency(prod.sizes[0]?.price || 0) }}
+              <span v-if="prod.sizes.length > 1" class="text-xs text-gray-500">(+{{ prod.sizes.length -1 }})</span>
+            </td>
+            <td class="p-2 sm:p-4 text-center whitespace-nowrap">
+              <div class="flex flex-col items-center">
+                <button 
+                  @click="menuStore.toggleAvailability(prod.id)"
+                  class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in focus:outline-none"
+                  :disabled="prod.deletedAt"
+                >
+                  <div :class="`w-10 h-5 rounded-full p-1 duration-300 ease-in-out ${prod.isAvailable ? 'bg-green-500' : 'bg-gray-300'} ${prod.deletedAt ? 'opacity-50 cursor-not-allowed' : ''}`">
+                    <div :class="`bg-white w-3 h-3 rounded-full shadow-md transform duration-300 ease-in-out ${prod.isAvailable ? 'translate-x-5' : 'translate-x-0'}`"></div>
+                  </div>
+                </button>
+                <span class="text-[8px] mt-1 font-semibold uppercase" :class="prod.isAvailable ? 'text-green-600' : 'text-gray-400'">
+                  {{ prod.isAvailable ? 'Ativo' : 'Inativo' }}
+                </span>
+              </div>
+            </td>
+            <td class="p-2 sm:p-4 whitespace-nowrap">
+              <span v-if="prod.deletedAt" class="px-2 py-1 bg-gray-200 text-gray-700 rounded-full text-xs">
+                Arquivado
+              </span>
+              <span v-else class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
+                Ativo
+              </span>
+            </td>
+            <td class="p-2 sm:p-4 text-right whitespace-nowrap">
+              <div class="flex justify-end gap-1 sm:gap-2">
+                <template v-if="!prod.deletedAt">
+                  <button @click="openEditModal(prod)" class="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="Editar">
+                    <Edit :size="16" class="sm:w-5 sm:h-5" />
+                  </button>
+                  <button @click="handleSoftDelete(prod)" class="p-1.5 sm:p-2 text-orange-600 hover:bg-orange-50 rounded-lg" title="Arquivar">
+                    <Archive :size="16" class="sm:w-5 sm:h-5" />
+                  </button>
+                </template>
+                <template v-else>
+                  <button @click="handleRestore(prod)" class="p-1.5 sm:p-2 text-green-600 hover:bg-green-50 rounded-lg" title="Restaurar">
+                    <RotateCcw :size="16" class="sm:w-5 sm:h-5" />
+                  </button>
+                  <button @click="handlePermanentDelete(prod)" class="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg" title="Deletar permanentemente">
+                    <Trash2 :size="16" class="sm:w-5 sm:h-5" />
+                  </button>
+                </template>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto">
       <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl my-4 sm:my-8 overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh]">
@@ -430,7 +426,6 @@ const handlePermanentDelete = (product) => {
                   class="absolute inset-0 opacity-0 cursor-pointer" 
                   accept="image/*" 
                   @change="handleImageUpload"
-                  @blur="touchField('image')"
                 />
               </div>
               <p v-if="errors.image" class="text-red-500 text-xs mt-1">{{ errors.image }}</p>
@@ -457,6 +452,7 @@ const handlePermanentDelete = (product) => {
                   type="text" 
                   v-model="form.name" 
                   name="name"
+                  maxlength="60"
                   @blur="touchField('name')"
                   @input="() => { if(touched.name) validateField('name'); }"
                   :class="{ 'border-red-500': errors.name }"
@@ -486,7 +482,7 @@ const handlePermanentDelete = (product) => {
 
               <div>
                 <label class="block text-gray-600 font-semibold mb-1 text-sm sm:text-base">Descrição</label>
-                <textarea v-model="form.description" rows="3" placeholder="Ingredientes e detalhes..." class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900"></textarea>
+                <textarea v-model="form.description" rows="3" maxlength="200" placeholder="Ingredientes e detalhes..." class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900"></textarea>
               </div>
 
               <div class="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-100">
@@ -498,6 +494,7 @@ const handlePermanentDelete = (product) => {
                   <input 
                     type="text" 
                     v-model="size.name" 
+                    maxlength="30"
                     placeholder="Ex: Padrão, Grande..." 
                     class="text-gray-900 w-full sm:flex-1 p-2 text-sm border border-gray-300 rounded" 
                   />
@@ -526,6 +523,7 @@ const handlePermanentDelete = (product) => {
                   <input 
                     type="text" 
                     v-model="addon.name" 
+                    maxlength="30"
                     placeholder="Ex: Bacon Extra" 
                     class="text-gray-900 w-full sm:flex-1 p-2 text-sm border border-gray-300 rounded" 
                   />
@@ -558,28 +556,30 @@ const handlePermanentDelete = (product) => {
       </div>
     </div>
 
-   <div v-if="confirmModal.show" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-sm overflow-hidden">
-        <div class="p-4" :class="{ 'bg-red-50': confirmModal.isError }">
-          <h3 class="text-lg font-semibold" :class="{ 'text-red-800': confirmModal.isError }">
+    <div v-if="confirmModal.show" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-sm overflow-hidden border border-gray-200">
+        <div class="p-5 bg-white">
+          <h3 class="text-lg font-bold text-gray-900">
             {{ confirmModal.title }}
           </h3>
-          <p class="text-gray-600 text-sm mt-2">{{ confirmModal.message }}</p>
+          <p class="text-sm mt-2 font-medium text-gray-800">
+            {{ confirmModal.message }}
+          </p>
         </div>
-        <div class="px-4 py-3 bg-gray-50 flex justify-end gap-2">
+        <div class="px-5 py-3 bg-gray-50 flex justify-end gap-2 border-t border-gray-100">
           <button 
             v-if="!confirmModal.isError" 
             @click="closeConfirm" 
-            class="px-4 py-2 text-sm text-gray-600 font-medium hover:bg-gray-200 rounded transition-colors"
+            class="px-4 py-2 text-sm text-gray-700 font-bold hover:bg-gray-200 rounded transition-colors"
           >
             Cancelar
           </button>
           <button 
             @click="handleConfirm" 
-            class="px-4 py-2 text-sm text-white font-medium rounded transition-colors"
+            class="px-4 py-2 text-sm text-white font-bold rounded transition-colors shadow-sm"
             :class="confirmModal.isError ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'"
           >
-            {{ confirmModal.isError ? 'OK' : 'Confirmar' }}
+            {{ confirmModal.isError ? 'Entendi' : 'Confirmar' }}
           </button>
         </div>
       </div>

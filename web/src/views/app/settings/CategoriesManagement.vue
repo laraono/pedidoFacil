@@ -128,12 +128,25 @@ const saveCategory = () => {
 };
 
 const handleDelete = (category) => {
+  const hasProducts = menuStore.activeProducts?.some(p => String(p.categoryId) === String(category.id));
+  
+  if (hasProducts) {
+    showConfirm(
+      'Ação Bloqueada', 
+      `Não é possível arquivar a categoria "${category.name}" pois existem produtos vinculados a ela. Remova ou altere a categoria dos produtos primeiro.`, 
+      null, 
+      null, 
+      { isError: true }
+    );
+    return;
+  }
+
   showConfirm(
     'Arquivar Categoria',
     `Deseja arquivar a categoria "${category.name}"?`,
     (cat) => {
       const result = menuStore.softDeleteCategory(cat.id);
-      if (!result.success) {
+      if (result && !result.success) {
         showConfirm('Erro', result.message, null, null, { isError: true });
       }
     },
@@ -155,7 +168,7 @@ const handleRestore = (category) => {
 const handlePermanentDelete = (category) => {
   showConfirm(
     'Excluir Permanentemente',
-    `Tem certeza? Esta ação é irreversível! A categoria "${category.name}" será excluída permanentemente, junto com seus produtos.`,
+    `Tem certeza? Esta ação é irreversível! A categoria "${category.name}" será excluída permanentemente.`,
     (cat) => {
       menuStore.permanentlyDeleteCategory(cat.id);
     },
@@ -181,10 +194,6 @@ const handlePermanentDelete = (category) => {
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'">
           <Archive :size="20" />
           {{ showDeleted ? 'Ver Ativas' : 'Ver Arquivadas' }}
-          <span v-if="!showDeleted && menuStore.deletedCategories.length"
-            class="ml-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-            {{ menuStore.deletedCategories.length }}
-          </span>
         </button>
 
         <button v-if="!showDeleted" @click="openAddModal"
@@ -195,7 +204,6 @@ const handlePermanentDelete = (category) => {
       </div>
     </div>
 
-    <!-- Aviso de modo de visualização -->
     <div v-if="showDeleted" class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
       <p class="text-yellow-800 flex items-center">
         <Archive class="mr-2" :size="20" />
@@ -270,7 +278,6 @@ const handlePermanentDelete = (category) => {
       </table>
     </div>
 
-    <!-- Modal de Categoria -->
     <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
         <div class="p-6 border-b border-gray-100 flex justify-between items-center">
@@ -300,7 +307,7 @@ const handlePermanentDelete = (category) => {
           <div>
             <label class="block text-gray-600 font-semibold mb-2">Nome da Categoria <span
                 class="text-red-500">*</span></label>
-            <input type="text" v-model="form.name" name="name" @blur="touchField('name')"
+            <input type="text" v-model="form.name" name="name" maxlength="50" @blur="touchField('name')"
               @input="() => { if (touched.name) validateField('name'); }" :class="{ 'border-red-500': errors.name }"
               class="text-gray-900 w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               placeholder="Ex: Bebidas" />
@@ -319,23 +326,30 @@ const handlePermanentDelete = (category) => {
       </div>
     </div>
 
-    <div v-if="confirmModal.show"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-sm overflow-hidden">
-        <div class="p-4" :class="{ 'bg-red-50': confirmModal.isError }">
-          <h3 class="text-lg font-semibold" :class="{ 'text-red-800': confirmModal.isError }">
+     <div v-if="confirmModal.show" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-sm overflow-hidden border border-gray-200">
+        <div class="p-5 bg-white">
+          <h3 class="text-lg font-bold text-gray-900">
             {{ confirmModal.title }}
           </h3>
-          <p class="text-gray-600 text-sm mt-2">{{ confirmModal.message }}</p>
+          <p class="text-sm mt-2 font-medium text-gray-800">
+            {{ confirmModal.message }}
+          </p>
         </div>
-        <div class="px-4 py-3 bg-gray-50 flex justify-end gap-2">
-          <button v-if="!confirmModal.isError" @click="closeConfirm"
-            class="px-4 py-2 text-sm text-gray-600 font-medium hover:bg-gray-200 rounded transition-colors">
+        <div class="px-5 py-3 bg-gray-50 flex justify-end gap-2 border-t border-gray-100">
+          <button 
+            v-if="!confirmModal.isError" 
+            @click="closeConfirm" 
+            class="px-4 py-2 text-sm text-gray-700 font-bold hover:bg-gray-200 rounded transition-colors"
+          >
             Cancelar
           </button>
-          <button @click="handleConfirm" class="px-4 py-2 text-sm text-white font-medium rounded transition-colors"
-            :class="confirmModal.isError ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'">
-            {{ confirmModal.isError ? 'OK' : 'Confirmar' }}
+          <button 
+            @click="handleConfirm" 
+            class="px-4 py-2 text-sm text-white font-bold rounded transition-colors shadow-sm"
+            :class="confirmModal.isError ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'"
+          >
+            {{ confirmModal.isError ? 'Entendi' : 'Confirmar' }}
           </button>
         </div>
       </div>
