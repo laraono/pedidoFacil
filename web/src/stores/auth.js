@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { loginMock, logoutMock } from '@/mock/authmock';
-import { getRolesMock } from '@/mock/rolesmock';
+import { getRolesMock } from '@/mock/authmock';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({

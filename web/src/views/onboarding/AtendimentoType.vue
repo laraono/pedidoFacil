@@ -3,177 +3,216 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useOnboardingStore } from '@/stores/onboarding';
 import { useAuthStore } from '@/stores/auth';
-import { Check } from 'lucide-vue-next';
+import { Check, ArrowRight, Loader2, MonitorSmartphone, Users } from 'lucide-vue-next';
+import { getRolesMock, initMockRoles } from '@/mock/authmock';
 
-// Assets
-const BG_WAVES_URL = '../../assets/image 4.png'; 
-const MOCKUP_TOTEM_URL = '../../assets/image 3.png'; 
-const MOCKUP_GARCOM_URL = '../../assets/image 25.png'; 
+import imgOndas from '@/assets/ondas.png';
+import imgTotemMockup from '@/assets/atendimento2.png'; 
+import imgGarcomMockup from '@/assets/atendimento1.png'; 
 
-// Router & Stores
 const router = useRouter();
 const onboardingStore = useOnboardingStore();
 const authStore = useAuthStore();
 
-// Estados
 const totens = ref(false);
 const garcons = ref(false);
 const isLoading = ref(false);
 const serverError = ref(null);
 
-// Dados do onboarding
 const nomeEstabelecimento = computed(
   () => onboardingStore.estabelecimentoData?.nome_estabelecimento || ''
 );
 
-const pessoalData = JSON.parse(
-  localStorage.getItem('onboarding_personal') || '{}'
-);
+const getPersonalData = () => {
+    try {
+        return JSON.parse(localStorage.getItem('onboarding_personal') || '{}');
+    } catch (e) {
+        return {};
+    }
+};
 
-// Validação geral
-const isDataReady = computed(() => {
-  return (
-    pessoalData.email &&
-    pessoalData.senha &&
-    nomeEstabelecimento.value &&
-    (totens.value || garcons.value)
-  );
-});
+const pessoalData = getPersonalData();
 
-// 🔥 FINALIZAÇÃO COM MOCK
+const isSelectionValid = computed(() => totens.value || garcons.value);
+
 const finalizeRegistration = async () => {
-  if (!isDataReady.value) {
-    serverError.value = 'Dados incompletos. Recomece o cadastro.';
+  serverError.value = null;
+
+  if (!pessoalData.email || !nomeEstabelecimento.value) {
+    serverError.value = 'Dados perdidos. Por favor, reinicie o cadastro.';
     return;
   }
 
+  if (!isSelectionValid.value) return;
+
   isLoading.value = true;
-  serverError.value = null;
 
-  try {
-    // Define tipo de atendimento
-    let tipo_atendimento = 'Mesa';
-    if (totens.value) tipo_atendimento = 'Autoatendimento';
-    else if (garcons.value) tipo_atendimento = 'Garçom';
+  setTimeout(() => {
+    try {
+      initMockRoles();
+      const roles = getRolesMock();
 
-    // 🔹 MOCK DO USUÁRIO
-    const mockUser = {
-      id: Date.now(),
-      nome: pessoalData.nome,
-      email: pessoalData.email,
-      estabelecimento: {
-        nome: nomeEstabelecimento.value,
-        tipo_atendimento
+      const gerenteRole = roles.find(
+        r => r.role === 'GERENTE' || r.name.toLowerCase().includes('gerente')
+      );
+
+      if (!gerenteRole) {
+        throw new Error('Cargo gerente não encontrado.');
       }
-    };
 
-    // 🔹 SALVA "USUÁRIO REGISTRADO"
-    localStorage.setItem('user', JSON.stringify(mockUser));
+      let tipo_atendimento = 'Mesa';
+      if (totens.value && garcons.value) tipo_atendimento = 'Híbrido';
+      else if (totens.value) tipo_atendimento = 'Autoatendimento';
+      else if (garcons.value) tipo_atendimento = 'Garçom';
 
-    // 🔹 LIMPA ONBOARDING
-    localStorage.removeItem('onboarding_personal');
-    onboardingStore.clearOnboarding();
+      const mockUser = {
+        id: Date.now(),
+        name: pessoalData.nome,
+        email: pessoalData.email,
+        password: pessoalData.password,
+        roleId: gerenteRole.id,
+        permissions: gerenteRole.permissions,
+        estabelecimento: {
+          nome: nomeEstabelecimento.value,
+          tipo_atendimento,
+          usa_totens: totens.value,
+          usa_garcons: garcons.value
+        }
+      };
 
-    // 🔹 LOGIN MOCK
-    authStore.user = mockUser;
-    authStore.isAuthenticated = true;
+      localStorage.setItem('user', JSON.stringify(mockUser));
+      localStorage.removeItem('onboarding_personal');
+      onboardingStore.clearOnboarding();
 
-    // 🔹 REDIRECIONA
-    router.push('/app/dashboard');
+      const userWithRole = {
+        ...mockUser,
+        role: gerenteRole
+      };
 
-  } catch (err) {
-    console.error(err);
-    serverError.value = 'Erro ao finalizar cadastro (mock).';
-  } finally {
-    isLoading.value = false;
-  }
+      localStorage.setItem('user', JSON.stringify(userWithRole));
+      localStorage.setItem('userToken', 'mock-token');
+
+      authStore.user = userWithRole;
+      authStore.roles = roles;
+      authStore.isAuthenticated = true;
+
+      router.push('/app/dashboard');
+
+    } catch (err) {
+      console.error(err);
+      serverError.value = 'Erro ao finalizar cadastro.';
+    } finally {
+      isLoading.value = false;
+    }
+  }, 1000);
 };
 </script>
 
 <template>
-  <div class="min-h-screen bg-black relative flex flex-col items-center justify-center p-6 md:p-12 overflow-hidden">
+  <div class="min-h-screen bg-[#050505] font-inter relative flex flex-col items-center justify-center p-4 md:p-12 overflow-hidden">
     
-    <!-- Fundo de Ondas e Overlay -->
     <div 
-      class="absolute inset-0 z-0 opacity-10 md:opacity-15" 
-      :style="{ backgroundImage: `url(${BG_WAVES_URL})` }"
-      style="background-size: cover; background-position: center;"
+      class="absolute top-1/2 left-0 w-full -translate-y-1/2 z-0 pointer-events-none opacity-40"
+      :style="{ backgroundImage: `url(${imgOndas})` }"
+      style="height: 70vh; background-size: cover; background-position: center; background-repeat: no-repeat;"
     ></div>
-    <div class="absolute inset-0 z-10 bg-black/95"></div>
 
-    <!-- Conteúdo Centralizado -->
-    <div class="z-20 w-full max-w-4xl text-center">
-      <p class="text-lg text-gray-400 font-semibold mb-4">
-        Perguntas iniciais
-      </p>
+    <div class="z-10 w-full max-w-5xl text-center">
       
-      <h1 class="text-4xl md:text-5xl font-black text-white mb-12">
-        Que tipo(s) de Atendimento o seu Estabelecimento oferece?
+      <div class="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-6 md:mb-8 backdrop-blur-md">
+        <span class="text-[#00D26A] text-[10px] md:text-xs font-bold uppercase tracking-widest">Etapa 3 de 3</span>
+      </div>
+
+      <h1 class="text-2xl md:text-5xl font-bold text-white mb-4 md:mb-6 tracking-tight leading-tight">
+        Como será o atendimento aos clientes?
       </h1>
       
-      <div v-if="serverError" class="bg-red-600/20 text-red-400 p-3 rounded mb-6 mx-auto max-w-md">{{ serverError }}</div>
+      <p class="text-gray-400 text-sm md:text-lg mb-8 md:mb-12">
+        Selecione uma ou ambas as opções.
+      </p>
+      
+      <transition enter-active-class="transition duration-300" enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0">
+        <div v-if="serverError" class="bg-red-500/10 border border-red-500/30 text-red-300 p-3 rounded-xl mb-6 inline-block">
+            {{ serverError }}
+        </div>
+      </transition>
 
-      <!-- Opções de Atendimento (GRID com cards clicáveis) -->
-      <div class="flex flex-col md:flex-row justify-center gap-8">
+      <div class="flex flex-row justify-center gap-3 md:gap-6 lg:gap-10 mb-12 w-full">
         
-        <!-- Opção 1: Totens / Autoatendimento -->
         <div 
             @click="totens = !totens"
-            class="w-full md:w-80 bg-[#1A1A1A] rounded-xl p-4 cursor-pointer transition-all duration-300 border-4"
-            :class="{'border-[#00ff6a] shadow-lg': totens, 'border-transparent hover:border-gray-700': !totens}"
+            class="group relative w-1/2 md:w-80 bg-[#121212]/80 backdrop-blur-sm rounded-2xl md:rounded-[2rem] border-2 cursor-pointer transition-all duration-300 overflow-hidden flex flex-col"
+            :class="totens ? 'border-[#00D26A] scale-[1.02]' : 'border-white/10 hover:border-white/30 hover:bg-[#1A1A1A]'"
         >
-          <!-- CONTAINER DA IMAGEM (h-48 define a proporção) -->
-          <div class="relative overflow-hidden h-48 mb-4 rounded-lg bg-gray-800 flex items-center justify-center">
-            <!-- IMAGEM DO TOTEM: object-cover e object-top para focar na tela -->
-            <img :src="MOCKUP_TOTEM_URL" alt="Totem de Autoatendimento" 
-                 class="w-full h-full object-cover object-top" /> 
-            
-            <!-- Checkmark de seleção -->
-            <div v-if="totens" class="absolute inset-0 flex items-start justify-end p-2">
-                <Check :size="32" class="text-[#00ff6a] bg-black rounded-full p-1" />
-            </div>
+          <div class="absolute top-2 right-2 md:top-4 md:right-4 z-20 transition-all duration-300" :class="totens ? 'opacity-100 scale-100' : 'opacity-0 scale-75'">
+             <div class="bg-[#00D26A] text-black rounded-full p-1 md:p-1.5">
+                 <Check class="w-3 h-3 md:w-5 md:h-5" stroke-width="3" />
+             </div>
+          </div>
+
+          <div class="h-40 md:h-80 bg-gradient-to-b from-gray-800 to-[#121212] relative overflow-hidden">
+             <img :src="imgTotemMockup" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500" />
+             
+             <div class="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent"></div>
+             
+             <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md p-2 md:p-3 rounded-xl md:rounded-2xl border border-white/10">
+                <MonitorSmartphone class="w-5 h-5 md:w-8 md:h-8 text-white" />
+             </div>
           </div>
           
-          <p class="text-xl font-semibold text-center mt-2">
-            Autoatendimento com Totens
-          </p>
+          <div class="p-3 md:p-6 text-center flex-grow flex flex-col justify-center">
+             <h3 class="text-sm md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-[#00D26A] transition-colors">Autoatendimento</h3>
+             <p class="text-[10px] md:text-sm text-gray-400 leading-tight md:leading-relaxed">
+               Totens e tablets.
+             </p>
+          </div>
         </div>
 
-        <!-- Opção 2: Garçons / Atendimento com Pessoas -->
         <div 
             @click="garcons = !garcons"
-            class="w-full md:w-80 bg-[#1A1A1A] rounded-xl p-4 cursor-pointer transition-all duration-300 border-4"
-            :class="{'border-[#00ff6a] shadow-lg': garcons, 'border-transparent hover:border-gray-700': !garcons}"
+            class="group relative w-1/2 md:w-80 bg-[#121212]/80 backdrop-blur-sm rounded-2xl md:rounded-[2rem] border-2 cursor-pointer transition-all duration-300 overflow-hidden flex flex-col"
+            :class="garcons ? 'border-[#00D26A] scale-[1.02]' : 'border-white/10 hover:border-white/30 hover:bg-[#1A1A1A]'"
         >
-          <!-- CONTAINER DA IMAGEM (h-48 define a proporção) -->
-          <div class="relative overflow-hidden h-48 mb-4 rounded-lg bg-gray-800 flex items-center justify-center">
-            <!-- IMAGEM DA GARÇONETE: object-cover e object-top para focar no rosto e tablet -->
-            <img :src="MOCKUP_GARCOM_URL" alt="Atendimento com Garçons" 
-                 class="w-full h-full object-cover object-top" />
-            
-            <!-- Checkmark de seleção -->
-            <div v-if="garcons" class="absolute inset-0 flex items-start justify-end p-2">
-                <Check :size="32" class="text-[#00ff6a] bg-black rounded-full p-1" />
-            </div>
+          <div class="absolute top-2 right-2 md:top-4 md:right-4 z-20 transition-all duration-300" :class="garcons ? 'opacity-100 scale-100' : 'opacity-0 scale-75'">
+             <div class="bg-[#00D26A] text-black rounded-full p-1 md:p-1.5">
+                 <Check class="w-3 h-3 md:w-5 md:h-5" stroke-width="3" />
+             </div>
+          </div>
+
+          <div class="h-40 md:h-80 bg-gradient-to-b from-gray-800 to-[#121212] relative overflow-hidden">
+             <img :src="imgGarcomMockup" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500" />
+             
+             <div class="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent"></div>
+             
+             <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md p-2 md:p-3 rounded-xl md:rounded-2xl border border-white/10">
+                <Users class="w-5 h-5 md:w-8 md:h-8 text-white" />
+             </div>
           </div>
           
-          <p class="text-xl font-semibold text-center mt-2">
-            Atendimento com Garçons
-          </p>
+          <div class="p-3 md:p-6 text-center flex-grow flex flex-col justify-center">
+             <h3 class="text-sm md:text-xl font-bold text-white mb-1 md:mb-2 group-hover:text-[#00D26A] transition-colors">Garçons</h3>
+             <p class="text-[10px] md:text-sm text-gray-400 leading-tight md:leading-relaxed">
+               Mesas e balcão.
+             </p>
+          </div>
         </div>
 
       </div>
       
-      <!-- Botão de Ação -->
-      <button @click="finalizeRegistration" 
-              :disabled="isLoading || (!totens && !garcons)"
-              class="mt-12 py-3 px-12 bg-white text-black font-bold rounded-full text-xl hover:bg-gray-200 transition-colors duration-300 disabled:opacity-50">
-        {{ isLoading ? 'Finalizando...' : 'Finalizar Cadastro' }}
+      <button 
+        @click="finalizeRegistration" 
+        :disabled="isLoading || !isSelectionValid"
+        class="py-3 px-8 md:py-4 md:px-12 bg-[#00D26A] text-black font-bold rounded-full text-lg md:text-xl hover:bg-[#00b058] transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3 mx-auto w-full md:w-auto min-w-[200px]"
+      >
+        <Loader2 v-if="isLoading" class="w-5 h-5 md:w-6 md:h-6 animate-spin" />
+        <span v-else>Acessar Sistema</span>
+        <ArrowRight v-if="!isLoading" class="w-5 h-5 md:w-6 md:h-6" />
       </button>
 
-      <p v-if="!totens && !garcons" class="text-sm text-gray-500 mt-3">
-          Selecione pelo menos uma opção.
+      <p v-if="!isSelectionValid" class="text-xs md:text-sm text-gray-600 mt-4 animate-pulse">
+          Selecione uma opção
       </p>
+
     </div>
   </div>
 </template>

@@ -1,199 +1,263 @@
 <script setup>
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-// Importação de ícones Lucide
-import { User, Mail, Instagram, Phone, Menu } from 'lucide-vue-next';
+import { User, Menu, X, Check } from 'lucide-vue-next';
+
+import imgLogo from '@/assets/logo.png'; 
+import imgOndas from '@/assets/ondas.png';
+import imgTotem from '@/assets/totem.png'; 
+import imgGraficos from '@/assets/graficos.png';
+import imgInterface from '@/assets/pedidos.png'; 
 
 const router = useRouter();
+const isMenuOpen = ref(false);
 
-// URLs de Assets (Certifique-se que estas URLs existam na sua pasta public/assets)
-const BG_WAVES_URL = '../assets/image 4.png';
-const MOCKUP_TOTEM_URL = '../assets/image 3.png';
-const MOCKUP_CHARTS_URL = '../assets/image 8.png';
-const MOCKUP_KDS_URL = '../assets/image 9.png'; 
+const navigateToLogin = () => { router.push('/login'); };
+const toggleMenu = () => { isMenuOpen.value = !isMenuOpen.value; };
 
-// Funções de Navegação
-const navigateToPlans = () => {
-  router.push('/planos');
-};
-const navigateToLogin = () => {
-  router.push('/login');
+const navigateToRegister = () => {
+  router.push('/register'); 
 };
 
-const COLOR_PRIMARY = 'text-[#00ff6a]'; 
-const COLOR_TEXT = 'text-[#eaeaea]'; 
+// Função unificada para rolagem suave
+const scrollToSection = (sectionId) => {
+  const element = document.getElementById(sectionId);
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth' });
+    isMenuOpen.value = false; // Fecha o menu mobile se estiver aberto
+  }
+};
 </script>
 
 <template>
   <div class="min-h-screen bg-black font-inter relative overflow-hidden">
     
-    <!-- Imagem de Fundo (Ondas) -->
     <div 
-      class="absolute inset-0 z-0 opacity-10 md:opacity-15" 
-      :style="{ backgroundImage: `url(${BG_WAVES_URL})` }"
-      style="background-size: cover; background-position: center;"
+      class="absolute left-0 w-full z-0 pointer-events-none opacity-90 top-[5%] h-[12vh] lg:top-[12%] lg:h-[60vh]"
+      :style="{ backgroundImage: `url(${imgOndas})` }"
+      style="background-size: 100% 100%; background-repeat: no-repeat;"
     ></div>
-    <!-- Overlay Escuro -->
-    <div class="absolute inset-0 z-10 bg-black/70"></div>
-    
-    <!-- 1. HEADER/Navegação -->
-    <header class="relative z-20 flex justify-between items-center p-6 md:p-10 border-b border-gray-800">
-      <div class="text-4xl font-bold" :class="COLOR_PRIMARY">FoodSystem</div>
-      
-      <!-- Navegação Desktop -->
-      <nav class="hidden lg:flex space-x-12 text-xl font-bold" :class="COLOR_TEXT">
-        <a href="#sobre" class="hover:text-white transition-colors">Sobre</a>
-        <a href="#planos" @click.prevent="navigateToPlans" class="hover:text-white transition-colors cursor-pointer">Planos</a>
-        <a href="#contato" class="hover:text-white transition-colors">Contato</a>
-        <a @click.prevent="navigateToLogin" class="flex items-center space-x-2 hover:text-white transition-colors cursor-pointer">
-          <span>Login</span>
-          <User :color="COLOR_TEXT.replace('text-', '#')" :size="24" />
-        </a>
-      </nav>
-      
-      <!-- Menu Hambúrguer para Mobile -->
-      <button class="lg:hidden p-2 rounded-md hover:bg-gray-800 transition-colors">
-        <Menu class="w-8 h-8" :color="COLOR_TEXT.replace('text-', '#')" />
-      </button>
-    </header>
 
-    <!-- Conteúdo Principal -->
-    <main class="relative z-20 pt-16 pb-24 md:pt-32 px-6">
+    <div 
+      class="absolute bottom-0 left-0 w-full z-0 pointer-events-none opacity-80 h-[12vh] lg:h-[50vh]"
+      :style="{ backgroundImage: `url(${imgOndas})` }"
+      style="background-size: 100% 100%; background-repeat: no-repeat; transform: scaleX(-1);"
+    ></div>
+
+    <div class="relative z-10">
       
-      <!-- Seção 1: HERO - LAYOUT INVERTIDO (AUMENTADO) -->
-      <section class="max-w-7xl mx-auto flex flex-col lg:flex-row items-center lg:justify-between mb-40">
+      <header class="flex justify-between items-center px-5 py-4 lg:px-0 lg:py-8 max-w-[1200px] mx-auto relative">
         
-        <!-- Bloco 1: Mockup do Totem (ESQUERDA - AUMENTADO) -->
-        <div class="lg:w-1/2 order-1 lg:order-1 flex justify-center lg:justify-start mb-12 lg:mb-0">
-            <img :src="MOCKUP_TOTEM_URL" 
-                 alt="Mockup do Totem de Autoatendimento"
-                 class="w-[350px] md:w-[550px] h-auto rounded-3xl shadow-2xl object-cover" 
-                 onerror="this.onerror=null;this.src='https://placehold.co/550x800/333/999?text=Totem+Mockup';" 
-            />
-        </div>
-        
-        <!-- Bloco 2: Textos e Call to Action (DIREITA - AUMENTADO) -->
-        <div class="lg:w-1/2 order-2 lg:order-2 mt-12 lg:mt-0 text-center lg:text-left lg:pl-10">
-          <div class="text-6xl font-bold mb-4" :class="COLOR_PRIMARY">
-            FoodSystem
-          </div>
+        <div class="flex-1 flex justify-start items-center">
+          <img :src="imgLogo" alt="Logo PedidoFácil" class="h-9 lg:h-32 w-auto object-contain" />
           
-          <h1 class="text-5xl md:text-7xl font-bold mb-8 leading-tight" :class="COLOR_TEXT">
-            Personalize a experiência do seu restaurante
-          </h1>
-          
-          <p class="text-xl md:text-2xl font-regular leading-relaxed mb-12" :class="COLOR_TEXT">
-            Bem-vindo ao FoodSystem. Nossa plataforma é a 
-            <strong class="font-bold">solução ideal</strong> para <strong class="font-bold">restaurantes</strong> que querem <strong class="font-bold">modernizar</strong> sua operação e <strong class="font-bold">aumentar as vendas.</strong>
-          </p>
-          
-          <button 
-            @click="navigateToPlans"
-            class="bg-[#00a444] text-white font-bold py-4 px-12 rounded-full text-xl shadow-lg transition-all hover:bg-[#00d431] transform hover:scale-105"
-          >
-            Ver Planos e Começar
+          <button @click="toggleMenu" class="lg:hidden p-1 ml-auto z-50 relative">
+            <component :is="isMenuOpen ? X : Menu" class="w-7 h-7 text-[#00D26A]" />
           </button>
         </div>
-      </section>
-
-      <!-- Seção 2: ESTATÍSTICAS -->
-      <section class="max-w-7xl mx-auto mb-40 text-center">
-        <h2 class="text-4xl font-bold mb-16" :class="COLOR_TEXT">Nossos Resultados Falam por Nós</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
-            
-            <!-- Cliente Ativos -->
-            <div class="p-8 rounded-xl bg-white/5 backdrop-blur-sm border border-gray-700">
-                <div class="text-7xl font-bold mb-2" :class="COLOR_TEXT">Mais de 10000</div>
-                <div class="text-3xl font-bold" :class="COLOR_TEXT">Clientes ativos</div>
-            </div>
-            
-            <!-- Avaliações Positivas -->
-            <div class="p-8 rounded-xl bg-white/5 backdrop-blur-sm border border-gray-700">
-                <div class="text-7xl font-bold mb-2" :class="COLOR_TEXT">Mais de 7000</div>
-                <div class="text-3xl font-bold" :class="COLOR_TEXT">Avaliações positivas</div>
-            </div>
-            
-            <!-- Desconto -->
-            <div class="p-8 rounded-xl bg-white/5 backdrop-blur-sm border border-gray-700">
-                <div class="text-7xl font-bold mb-2" :class="COLOR_TEXT">Até 60%</div>
-                <p class="text-3xl font-bold" :class="COLOR_TEXT">
-                    De desconto para novos usuários
-                </p>
-            </div>
-        </div>
-      </section>
-
-      <!-- Seção 3: SOBRE e FUNCIONALIDADES (Mockups DIMINUIDOS) -->
-      <section id="sobre" class="max-w-7xl mx-auto mb-40 text-left">
         
-        <h2 class="text-4xl font-bold mb-12 text-center" :class="COLOR_TEXT">
-          Otimize seu restaurante e aumente as vendas
-        </h2>
-
-        <!-- Texto Central -->
-        <div class="max-w-4xl mx-auto text-lg leading-relaxed text-gray-400 mb-16">
-          <p class="mb-4">
-            Nosso sistema é mais do que apenas um menu online; é uma 
-            <strong class="font-bold text-white">plataforma completa para a gestão do seu restaurante.</strong>
-            Com ele, você ganha eficiência, agilidade e lucratividade.
-          </p>
-          <p class="mb-4">
-            <strong class="font-bold text-white">Reduza erros e otimize o tempo:</strong> Os pedidos feitos nos 
-            <strong class="font-bold text-white">totens, tablets ou no caixa</strong> são enviados diretamente e sem erros para a cozinha, eliminando a confusão de comandas de papel. 
-          </p>
-          <p>
-            <strong class="font-bold text-white">Tenha total controle:</strong> Altere preços, adicione ou remova produtos e personalize o cardápio em tempo real, de forma simples e rápida.
-          </p>
-        </div>
-
-        <!-- Imagens de Funcionalidades (KDS e Relatórios) - DIMINUIDOS AQUI -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 max-w-4xl mx-auto">
-            
-            <!-- Soluções Rápidas (Mockup KDS) -->
-            <div class="text-center">
-                <h3 class="text-2xl font-bold mb-4" :class="COLOR_TEXT">Soluções Rápidas</h3>
-                <img :src="MOCKUP_KDS_URL" 
-                     alt="Mockup de Pedidos Prontos (KDS)"
-                     class="w-full h-auto rounded-xl shadow-xl border border-gray-700 max-w-md mx-auto"
-                     onerror="this.onerror=null;this.src='https://placehold.co/400x280/1A1A1A/00ff6a?text=Pedidos+Prontos+Mockup';" 
-                />
-            </div>
-
-            <!-- Relatórios de Desempenho (Mockup Charts) -->
-            <div class="text-center">
-                <h3 class="text-2xl font-bold mb-4" :class="COLOR_TEXT">Relatórios de Desempenho</h3>
-                <img :src="MOCKUP_CHARTS_URL" 
-                     alt="Mockup de Gráficos e Relatórios"
-                     class="w-full h-auto rounded-xl shadow-xl border border-gray-700 max-w-md mx-auto"
-                     onerror="this.onerror=null;this.src='https://placehold.co/400x280/1A1A1A/00ff6a?text=Gráficos+e+Estatísticas';" 
-                />
-            </div>
+        <div class="flex-[2] flex justify-center items-center hidden lg:flex">
+          <nav class="space-x-10 text-lg font-bold text-white">
+            <a @click.prevent="scrollToSection('sobre')" href="#sobre" class="hover:text-[#00D26A] transition-colors cursor-pointer">Sobre</a>
+            <a @click.prevent="scrollToSection('planos')" href="#planos" class="hover:text-[#00D26A] transition-colors cursor-pointer">Planos</a>
+            <a @click.prevent="scrollToSection('contato')" href="#contato" class="hover:text-[#00D26A] transition-colors cursor-pointer">Contato</a>
+          </nav>
         </div>
         
-      </section>
-      
-      <!-- Seção 4: Contato -->
-      <section id="contato" class="max-w-4xl mx-auto text-center">
-        <h2 class="text-4xl font-bold mb-10" :class="COLOR_TEXT">Fale Conosco</h2>
+        <div class="flex-1 flex justify-end hidden lg:flex">
+          <a @click.prevent="navigateToLogin" class="flex items-center space-x-2 text-white font-semibold text-lg cursor-pointer hover:text-[#00D26A]">
+            <span>Login</span>
+            <User class="text-white" :size="24" />
+          </a>
+        </div>
+      </header>
+
+      <div v-if="isMenuOpen" class="lg:hidden bg-[#050F0D]/95 backdrop-blur-md border-b border-[#111] p-5 absolute top-[60px] left-0 w-full z-40 shadow-2xl">
+        <a href="#sobre" @click.prevent="scrollToSection('sobre')" class="block py-4 border-b border-[#1A1A1A] text-white text-base font-bold text-center">Sobre nós</a>
+        <a href="#planos" @click.prevent="scrollToSection('planos')" class="block py-4 border-b border-[#1A1A1A] text-white text-base font-bold text-center">Planos</a>
+        <a href="#contato" @click.prevent="scrollToSection('contato')" class="block py-4 border-b border-[#1A1A1A] text-white text-base font-bold text-center">Contato</a>
+         <a @click="navigateToLogin" class="block py-4 text-[#00D26A] text-base font-bold text-center flex justify-center items-center gap-2 cursor-pointer hover:bg-[#00D26A]/10 rounded-lg mt-2">
+            <User :size="18" /> Login
+        </a>
+      </div>
+
+      <main class="flex flex-col items-center pb-20">
         
-        <div class="bg-[#1A1A1A] p-8 rounded-xl shadow-xl border border-gray-700">
-            <h3 class="text-2xl font-semibold mb-6" :class="COLOR_PRIMARY">Envie uma mensagem</h3>
-            <form class="space-y-4">
-                <input type="text" placeholder="Seu Nome" class="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 placeholder-gray-500" />
-                <input type="email" placeholder="Seu Email" class="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 placeholder-gray-500" />
-                <textarea placeholder="Sua Mensagem" rows="4" class="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 placeholder-gray-500"></textarea>
-                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors">
-                    Enviar
-                </button>
-            </form>
-        </div>
+        <section class="w-full max-w-[1200px] px-4 pt-10 pb-12 lg:px-0 lg:pt-20 lg:pb-20 flex flex-row items-start lg:items-center justify-between gap-4 lg:gap-16">
+          
+          <div class="flex justify-center items-start lg:items-center flex-none w-[45%] lg:flex-1 order-1 lg:order-1">
+             <img :src="imgTotem" alt="Totem" class="w-full lg:w-[480px] h-auto object-contain transition-transform duration-500 hover:scale-105" />
+          </div>
+          
+          <div class="flex-1 flex flex-col items-start text-left w-[55%] lg:w-full order-2 lg:order-2">
+            
+            <img :src="imgLogo" alt="Logo" class="h-10 lg:h-48 w-auto mb-5 lg:mb-10 object-contain" />
+            
+            <h1 class="text-white font-extrabold mb-4 lg:mb-8 text-lg lg:text-[60px] leading-tight lg:leading-[1.1]">
+              Personalize a experiência do seu restaurante
+            </h1>
+            
+            <p class="text-gray-200 mb-6 lg:mb-12 text-[15px] lg:text-[22px] leading-relaxed lg:leading-[34px] max-w-full lg:max-w-[650px]">
+              Bem-vindo ao PedidoFácil. Nossa plataforma é a <strong class="text-[#00D26A]">solução ideal</strong> para <strong class="text-white">restaurantes</strong> que querem <strong class="text-white">modernizar</strong> sua operação e <strong class="text-[#00D26A]">aumentar as vendas</strong>.
+            </p>
+            
+            <div class="flex flex-col lg:flex-row gap-3 w-full lg:w-auto">
+              <button @click="scrollToSection('planos')" class="bg-[#00D26A] text-black font-bold py-2 px-5 lg:py-4 lg:px-12 rounded-lg lg:rounded-xl text-xs lg:text-lg hover:bg-[#00b058] transition-all shadow-[0_0_20px_rgba(0,210,106,0.3)] w-auto transform hover:-translate-y-1">
+                Ver Planos e Começar
+              </button>
+            </div>
+          </div>
+        </section>
 
-        <div class="flex justify-center space-x-12 mt-12" :class="COLOR_TEXT">
-            <a href="#" class="hover:text-[#00ff6a] transition-colors"><Instagram :size="32" /></a>
-            <a href="#" class="hover:text-[#00ff6a] transition-colors"><Phone :size="32" /></a>
-            <a href="#" class="hover:text-[#00ff6a] transition-colors"><Mail :size="32" /></a>
-        </div>
-      </section>
+        <section class="w-full max-w-[1200px] px-5 lg:px-0 py-16 flex flex-col lg:flex-row justify-around items-center gap-12 lg:gap-0 bg-white/5 rounded-3xl backdrop-blur-sm border border-white/10 mx-5 lg:mx-0">
+            <div class="flex flex-col items-center text-center">
+              <span class="text-gray-400 text-lg font-bold mb-1">Diversos</span>
+              <span class="text-[#00D26A] text-[56px] font-extrabold mb-2 leading-tight">Benefícios</span>
+              <span class="text-white text-xl font-medium max-w-[250px]">Para Aproveitar</span>
+            </div>
+            <div class="hidden lg:block w-px h-24 bg-gray-700"></div>
+            <div class="flex flex-col items-center text-center">
+              <span class="text-gray-400 text-lg font-bold mb-1">Maior</span>
+              <span class="text-[#00D26A] text-[56px] font-extrabold mb-2 leading-tight">Praticidade</span>
+              <span class="text-white text-xl font-medium max-w-[250px]">Com os pedidos</span>
+            </div>
+            <div class="hidden lg:block w-px h-24 bg-gray-700"></div>
+            <div class="flex flex-col items-center text-center">
+              <span class="text-gray-400 text-lg font-bold mb-1">Gestão</span>
+              <span class="text-[#00D26A] text-[56px] font-extrabold mb-2 leading-tight">Fácil</span>
+              <span class="text-white text-xl font-medium max-w-[250px]">De onde você estiver</span>
+            </div>
+        </section>
 
-    </main>
+        <section id="sobre" class="w-full max-w-[1200px] px-5 lg:px-0 py-24 text-center">
+          <h2 class="text-white text-3xl lg:text-[42px] font-bold mb-10 leading-tight">
+            Otimize seu restaurante e aumente as vendas
+          </h2>
+
+          <div class="text-gray-300 text-lg lg:text-xl leading-[30px] mb-16 max-w-[800px] mx-auto space-y-6">
+            <p>Uma <strong class="text-[#00D26A]">plataforma completa para a gestão do seu restaurante</strong>.</p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 max-w-[760px] mx-auto">
+            
+            <div class="w-full bg-[#111] py-12 px-6 rounded-3xl border border-gray-800 hover:border-[#00D26A] transition-all duration-300 group flex flex-col items-center h-full hover:shadow-[0_0_30px_rgba(0,210,106,0.1)]">
+              <h3 class="text-[#00D26A] text-2xl lg:text-3xl font-bold mb-6 group-hover:scale-105 transition-transform">
+                Reduza erros e otimize o tempo
+              </h3>
+              <p class="text-white text-base lg:text-lg leading-relaxed flex-grow mb-8">
+                Os pedidos feitos nos <strong class="font-bold">totens, tablets ou no caixa</strong> são enviados diretamente e sem erros para a cozinha, eliminando a confusão de comandas de papel.
+              </p>
+              <div class="p-4 bg-gray-900 rounded-full group-hover:bg-[#00D26A]/10 transition-colors mt-auto">
+                 <Check class="w-8 h-8 text-[#00D26A]" />
+              </div>
+            </div>
+
+            <div class="w-full bg-[#111] py-12 px-6 rounded-3xl border border-gray-800 hover:border-[#00D26A] transition-all duration-300 group flex flex-col items-center h-full hover:shadow-[0_0_30px_rgba(0,210,106,0.1)]">
+              <h3 class="text-[#00D26A] text-2xl lg:text-3xl font-bold mb-6 group-hover:scale-105 transition-transform">
+                Tenha total controle
+              </h3>
+              <p class="text-white text-base lg:text-lg leading-relaxed flex-grow mb-8">
+                Altere preços, adicione ou remova produtos e personalize o cardápio em tempo real, de forma <strong class="font-bold">simples e rápida</strong>, direto do painel administrativo.
+              </p>
+              <div class="p-4 bg-gray-900 rounded-full group-hover:bg-[#00D26A]/10 transition-colors mt-auto">
+                 <Check class="w-8 h-8 text-[#00D26A]" />
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <section class="w-full max-w-[1200px] px-5 lg:px-0 py-20">
+          <div class="flex flex-col lg:flex-row gap-16 items-center">
+            <div class="flex-1 group w-full">
+               <h3 class="text-white text-2xl lg:text-[32px] font-bold mb-8 text-center group-hover:text-[#00D26A] transition-colors">Soluções Rápidas</h3>
+               <div class="w-full flex items-center justify-center rounded-xl bg-transparent overflow-hidden">
+                 <img :src="imgInterface" class="w-full h-auto object-contain hover:scale-105 transition-transform duration-500 max-h-[400px]" />
+               </div>
+            </div>
+            <div class="flex-1 group w-full">
+               <h3 class="text-white text-2xl lg:text-[32px] font-bold mb-8 text-center group-hover:text-[#00D26A] transition-colors">Relatórios de Desempenho</h3>
+               <div class="w-full flex items-center justify-center rounded-xl bg-transparent overflow-hidden">
+                 <img :src="imgGraficos" class="w-full h-auto object-contain hover:scale-105 transition-transform duration-500 max-h-[400px]" />
+               </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="planos" class="w-full max-w-[1000px] px-5 lg:px-0 py-24 text-center">
+           <h2 class="text-white text-3xl lg:text-[42px] font-bold mb-16">Escolha seu plano</h2>
+           
+           <div class="flex flex-col lg:flex-row gap-8 justify-center items-stretch">
+              
+              <div class="flex-1 bg-[#111] px-8 py-12 rounded-[32px] border border-gray-800 flex flex-col items-center hover:border-[#00D26A] transition-all max-w-md mx-auto w-full h-full hover:shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+                 <h3 class="text-[#00D26A] text-3xl font-bold mb-4">Mensal</h3>
+                 <div class="text-white text-5xl lg:text-6xl font-bold mb-2">R$79,90<span class="text-xl font-normal text-gray-500">/mês</span></div>
+                 
+                 <div class="w-full h-px bg-gray-800 my-8"></div>
+
+                 <div class="flex flex-col gap-5 mb-10 w-full px-2 text-left">
+                    <div class="flex items-center gap-4 text-gray-300"><Check class="text-[#00D26A] w-6 h-6 flex-shrink-0" /> Suporte ao Usuário</div>
+                    <div class="flex items-center gap-4 text-gray-300"><Check class="text-[#00D26A] w-6 h-6 flex-shrink-0" /> Relatórios de Desempenho</div>
+                    <div class="flex items-center gap-4 text-gray-300"><Check class="text-[#00D26A] w-6 h-6 flex-shrink-0" /> Automação do Sistema</div>
+                    
+                    <div class="flex items-center gap-4 text-transparent opacity-0 select-none">
+                      <Check class="w-6 h-6 flex-shrink-0" /> Maior Estabilidade
+                    </div>
+                 </div>
+
+                 <button @click="navigateToRegister" class="bg-white text-black font-extrabold py-5 px-12 rounded-xl w-full hover:bg-gray-200 transition-colors mt-auto text-lg">
+                    Confirmar
+                 </button>
+              </div>
+
+              <div class="flex-1 bg-[#111] px-8 py-12 rounded-[32px] border-2 border-[#00D26A]/30 flex flex-col items-center hover:border-[#00D26A] transition-all max-w-md mx-auto w-full h-full hover:shadow-[0_0_40px_rgba(0,210,106,0.1)] relative">
+                 
+                 <div class="absolute top-0 right-0 bg-[#00D26A] text-black font-bold text-xs px-4 py-2 rounded-bl-xl rounded-tr-[30px]">RECOMENDADO</div>
+
+                 <h3 class="text-[#00D26A] text-3xl font-bold mb-4">Anual</h3>
+                 <div class="text-white text-5xl lg:text-6xl font-bold mb-2">R$49,90<span class="text-xl font-normal text-gray-500">/mês</span></div>
+                 
+                 <div class="w-full h-px bg-gray-800 my-8"></div>
+
+                 <div class="flex flex-col gap-5 mb-10 w-full px-2 text-left">
+                    <div class="flex items-center gap-4 text-gray-300"><Check class="text-[#00D26A] w-6 h-6 flex-shrink-0" /> Suporte ao Usuário</div>
+                    <div class="flex items-center gap-4 text-gray-300"><Check class="text-[#00D26A] w-6 h-6 flex-shrink-0" /> Relatórios de Desempenho</div>
+                    <div class="flex items-center gap-4 text-gray-300"><Check class="text-[#00D26A] w-6 h-6 flex-shrink-0" /> Automação do Sistema</div>
+                    <div class="flex items-center gap-4 text-white font-bold"><Check class="text-[#00D26A] w-6 h-6 flex-shrink-0" /> Maior Estabilidade</div>
+                 </div>
+
+                 <button @click="navigateToRegister" class="bg-white text-black font-extrabold py-5 px-12 rounded-xl w-full hover:bg-gray-200 transition-colors mt-auto text-lg">
+                    Confirmar
+                 </button>
+              </div>
+
+           </div>
+        </section>
+        
+        <section id="contato" class="w-full max-w-[650px] px-5 lg:px-0 mt-20 mb-32 text-center">
+          <h2 class="text-white text-3xl lg:text-[42px] font-bold mb-12">Fale Conosco</h2>
+          
+          <div class="bg-[#1A1A1A] rounded-[32px] p-8 lg:p-12 shadow-2xl border border-gray-800">
+              <form class="flex flex-col text-left">
+                  <h3 class="text-[#00D26A] text-xl font-bold mb-8 text-center uppercase tracking-wider">Envie uma mensagem</h3>
+                  
+                  <label class="text-gray-400 text-sm font-bold ml-1 mb-2">SEU NOME</label>
+                  <input type="text" placeholder="Ex: João Silva" class="bg-[#2C2C2E] border border-gray-700 rounded-xl p-5 text-white placeholder-gray-500 mb-6 focus:outline-none focus:border-[#00D26A] focus:ring-1 focus:ring-[#00D26A] transition-all" />
+
+                  <label class="text-gray-400 text-sm font-bold ml-1 mb-2">SEU EMAIL</label>
+                  <input type="email" placeholder="Ex: contato@email.com" class="bg-[#2C2C2E] border border-gray-700 rounded-xl p-5 text-white placeholder-gray-500 mb-6 focus:outline-none focus:border-[#00D26A] focus:ring-1 focus:ring-[#00D26A] transition-all" />
+
+                  <label class="text-gray-400 text-sm font-bold ml-1 mb-2">MENSAGEM</label>
+                  <textarea rows="5" placeholder="Como podemos ajudar?" class="bg-[#2C2C2E] border border-gray-700 rounded-xl p-5 text-white placeholder-gray-500 mb-8 focus:outline-none focus:border-[#00D26A] focus:ring-1 focus:ring-[#00D26A] resize-none transition-all"></textarea>
+
+                  <button type="submit" class="bg-[#00D26A] text-white font-extrabold text-xl py-5 rounded-xl hover:bg-[#00b058] transition-all shadow-lg hover:shadow-[0_0_20px_rgba(0,210,106,0.4)]">
+                      Enviar
+                  </button>
+              </form>
+          </div>
+        </section>
+
+      </main>
+    </div>
   </div>
 </template>
