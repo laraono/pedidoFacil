@@ -217,7 +217,7 @@ const handlePermanentDelete = (category) => {
     <div class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
       <div class="p-6 border-b border-gray-50">
         <h2 class="text-xl font-bold text-black">
-          Lista de Categorias
+          Lista de Categoria
         </h2>
       </div>
       <div class="hidden md:block overflow-x-auto">
@@ -335,8 +335,8 @@ const handlePermanentDelete = (category) => {
           <div>
             <label class="block text-gray-600 font-semibold mb-2">Nome da Categoria</label>
             <input type="text" v-model="form.name" name="name" maxlength="50" @blur="touchField('name')"
-              @input="() => { if (touched.name) validateField('name'); }" :class="{ 'border-red-500': errors.name }"
-              class="text-gray-900 w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              @input="() => { if (touched.name) validateField('name'); }"
+              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 transition-all outline-none"
               placeholder="Ex: Bebidas" />
             <p v-if="errors.name" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
               <CircleX :size="14" /> {{ errors.name }}

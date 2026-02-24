@@ -511,10 +511,8 @@ const handlePermanentDelete = (product) => {
                   maxlength="60"
                   @blur="touchField('name')"
                   @input="() => { if(touched.name) validateField('name'); }"
-                  :class="{ 'border-red-500': errors.name }"
                   placeholder="Ex: X-Salada" 
-                  class="text-gray-900 w-full p-2 text-sm sm:text-base border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500" 
-                />
+                  class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 transition-all outline-none" />
                 <p v-if="errors.name" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
                   <CircleX :size="14" /> {{ errors.name }}
                 </p>
@@ -527,9 +525,7 @@ const handlePermanentDelete = (product) => {
                   name="categoryId"
                   @blur="touchField('categoryId')"
                   @change="() => { if(touched.categoryId) validateField('categoryId'); }"
-                  :class="{ 'border-red-500': errors.categoryId }"
-                  class="text-gray-900 w-full p-2 text-sm sm:text-base border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 bg-white"
-                >
+                  class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 transition-all outline-none">
                   <option disabled value="">Selecione...</option>
                   <option v-for="cat in menuStore.activeCategories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                 </select>
@@ -540,7 +536,7 @@ const handlePermanentDelete = (product) => {
 
               <div>
                 <label class="block text-gray-600 font-semibold mb-1 text-sm sm:text-base">Descrição</label>
-                <textarea v-model="form.description" rows="3" maxlength="200" placeholder="Ingredientes e detalhes..." class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900"></textarea>
+                <textarea v-model="form.description" rows="3" maxlength="200" placeholder="Ingredientes e detalhes..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 transition-all outline-none"></textarea>
               </div>
 
               <div class="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-100">
@@ -554,16 +550,14 @@ const handlePermanentDelete = (product) => {
                     v-model="size.name" 
                     maxlength="30"
                     placeholder="Ex: Padrão, Grande..." 
-                    class="text-gray-900 w-full sm:flex-1 p-2 text-sm border border-gray-300 rounded" 
-                  />
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 transition-all outline-none" />
                   <div class="relative w-full sm:w-32">
-                    <span class="absolute left-2 top-2 text-gray-500 text-sm">R$</span>
                     <input 
                       type="text"
                       :value="currencyFormatter.format(size.price)"
                       @input="updatePrice(index, $event, 'sizes')"
                       @blur="touchField('sizes')"
-                      class="text-gray-900 w-full pl-8 p-2 text-sm border border-gray-300 rounded" 
+                      class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 transition-all outline-none"
                       placeholder="0,00"
                     />
                   </div>
@@ -585,15 +579,14 @@ const handlePermanentDelete = (product) => {
                     v-model="addon.name" 
                     maxlength="30"
                     placeholder="Ex: Bacon Extra" 
-                    class="text-gray-900 w-full sm:flex-1 p-2 text-sm border border-gray-300 rounded" 
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 transition-all outline-none" 
                   />
                   <div class="relative w-full sm:w-32">
-                    <span class="absolute left-2 top-2 text-gray-500 text-sm">R$</span>
                     <input 
                       type="text"
                       :value="currencyFormatter.format(addon.price)"
                       @input="updatePrice(index, $event, 'addons')"
-                      class="text-gray-900 w-full pl-8 p-2 text-sm border border-gray-300 rounded" 
+                      class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 transition-all outline-none"
                       placeholder="0,00"
                     />
                   </div>
