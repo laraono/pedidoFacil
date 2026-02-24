@@ -24,6 +24,7 @@ const auth = useAuthStore();
       <CardCardapio v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
       <CardCategorias v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
       <CardProdutos v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
+      <CardUsers v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
     </div>
   </main>
 </template>

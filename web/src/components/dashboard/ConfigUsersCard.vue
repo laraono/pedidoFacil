@@ -1,7 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router'
-import { ShieldCheck, User } from 'lucide-vue-next'; 
-import { Users } from 'lucide-vue-next'
+import { User } from 'lucide-vue-next';
 
 import usersImage from '@/assets/image 30.png'
 

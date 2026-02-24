@@ -45,12 +45,6 @@ const shouldShowNavbar = computed(() => {
 
 const allMenuItems = [
   { 
-    label: establishmentName, 
-    route: '/app/dashboard', 
-    icon: BarChart3,
-    permission: PERMISSIONS.RELATORIOS 
-  },
-  { 
     label: 'Pedidos', 
     route: '/app/kitchen', 
     icon: ChefHat,
@@ -140,6 +134,10 @@ const navigateTo = (path) => {
     isSidebarOpen.value = false;
   }
 };
+
+const goToDashboard = () => {
+  router.push('/app/dashboard');
+};
 </script>
 
 <template>
@@ -174,9 +172,11 @@ const navigateTo = (path) => {
       </nav>
 
       <div class="flex items-center gap-4 order-3">
-        <h1 class="font-medium text-sm md:text-base opacity-90 hidden sm:block text-right">{{ establishmentName }}</h1>
+        <h1 @click="goToDashboard" class="font-medium text-sm md:text-base opacity-90 hidden sm:block text-right cursor-pointer hover:opacity-100 transition-opacity">
+          {{ establishmentName }}
+        </h1>
         <button @click="toggleSidebar" class="p-2 hover:bg-white/10 rounded-lg transition-colors focus:outline-none active:scale-95">
-          <MenuIcon :size="28" />
+        <MenuIcon :size="28" />
         </button>
       </div>
     </header>
