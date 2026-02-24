@@ -38,7 +38,7 @@ function handleEdit() {
         @click="handleEdit"
         class="mt-auto w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
       >
-        Editar
+        Personalizar Visuais
       </button>
     </div>
   </div>
