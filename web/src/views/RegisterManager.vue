@@ -117,6 +117,7 @@ async function handleSubmit() {
                 </div>
             </div>
             <input id="nome" type="text" v-model="nome" required 
+                   minlength="5" maxlength="100"
                    placeholder="Ex: João da Silva"
                    class="w-full p-4 bg-white/5 rounded-2xl border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-brand-green/50 focus:bg-white/10 transition-all duration-300" />
         </div>
@@ -132,6 +133,7 @@ async function handleSubmit() {
                 </div>
             </div>
             <input id="email" type="email" v-model="email" required 
+                   maxlength="255"
                    placeholder="seu.email@restaurante.com"
                    class="w-full p-4 bg-white/5 rounded-2xl border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-brand-green/50 focus:bg-white/10 transition-all duration-300" />
         </div>
@@ -169,6 +171,8 @@ async function handleSubmit() {
                         :type="showPassword ? 'text' : 'password'" 
                         v-model="senha" 
                         required 
+                        minlength="6"
+                        maxlength="64"
                         placeholder="******"
                         class="w-full p-4 pr-12 bg-white/5 rounded-2xl border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-brand-green/50 focus:bg-white/10 transition-all duration-300" 
                     />
@@ -193,6 +197,8 @@ async function handleSubmit() {
                         :type="showConfirmPassword ? 'text' : 'password'" 
                         v-model="confirmarSenha" 
                         required 
+                        minlength="6"
+                        maxlength="64"
                         placeholder="******"
                         class="w-full p-4 pr-12 bg-white/5 rounded-2xl border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-brand-green/50 focus:bg-white/10 transition-all duration-300" 
                     />

@@ -93,6 +93,7 @@ const goToPlans = () => {
                   v-model="email" 
                   placeholder="exemplo@restaurante.com" 
                   required 
+                  maxlength="255"
                   class="w-full p-4 pl-12 bg-white/5 rounded-2xl border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-brand-green/50 focus:bg-white/10 transition-all duration-300" 
                 />
                 <Mail class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
@@ -111,6 +112,7 @@ const goToPlans = () => {
                   v-model="senha" 
                   placeholder="••••••••" 
                   required 
+                  maxlength="64"
                   class="w-full p-4 pl-12 bg-white/5 rounded-2xl border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-brand-green/50 focus:bg-white/10 transition-all duration-300" 
                 />
                 <Lock class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
