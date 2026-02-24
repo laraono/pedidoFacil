@@ -6,7 +6,7 @@ import App from './App.vue'
 import router from './router/index.js'
 
 import { initMockUsers } from '@/mock/authmock'
-import { initMockRoles } from '@/mock/rolesmock'
+import { initMockRoles } from '@/mock/authmock'
 import { useAuthStore } from '@/stores/auth'
 
 initMockUsers();

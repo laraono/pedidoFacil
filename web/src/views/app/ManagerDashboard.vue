@@ -7,6 +7,7 @@ import CardCargos from '@/components/dashboard/ConfigRolesCard.vue';
 import CardCardapio from '@/components/dashboard/ConfigMenuCard.vue';
 import CardCategorias from '@/components/dashboard/ConfigCategoriesCard.vue';
 import CardProdutos from '@/components/dashboard/ConfigProductsCard.vue';
+import CardUsers from '@/components/dashboard/ConfigUsersCard.vue'
 
 const auth = useAuthStore();
 </script>

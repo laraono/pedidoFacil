@@ -2,9 +2,9 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-// Ícones para enriquecer a interface
 import { LogIn, Lock, Mail, AlertCircle, Loader2, ArrowRight } from 'lucide-vue-next';
 import imgOndas from '@/assets/ondas.png';
+import { PERMISSIONS } from '@/utils/permissions';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -23,22 +23,40 @@ const handleLogin = async () => {
       email: email.value,
       senha: senha.value
     });
-    router.push("/app/dashboard");
+
+    const rotasPossiveis = [
+      { permission: PERMISSIONS.RELATORIOS, route: "/app/dashboard" },
+      { permission: PERMISSIONS.COZINHA, route: "/app/kitchen" },
+      { permission: PERMISSIONS.ESTOQUE, route: "/app/stock" },
+      { permission: PERMISSIONS.CARDAPIO, route: "/app/menu/manage" }, 
+      { permission: PERMISSIONS.FUNCIONARIOS, route: "/app/settings/roles" },
+      { permission: PERMISSIONS.CONFIGURACAO, route: "/app/settings/establishment" }, 
+      { permission: PERMISSIONS.ASSINATURA, route: "/app/subscription" }
+    ];
+
+    const destino = rotasPossiveis.find(item => authStore.hasPermission(item.permission));
+
+    if (destino) {
+      router.push(destino.route);
+    } else {
+      router.push("/app/dashboard");
+    }
+
   } catch (err) {
+    console.error(err);
     serverError.value = "Email ou senha incorretos.";
   } finally {
     isLoading.value = false;
   }
 };
 
-// Função para levar à seção de planos da Landing Page
 const goToPlans = () => {
   router.push({ path: '/', hash: '#planos' });
 };
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#050505] font-inter relative flex items-center justify-center p-4 md:p-8 overflow-hidden">
+  <div class="min-h-screen bg-dark-bg font-inter relative flex items-center justify-center p-4 md:p-8 overflow-hidden">
     
     <div 
       class="absolute top-1/2 left-0 w-full -translate-y-1/2 z-0 pointer-events-none opacity-40"
@@ -46,14 +64,14 @@ const goToPlans = () => {
       style="height: 70vh; background-size: cover; background-position: center; background-repeat: no-repeat;"
     ></div>
 
-    <div class="z-10 w-full max-w-md bg-[#121212]/90 border border-white/10 p-8 md:p-12 rounded-[2.5rem] shadow-2xl relative backdrop-blur-xl">
+    <div class="z-10 w-full max-w-md bg-dark-card/90 border border-white/10 p-8 md:p-12 rounded-[2.5rem] shadow-2xl relative backdrop-blur-xl">
       
       <div class="text-center mb-10">
         <h2 class="text-3xl font-bold text-white mb-2 tracking-tight">
           Bem-vindo de volta
         </h2>
         <p class="text-gray-400 text-base font-medium">
-          Acesse o painel do <span class="text-[#00D26A]">PedidoFácil</span>.
+          Acesse o painel do <span class="text-brand-green">PedidoFácil</span>.
         </p>
       </div>
 
@@ -75,7 +93,7 @@ const goToPlans = () => {
                   v-model="email" 
                   placeholder="exemplo@restaurante.com" 
                   required 
-                  class="w-full p-4 pl-12 bg-white/5 rounded-2xl border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-[#00D26A]/50 focus:bg-white/10 transition-all duration-300" 
+                  class="w-full p-4 pl-12 bg-white/5 rounded-2xl border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-brand-green/50 focus:bg-white/10 transition-all duration-300" 
                 />
                 <Mail class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
             </div>
@@ -84,7 +102,7 @@ const goToPlans = () => {
         <div class="space-y-2">
             <div class="flex justify-between items-center ml-2 mr-1">
                 <label for="senha" class="text-sm font-medium text-gray-300">Sua senha</label>
-                <a href="#" class="text-xs text-[#00D26A] hover:text-[#00b058] transition-colors hover:underline">Esqueceu a senha?</a>
+                <a href="#" class="text-xs text-brand-green hover:text-brand-green-hover transition-colors hover:underline">Esqueceu a senha?</a>
             </div>
             <div class="relative">
                 <input 
@@ -93,7 +111,7 @@ const goToPlans = () => {
                   v-model="senha" 
                   placeholder="••••••••" 
                   required 
-                  class="w-full p-4 pl-12 bg-white/5 rounded-2xl border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-[#00D26A]/50 focus:bg-white/10 transition-all duration-300" 
+                  class="w-full p-4 pl-12 bg-white/5 rounded-2xl border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-brand-green/50 focus:bg-white/10 transition-all duration-300" 
                 />
                 <Lock class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
             </div>
@@ -102,7 +120,7 @@ const goToPlans = () => {
         <button 
           type="submit" 
           :disabled="isLoading"
-          class="w-full py-4 bg-[#00D26A] text-black font-bold rounded-full text-lg transition-all duration-300 hover:bg-[#00b058] hover:shadow-[0_0_25px_rgba(0,210,106,0.3)] disabled:opacity-50 disabled:cursor-not-allowed mt-8 flex justify-center items-center gap-3 active:scale-[0.98]"
+          class="w-full py-4 bg-brand-green text-black font-bold rounded-full text-lg transition-all duration-300 hover:bg-brand-green-hover hover:shadow-lg hover:shadow-brand-green/30 disabled:opacity-50 disabled:cursor-not-allowed mt-8 flex justify-center items-center gap-3 active:scale-[0.98]"
         >
           <Loader2 v-if="isLoading" class="w-6 h-6 animate-spin" />
           <span v-else>Entrar no sistema</span>
@@ -114,8 +132,9 @@ const goToPlans = () => {
       <div class="mt-10 pt-6 border-t border-white/5 text-center">
           <p class="text-gray-400 text-sm mb-3">Ainda não é cliente?</p>
           <a  
+            @click.prevent="goToPlans"
             href="/#planos"
-            class="inline-flex items-center gap-2 text-[#00D26A] font-bold hover:text-[#00b058] transition-all group cursor-pointer"
+            class="inline-flex items-center gap-2 text-brand-green font-bold hover:text-brand-green-hover transition-all group cursor-pointer"
           >
             Ver planos disponíveis
             <ArrowRight class="w-4 h-4 transition-transform group-hover:translate-x-1" />
