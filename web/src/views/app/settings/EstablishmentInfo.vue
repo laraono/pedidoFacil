@@ -3,7 +3,7 @@ import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useOnboardingStore } from '@/stores/onboarding';
-import { ArrowLeft, CheckCircle, Upload } from 'lucide-vue-next';
+import { ArrowLeft, CheckCircle, CircleX, Upload } from 'lucide-vue-next';
 import { maskCNPJ, isValidCNPJ } from '@/utils/validator';
 import { getEstablishmentMock, updateEstablishmentMock } from '@/mock/stablishmentmock';
 
@@ -27,6 +27,14 @@ const serviceOptions = [
   'Atendimento no caixa'
 ];
 
+const errors = ref({
+  nome: null,
+  cnpj: null,
+  endereco: null,
+  pagamento: null,
+  atendimento: null
+});
+
 watch(cnpj, (value) => {
   if (!value) return;
   const masked = maskCNPJ(value);
@@ -34,6 +42,7 @@ watch(cnpj, (value) => {
     cnpj.value = masked;
   }
 });
+
 
 onMounted(async () => {
   const data = await getEstablishmentMock();
@@ -64,11 +73,44 @@ onMounted(async () => {
 });
 
 const saveInfo = async () => {
-  localError.value = null;
   isLoading.value = true;
 
-  if (!isValidCNPJ(cnpj.value)) {
-    localError.value = 'CNPJ inválido.';
+  errors.value = {
+    nome: null,
+    cnpj: null,
+    endereco: null,
+    pagamento: null,
+    atendimento: null
+  };
+
+  let hasError = false;
+
+  if (!nomeEstabelecimento.value || nomeEstabelecimento.value.length < 3) {
+    errors.value.nome = 'Informe um nome válido.';
+    hasError = true;
+  }
+
+  if (!cnpj.value || !isValidCNPJ(cnpj.value)) {
+    errors.value.cnpj = 'CNPJ inválido.';
+    hasError = true;
+  }
+
+  if (!endereco.value) {
+    errors.value.endereco = 'Informe o endereço.';
+    hasError = true;
+  }
+
+  if (!metodosPagamento.value.length) {
+    errors.value.pagamento = 'Selecione pelo menos um método de pagamento.';
+    hasError = true;
+  }
+
+  if (!formasAtendimento.value.length) {
+    errors.value.atendimento = 'Selecione pelo menos uma forma de atendimento.';
+    hasError = true;
+  }
+
+  if (hasError) {
     isLoading.value = false;
     return;
   }
@@ -82,7 +124,6 @@ const saveInfo = async () => {
   });
 
   authStore.setConfigStepComplete('info');
-
   isLoading.value = false;
   router.push('/app/dashboard');
 };
@@ -101,16 +142,18 @@ const saveInfo = async () => {
         </h1>
     </div>
 
-    <form @submit.prevent="saveInfo" class="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
+    <form @submit.prevent="saveInfo" novalidate class="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
         <div>
           <h2 class="text-2xl font-bold text-gray-800 mb-4">Informações gerais</h2>
           
           <div class="mb-6">
             <label for="nome" class="block text-gray-600 font-semibold mb-2">Nome do Estabelecimento:</label>
-            <input type="text" id="nome" v-model="nomeEstabelecimento" placeholder="Digite o nome" required
-                   minlength="3" maxlength="100"
+            <input type="text" id="nome" v-model="nomeEstabelecimento" placeholder="Digite o nome" maxlength="100"
                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 transition-all outline-none" />
+            <p v-if="errors.nome" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
+              <CircleX :size="14" /> {{ errors.nome }}
+            </p>
           </div>
 
           <div class="mb-6">
@@ -118,8 +161,8 @@ const saveInfo = async () => {
             <input type="text" id="cnpj" v-model="cnpj" placeholder="00.000.000/0000-00" required
                    maxlength="18"
                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 transition-all outline-none" />
-            <p v-if="localError" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
-              <CheckCircle :size="14" class="rotate-180" /> {{ localError }}
+            <p v-if="errors.cnpj" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
+              <CircleX :size="14" /> {{ errors.cnpj }}
             </p>
           </div>
 
@@ -128,11 +171,14 @@ const saveInfo = async () => {
             <input type="text" id="endereco" v-model="endereco" placeholder="Rua, Número, Bairro, Cidade - UF"
                    maxlength="255"
                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 transition-all outline-none" />
+            <p v-if="errors.endereco" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
+              <CircleX :size="14" /> {{ errors.endereco }}
+            </p>
           </div>
 
           <div class="mb-6">
             <label class="block text-gray-600 font-semibold mb-2">Logo da Marca:</label>
-            <div class="p-3 border border-gray-300 rounded-lg bg-gray-50 flex justify-between items-center text-gray-900 cursor-pointer hover:bg-gray-100 transition-colors border-dashed border-2">
+            <div class="p-3 border-gray-300 rounded-lg bg-gray-50 flex justify-between items-center text-gray-900 cursor-pointer hover:bg-gray-100 transition-colors border-dashed border-2">
               <span class="text-gray-500 text-sm">Fazer upload (PNG ou JPG)</span>
               <Upload :size="20" class="text-gray-400" />
             </div>
@@ -149,6 +195,9 @@ const saveInfo = async () => {
                      class="h-5 w-5 text-brand-green border-gray-300 rounded focus:ring-brand-green transition-colors cursor-pointer" />
               <label :for="option" class="ml-3 text-gray-700 cursor-pointer group-hover:text-gray-900 transition-colors font-medium">{{ option }}</label>
             </div>
+            <p v-if="errors.pagamento" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
+              <CircleX :size="14" /> {{ errors.pagamento }}
+            </p>
           </div>
 
           <div class="mb-6">
@@ -158,13 +207,16 @@ const saveInfo = async () => {
                      class="h-5 w-5 text-brand-green border-gray-300 rounded focus:ring-brand-green transition-colors cursor-pointer" />
               <label :for="option" class="ml-3 text-gray-700 cursor-pointer group-hover:text-gray-900 transition-colors font-medium">{{ option }}</label>
             </div>
+            <p v-if="errors.atendimento" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
+              <CircleX :size="14" /> {{ errors.atendimento }}
+            </p>
           </div>
         </div>
       </div>
 
       <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end">
         <button type="submit" :disabled="isLoading"
-                class="py-3 px-10 bg-brand-green text-black font-bold rounded-xl hover:bg-brand-green-hover transition-all active:scale-95 disabled:bg-gray-300 shadow-lg shadow-brand-green/20">
+                class="py-3 px-10 bg-brand-green text-white font-bold rounded-xl hover:bg-brand-green-hover transition-all active:scale-95 disabled:bg-gray-300 shadow-lg shadow-brand-green/20">
           {{ isLoading ? 'Salvando...' : 'Salvar Informações' }}
         </button>
       </div>

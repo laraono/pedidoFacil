@@ -1,6 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router';
-import { Utensils } from 'lucide-vue-next';
+import { Notebook } from 'lucide-vue-next';
 import menuImage from '@/assets/cardapio.png'; 
 
 const router = useRouter();
@@ -17,7 +17,7 @@ function handleEdit() {
       
       <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-2">
         <div class="p-2 bg-green-50 rounded-lg text-[#00D26A]">
-          <Utensils :size="24" />
+          <Notebook :size="24" />
         </div>
         <span>Cardápio Digital</span>
       </h3>

@@ -197,7 +197,7 @@ const handlePermanentDelete = (category) => {
         </button>
 
         <button v-if="!showDeleted" @click="openAddModal"
-          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 shadow-lg transition-transform hover:scale-105 w-full sm:w-auto">
+          class="bg-brand-green hover:bg-brand-green-hover text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 shadow-lg">
           <PlusCircle :size="20" />
           <span>Nova Categoria</span>
         </button>
@@ -319,7 +319,7 @@ const handlePermanentDelete = (category) => {
           <button @click="showModal = false"
             class="px-4 py-2 text-gray-600 font-semibold hover:bg-gray-200 rounded-lg transition-colors">Cancelar</button>
           <button @click="saveCategory"
-            class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors">
+            class="px-6 py-2 bg-brand-green text-white font-bold rounded-lg hover:bg-brand-green-hover transition-colors">
             {{ isEditing ? 'Salvar Alterações' : 'Criar Categoria' }}
           </button>
         </div>

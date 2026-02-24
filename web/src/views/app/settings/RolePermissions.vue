@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import { ArrowLeft, CheckCircle, Trash, HelpCircle, PlusCircle, Users } from 'lucide-vue-next';
+import { ArrowLeft, CheckCircle, Trash, HelpCircle, PlusCircle, Users, CircleX } from 'lucide-vue-next';
 
 import { PERMISSIONS } from '@/utils/permissions';
 import { getRolesMock, saveRolesMock } from '@/mock/authmock';
@@ -30,6 +30,8 @@ const ALL_PERMISSIONS = [
   { key: PERMISSIONS.NOTIFICACOES, label: "Enviar Notificações" }
 ];
 
+const errors = ref({});
+
 onMounted(() => {
   roles.value = getRolesMock();
 });
@@ -53,12 +55,25 @@ const removeRole = (id) => {
 
 const saveRoles = async () => {
   isLoading.value = true;
+  errors.value = {};
+  let hasError = false;
+
+  roles.value.forEach(role => {
+    if (!role.name || role.name.trim().length < 3) {
+      errors.value[role.id] = 'O nome do cargo deve ter pelo menos 3 caracteres.';
+      hasError = true;
+    }
+  });
+
+  if (hasError) {
+    isLoading.value = false;
+    return;
+  }
 
   await saveRolesMock(roles.value);
 
   authStore.setConfigStepComplete('roles');
   isLoading.value = false;
-
   router.push('/app/dashboard');
 };
 </script>
@@ -75,7 +90,7 @@ const saveRoles = async () => {
           <CheckCircle v-if="authStore.configStatus.roles" :size="24" class="text-green-500 ml-4" />
         </h1>
         <button @click="addRole"
-                class="py-2.5 px-5 bg-brand-green text-black font-bold rounded-xl flex items-center hover:bg-brand-green-hover transition-all ml-auto shadow-md active:scale-95">
+                class="py-2.5 px-5 bg-brand-green text-white font-bold rounded-xl flex items-center hover:bg-brand-green-hover transition-all ml-auto shadow-md active:scale-95">
             <PlusCircle :size="20" class="mr-2" />
             Criar Cargo
         </button>
@@ -102,9 +117,11 @@ const saveRoles = async () => {
                         </div>
                     </span>
                 </label>
-                <input type="text" v-model="role.name" placeholder="Ex: Churrasqueiro" required
-                       minlength="3" maxlength="50"
+                <input type="text" v-model="role.name" placeholder="Ex: Churrasqueiro" maxlength="50"
                        class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 outline-none transition-all font-semibold" />
+                <p v-if="errors[role.id]" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
+                  <CircleX :size="14" /> {{ errors[role.id] }}
+                </p>
             </div>
             <button @click="removeRole(role.id)" 
                     type="button"
@@ -143,7 +160,7 @@ const saveRoles = async () => {
         
         <div class="mt-10 pt-8 border-t border-gray-200 flex justify-end">
             <button type="submit" :disabled="isLoading"
-                    class="py-4 px-12 bg-brand-green text-black font-extrabold rounded-2xl hover:bg-brand-green-hover transition-all active:scale-95 disabled:bg-gray-200 disabled:text-gray-400 shadow-lg shadow-brand-green/20">
+                    class="py-4 px-12 bg-brand-green text-white font-extrabold rounded-2xl hover:bg-brand-green-hover transition-all active:scale-95 disabled:bg-gray-200 disabled:text-gray-400 shadow-lg shadow-brand-green/20">
                 {{ isLoading ? 'Processando...' : 'Finalizar Configuração de Cargos' }}
             </button>
         </div>

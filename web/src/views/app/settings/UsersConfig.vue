@@ -3,7 +3,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { isValidCPF, maskCPF } from '@/utils/validator';
-import { ArrowLeft, PlusCircle, Trash, Pencil, X } from 'lucide-vue-next';
+import { ArrowLeft, PlusCircle, Trash, Pencil, X, CircleX} from 'lucide-vue-next';
 import { getRolesMock, initMockRoles } from '@/mock/authmock'; 
 
 const USERS_KEY = "users";
@@ -16,7 +16,14 @@ const roles = ref([]);
 const isLoading = ref(false);
 const showForm = ref(false);
 const editingUser = ref(null);
-const localError = ref(null);
+
+const errors = ref({
+  name: null,
+  email: null,
+  cpf: null,
+  password: null,
+  roleId: null
+});
 
 const currentUser = computed(() => authStore.user);
 
@@ -38,7 +45,7 @@ watch(
       form.value.cpf = masked;
     }
     if (isValidCPF(masked)) {
-      localError.value = null;
+      errors.value.cpf = null;
     }
   }
 );
@@ -78,12 +85,45 @@ function closeForm() {
 }
 
 function saveUser() {
-  localError.value = null;
+  errors.value = {
+    name: null,
+    email: null,
+    cpf: null,
+    password: null,
+    roleId: null
+  };
 
-  if (!isValidCPF(form.value.cpf)) {
-    localError.value = 'O CPF inserido é inválido.';
-    return;
+  let hasError = false;
+
+  if (!form.value.name || form.value.name.trim().length < 5) {
+    errors.value.name = 'O nome deve ter pelo menos 5 caracteres.';
+    hasError = true;
   }
+
+  if (!form.value.email) {
+    errors.value.email = 'Informe um email.';
+    hasError = true;
+  } else if (!isValidEmail(form.value.email)) {
+    errors.value.email = 'O email informado não é válido.';
+    hasError = true;
+  }
+
+  if (!form.value.cpf || !isValidCPF(form.value.cpf)) {
+    errors.value.cpf = 'O CPF inserido é inválido.';
+    hasError = true;
+  }
+
+  if (!form.value.password || form.value.password.length < 6) {
+    errors.value.password = 'A senha deve ter pelo menos 6 caracteres.';
+    hasError = true;
+  }
+
+  if (!form.value.roleId) {
+    errors.value.roleId = 'Selecione um cargo.';
+    hasError = true;
+  }
+
+  if (hasError) return;
 
   isLoading.value = true;
 
@@ -132,6 +172,11 @@ function isActive(status) {
   if (!status) return true;
   return status.toString().trim().toUpperCase() === 'ATIVO';
 }
+
+function isValidEmail(email) {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+}
 </script>
 
 <template>
@@ -147,7 +192,7 @@ function isActive(status) {
 
       <button
         @click="openForm()"
-        class="sm:ml-auto flex items-center justify-center bg-brand-green text-white px-5 py-2.5 rounded-xl font-bold hover:bg-brand-green-hover transition-all active:scale-95 shadow-sm"
+        class="sm:ml-auto flex items-center justify-center bg-brand-green text-white px-5 py-2.5 rounded-xl font-bold hover:bg-brand-green-hover"
       >
         <PlusCircle :size="18" class="mr-2" />
         Novo Usuário
@@ -164,41 +209,49 @@ function isActive(status) {
         </button>
       </div>
 
-      <form @submit.prevent="saveUser" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <form @submit.prevent="saveUser" novalidate class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         <div>
           <label class="block font-bold mb-1.5 text-gray-700 ml-1">Nome Completo</label>
-          <input v-model="form.name" required type="text"
-                 minlength="5" maxlength="100"
+          <input v-model="form.name" type="text" maxlength="100"
                  placeholder="Ex: João Silva"
                  class="w-full p-3 border border-gray-300 rounded-xl text-black focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green outline-none transition-all" />
+          <p v-if="errors.name" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
+            <CircleX :size="14" /> {{ errors.name }}
+          </p>
         </div>
 
         <div>
           <label class="block font-bold mb-1.5 text-gray-700 ml-1">Email Profissional</label>
-          <input v-model="form.email" required type="email"
+          <input v-model="form.email" type="email"
                  maxlength="255"
                  placeholder="exemplo@email.com"
                  class="w-full p-3 border border-gray-300 rounded-xl text-black focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green outline-none transition-all" />
+          <p v-if="errors.email" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
+            <CircleX :size="14" /> {{ errors.email }}
+          </p>
         </div>
 
         <div>
           <label class="block font-bold mb-1.5 text-gray-700 ml-1">CPF</label>
-          <input v-model="form.cpf" required type="text"
+          <input v-model="form.cpf" type="text"
                  maxlength="14"
                  placeholder="000.000.000-00"
                  class="w-full p-3 border border-gray-300 rounded-xl text-black focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green outline-none transition-all" />
-          <p v-if="localError" class="text-red-500 text-xs mt-2 font-semibold ml-1">
-            ⚠️ {{ localError }}
+          <p v-if="errors.cpf" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
+            <CircleX :size="14" /> {{ errors.cpf }}
           </p>
         </div>
 
         <div>
           <label class="block font-bold mb-1.5 text-gray-700 ml-1">Senha</label>
-          <input v-model="form.password" required type="password"
+          <input v-model="form.password" type="password"
                  minlength="6" maxlength="64"
                  placeholder="••••••••"
                  class="w-full p-3 border border-gray-300 rounded-xl text-black focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green outline-none transition-all" />
+            <p v-if="errors.password" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
+              <CircleX :size="14" /> {{ errors.password }}
+            </p>
         </div>
 
         <div class="md:col-span-2">
@@ -214,12 +267,15 @@ function isActive(status) {
               {{ role.name }}
             </option>
           </select>
+          <p v-if="errors.roleId" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
+            <CircleX :size="14" /> {{ errors.roleId }}
+          </p>
         </div>
 
         <div class="md:col-span-2 flex gap-4 pt-2">
           <button type="submit"
                   :disabled="isLoading"
-                  class="bg-brand-green text-white px-8 py-3 rounded-xl font-bold hover:bg-brand-green-hover transition-all shadow-md active:scale-95 disabled:opacity-50">
+                  class="bg-brand-green text-white px-8 py-3 rounded-xl font-bold hover:bg-brand-green-hover">
             {{ isLoading ? 'Salvando...' : 'Salvar Usuário' }}
           </button>
 

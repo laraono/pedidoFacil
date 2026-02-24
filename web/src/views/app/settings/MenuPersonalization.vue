@@ -129,7 +129,7 @@ const savePersonalization = () => {
 
         <div class="mt-10 pt-6 border-t border-gray-100 flex justify-end">
           <button type="submit" :disabled="isLoading"
-                  class="py-3 px-10 bg-brand-green text-black font-bold rounded-xl hover:bg-brand-green-hover transition-all active:scale-95 disabled:bg-gray-300 shadow-lg shadow-brand-green/20">
+                  class="py-3 px-10 bg-brand-green text-white font-bold rounded-xl hover:bg-brand-green-hover transition-all active:scale-95 disabled:bg-gray-300 shadow-lg shadow-brand-green/20">
             {{ isLoading ? 'Salvando...' : 'Salvar Personalização' }}
           </button>
         </div>

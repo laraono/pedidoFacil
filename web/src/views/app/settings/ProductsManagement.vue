@@ -271,7 +271,7 @@ const handlePermanentDelete = (product) => {
         <button 
           v-if="!showDeleted"
           @click="openAddModal" 
-          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
+          class="bg-brand-green hover:bg-brand-green-hover text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 shadow-lg"
         >
           <PlusCircle :size="20" />
           <span class="text-sm sm:text-base">Novo Produto</span>
@@ -548,7 +548,7 @@ const handlePermanentDelete = (product) => {
 
         <div class="p-4 sm:p-6 border-t border-gray-100 bg-gray-50 flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
           <button @click="showModal = false" class="w-full sm:w-auto px-4 sm:px-6 py-2 text-gray-600 font-semibold hover:bg-gray-200 rounded-lg transition-colors text-sm sm:text-base">Cancelar</button>
-          <button @click="saveProduct" class="w-full sm:w-auto px-6 sm:px-8 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md text-sm sm:text-base">
+          <button @click="saveProduct" class="w-full sm:w-auto px-6 sm:px-8 py-2 bg-brand-green text-white font-bold rounded-lg hover:bg-brand-green-hover transition-colors shadow-md text-sm sm:text-base">
             {{ isEditing ? 'Salvar Alterações' : 'Criar Produto' }}
           </button>
         </div>
