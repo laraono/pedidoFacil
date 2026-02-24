@@ -21,10 +21,10 @@ const auth = useAuthStore();
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 items-stretch">
       <CardEstabelecimento v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
       <CardCargos v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
+      <CardUsers v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
       <CardCardapio v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
       <CardCategorias v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
       <CardProdutos v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
-      <CardUsers v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
     </div>
   </main>
 </template>

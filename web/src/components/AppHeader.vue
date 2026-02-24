@@ -9,8 +9,7 @@ import {
   LogOut, 
   Menu as MenuIcon, 
   X, 
-  ChevronDown, 
-  BarChart3,      
+  ChevronDown,    
   ChefHat,        
   Package,        
   UtensilsCrossed,
@@ -172,11 +171,9 @@ const goToDashboard = () => {
       </nav>
 
       <div class="flex items-center gap-4 order-3">
-        <h1 @click="goToDashboard" class="font-medium text-sm md:text-base opacity-90 hidden sm:block text-right cursor-pointer hover:opacity-100 transition-opacity">
-          {{ establishmentName }}
-        </h1>
+        <h1 @click="goToDashboard" class="font-medium text-sm md:text-base opacity-90 hidden sm:block text-right cursor-pointer hover:opacity-100 transition-opacity"> {{ establishmentName }} </h1>
         <button @click="toggleSidebar" class="p-2 hover:bg-white/10 rounded-lg transition-colors focus:outline-none active:scale-95">
-        <MenuIcon :size="28" />
+          <MenuIcon :size="28" />
         </button>
       </div>
     </header>
