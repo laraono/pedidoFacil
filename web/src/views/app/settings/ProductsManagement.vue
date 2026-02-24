@@ -3,9 +3,9 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMenuStore } from '@/stores/productsManagement.js';
 import { 
-  ArrowLeft, PlusCircle, Edit, 
+  ArrowLeft, PlusCircle, Pencil, 
   Image as ImageIcon, X, Plus, Trash2, Search,
-  Archive, RotateCcw 
+  Archive, RotateCcw, CircleX
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -311,89 +311,149 @@ const handlePermanentDelete = (product) => {
       </p>
     </div>
 
-    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-x-auto">
-      <table class="w-full text-left border-collapse min-w-[740px]">
-        <thead class="bg-gray-50 text-gray-600 uppercase text-xs sm:text-sm font-semibold">
-          <tr>
-            <th class="p-2 sm:p-4 border-b w-16">Imagem</th>
-            <th class="p-2 sm:p-4 border-b">Produto</th>
-            <th class="p-2 sm:p-4 border-b whitespace-nowrap">Categoria</th>
-            <th class="p-2 sm:p-4 border-b whitespace-nowrap">Preço (Base)</th>
-            <th class="p-2 sm:p-4 border-b text-center whitespace-nowrap">Disponível</th>
-            <th class="p-2 sm:p-4 border-b whitespace-nowrap">Status</th>
-            <th class="p-2 sm:p-4 border-b text-right whitespace-nowrap">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="prod in filteredProducts" :key="prod.id" 
-              class="hover:bg-gray-50 border-b last:border-0 transition-colors"
-              :class="{ 'opacity-60 bg-gray-50': prod.deletedAt }">
-            <td class="p-2 sm:p-4 w-16">
-              <div class="w-10 h-10 sm:w-16 sm:h-16 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
-                <img v-if="prod.image" :src="prod.image" class="w-full h-full object-cover" />
-                <ImageIcon v-else class="text-gray-400 w-full h-full p-2" />
-              </div>
-            </td>
-            <td class="p-2 sm:p-4">
-              <p class="font-bold text-gray-800 text-sm truncate max-w-[120px] sm:max-w-none">{{ prod.name }}</p>
-              <p class="text-xs text-gray-500 truncate max-w-[120px] sm:max-w-[200px]">{{ prod.description }}</p>
-            </td>
-            <td class="p-2 sm:p-4 whitespace-nowrap">
-              <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                {{ menuStore.getCategoryName(prod.categoryId) }}
-              </span>
-            </td>
-            <td class="p-2 sm:p-4 text-gray-700 font-mono text-sm whitespace-nowrap">
-              {{ formatCurrency(prod.sizes[0]?.price || 0) }}
-              <span v-if="prod.sizes.length > 1" class="text-xs text-gray-500">(+{{ prod.sizes.length -1 }})</span>
-            </td>
-            <td class="p-2 sm:p-4 text-center whitespace-nowrap">
-              <div class="flex flex-col items-center">
-                <button 
-                  @click="menuStore.toggleAvailability(prod.id)"
-                  class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in focus:outline-none"
-                  :disabled="prod.deletedAt"
-                >
-                  <div :class="`w-10 h-5 rounded-full p-1 duration-300 ease-in-out ${prod.isAvailable ? 'bg-green-500' : 'bg-gray-300'} ${prod.deletedAt ? 'opacity-50 cursor-not-allowed' : ''}`">
-                    <div :class="`bg-white w-3 h-3 rounded-full shadow-md transform duration-300 ease-in-out ${prod.isAvailable ? 'translate-x-5' : 'translate-x-0'}`"></div>
-                  </div>
-                </button>
-                <span class="text-[8px] mt-1 font-semibold uppercase" :class="prod.isAvailable ? 'text-green-600' : 'text-gray-400'">
-                  {{ prod.isAvailable ? 'Ativo' : 'Inativo' }}
+    <div class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+      <div class="p-6 border-b border-gray-50">
+        <h2 class="text-xl font-bold text-black">
+          Lista de Produtos
+        </h2>
+      </div>
+      <div class="hidden md:block overflow-x-auto">
+        <table class="w-full text-black">
+          <thead class="bg-gray-50/50">
+            <tr class="text-gray-500 text-sm uppercase tracking-wider">
+              <th class="px-6 py-4 text-left font-bold w-20">Imagem</th>
+              <th class="px-6 py-4 text-left font-bold">Produto</th>
+              <th class="px-6 py-4 text-left font-bold">Categoria</th>
+              <th class="px-6 py-4 text-left font-bold">Preço Base</th>
+              <th class="px-6 py-4 text-center font-bold">Disponível</th>
+              <th class="px-6 py-4 text-left font-bold">Status</th>
+              <th class="px-6 py-4 text-right font-bold pr-10">Ações</th>
+            </tr>
+          </thead>
+
+          <tbody class="divide-y divide-gray-100">
+            <tr
+              v-for="prod in filteredProducts"
+              :key="prod.id"
+              class="hover:bg-gray-50/50 transition-colors"
+              :class="{ 'opacity-60 bg-gray-50': prod.deletedAt }"
+            >
+              <td class="px-6 py-4">
+                <div class="w-14 h-14 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center">
+                  <img v-if="prod.image" :src="prod.image" class="w-full h-full object-cover" />
+                  <ImageIcon v-else class="text-gray-400" :size="18" />
+                </div>
+              </td>
+
+              <td class="px-6 py-4">
+                <p class="font-semibold text-gray-900">
+                  {{ prod.name }}
+                </p>
+                <p class="text-sm text-gray-500 truncate max-w-xs">
+                  {{ prod.description }}
+                </p>
+              </td>
+
+              <td class="px-6 py-4">
+                <span class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-blue-100 text-blue-700">
+                  {{ menuStore.getCategoryName(prod.categoryId) }}
                 </span>
-              </div>
-            </td>
-            <td class="p-2 sm:p-4 whitespace-nowrap">
-              <span v-if="prod.deletedAt" class="px-2 py-1 bg-gray-200 text-gray-700 rounded-full text-xs">
-                Arquivado
-              </span>
-              <span v-else class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
-                Ativo
-              </span>
-            </td>
-            <td class="p-2 sm:p-4 text-right whitespace-nowrap">
-              <div class="flex justify-end gap-1 sm:gap-2">
-                <template v-if="!prod.deletedAt">
-                  <button @click="openEditModal(prod)" class="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="Editar">
-                    <Edit :size="16" class="sm:w-5 sm:h-5" />
+              </td>
+
+              <td class="px-6 py-4 font-mono text-sm text-gray-700">
+                {{ formatCurrency(prod.sizes[0]?.price || 0) }}
+                <span
+                  v-if="prod.sizes.length > 1"
+                  class="text-xs text-gray-400 ml-1"
+                >
+                  (+{{ prod.sizes.length - 1 }})
+                </span>
+              </td>
+
+              <td class="px-6 py-4 text-center">
+                <div class="flex flex-col items-center">
+                  <button
+                    @click="menuStore.toggleAvailability(prod.id)"
+                    class="relative inline-block w-10 transition"
+                    :disabled="prod.deletedAt"
+                  >
+                    <div
+                      :class="`w-10 h-5 rounded-full p-1 transition ${
+                        prod.isAvailable ? 'bg-green-500' : 'bg-gray-300'
+                      } ${prod.deletedAt ? 'opacity-50 cursor-not-allowed' : ''}`"
+                    >
+                      <div
+                        :class="`bg-white w-3 h-3 rounded-full shadow transform transition ${
+                          prod.isAvailable ? 'translate-x-5' : 'translate-x-0'
+                        }`"
+                      ></div>
+                    </div>
                   </button>
-                  <button @click="handleSoftDelete(prod)" class="p-1.5 sm:p-2 text-orange-600 hover:bg-orange-50 rounded-lg" title="Arquivar">
-                    <Archive :size="16" class="sm:w-5 sm:h-5" />
-                  </button>
-                </template>
-                <template v-else>
-                  <button @click="handleRestore(prod)" class="p-1.5 sm:p-2 text-green-600 hover:bg-green-50 rounded-lg" title="Restaurar">
-                    <RotateCcw :size="16" class="sm:w-5 sm:h-5" />
-                  </button>
-                  <button @click="handlePermanentDelete(prod)" class="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg" title="Deletar permanentemente">
-                    <Trash2 :size="16" class="sm:w-5 sm:h-5" />
-                  </button>
-                </template>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+
+                  <span
+                    class="text-[10px] mt-1 font-bold uppercase"
+                    :class="prod.isAvailable ? 'text-green-600' : 'text-gray-400'"
+                  >
+                    {{ prod.isAvailable ? 'Ativo' : 'Inativo' }}
+                  </span>
+                </div>
+              </td>
+
+              <td class="px-6 py-4">
+                <span
+                  v-if="prod.deletedAt"
+                  class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-gray-200 text-gray-700"
+                >
+                  Arquivado
+                </span>
+
+                <span
+                  v-else
+                  class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-green-100 text-green-700"
+                >
+                  Ativo
+                </span>
+              </td>
+
+              <td class="px-6 py-4 text-right pr-10">
+                <div class="flex justify-end gap-3">
+                  <template v-if="!prod.deletedAt">
+                    <button
+                      @click="openEditModal(prod)"
+                      class="p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                      <Pencil :size="18" class="text-blue-600" />
+                    </button>
+
+                    <button
+                      @click="handleSoftDelete(prod)"
+                      class="p-2 hover:bg-orange-50 rounded-lg transition-colors"
+                    >
+                      <Archive :size="18" class="text-orange-600" />
+                    </button>
+                  </template>
+
+                  <template v-else>
+                    <button
+                      @click="handleRestore(prod)"
+                      class="p-2 hover:bg-green-50 rounded-lg transition-colors"
+                    >
+                      <RotateCcw :size="18" class="text-green-600" />
+                    </button>
+
+                    <button
+                      @click="handlePermanentDelete(prod)"
+                      class="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 :size="18" class="text-red-600" />
+                    </button>
+                  </template>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto">
@@ -408,9 +468,7 @@ const handlePermanentDelete = (product) => {
           <div class="flex flex-col md:grid md:grid-cols-3 gap-6 md:gap-8">
             
             <div class="md:col-span-1">
-              <label class="block text-gray-600 font-semibold mb-2 text-sm sm:text-base">
-                Imagem <span v-if="!isEditing" class="text-red-500">*</span>
-              </label>
+              <label class="block text-gray-600 font-semibold mb-2 text-sm sm:text-base"> Imagem </label>
               <div 
                 class="relative w-full aspect-square bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-500 transition-colors flex items-center justify-center overflow-hidden cursor-pointer group"
                 :class="{ 'border-red-500': errors.image }"
@@ -445,9 +503,7 @@ const handlePermanentDelete = (product) => {
             <div class="md:col-span-2 space-y-4 sm:space-y-5">
               
               <div>
-                <label class="block text-gray-600 font-semibold mb-1 text-sm sm:text-base">
-                  Título <span class="text-red-500">*</span>
-                </label>
+                <label class="block text-gray-600 font-semibold mb-1 text-sm sm:text-base"> Título </label>
                 <input 
                   type="text" 
                   v-model="form.name" 
@@ -459,13 +515,13 @@ const handlePermanentDelete = (product) => {
                   placeholder="Ex: X-Salada" 
                   class="text-gray-900 w-full p-2 text-sm sm:text-base border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500" 
                 />
-                <p v-if="errors.name" class="text-red-500 text-xs mt-1">{{ errors.name }}</p>
+                <p v-if="errors.name" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
+                  <CircleX :size="14" /> {{ errors.name }}
+                </p>
               </div>
 
               <div>
-                <label class="block text-gray-600 font-semibold mb-1 text-sm sm:text-base">
-                  Categoria <span class="text-red-500">*</span>
-                </label>
+                <label class="block text-gray-600 font-semibold mb-1 text-sm sm:text-base"> Categoria </label>
                 <select 
                   v-model="form.categoryId" 
                   name="categoryId"
@@ -477,7 +533,9 @@ const handlePermanentDelete = (product) => {
                   <option disabled value="">Selecione...</option>
                   <option v-for="cat in menuStore.activeCategories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                 </select>
-                <p v-if="errors.categoryId" class="text-red-500 text-xs mt-1">{{ errors.categoryId }}</p>
+                <p v-if="errors.categoryId" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
+                  <CircleX :size="14" /> {{ errors.categoryId }}
+                </p>
               </div>
 
               <div>
@@ -511,7 +569,9 @@ const handlePermanentDelete = (product) => {
                   </div>
                   <button @click="removeSize(index)" type="button" class="text-red-400 hover:text-red-600 self-end sm:self-center" title="Remover tamanho"><Trash2 :size="16" /></button>
                 </div>
-                <p v-if="errors.sizes" class="text-red-500 text-xs mt-1">{{ errors.sizes }}</p>
+                <p v-if="errors.sizes" class="text-red-500 text-xs mt-2 font-medium flex items-center gap-1">
+                  <CircleX :size="14" /> {{ errors.sizes }}
+                </p>
               </div>
 
               <div class="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
@@ -577,7 +637,7 @@ const handlePermanentDelete = (product) => {
           <button 
             @click="handleConfirm" 
             class="px-4 py-2 text-sm text-white font-bold rounded transition-colors shadow-sm"
-            :class="confirmModal.isError ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'"
+            :class="confirmModal.isError ? 'bg-brand-green hover:bg-brand-green-hover' : 'bg-red-600 hover:bg-red-700'"
           >
             {{ confirmModal.isError ? 'Entendi' : 'Confirmar' }}
           </button>

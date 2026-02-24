@@ -3,9 +3,9 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMenuStore } from '@/stores/productsManagement.js';
 import {
-  ArrowLeft, PlusCircle, Edit,
+  ArrowLeft, PlusCircle, Pencil,
   Image as ImageIcon, X, Archive,
-  RotateCcw, Trash2
+  RotateCcw, Trash2, CircleX
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -214,68 +214,96 @@ const handlePermanentDelete = (category) => {
       </p>
     </div>
 
-    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-x-auto">
-      <table class="w-full text-left border-collapse">
-        <thead class="bg-gray-50 text-gray-600 uppercase text-sm font-semibold">
-          <tr>
-            <th class="p-3 sm:p-4 border-b w-16">Ícone</th>
-            <th class="p-3 sm:p-4 border-b">Nome</th>
-            <th class="p-3 sm:p-4 border-b whitespace-nowrap">Status</th>
-            <th class="p-3 sm:p-4 border-b text-right whitespace-nowrap">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="cat in displayedCategories" :key="cat.id"
-            class="hover:bg-gray-50 border-b last:border-0 transition-colors"
-            :class="{ 'opacity-60 bg-gray-50': cat.deletedAt }">
-            <td class="p-3 sm:p-4 w-16">
-              <div
-                class="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200">
-                <img v-if="cat.image" :src="cat.image" class="w-full h-full object-cover" />
-                <ImageIcon v-else class="text-gray-400" :size="16" />
-              </div>
-            </td>
-            <td class="p-3 sm:p-4 font-medium text-gray-800 text-sm sm:text-base truncate max-w-[150px] sm:max-w-none">
-              {{ cat.name }}
-            </td>
-            <td class="p-3 sm:p-4 whitespace-nowrap">
-              <span v-if="cat.deletedAt" class="px-2 py-1 bg-gray-200 text-gray-700 rounded-full text-xs">
-                {{ new Date(cat.deletedAt).toLocaleDateString() }}
-              </span>
-              <span v-else class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
-                Ativa
-              </span>
-            </td>
-            <td class="p-3 sm:p-4 text-right whitespace-nowrap">
-              <div class="flex justify-end gap-1 sm:gap-2">
-                <template v-if="!cat.deletedAt">
-                  <button @click="openEditModal(cat)"
-                    class="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
-                    <Edit :size="18" class="sm:w-5 sm:h-5" />
-                  </button>
-                  <button @click="handleDelete(cat)"
-                    class="p-1.5 sm:p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                    title="Arquivar">
-                    <Archive :size="18" class="sm:w-5 sm:h-5" />
-                  </button>
-                </template>
-                <template v-else>
-                  <button @click="handleRestore(cat)"
-                    class="p-1.5 sm:p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                    title="Restaurar">
-                    <RotateCcw :size="18" class="sm:w-5 sm:h-5" />
-                  </button>
-                  <button @click="handlePermanentDelete(cat)"
-                    class="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Deletar permanentemente">
-                    <Trash2 :size="18" class="sm:w-5 sm:h-5" />
-                  </button>
-                </template>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+      <div class="p-6 border-b border-gray-50">
+        <h2 class="text-xl font-bold text-black">
+          Lista de Categorias
+        </h2>
+      </div>
+      <div class="hidden md:block overflow-x-auto">
+        <table class="w-full text-black">
+          <thead class="bg-gray-50/50">
+            <tr class="text-gray-500 text-sm uppercase tracking-wider">
+              <th class="px-6 py-4 text-left font-bold w-20">Ícone</th>
+              <th class="px-6 py-4 text-left font-bold">Nome</th>
+              <th class="px-6 py-4 text-center font-bold">Status</th>
+              <th class="px-6 py-4 text-right font-bold pr-10">Ações</th>
+            </tr>
+          </thead>
+
+          <tbody class="divide-y divide-gray-100">
+            <tr
+              v-for="cat in displayedCategories"
+              :key="cat.id"
+              class="hover:bg-gray-50/50 transition-colors"
+              :class="{ 'opacity-60 bg-gray-50': cat.deletedAt }"
+            >
+              <td class="px-6 py-4">
+                <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center overflow-hidden border border-gray-200">
+                  <img v-if="cat.image" :src="cat.image" class="w-full h-full object-cover" />
+                  <ImageIcon v-else class="text-gray-400" :size="18" />
+                </div>
+              </td>
+
+              <td class="px-6 py-4 font-medium">
+                {{ cat.name }}
+              </td>
+
+              <td class="px-6 py-4 text-center">
+                <span
+                  v-if="cat.deletedAt"
+                  class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-gray-200 text-gray-700"
+                >
+                  {{ new Date(cat.deletedAt).toLocaleDateString() }}
+                </span>
+
+                <span
+                  v-else
+                  class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-green-100 text-green-700"
+                >
+                  Ativa
+                </span>
+              </td>
+
+              <td class="px-6 py-4 text-right pr-10">
+                <div class="flex justify-end gap-3">
+                  <template v-if="!cat.deletedAt">
+                    <button
+                      @click="openEditModal(cat)"
+                      class="p-2 hover:bg-dark/10 rounded-lg transition-colors"
+                    >
+                      <Pencil :size="18" />
+                    </button>
+
+                    <button
+                      @click="handleDelete(cat)"
+                      class="text-orange-600 p-2 hover:bg-orange-50 rounded-lg transition-colors"
+                    >
+                      <Archive :size="18" />
+                    </button>
+                  </template>
+
+                  <template v-else>
+                    <button
+                      @click="handleRestore(cat)"
+                      class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                    >
+                      <RotateCcw :size="18" />
+                    </button>
+
+                    <button
+                      @click="handlePermanentDelete(cat)"
+                      class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 :size="18" />
+                    </button>
+                  </template>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -305,13 +333,14 @@ const handlePermanentDelete = (category) => {
           </div>
 
           <div>
-            <label class="block text-gray-600 font-semibold mb-2">Nome da Categoria <span
-                class="text-red-500">*</span></label>
+            <label class="block text-gray-600 font-semibold mb-2">Nome da Categoria</label>
             <input type="text" v-model="form.name" name="name" maxlength="50" @blur="touchField('name')"
               @input="() => { if (touched.name) validateField('name'); }" :class="{ 'border-red-500': errors.name }"
               class="text-gray-900 w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               placeholder="Ex: Bebidas" />
-            <p v-if="errors.name" class="text-red-500 text-xs mt-1">{{ errors.name }}</p>
+            <p v-if="errors.name" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
+              <CircleX :size="14" /> {{ errors.name }}
+            </p>
           </div>
         </div>
 
@@ -347,7 +376,7 @@ const handlePermanentDelete = (category) => {
           <button 
             @click="handleConfirm" 
             class="px-4 py-2 text-sm text-white font-bold rounded transition-colors shadow-sm"
-            :class="confirmModal.isError ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'"
+            :class="confirmModal.isError ? 'bg-brand-green hover:bg-brand-green-hover' : 'bg-red-600 hover:bg-red-700'"
           >
             {{ confirmModal.isError ? 'Entendi' : 'Confirmar' }}
           </button>
