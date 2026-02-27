@@ -19,8 +19,6 @@ import MenuProducts from '@/views/app/settings/ProductsManagement.vue';
 import MenuCategories from '@/views/app/settings/CategoriesManagement.vue';
 import Menu from '@/views/app/Menu.vue';
 import CreateUsers from '@/views/app/settings/UsersConfig.vue'
-import MenuProducts from '@/views/app/settings/ProductsManagement.vue';
-import MenuCategories from '@/views/app/settings/CategoriesManagement.vue';
 
 import KitchenTerminal from '@/views/app/kitchen/KitchenTerminal.vue'; 
 
@@ -45,7 +43,7 @@ const routes = [
       { path: 'settings/products', component: MenuProducts, meta: { permission: PERMISSIONS.CONFIGURACAO }},
       { path: 'settings/users', name: 'users-settings', component: CreateUsers, meta: { permission: PERMISSIONS.CONFIGURACAO } },
       { path: '/app/kitchen', name: 'kitchen', component: KitchenTerminal, meta: { requiresAuth: true, permission: PERMISSIONS.COZINHA } },
-      { path: 'menu', name: 'Menu', component: Menu }
+      { path: 'menu', name: 'Menu', component: Menu, meta: { requiresAuth: true, permission: PERMISSIONS.CRIAR_PEDIDO } }
     ]
   }
 ];

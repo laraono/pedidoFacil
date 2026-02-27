@@ -19,7 +19,8 @@ import {
   Tag,            
   Palette,        
   Shield,         
-  UserCog         
+  UserCog,
+  HamburgerIcon
 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
@@ -85,6 +86,12 @@ const allMenuItems = [
     route: '/app/...', 
     icon: CreditCard,
     permission: PERMISSIONS.ASSINATURA 
+  },
+  {
+    label: 'Criar Pedido',
+    route: '/app/menu', 
+    icon:   HamburgerIcon,
+    permission: PERMISSIONS.CRIAR_PEDIDO
   }
 ];
 
