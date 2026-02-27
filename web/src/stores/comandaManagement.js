@@ -3,10 +3,11 @@ import { ref } from 'vue';
 
 export const useComandaStore = defineStore('comanda', () => {
 
-    const comandas = ref([]);
+    const comandas = ref([])
+    const orders = ref([])
 
-    const addComanda = (order, totalPrice) => {
-        comandas.value.push({ orders: order, id: Date.now(), totalPrice: totalPrice });
+    const addComanda = (order) => {
+        comandas.value.push({ orders: [order], id: Date.now(), total: order.preco });
 
         console.log(comandas.value)
     };
@@ -15,14 +16,13 @@ export const useComandaStore = defineStore('comanda', () => {
         const index = comandas.value.findIndex(c => c.id === id);
         if (index !== -1) {
             comandas.value[index].orders.push(...order)
-            comandas.value[index].totalPrice += totalPrice
+            comandas.value[index].total += totalPrice
         }
     };
 
     const removeComanda = (id) => {
         comandas.value = comandas.value.filter(c => c.id !== id);
     };
-
 
     return {
         comandas,

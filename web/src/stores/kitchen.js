@@ -39,6 +39,10 @@ export const useKitchenStore = defineStore('kitchen', () => {
     }
   }
 
+  function addOrder(order) {
+    orders.value.push({...order, id: orders.value.length + 1})
+  }
+
   function finishOrder(id) {
     // Remove da tela (arquiva)
     orders.value = orders.value.filter(o => o.id !== id);
@@ -70,6 +74,7 @@ export const useKitchenStore = defineStore('kitchen', () => {
     readyOrders, 
     moveOrder, 
     finishOrder,
-    incomingOrderMock 
+    incomingOrderMock,
+    addOrder
   };
 });
