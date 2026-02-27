@@ -238,16 +238,14 @@ const updateComanda = (id, order) => {
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                         <div class="flex item-start justify-between mb-1 bg-green-600 p-4 rounded-lg" v-for="comanda in comandaStore.comandas">
                             <button @click="updateComanda(comanda.id, pedido)" class="w-full">
-                                <div class="bg-green-500 w-full p-2 rounded-t-lg"> <!-- Adicionado w-full e padding -->
                                     <h2 class="text-white font-bold text-lg">{{ 'Comanda ' + comanda.id }}</h2>
-                                </div>
-                                <div class="flex flex-col w-full p-2" v-for="order in comanda.orders"> <!-- Adicionado padding -->
+                                <div class="flex flex-col w-full p-2" v-for="order in comanda.orders">
                                     <div class="flex justify-between w-full">
                                         <span class="font-bold text-white">{{ order.amount + 'x' }}</span>
                                         <span class="font-bold text-white">{{ order.produto }}</span>
                                     </div>
                                 </div>          
-                                <span class="font-medium text-white text-right block w-full p-2"> <!-- Adicionado block, w-full e padding -->
+                                <span class="font-medium text-white text-right block w-full p-2"> 
                                     {{ 'R$ ' + comanda.totalPrice }}
                                 </span>
                             </button>

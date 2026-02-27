@@ -8,8 +8,6 @@ import CardCardapio from '@/components/dashboard/ConfigMenuCard.vue';
 import CardCategorias from '@/components/dashboard/ConfigCategoriesCard.vue';
 import CardProdutos from '@/components/dashboard/ConfigProductsCard.vue';
 import CardUsers from '@/components/dashboard/ConfigUsersCard.vue'
-import CardCategorias from '@/components/dashboard/ConfigCategoriesCard.vue';
-import CardProdutos from '@/components/dashboard/ConfigProductsCard.vue';
 
 const auth = useAuthStore();
 </script>
