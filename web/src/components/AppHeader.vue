@@ -160,9 +160,10 @@ const navigateTo = (path) => {
 
 			<nav class="hidden md:flex items-center gap-4 order-2">
 				<template v-for="(item, index) in visibleMenuItems" :key="item.label">
+					<div class="relative">
 					<a 
 						v-if="index < 4" 
-						@click.prevent="item.children ? toggleSubmenu() : navigateTo(item.route)"
+						@click.prevent="item.children ? toggleSubmenu(item.label) : navigateTo(item.route)"
 						class="flex items-center gap-2 text-sm font-medium opacity-70 hover:opacity-100 hover:bg-white/10 px-3 py-1.5 rounded transition-all cursor-pointer"
 						:class="{ 'bg-white/10 opacity-100 font-bold': route.path === item.route }"
 					>
@@ -170,6 +171,21 @@ const navigateTo = (path) => {
 						{{ item.label }}
 						<ChevronDown v-if="item.children" :size="12" class="opacity-50" />
 					</a>
+					<div v-show="openMenus[item.label]" class="space-y-1 rounded-b-xl mb-2 absolute left-0 rounded-lg z-50" :class="headerColorClass" >
+						<a
+							v-for="subitem in item.children"
+							:key="subitem.label"
+							@click.prevent="navigateTo(subitem.route)"
+							class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium opacity-70 px-3 py-1.5 rounded transition-all cursor-pointer"
+							:class="route.path === subitem.route 
+							? 'bg-white/10 opacity-70' 
+							: 'border-transparent hover:opacity-100 hover:bg-white/10'"
+						>
+							<component :is="subitem.icon" :size="16" class="opacity-70" />
+							{{ subitem.label }}
+						</a>
+					</div>
+					</div>
 				</template>
 			</nav>
 
