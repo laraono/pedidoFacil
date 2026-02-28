@@ -16,9 +16,9 @@ const defaultColors = {
     Cor_Categorias: '#009DFF'
 };
 
-const corFundo = ref(defaultColors.Cor_Fundo);
-const corBotoes = ref(defaultColors.Cor_Botoes);
-const corCategorias = ref(defaultColors.Cor_Categorias);
+const corFundo = ref(localStorageService.getBackgroundColors() ?? defaultColors.Cor_Fundo);
+const corBotoes = ref(localStorageService.getButtonColors() ?? defaultColors.Cor_Botoes);
+const corCategorias = ref(localStorageService.getCategoryColors() ?? defaultColors.Cor_Categorias);
 const formasConsumo = ref([]);
 const observacoesPermitidas = ref(true);
 
