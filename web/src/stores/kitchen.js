@@ -5,23 +5,23 @@ export const useKitchenStore = defineStore('kitchen', () => {
   const orders = ref([
     {
       id: 101,
-      mesa: 'Mesa 04',
-      garcom: 'Carlos',
+      table: 'Mesa 04',
+      waiter: 'Carlos',
       status: 'pending', // Estados: pending, preparing, ready
       createdAt: new Date(Date.now() - 1000 * 60 * 15), // 15 min atrás
       items: [
-        { name: 'X-Bacon', qtd: 2, obs: 'Sem cebola' },
-        { name: 'Coca-Cola Zero', qtd: 2, obs: '' }
+        { name: 'X-Bacon', amount: 2, obs: 'Sem cebola' },
+        { name: 'Coca-Cola Zero', amount: 2, obs: '' }
       ]
     },
     {
       id: 102,
-      mesa: 'Balcão',
-      garcom: 'Ana',
+      table: 'Balcão',
+      waiter: 'Ana',
       status: 'preparing',
       createdAt: new Date(Date.now() - 1000 * 60 * 5), // 5 min atrás
       items: [
-        { name: 'Isca de Peixe', qtd: 1, obs: 'Molho extra' }
+        { name: 'Isca de Peixe', amount: 1, obs: 'Molho extra' }
       ]
     }
   ]);
@@ -55,12 +55,12 @@ export const useKitchenStore = defineStore('kitchen', () => {
     const newOrder = {
       id: newId,
       mesa: `Mesa ${Math.floor(Math.random() * 20) + 1}`,
-      garcom: 'Sistema',
+      waiter: 'Sistema',
       status: 'pending',
       createdAt: new Date(),
       items: [
-        { name: 'Hambúrguer Artesanal', qtd: 1, obs: 'Ao ponto' },
-        { name: 'Batata Frita', qtd: 1, obs: '' }
+        { name: 'Hambúrguer Artesanal', amount: 1, obs: 'Ao ponto' },
+        { name: 'Batata Frita', amount: 1, obs: '' }
       ]
     };
     orders.value.push(newOrder);

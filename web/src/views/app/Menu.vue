@@ -7,9 +7,9 @@ import { useKitchenStore } from '@/stores/kitchen';
 
 const imageUrl = ref('');
 
-const produtos = ref([]);
+const products = ref([]);
 
-const selectedProduto = ref({})
+const selectedProduct = ref({})
 
 const amount = ref([])
 
@@ -43,7 +43,7 @@ const backgroundStyle = computed(() => {
 onMounted(() => {
     const savedImage = localStorageService.getImage();
 
-    produtos.value = menuStore.products.filter(produto => produto.categoryId == 1)
+    products.value = menuStore.products.filter(product => product.categoryId == 1)
     
     if (savedImage) {
         imageUrl.value = savedImage;
@@ -51,7 +51,7 @@ onMounted(() => {
 });
 
 const selectCategory = (id) => {
-    produtos.value = menuStore.products.filter(produto => produto.categoryId == id)
+    products.value = menuStore.products.filter(product => product.categoryId == id)
 
 }
 
@@ -70,7 +70,7 @@ const saveAmount = (change, product, size) => {
     }
     
     const existingItemIndex = itens.value.findIndex(
-        item => item.produto === product.name && item.size === size.name
+        item => item.product === product.name && item.size === size.name
     )
 
     if(amount.value[key] !== 0) {
@@ -80,9 +80,9 @@ const saveAmount = (change, product, size) => {
         } else {
             itens.value.push({
                 name: product.name, 
-                tamanho: size.name, 
-                qtd: amount.value[key],
-                preco: amount.value[key] * size.price
+                size: size.name, 
+                amount: amount.value[key],
+                price: amount.value[key] * size.price
             })
 
         }
@@ -93,16 +93,16 @@ const endOrder = () => {
 
     let total = 0
 
-    itens.value.map((item) => console.log(item.preco))
+    itens.value.map((item) => console.log(item.price))
 
-    itens.value.map((item) =>  total += item.preco)
+    itens.value.map((item) =>  total += item.price)
 
     order.value = {
-      mesa: `Mesa ${Math.floor(Math.random() * 20) + 1}`,
-      garcom: 'Sistema',
+      table: `table ${Math.floor(Math.random() * 20) + 1}`,
+      waiter: 'Sistema',
       status: 'pending',
       createdAt: new Date(),
-      preco: total,
+      price: total,
       itens: itens.value
     };
 
@@ -125,7 +125,7 @@ const saveOrder = () => {
 }
 
 const calculateTotal = () => {
-    return itens.value.reduce((sum, item) => sum + (item.preco || 0), 0)
+    return itens.value.reduce((sum, item) => sum + (item.price || 0), 0)
 }
 
 
@@ -186,17 +186,17 @@ const updateComanda = (id, order) => {
             :style="{ background: localStorageService.getBackgroundColors() }"
         >
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-3 p-4">
-                <div v-for="produto in produtos" :key="produto.id" >
+                <div v-for="product in products" :key="product.id" >
                     <button 
-                        @click="isOpen = true, selectedProduto = produto" class="image-button flex flex-col items-center justify-center w-full h-full p-4 " 
+                        @click="isOpen = true, selectedProduct = product" class="image-button flex flex-col items-center justify-center w-full h-full p-4 " 
                         :style="{background: localStorageService.getButtonColors()}"
                     >
-                            <img :src="produto.image" class="button-icon object-contain max-w-full max-h-full"/>
+                            <img :src="product.image" class="button-icon object-contain max-w-full max-h-full"/>
                             <div class="flex justify-between w-full mb-1">
-                                <span class="font-medium">{{ produto.name }}</span>
-                                <span class="font-semibold"> {{ 'R$ ' + produto.sizes[0].price }}</span>
+                                <span class="font-medium">{{ product.name }}</span>
+                                <span class="font-semibold"> {{ 'R$ ' + product.sizes[0].price }}</span>
                             </div>
-                            <span class="text-sm ">{{ produto.description }}</span>
+                            <span class="text-sm ">{{ product.description }}</span>
                     </button>
                 </div>            
             </div>
@@ -212,10 +212,10 @@ const updateComanda = (id, order) => {
 
             </div>
             <div class="flex justify-between w-full mb-1" v-for="item in itens">
-                <span class="font-medium text-white">{{ item.produto }}</span>
-                <span class="font-medium text-white">{{ item.tamanho }}</span>
-                <span class="font-medium text-white">{{ item.qtd }}</span>
-                <span class="font-medium text-white"> {{'R$' + item.preco }}</span>
+                <span class="font-medium text-white">{{ item.product }}</span>
+                <span class="font-medium text-white">{{ item.size }}</span>
+                <span class="font-medium text-white">{{ item.amount }}</span>
+                <span class="font-medium text-white"> {{'R$' + item.price }}</span>
             </div>
 
             <div class="flex justify-between items-center pt-2 border-t border-gray-700">
@@ -240,14 +240,14 @@ const updateComanda = (id, order) => {
         <Teleport to="body">
             <div v-if="isOpen" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
                 <div class="bg-white p-4 rounded-lg max-w-2xl w-full">
-                    <h2 class="text-black font-bold">{{ selectedProduto.name }}</h2>
-                    <div class="flex justify-between w-full mb-1" v-for="(size, index) in selectedProduto.sizes">
+                    <h2 class="text-black font-bold">{{ selectedProduct.name }}</h2>
+                    <div class="flex justify-between w-full mb-1" v-for="(size, index) in selectedProduct.sizes">
                         <span class="font-medium text-black">{{ size.name }}</span>
                         <span class="font-medium text-black"> {{ 'R$ ' + size.price }}</span>
                         <div class="flex justify-between">
-                            <button @click="saveAmount(-1, selectedProduto, size)" class="font-medium text-black"> - </button>
-                            <span class="font-medium text-black"> {{ amount[selectedProduto.name + '-' + size.name] || 0   }}</span>
-                            <button @click="saveAmount(1, selectedProduto, size)" class="font-medium text-black"> + </button>
+                            <button @click="saveAmount(-1, selectedProduct, size)" class="font-medium text-black"> - </button>
+                            <span class="font-medium text-black"> {{ amount[selectedProduct.name + '-' + size.name] || 0   }}</span>
+                            <button @click="saveAmount(1, selectedProduct, size)" class="font-medium text-black"> + </button>
                         </div>
                         
                     </div>
@@ -270,7 +270,7 @@ const updateComanda = (id, order) => {
                                 <div class="flex flex-col w-full p-2" v-for="order in comanda.orders">
                                     <div class="flex flex-col w-full p-2" v-for="item in order.itens">
                                         <div class="flex justify-between w-full">
-                                            <span class="font-bold text-white">{{ item.qtd + 'x' }}</span>
+                                            <span class="font-bold text-white">{{ item.amount + 'x' }}</span>
                                             <span class="font-bold text-white">{{ item.name }}</span>
                                         </div>
                                     </div>
