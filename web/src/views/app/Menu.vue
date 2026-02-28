@@ -18,9 +18,9 @@ const amount = ref([])
 
 const isOpen = ref(false)
 
-const hasPedido = ref(false)
+const hasOrder = ref(false)
 
-const pedidoEnded = ref(false)
+const orderEnded = ref(false)
 
 const items = ref([])
 
@@ -107,15 +107,16 @@ const endOrder = () => {
     items.value.map((item) =>  total += item.price)
 
     order.value = {
-      table: `table ${Math.floor(Math.random() * 20) + 1}`,
-      waiter: 'Sistema',
-      status: 'pending',
-      createdAt: new Date(),
-      price: total,
-      itens: items.value
+        id: Math.floor(Math.random() * 50) + 1,
+        table: `table ${Math.floor(Math.random() * 20) + 1}`,
+        waiter: 'Sistema',
+        status: 'pending',
+        createdAt: new Date(),
+        price: total,
+        items: items.value
     };
 
-    pedidoEnded.value = true
+    orderEnded.value = true
     amount.value = []
 }
 
@@ -127,7 +128,7 @@ const cancelOrder = () => {
 }
 
 const saveOrder = () => {    
-    hasPedido.value = true
+    hasOrder.value = true
     isOpen.value = false
     amount.value = []
 }
@@ -144,7 +145,7 @@ const addComanda = () => {
     order.value = ({})
     items.value = []
 
-    hasPedido.value =false
+    hasOrder.value =false
 }
 
 const updateComanda = (id) => {
@@ -152,7 +153,7 @@ const updateComanda = (id) => {
 
     items.value = []
 
-    hasPedido.value = false    
+    hasOrder.value = false    
 }
 
 </script>
@@ -211,7 +212,7 @@ const updateComanda = (id) => {
         
         </div>
 
-        <div v-if="hasPedido" class="fixed bottom-0 w-full bg-black p-4">
+        <div v-if="hasOrder" class="fixed bottom-0 w-full bg-black p-4">
             <div class="flex justify-between w-full mb-1">
                 <span class="font-bold text-white"> Produto </span>
                 <span class="font-bold text-white"> Tamanho </span>
@@ -269,14 +270,14 @@ const updateComanda = (id) => {
 
 
         <Teleport to="body">
-            <div v-if="pedidoEnded" class="fixed inset-0 flex items-center justify-center p-4">
+            <div v-if="orderEnded" class="fixed inset-0 flex items-center justify-center p-4">
                 <div class="bg-white p-4 rounded-lg max-w-4xl w-full ">
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                         <div class="flex item-start justify-between mb-1 bg-green-600 p-4 rounded-lg" v-for="comanda in comandaStore.comandas">
                             <button @click="updateComanda(comanda.id, items)" class="w-full">
                                     <h2 class="text-white font-bold text-lg">{{ 'Comanda ' + comanda.id }}</h2>
                                 <div class="flex flex-col w-full p-2" v-for="order in comanda.orders">
-                                    <div class="flex flex-col w-full p-2" v-for="item in order.itens">
+                                    <div class="flex flex-col w-full p-2" v-for="item in order.items">
                                         <div class="flex justify-between w-full">
                                             <span class="font-bold text-white">{{ item.amount + 'x' }}</span>
                                             <span class="font-bold text-white">{{ item.name }}</span>
@@ -299,7 +300,7 @@ const updateComanda = (id) => {
                         </button>
 
                         <button 
-                            @click="pedidoEnded = false" 
+                            @click="orderEnded = false" 
                             :style="{background: localStorageService.getButtonColors()}" class="text-black p-2"
                         >
                             Fechar
