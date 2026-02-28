@@ -212,29 +212,36 @@ const updateComanda = (id) => {
         
         </div>
 
-        <div v-if="hasOrder" class="fixed bottom-0 w-full bg-black p-4">
-            <div class="flex justify-between w-full mb-1">
-                <span class="font-bold text-white"> Produto </span>
-                <span class="font-bold text-white"> Tamanho </span>
-                <span class="font-bold text-white"> Quantidade </span>
-                <span class="font-bold text-white"> Preço </span>
+        <div v-if="hasOrder" class="fixed bottom-0 w-full bg-black">
 
-            </div>
-            <div class="flex justify-between w-full mb-1" v-for="item in items">
-                <span class="font-medium text-white">{{ item.name }}</span>
-                <span class="font-medium text-white">{{ item.size }}</span>
-                <span class="font-medium text-white">{{ item.amount }}</span>
-                <span class="font-medium text-white"> {{'R$' + item.price }}</span>
-            </div>
-
-            <div class="flex justify-between items-center pt-2 border-t border-gray-700">
-                <div class="text-white">
-                    <span class="font-bold">Total: </span>
-                    <span class="text-xl font-bold text-green-400">
-                        R$ {{ calculateTotal().toFixed(2) }}
-                    </span>
+            <div class="bg-gray-700 w-full py-2 px-4">
+                <div class="grid grid-cols-4">
+                    <div class="font-bold text-xl text-white">Produto</div>
+                    <div class="font-bold text-xl text-white">Tamanho</div>
+                    <div class="font-bold text-xl text-white">Quantidade</div>
+                    <div class="font-bold text-xl text-white">Preço</div>
                 </div>
-                
+            </div>
+    
+            <div class="p-4">
+                    
+                <div class="grid grid-cols-4 gap-2">
+                    <template v-for="item in items">
+                        <div class="font-medium text-white p-2">{{ item.name }}</div>
+                        <div class="font-medium text-white p-2">{{ item.size }}</div>
+                        <div class="font-medium text-white p-2">{{ item.amount }}</div>
+                        <div class="font-medium text-white p-2">R${{ item.price }}</div>
+                    </template>
+                </div>
+
+                <div class="flex justify-between items-center pt-2 border-t border-gray-700">
+                    <div class="text-white">
+                        <span class="font-bold">Total: </span>
+                        <span class="text-xl font-bold text-green-400">
+                            R$ {{ calculateTotal().toFixed(2) }}
+                        </span>
+                    </div>
+                    
                     <button 
                         @click="endOrder"
                         class="font-medium text-white px-6 py-2 rounded transition-colors"
@@ -242,8 +249,8 @@ const updateComanda = (id) => {
                     > 
                         Finalizar Pedido
                     </button>
+                </div>
             </div>
-
         </div>
 
         <Teleport to="body">
@@ -253,13 +260,27 @@ const updateComanda = (id) => {
                     <div class="flex justify-between w-full mb-1" v-for="(size, index) in selectedProduct.sizes">
                         <span class="font-medium text-black">{{ size.name }}</span>
                         <span class="font-medium text-black"> {{ 'R$ ' + size.price }}</span>
-                        <div class="flex justify-between">
-                            <button @click="saveAmount(-1, selectedProduct, size)" class="font-medium text-black"> - </button>
-                            <span class="font-medium text-black"> {{ amount[selectedProduct.name + '-' + size.name] || 0   }}</span>
-                            <button @click="saveAmount(1, selectedProduct, size)" class="font-medium text-black"> + </button>
-                        </div>
                         
+                        <div class="flex items-center gap-2">
+                            <button 
+                                @click="saveAmount(-1, selectedProduct, size)" 
+                                class="w-8 h-8 rounded-full font-bold text-lg flex items-center justify-center transition-colors"
+                                :style="{background: localStorageService.getButtonColors()}"
+                            >
+                                -
+                            </button>
+                            <span class="font-medium text-black w-8 text-center"> {{ amount[selectedProduct.name + '-' + size.name] || 0 }}</span>
+                            <button 
+                                @click="saveAmount(1, selectedProduct, size)" 
+                                class="w-8 h-8 rounded-full font-bold text-lg flex items-center justify-center transition-colors"
+                                :style="{background: localStorageService.getButtonColors()}"
+                            >
+                                +
+                            </button>
+                        </div>
+
                     </div>
+
                     <div class="flex justify-between w-full mb-1">
                         <button @click="cancelOrder" :style="{background: localStorageService.getButtonColors()}" class="text-black p-2">Cancelar</button>
                         <button @click="saveOrder" :style="{background: localStorageService.getButtonColors()}" class="text-black p-2">Salvar Pedido</button>
@@ -272,10 +293,15 @@ const updateComanda = (id) => {
         <Teleport to="body">
             <div v-if="orderEnded" class="fixed inset-0 flex items-center justify-center p-4">
                 <div class="bg-white p-4 rounded-lg max-w-4xl w-full ">
+                    <div class="flex item-start justify-center">
+                        <h2 class="text-black font-bold text-2xl">Comandas Abertas</h2>
+                    </div>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                         <div class="flex item-start justify-between mb-1 bg-green-600 p-4 rounded-lg" v-for="comanda in comandaStore.comandas">
                             <button @click="updateComanda(comanda.id, items)" class="w-full">
-                                    <h2 class="text-white font-bold text-lg">{{ 'Comanda ' + comanda.id }}</h2>
+                                    <div class="bg-green-500 w-full py-2 px-4">
+                                        <h2 class="text-white font-bold text-lg">{{ 'Comanda ' + comanda.id }}</h2>
+                                    </div>
                                 <div class="flex flex-col w-full p-2" v-for="order in comanda.orders">
                                     <div class="flex flex-col w-full p-2" v-for="item in order.items">
                                         <div class="flex justify-between w-full">
