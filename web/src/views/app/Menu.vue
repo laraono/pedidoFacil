@@ -4,6 +4,9 @@ import { ref, computed, onMounted } from 'vue';
 import { useMenuStore } from '@/stores/productsManagement';
 import { useComandaStore } from '@/stores/comandaManagement';
 import { useKitchenStore } from '@/stores/kitchen';
+import { initMockEstablishment } from '@/mock/stablishmentmock';
+
+const establishmentName = ref('Carregando...');
 
 const imageUrl = ref('');
 
@@ -19,7 +22,7 @@ const hasPedido = ref(false)
 
 const pedidoEnded = ref(false)
 
-const itens = ref([])
+const items = ref([])
 
 const order = ref({})
 
@@ -40,13 +43,21 @@ const backgroundStyle = computed(() => {
     };
 });
 
-onMounted(() => {
+onMounted(async () => {
     const savedImage = localStorageService.getImage();
 
     products.value = menuStore.products.filter(product => product.categoryId == 1)
     
     if (savedImage) {
         imageUrl.value = savedImage;
+    }
+
+    initMockEstablishment(); 
+    try {
+        const data = await getEstablishmentMock();
+        if (data && data.info) establishmentName.value = data.info.name;
+    } catch (error) {
+        establishmentName.value = 'Erro ao carregar';
     }
 });
 
@@ -69,16 +80,16 @@ const saveAmount = (change, product, size) => {
         return
     }
     
-    const existingItemIndex = itens.value.findIndex(
-        item => item.product === product.name && item.size === size.name
+    const existingItemIndex = items.value.findIndex(
+        item => item.name === product.name && item.size === size.name
     )
 
     if(amount.value[key] !== 0) {
         if (existingItemIndex !== -1) {
-            itens.value[existingItemIndex].amount = amount.value[key]
-            itens.value[existingItemIndex].price = amount.value[key] * size.price
+            items.value[existingItemIndex].amount = amount.value[key]
+            items.value[existingItemIndex].price = amount.value[key] * size.price
         } else {
-            itens.value.push({
+            items.value.push({
                 name: product.name, 
                 size: size.name, 
                 amount: amount.value[key],
@@ -93,9 +104,7 @@ const endOrder = () => {
 
     let total = 0
 
-    itens.value.map((item) => console.log(item.price))
-
-    itens.value.map((item) =>  total += item.price)
+    items.value.map((item) =>  total += item.price)
 
     order.value = {
       table: `table ${Math.floor(Math.random() * 20) + 1}`,
@@ -103,18 +112,17 @@ const endOrder = () => {
       status: 'pending',
       createdAt: new Date(),
       price: total,
-      itens: itens.value
+      itens: items.value
     };
 
     pedidoEnded.value = true
     amount.value = []
-
 }
 
 const cancelOrder = () => {
     isOpen.value = false
 
-    itens.value = []
+    items.value = []
     amount.value = []
 }
 
@@ -125,9 +133,8 @@ const saveOrder = () => {
 }
 
 const calculateTotal = () => {
-    return itens.value.reduce((sum, item) => sum + (item.price || 0), 0)
+    return items.value.reduce((sum, item) => sum + (item.price || 0), 0)
 }
-
 
 const addComanda = () => {
     comandaStore.addComanda(order.value)
@@ -135,14 +142,15 @@ const addComanda = () => {
     kitchenStore.addOrder(order.value)
 
     order.value = ({})
+    items.value = []
 
     hasPedido.value =false
 }
 
-const updateComanda = (id, order) => {
-    comandaStore.updateComanda(id, order, calculateTotal())
+const updateComanda = (id) => {
+    comandaStore.updateComanda(id, order.value, calculateTotal())
 
-    itens.value = []
+    items.value = []
 
     hasPedido.value = false    
 }
@@ -159,7 +167,7 @@ const updateComanda = (id, order) => {
         <div class="relative h-full flex items-center justify-center p-8 text-white">
 
         <h2 class="text-3xl md:text-4xl font-bold mb-4 drop-shadow-lg">
-            title
+            {{ establishmentName }}
         </h2>
         
         </div>
@@ -211,8 +219,8 @@ const updateComanda = (id, order) => {
                 <span class="font-bold text-white"> Preço </span>
 
             </div>
-            <div class="flex justify-between w-full mb-1" v-for="item in itens">
-                <span class="font-medium text-white">{{ item.product }}</span>
+            <div class="flex justify-between w-full mb-1" v-for="item in items">
+                <span class="font-medium text-white">{{ item.name }}</span>
                 <span class="font-medium text-white">{{ item.size }}</span>
                 <span class="font-medium text-white">{{ item.amount }}</span>
                 <span class="font-medium text-white"> {{'R$' + item.price }}</span>
@@ -265,7 +273,7 @@ const updateComanda = (id, order) => {
                 <div class="bg-white p-4 rounded-lg max-w-4xl w-full ">
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                         <div class="flex item-start justify-between mb-1 bg-green-600 p-4 rounded-lg" v-for="comanda in comandaStore.comandas">
-                            <button @click="updateComanda(comanda.id, itens)" class="w-full">
+                            <button @click="updateComanda(comanda.id, items)" class="w-full">
                                     <h2 class="text-white font-bold text-lg">{{ 'Comanda ' + comanda.id }}</h2>
                                 <div class="flex flex-col w-full p-2" v-for="order in comanda.orders">
                                     <div class="flex flex-col w-full p-2" v-for="item in order.itens">
@@ -284,7 +292,7 @@ const updateComanda = (id, order) => {
 
                     <div class="flex justify-between w-full mb-1">
                         <button 
-                            @click="addComanda(itens)"
+                            @click="addComanda(items)"
                             :style="{background: localStorageService.getButtonColors()}" class="text-black p-2"
                         >
                             Criar Comanda
