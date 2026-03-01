@@ -58,7 +58,19 @@ export function initMockRoles() {
         PERMISSIONS.COZINHA, 
         PERMISSIONS.ESTOQUE
       ]
-    }
+    },
+    {
+      id: 6,
+      name: 'Caixa',
+      role: 'CAIXA', 
+      permissions: [
+        PERMISSIONS.CRIAR_PEDIDO,
+        PERMISSIONS.COZINHA, 
+        PERMISSIONS.CAIXA, 
+        PERMISSIONS.ESTOQUE,
+        PERMISSIONS.COMANDAS_FINALIZADAS,
+      ]
+    },
   ];
 
   localStorage.setItem(ROLES_KEY, JSON.stringify(roles));
@@ -97,6 +109,14 @@ export function initMockUsers() {
       email: "cozinha@email.com",
       password: "123456",
       roleId: 5,
+      status: "ATIVO"
+    },
+     {
+      id: 6,
+      name: "Roberta Caixa",
+      email: "caixa@email.com",
+      password: "123456",
+      roleId: 6,
       status: "ATIVO"
     }
   ];

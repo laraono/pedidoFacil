@@ -20,7 +20,8 @@ import {
   Palette,        
   Shield,         
   UserCog,
-  HamburgerIcon
+  HamburgerIcon,
+  DollarSign
 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
@@ -92,6 +93,18 @@ const allMenuItems = [
     route: '/app/menu', 
     icon:   HamburgerIcon,
     permission: PERMISSIONS.CRIAR_PEDIDO
+  },
+   { 
+    label: 'Caixa', 
+    route: '/app/cashier', 
+    icon: DollarSign,
+    permission: PERMISSIONS.CAIXA 
+  },
+  {
+    label: 'Finalizados',
+    route: '/app/closed',
+    icon: X,
+    permission: PERMISSIONS.COMANDAS_FINALIZADAS 
   }
 ];
 
