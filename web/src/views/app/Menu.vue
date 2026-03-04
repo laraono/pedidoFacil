@@ -4,7 +4,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useMenuStore } from '@/stores/productsManagement';
 import { useComandaStore } from '@/stores/comandaManagement';
 import { useKitchenStore } from '@/stores/kitchen';
-import { initMockEstablishment } from '@/mock/stablishmentmock';
+import { getEstablishmentMock, initMockEstablishment } from '@/mock/stablishmentmock'; 
 
 const establishmentName = ref('Carregando...');
 
@@ -138,14 +138,16 @@ const calculateTotal = () => {
 }
 
 const addComanda = () => {
-    comandaStore.addComanda(order.value)
+    if(order.value.items.length > 0) {
+        comandaStore.addComanda(order.value)
 
-    kitchenStore.addOrder(order.value)
+        kitchenStore.addOrder(order.value)
 
-    order.value = ({})
-    items.value = []
+        order.value = ({})
+        items.value = []
 
-    hasOrder.value =false
+        hasOrder.value =false
+    }
 }
 
 const updateComanda = (id) => {
