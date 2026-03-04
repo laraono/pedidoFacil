@@ -12,7 +12,7 @@ import {
 
 const activeTab = ref('geral');
 const dateFilter = ref('7d');
-const isLoaded = ref(false); // Gatilho para animações de barras
+const isLoaded = ref(false); 
 
 const kpis = ref({});
 const revenueData = ref([]);
@@ -32,7 +32,6 @@ const loadData = () => {
   cancellations.value = getCancellationsMock(dateFilter.value);
   paymentMethods.value = getPaymentMethodsMock(dateFilter.value);
   
-  // Timeout para disparar animação de crescimento das barras
   setTimeout(() => { isLoaded.value = true; }, 50);
 };
 
@@ -43,7 +42,6 @@ watch(activeTab, () => {
   setTimeout(() => { isLoaded.value = true; }, 50);
 });
 
-// Helpers Visuais e Cálculos
 const getMaxRevenue = () => Math.max(...revenueData.value.map(d => d.value));
 const getRevenueHeight = (val) => isLoaded.value ? `${(val / getMaxRevenue()) * 100}%` : '5%';
 
@@ -56,7 +54,6 @@ const financialImpact = computed(() => {
   return loss.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 });
 
-// Ícones dinâmicos para KPIs
 const getIcon = (key) => {
   if (key === 'faturamento') return DollarSign;
   if (key === 'ticketMedio') return TrendingUp;

@@ -1,5 +1,3 @@
-// src/mock/reportsmock.js
-
 export const getKpisMock = (period) => {
   const multipliers = { '24h': 1, '7d': 7, '30d': 30 };
   const m = multipliers[period] || 7;
