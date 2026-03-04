@@ -32,6 +32,10 @@ const comandaStore = useComandaStore();
 
 const kitchenStore = useKitchenStore()
 
+const gray = '#7a7a7a'
+
+const isSelfService = ref(false)
+
 const backgroundStyle = computed(() => {
     return {
         backgroundImage: imageUrl.value 
@@ -84,7 +88,8 @@ const saveAmount = (change, product, size) => {
         item => item.name === product.name && item.size === size.name
     )
 
-    if(amount.value[key] !== 0) {
+    if(amount.value[key] === 0) {
+    } else {
         if (existingItemIndex !== -1) {
             items.value[existingItemIndex].amount = amount.value[key]
             items.value[existingItemIndex].price = amount.value[key] * size.price
@@ -95,7 +100,6 @@ const saveAmount = (change, product, size) => {
                 amount: amount.value[key],
                 price: amount.value[key] * size.price
             })
-
         }
     }
 }
@@ -116,8 +120,15 @@ const endOrder = () => {
         items: items.value
     };
 
-    orderEnded.value = true
-    amount.value = []
+    if(isSelfService.value) {
+        orderEnded.value = false
+        addComanda()
+        amount.value = []
+    } else {
+        orderEnded.value = true
+        amount.value = []
+    }
+
 }
 
 const cancelOrder = () => {
@@ -127,10 +138,12 @@ const cancelOrder = () => {
     amount.value = []
 }
 
-const saveOrder = () => {    
-    hasOrder.value = true
-    isOpen.value = false
-    amount.value = []
+const saveOrder = () => {
+    if(items.value.length > 0) {
+        hasOrder.value = true
+        isOpen.value = false
+        amount.value = []
+    }
 }
 
 const calculateTotal = () => {
@@ -199,7 +212,7 @@ const updateComanda = (id) => {
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-3 p-4">
                 <div v-for="product in products" :key="product.id" >
                     <button 
-                        @click="isOpen = true, selectedProduct = product" class="image-button flex flex-col items-center justify-center w-full h-full p-4 " 
+                        @click="isOpen = true, selectedProduct = product" class="image-button flex flex-col items-center justify-center w-full h-full p-4 rounded" 
                         :style="{background: localStorageService.getButtonColors()}"
                     >
                             <img :src="product.image" class="button-icon object-contain max-w-full max-h-full"/>
@@ -284,8 +297,8 @@ const updateComanda = (id) => {
                     </div>
 
                     <div class="flex justify-between w-full mb-1">
-                        <button @click="cancelOrder" :style="{background: localStorageService.getButtonColors()}" class="text-black p-2">Cancelar</button>
-                        <button @click="saveOrder" :style="{background: localStorageService.getButtonColors()}" class="text-black p-2">Salvar Pedido</button>
+                        <button @click="cancelOrder" :style="{background: localStorageService.getButtonColors()}" class="text-black p-2 rounded">Cancelar</button>
+                        <button @click="saveOrder" :style="{background: localStorageService.getButtonColors()}" class="text-black p-2 rounded">Salvar Pedido</button>
                     </div>
                 </div>
             </div>
@@ -312,7 +325,7 @@ const updateComanda = (id) => {
                                         </div>
                                     </div>
                                 </div>          
-                                <span class="font-medium text-white text-right block w-full p-2"> 
+                                <span class="font-medium text-white text-right block w-full p-2 rounded"> 
                                     {{ 'R$ ' + comanda.total }}
                                 </span>
                             </button>
