@@ -12,6 +12,7 @@ import AtendimentoType from '@/views/onboarding/AtendimentoType.vue';
 import ManagerLayout from '@/views/app/ManagerLayout.vue';
 
 import ManagerDashboard from '@/views/app/ManagerDashboard.vue';
+import ManagerReports from '@/views/app/ManagerReports.vue';
 import EstablishmentInfo from '@/views/app/settings/EstablishmentInfo.vue';
 import RolePermissions from '@/views/app/settings/RolePermissions.vue';
 import MenuPersonalization from '@/views/app/settings/MenuPersonalization.vue';
@@ -34,6 +35,7 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       { path: 'dashboard', name: 'dashboard', component: ManagerDashboard },
+      { path: 'reports', name: 'reports', component: ManagerReports, meta: { permission: PERMISSIONS.RELATORIOS } },
       { path: 'settings/establishment', name: 'establishment-settings', component: EstablishmentInfo, meta: { permission: PERMISSIONS.CONFIGURACAO } },
       { path: 'settings/roles', component: RolePermissions, meta: { permission: PERMISSIONS.CONFIGURACAO } },
       { path: 'settings/menu', component: MenuPersonalization, meta: { permission: PERMISSIONS.CONFIGURACAO } },

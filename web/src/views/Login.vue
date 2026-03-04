@@ -42,9 +42,9 @@ const handleLogin = async () => {
       router.push("/app/dashboard");
     }
 
-  } catch (err) {
-    console.error(err);
-    serverError.value = "Email ou senha incorretos.";
+  }  catch (err) {
+  serverError.value = `Erro: ${err.message || 'Falha de login'}`;
+
   } finally {
     isLoading.value = false;
   }

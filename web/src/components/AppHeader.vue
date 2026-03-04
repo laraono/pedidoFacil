@@ -19,7 +19,10 @@ import {
   Tag,            
   Palette,        
   Shield,         
-  UserCog         
+  UserCog,         
+  BarChart,
+  LucideBarChart2,
+  StoreIcon
 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
@@ -47,7 +50,7 @@ const allMenuItems = [
   { 
     label: establishmentName, 
     route: '/app/dashboard', 
-    icon: BarChart3,
+    icon: StoreIcon,
     permission: PERMISSIONS.RELATORIOS 
   },
   { 
@@ -55,6 +58,12 @@ const allMenuItems = [
     route: '/app/kitchen', 
     icon: ChefHat,
     permission: PERMISSIONS.COZINHA 
+  },
+  { 
+    label: 'Relatórios', 
+    route: '/app/reports', 
+    icon: BarChart3,
+    permission: PERMISSIONS.RELATORIOS
   },
   { 
     label: 'Estoque', 
