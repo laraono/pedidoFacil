@@ -78,7 +78,7 @@ const timerClass = computed(() => {
       <div v-for="(item, index) in order.items" :key="index" class="flex flex-col border-b border-dashed border-black/10 pb-3 last:border-0 last:pb-0">
         
         <div class="flex items-start gap-3">
-          <span class="font-black text-lg text-gray-900 min-w-[24px]">{{ item.qtd }}x</span>
+          <span class="font-black text-lg text-gray-900 min-w-[24px]">{{ item.amount }}x</span>
           <span class="font-semibold text-lg text-gray-900 leading-tight">{{ item.name }}</span>
         </div>
         
