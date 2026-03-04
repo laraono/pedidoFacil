@@ -108,6 +108,8 @@ const endOrder = () => {
 
     let total = 0
 
+    kitchenStore.addOrder(order.value)
+
     items.value.map((item) =>  total += item.price)
 
     order.value = {
@@ -154,7 +156,7 @@ const addComanda = () => {
     if(order.value.items.length > 0) {
         comandaStore.addComanda(order.value)
 
-        kitchenStore.addOrder(order.value)
+    //    kitchenStore.addOrder(order.value)
 
         order.value = ({})
         items.value = []
@@ -164,11 +166,14 @@ const addComanda = () => {
 }
 
 const updateComanda = (id) => {
-    comandaStore.updateComanda(id, order.value, calculateTotal())
+    if(order.value.items.length > 0) {
+        comandaStore.updateComanda(id, order.value, calculateTotal())
 
-    items.value = []
+        items.value = []
+        order.value = ({})
 
-    hasOrder.value = false    
+        hasOrder.value = false    
+    }
 }
 
 </script>
