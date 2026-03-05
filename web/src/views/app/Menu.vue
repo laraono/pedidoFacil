@@ -108,8 +108,6 @@ const endOrder = () => {
 
     let total = 0
 
-    kitchenStore.addOrder(order.value)
-
     items.value.map((item) =>  total += item.price)
 
     order.value = {
@@ -156,7 +154,7 @@ const addComanda = () => {
     if(order.value.items.length > 0) {
         comandaStore.addComanda(order.value)
 
-    //    kitchenStore.addOrder(order.value)
+        kitchenStore.addOrder(order.value)
 
         order.value = ({})
         items.value = []
@@ -197,14 +195,14 @@ const updateComanda = (id) => {
 
     <div class="flex w-full h-lvh">
         <div 
-            class="w-60 h-lvh transform transition-all duration-300 overflow-hidden"
+            class="w-32 md:w-32 lg:w-48 h-lvh transform transition-all duration-300 overflow-hidden"
             :style="{ background: localStorageService.getCategoryColors() }"
         >
-            <div class="flex flex-col  items-center py-4 h-screen overflow-auto p-4">
+            <div class="grid grid-cols-1 items-center py-4 h-screen overflow-auto p-4">
                 <div v-for="category in menuStore.categories" :key="category.id" >
                     <button @click="selectCategory(category.id)" class="image-button flex flex-col items-center justify-center w-full h-full p-2">
-                        <img :src="category.image" class="button-icon w-18 h-18 object-contain max-w-full max-h-full"/>
-                        <span>{{ category.name }}</span>
+                        <img :src="category.image" class="button-icon w-4/5 h-18 object-contain max-w-full max-h-full"/>
+                        <span class="font-semibold text-2xl">{{ category.name }}</span>
                     </button>
                 </div>            
             </div>
