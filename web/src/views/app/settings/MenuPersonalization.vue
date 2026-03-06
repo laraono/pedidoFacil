@@ -10,15 +10,10 @@ const authStore = useAuthStore();
 
 const isLoading = ref(false);
 
-const defaultColors = {
-    Cor_Fundo: '#0060A9',
-    Cor_Botoes: '#009DFF',
-    Cor_Categorias: '#009DFF'
-};
+const backgroundColor = ref(localStorageService.getBackgroundColors());
+const buttonsColor = ref(localStorageService.getButtonColors());
+const categoriesColor = ref(localStorageService.getCategoryColors());
 
-const corFundo = ref(localStorageService.getBackgroundColors() ?? defaultColors.Cor_Fundo);
-const corBotoes = ref(localStorageService.getButtonColors() ?? defaultColors.Cor_Botoes);
-const corCategorias = ref(localStorageService.getCategoryColors() ?? defaultColors.Cor_Categorias);
 const formasConsumo = ref([]);
 const observacoesPermitidas = ref(true);
 
@@ -28,25 +23,25 @@ const savePersonalization = () => {
     
     authStore.setConfigStepComplete('menu'); 
         
-    localStorageService.saveBackgroundColors(corFundo.value)
-    localStorageService.saveButtonColors(corBotoes.value)
-    localStorageService.saveCategoryColors(corCategorias.value)
+    localStorageService.saveBackgroundColors(backgroundColor.value)
+    localStorageService.saveButtonColors(buttonsColor.value)
+    localStorageService.saveCategoryColors(categoriesColor.value)
 
-    console.log(corBotoes.value)
+    console.log(buttonsColor.value)
     
     router.push('/app/dashboard');
 };
 
 const setCorFundo = (event) => {
-    corFundo.value = event.target.value
+    backgroundColor.value = event.target.value
 }
 
 const setCorBotoes = (event) => {
-    corBotoes.value = event.target.value
+    buttonsColor.value = event.target.value
 }
 
 const setCorCategorias = (event) => {
-    corCategorias.value = event.target.value
+    categoriesColor.value = event.target.value
 }
 
 </script>
@@ -74,8 +69,8 @@ const setCorCategorias = (event) => {
             <div class="mb-6">
               <label for="fundo" class="block text-gray-600 font-semibold mb-2">Cor de fundo:</label>
               <div class="flex items-center">
-                  <input type="color" v-model="corFundo" class="w-10 h-10 p-0 border-none mr-3 cursor-pointer bg-transparent" @click="setCorFundo" />
-                  <input type="text" id="fundo" v-model="corFundo"
+                  <input type="color" v-model="backgroundColor" class="w-10 h-10 p-0 border-none mr-3 cursor-pointer bg-transparent" @click="setCorFundo" />
+                  <input type="text" id="fundo" v-model="backgroundColor"
                          placeholder="#0060A9" required maxlength="7" minlength="4"
                          class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 outline-none transition-all" />
                   <HelpCircle :size="18" class="text-gray-400 ml-2 cursor-pointer" title="Cor principal do cardápio" />
@@ -85,8 +80,8 @@ const setCorCategorias = (event) => {
             <div class="mb-6">
               <label for="botoes" class="block text-gray-600 font-semibold mb-2">Cor dos botões:</label>
               <div class="flex items-center">
-                  <input type="color" v-model="corBotoes" class="w-10 h-10 p-0 border-none mr-3 cursor-pointer bg-transparent" @click="setCorBotoes" />
-                  <input type="text" id="botoes" v-model="corBotoes"
+                  <input type="color" v-model="buttonsColor" class="w-10 h-10 p-0 border-none mr-3 cursor-pointer bg-transparent" @click="setCorBotoes" />
+                  <input type="text" id="botoes" v-model="buttonsColor"
                          placeholder="#009DFF" required maxlength="7" minlength="4"
                          class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 outline-none transition-all" />
               </div>
@@ -95,8 +90,8 @@ const setCorCategorias = (event) => {
             <div class="mb-6">
               <label for="categorias" class="block text-gray-600 font-semibold mb-2">Cor das categorias:</label>
               <div class="flex items-center">
-                  <input type="color" v-model="corCategorias" class="w-10 h-10 p-0 border-none mr-3 cursor-pointer bg-transparent" @click="setCorCategorias"/>
-                  <input type="text" id="categorias" v-model="corCategorias"
+                  <input type="color" v-model="categoriesColor" class="w-10 h-10 p-0 border-none mr-3 cursor-pointer bg-transparent" @click="setCorCategorias"/>
+                  <input type="text" id="categorias" v-model="categoriesColor"
                          placeholder="#009DFF" required maxlength="7" minlength="4"
                          class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 outline-none transition-all" />
               </div>
@@ -107,8 +102,8 @@ const setCorCategorias = (event) => {
                   <Palette :size="18" class="mr-2 text-brand-green" /> 
                   Prévia do Cardápio
                 </h3>
-                <div class="flex justify-center p-4 rounded-xl shadow-inner transition-colors duration-300" :style="{ backgroundColor: corFundo }">
-                    <button class="px-6 py-2 rounded-lg font-bold shadow-md transition-colors" :style="{ backgroundColor: corBotoes, color: '#fff' }">
+                <div class="flex justify-center p-4 rounded-xl shadow-inner transition-colors duration-300" :style="{ backgroundColor: backgroundColor }">
+                    <button class="px-6 py-2 rounded-lg font-bold shadow-md transition-colors" :style="{ backgroundColor: buttonsColor, color: '#fff' }">
                         Comprar Agora
                     </button>
                 </div>
