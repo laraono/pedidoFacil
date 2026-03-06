@@ -7,8 +7,8 @@ export const useKitchenStore = defineStore('kitchen', () => {
       id: 101,
       table: 'Mesa 04',
       waiter: 'Carlos',
-      status: 'pending', // Estados: pending, preparing, ready
-      createdAt: new Date(Date.now() - 1000 * 60 * 15), // 15 min atrás
+      status: 'pending',
+      createdAt: new Date(Date.now() - 1000 * 60 * 15), 
       items: [
         { name: 'X-Bacon', amount: 2, obs: 'Sem cebola' },
         { name: 'Coca-Cola Zero', amount: 2, obs: '' }
@@ -19,19 +19,17 @@ export const useKitchenStore = defineStore('kitchen', () => {
       table: 'Balcão',
       waiter: 'Ana',
       status: 'preparing',
-      createdAt: new Date(Date.now() - 1000 * 60 * 5), // 5 min atrás
+      createdAt: new Date(Date.now() - 1000 * 60 * 5), 
       items: [
         { name: 'Isca de Peixe', amount: 1, obs: 'Molho extra' }
       ]
     }
   ]);
 
-  // Getters para separar as colunas do Kanban
   const pendingOrders = computed(() => orders.value.filter(o => o.status === 'pending'));
   const preparingOrders = computed(() => orders.value.filter(o => o.status === 'preparing'));
   const readyOrders = computed(() => orders.value.filter(o => o.status === 'ready'));
 
-  // Actions
   function moveOrder(id, newStatus) {
     const order = orders.value.find(o => o.id === id);
     if (order) {
@@ -44,7 +42,6 @@ export const useKitchenStore = defineStore('kitchen', () => {
   }
 
   function finishOrder(id) {
-    // Remove da tela (arquiva)
     orders.value = orders.value.filter(o => o.id !== id);
   }
 
@@ -64,7 +61,7 @@ export const useKitchenStore = defineStore('kitchen', () => {
       ]
     };
     orders.value.push(newOrder);
-    return true; // Retorna true para avisar que chegou um novo pedido
+    return true; 
   }
 
   return { 
