@@ -5,6 +5,7 @@ import { useMenuStore } from '@/stores/productsManagement';
 import { useComandaStore } from '@/stores/comandaManagement';
 import { useKitchenStore } from '@/stores/kitchen';
 import { getEstablishmentMock, initMockEstablishment } from '@/mock/stablishmentmock'; 
+import { Trash2 } from 'lucide-vue-next';
 
 const establishmentName = ref('Carregando...');
 
@@ -40,7 +41,7 @@ const backgroundStyle = computed(() => {
     return {
         backgroundImage: imageUrl.value 
         ? `url(${imageUrl.value})` 
-        : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        : '#667eea',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
@@ -101,6 +102,14 @@ const saveAmount = (change, product, size) => {
                 price: amount.value[key] * size.price
             })
         }
+    }
+}
+
+const removeItem = (index) => {
+    items.value.splice(index, 1);
+    if(items.value.length === 0) {
+        hasOrder.value = false
+        amount.value = []
     }
 }
 
@@ -181,11 +190,11 @@ const updateComanda = (id) => {
         class="relative w-full h-30  overflow-hidden  group"
         :style="backgroundStyle"
     >
-        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+        <div class="absolute inset-0 bg-black/80"></div>
         
         <div class="relative h-full flex items-center justify-center p-8 text-white">
 
-        <h2 class="text-3xl md:text-4xl font-bold mb-4 drop-shadow-lg">
+        <h2 class="text-3xl md:text-5xl font-bold mb-4 drop-shadow-lg">
             {{ establishmentName }}
         </h2>
         
@@ -233,7 +242,7 @@ const updateComanda = (id) => {
         <div v-if="hasOrder" class="fixed bottom-0 w-full bg-black">
 
             <div class="bg-gray-700 w-full py-2 px-4">
-                <div class="grid grid-cols-4">
+                <div class="grid grid-cols-5">
                     <div class="font-bold text-xl text-white">Produto</div>
                     <div class="font-bold text-xl text-white">Tamanho</div>
                     <div class="font-bold text-xl text-white">Quantidade</div>
@@ -243,12 +252,13 @@ const updateComanda = (id) => {
     
             <div class="p-4">
                     
-                <div class="grid grid-cols-4 gap-2">
-                    <template v-for="item in items">
+                <div class="grid grid-cols-5 gap-2">
+                    <template v-for="(item, index) in items" :key="index">
                         <div class="font-medium text-white p-2">{{ item.name }}</div>
                         <div class="font-medium text-white p-2">{{ item.size }}</div>
                         <div class="font-medium text-white p-2">{{ item.amount }}</div>
                         <div class="font-medium text-white p-2">R${{ item.price }}</div>
+                        <button @click="removeItem(index)" type="button" class="text-red-400 hover:text-red-600 self-end sm:self-center" title="Remover tamanho"><Trash2 :size="16" /></button>
                     </template>
                 </div>
 
@@ -309,8 +319,8 @@ const updateComanda = (id) => {
 
 
         <Teleport to="body">
-            <div v-if="orderEnded" class="fixed inset-0 flex items-center justify-center p-4">
-                <div class="bg-white p-4 rounded-lg max-w-4xl w-full ">
+            <div v-if="orderEnded" class="fixed inset-0 flex items-center justify-center p-4" style="z-index: 9999;">
+                <div class="bg-white p-4 rounded-lg max-w-4xl w-full h-4/5 overflow-y-auto">
                     <div class="flex item-start justify-center">
                         <h2 class="text-black font-bold text-2xl">Comandas Abertas</h2>
                     </div>
