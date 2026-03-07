@@ -207,7 +207,7 @@ const updateComanda = (id) => {
             class="w-32 md:w-32 lg:w-48 h-lvh transform transition-all duration-300 overflow-hidden"
             :style="{ background: localStorageService.getCategoryColors() }"
         >
-            <div class="grid grid-cols-1 items-center py-4 h-screen overflow-auto p-4">
+            <div class="grid grid-cols-1 content-center py-4 h-screen overflow-auto p-4 divide-y divide-gray-200">
                 <div v-for="category in menuStore.categories" :key="category.id" >
                     <button @click="selectCategory(category.id)" class="image-button flex flex-col items-center justify-center w-full h-full p-2">
                         <img :src="category.image" class="button-icon w-4/5 h-18 object-contain max-w-full max-h-full"/>
@@ -228,9 +228,9 @@ const updateComanda = (id) => {
                         :style="{background: localStorageService.getButtonColors()}"
                     >
                             <img :src="product.image" class="button-icon object-contain max-w-full max-h-full"/>
-                            <div class="flex justify-between w-full mb-1">
-                                <span class="font-medium">{{ product.name }}</span>
-                                <span class="font-semibold"> {{ 'R$ ' + product.sizes[0].price }}</span>
+                            <div class="flex justify-between items-baseline w-full mb-1">
+                                <span class="font-medium text-xl">{{ product.name }}</span>
+                                <span class="font-semibold text-right">R$ {{ product.sizes[0].price }}</span>
                             </div>
                             <span class="text-sm ">{{ product.description }}</span>
                     </button>
@@ -242,11 +242,12 @@ const updateComanda = (id) => {
         <div v-if="hasOrder" class="fixed bottom-0 w-full bg-black">
 
             <div class="bg-gray-700 w-full py-2 px-4">
-                <div class="grid grid-cols-5">
-                    <div class="font-bold text-xl text-white">Produto</div>
-                    <div class="font-bold text-xl text-white">Tamanho</div>
-                    <div class="font-bold text-xl text-white">Quantidade</div>
-                    <div class="font-bold text-xl text-white">Preço</div>
+                <div class="grid grid-cols-5 ">
+                    <div class="font-bold text-xl text-white border-r border-gray-200 text-center">Produto</div>
+                    <div class="font-bold text-xl text-white border-r border-gray-200 text-center">Tamanho</div>
+                    <div class="font-bold text-xl text-white border-r border-gray-200 text-center">Quantidade</div>
+                    <div class="font-bold text-xl text-white border-r border-gray-200 text-center">Preço</div>
+                    <div class="font-bold text-xl text-white border-r border-gray-200 text-center">Ações</div>
                 </div>
             </div>
     
@@ -254,11 +255,11 @@ const updateComanda = (id) => {
                     
                 <div class="grid grid-cols-5 gap-2">
                     <template v-for="(item, index) in items" :key="index">
-                        <div class="font-medium text-white p-2">{{ item.name }}</div>
-                        <div class="font-medium text-white p-2">{{ item.size }}</div>
-                        <div class="font-medium text-white p-2">{{ item.amount }}</div>
-                        <div class="font-medium text-white p-2">R${{ item.price }}</div>
-                        <button @click="removeItem(index)" type="button" class="text-red-400 hover:text-red-600 self-end sm:self-center" title="Remover tamanho"><Trash2 :size="16" /></button>
+                        <div class="font-medium text-white p-2 border-gray-200 text-center">{{ item.name }}</div>
+                        <div class="font-medium text-white p-2 border-gray-200 text-center">{{ item.size }}</div>
+                        <div class="font-medium text-white p-2 border-gray-200 text-center">{{ item.amount }}</div>
+                        <div class="font-medium text-white p-2 border-gray-200 text-center">R${{ item.price }}</div>
+                        <button @click="removeItem(index)" type="button" class="text-red-400 hover:text-red-600 self-end sm:self-center flex items-center justify-center" title="Remover tamanho"><Trash2 :size="16" /></button>
                     </template>
                 </div>
 
@@ -284,7 +285,8 @@ const updateComanda = (id) => {
         <Teleport to="body">
             <div v-if="isOpen" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
                 <div class="bg-white p-4 rounded-lg max-w-2xl w-full">
-                    <h2 class="text-black font-bold">{{ selectedProduct.name }}</h2>
+                    <img :src="selectedProduct.image" class="button-icon w-4/5 h-18 object-contain max-w-full max-h-full"/>
+                    <span class="font-medium text-black">{{ selectedProduct.description }}</span>
                     <div class="flex justify-between w-full mb-1" v-for="(size, index) in selectedProduct.sizes">
                         <span class="font-medium text-black">{{ size.name }}</span>
                         <span class="font-medium text-black"> {{ 'R$ ' + size.price }}</span>
