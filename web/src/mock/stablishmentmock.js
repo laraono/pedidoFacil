@@ -7,7 +7,7 @@ export function initMockEstablishment() {
       JSON.stringify({
         info: {
           name: 'Restaurante Exemplo',
-          cnpj: '00.000.000/0001-00',
+          cnpj: '86.022.384/0001-69',
           phone: '(11) 99999-9999',
           address: 'Rua Exemplo, 123'
         }
