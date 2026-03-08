@@ -207,11 +207,11 @@ const updateComanda = (id) => {
             class="w-32 md:w-32 lg:w-48 h-lvh transform transition-all duration-300 overflow-hidden"
             :style="{ background: localStorageService.getCategoryColors() }"
         >
-            <div class="grid grid-cols-1 content-center py-4 h-screen overflow-auto p-4 divide-y divide-gray-200">
+            <div class="grid grid-cols-1 content-start py-4 h-screen overflow-auto p-4 divide-y divide-gray-200">
                 <div v-for="category in menuStore.categories" :key="category.id" >
                     <button @click="selectCategory(category.id)" class="image-button flex flex-col items-center justify-center w-full h-full p-2">
                         <img :src="category.image" class="button-icon w-4/5 h-18 object-contain max-w-full max-h-full"/>
-                        <span class="font-semibold text-2xl">{{ category.name }}</span>
+                        <span class="font-semibold md:text-2xl lg:text-xl">{{ category.name }}</span>
                     </button>
                 </div>            
             </div>
@@ -239,7 +239,7 @@ const updateComanda = (id) => {
         
         </div>
 
-        <div v-if="hasOrder" class="fixed bottom-0 w-full bg-black">
+        <div v-if="hasOrder" class="fixed bottom-0 w-full bg-black max-h-1/2 ">
 
             <div class="bg-gray-700 w-full py-2 px-4">
                 <div class="grid grid-cols-5 ">
@@ -283,27 +283,26 @@ const updateComanda = (id) => {
         </div>
 
         <Teleport to="body">
-            <div v-if="isOpen" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-                <div class="bg-white p-4 rounded-lg max-w-2xl w-full">
-                    <img :src="selectedProduct.image" class="button-icon w-4/5 h-18 object-contain max-w-full max-h-full"/>
-                    <span class="font-medium text-black">{{ selectedProduct.description }}</span>
-                    <div class="flex justify-between w-full mb-1" v-for="(size, index) in selectedProduct.sizes">
-                        <span class="font-medium text-black">{{ size.name }}</span>
-                        <span class="font-medium text-black"> {{ 'R$ ' + size.price }}</span>
-                        
-                        <div class="flex items-center gap-2">
+            <div v-if="isOpen" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 " style="z-index: 9999;">
+                <div class="bg-white p-4 rounded-lg max-w-xl w-full gap-2 mb-1">
+                    <div class="flex flex-col items-center justify-center gap-2 mb-3">
+                        <img :src="selectedProduct.image" class="button-icon w-4/5 h-18 object-contain max-w-full max-h-full"/>
+                        <span class="text-lg text-black">{{ selectedProduct.description }}</span>
+                    </div>
+                    <div class="flex justify-between w-fullgap-2 mb-4 items-baseline" v-for="(size, index) in selectedProduct.sizes">
+                        <span class="font-medium text-black">{{ size.name + ' - R$ ' + size.price }}</span>    
+                        <span class="font-bold text-black w-8 text-center"> {{ amount[selectedProduct.name + '-' + size.name] || 0 }}</span>                    
+                        <div class="flex items-center">
                             <button 
                                 @click="saveAmount(-1, selectedProduct, size)" 
-                                class="w-8 h-8 rounded-full font-bold text-lg flex items-center justify-center transition-colors"
-                                :style="{background: localStorageService.getButtonColors()}"
+                                class="w-8 h-8 font-bold text-lg text-black flex items-center justify-center transition-colors"
                             >
                                 -
                             </button>
-                            <span class="font-medium text-black w-8 text-center"> {{ amount[selectedProduct.name + '-' + size.name] || 0 }}</span>
+                            <span class="font-medium text-black w-8 text-center"> | </span>
                             <button 
                                 @click="saveAmount(1, selectedProduct, size)" 
-                                class="w-8 h-8 rounded-full font-bold text-lg flex items-center justify-center transition-colors"
-                                :style="{background: localStorageService.getButtonColors()}"
+                                class="w-8 h-8 font-bold text-lg text-black flex items-center justify-center transition-colors"
                             >
                                 +
                             </button>
@@ -313,12 +312,11 @@ const updateComanda = (id) => {
 
                     <div class="flex justify-between w-full mb-1">
                         <button @click="cancelOrder" :style="{background: localStorageService.getButtonColors()}" class="text-black p-2 rounded">Cancelar</button>
-                        <button @click="saveOrder" :style="{background: localStorageService.getButtonColors()}" class="text-black p-2 rounded">Salvar Pedido</button>
+                        <button @click="saveOrder" :style="{ background: items.length > 0 ? localStorageService.getButtonColors() : 'gray' }" class="text-black p-2 rounded">Salvar Pedido</button>
                     </div>
                 </div>
             </div>
         </Teleport>
-
 
         <Teleport to="body">
             <div v-if="orderEnded" class="fixed inset-0 flex items-center justify-center p-4" style="z-index: 9999;">
