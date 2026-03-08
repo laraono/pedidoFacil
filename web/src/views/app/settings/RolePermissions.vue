@@ -3,6 +3,7 @@ import { ref, onMounted, Teleport } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { ArrowLeft, CheckCircle, Trash, HelpCircle, PlusCircle, Users } from 'lucide-vue-next';
+import localStorageService from '@/services/localStorageService';
 
 import { PERMISSIONS } from '@/utils/permissions';
 import { getRolesMock, saveRolesMock } from '@/mock/authmock';
@@ -118,8 +119,8 @@ const saveRoles = async () => {
                         title="Excluir Cargo"
                         class="mt-7 p-2.5 rounded-xl transition-all outline-none"
                         :class="{ 
-                            'text-red-500 hover:bg-red-50 active:scale-90': role.id > 4, 
-                            'text-gray-200 cursor-not-allowed': role.id <= 4 
+                            'text-red-500 hover:bg-red-50 active:scale-90': role.id > 2, 
+                            'text-gray-200 cursor-not-allowed': role.id <= 2
                         }"
                         :disabled="role.id <= 4"
                 >
@@ -157,9 +158,17 @@ const saveRoles = async () => {
         </form>
 
         <Teleport to="body">
-            <div v-if="open" class="modal bg-black">
-                <span>Cargo criado com sucesso!</span>
-                <button @click="open = false">Fechar</button>
+            <div v-if="open" class="fixed inset-0 flex items-center justify-center p-4" style="z-index: 9999;">
+                <div class="bg-white p-4 rounded-lg border-2 border-black">
+                <div class="grid items-center justify-center grid-cols-1 gap-4">
+                    <h2 class="text-black font-bold text-2xl">Cargo criado com sucesso!</h2>
+                    <button 
+                    @click="open = false" 
+                    class="py-2.5 px-5 bg-brand-green text-black font-bold rounded-xl flex items-center hover:bg-brand-green-hover transition-all ml-auto shadow-md active:scale-95">
+                    Fechar
+                    </button>
+                </div>
+                </div>
             </div>
         </Teleport>
     </main>
