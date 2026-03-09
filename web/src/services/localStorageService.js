@@ -67,7 +67,7 @@ export default {
   },
 
   getButtonColors() {
-    return getItem(STORAGE_KEYS.BUTTONS)
+    return getItem(STORAGE_KEYS.BUTTONS) || '#009DFF'
   },
 
   saveBackgroundColors(value) {
@@ -75,7 +75,7 @@ export default {
   },
 
   getBackgroundColors() {
-    return getItem(STORAGE_KEYS.BACKGROUND)
+    return getItem(STORAGE_KEYS.BACKGROUND) || '#0060A9'
   },
 
   saveCategoryColors(value) {
@@ -83,7 +83,7 @@ export default {
   },
 
   getCategoryColors() {
-    return getItem(STORAGE_KEYS.CATEGORY)
+    return getItem(STORAGE_KEYS.CATEGORY) || '#009DFF'
   },
-  
+
 };

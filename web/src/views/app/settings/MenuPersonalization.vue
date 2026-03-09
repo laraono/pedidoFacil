@@ -10,15 +10,9 @@ const authStore = useAuthStore();
 
 const isLoading = ref(false);
 
-const defaultColors = {
-    Cor_Fundo: '#0060A9',
-    Cor_Botoes: '#009DFF',
-    Cor_Categorias: '#009DFF'
-};
-
-const corFundo = ref(defaultColors.Cor_Fundo);
-const corBotoes = ref(defaultColors.Cor_Botoes);
-const corCategorias = ref(defaultColors.Cor_Categorias);
+const corFundo = ref(localStorageService.getBackgroundColors());
+const corBotoes = ref(localStorageService.getButtonColors());
+const corCategorias = ref(localStorageService.getCategoryColors());
 const formasConsumo = ref([]);
 const observacoesPermitidas = ref(true);
 
