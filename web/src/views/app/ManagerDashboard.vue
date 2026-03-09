@@ -8,6 +8,7 @@ import CardCardapio from '@/components/dashboard/ConfigMenuCard.vue';
 import CardCategorias from '@/components/dashboard/ConfigCategoriesCard.vue';
 import CardProdutos from '@/components/dashboard/ConfigProductsCard.vue';
 import CardUsers from '@/components/dashboard/ConfigUsersCard.vue'
+import MenuCard from '@/components/dashboard/MenuCard.vue';
 
 const auth = useAuthStore();
 </script>
@@ -24,6 +25,7 @@ const auth = useAuthStore();
       <CardCardapio v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
       <CardCategorias v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
       <CardProdutos v-if="auth.hasPermission(PERMISSIONS.CONFIGURACAO)" />
+      <MenuCard v-if="auth.hasPermission(PERMISSIONS.CRIAR_PEDIDO)" />
     </div>
   </main>
 </template>
