@@ -1,5 +1,5 @@
 export const getKpisMock = (period) => {
-  const multipliers = { '24h': 1, '7d': 7, '30d': 30 };
+  const multipliers = { '24h': 1, '7d': 7, '30d': 30, 'all': 180 }; // Adicionado multiplicador para 'all'
   const m = multipliers[period] || 7;
 
   return {
@@ -16,7 +16,7 @@ export const getRevenueChartMock = (period) => {
       { label: '10:00', value: 120 }, { label: '12:00', value: 450 }, { label: '14:00', value: 300 },
       { label: '18:00', value: 600 }, { label: '20:00', value: 950 }, { label: '22:00', value: 700 }
     ];
-  } else if (period === '30d') {
+  } else if (period === '30d' || period === 'all') { // Retornando dados mensais/gerais
     return [
       { label: 'Semana 1', value: 35000 }, { label: 'Semana 2', value: 42000 }, 
       { label: 'Semana 3', value: 38000 }, { label: 'Semana 4', value: 45000 }
@@ -30,7 +30,7 @@ export const getRevenueChartMock = (period) => {
 
 export const getSalesByChannelMock = (period) => {
   if (period === '24h') return [{ name: 'Garçom (Mesas)', value: 65, color: 'bg-brand-green' }, { name: 'Autoatendimento', value: 25, color: 'bg-blue-500' }, { name: 'Caixa', value: 10, color: 'bg-gray-400' }];
-  if (period === '30d') return [{ name: 'Garçom (Mesas)', value: 50, color: 'bg-brand-green' }, { name: 'Autoatendimento', value: 40, color: 'bg-blue-500' }, { name: 'Caixa', value: 10, color: 'bg-gray-400' }];
+  if (period === '30d' || period === 'all') return [{ name: 'Garçom (Mesas)', value: 50, color: 'bg-brand-green' }, { name: 'Autoatendimento', value: 40, color: 'bg-blue-500' }, { name: 'Caixa', value: 10, color: 'bg-gray-400' }];
   
   return [
     { name: 'Garçom (Mesas)', value: 55, color: 'bg-brand-green' },
@@ -41,7 +41,7 @@ export const getSalesByChannelMock = (period) => {
 
 export const getPaymentMethodsMock = (period) => {
   if (period === '24h') return [{ name: 'Pix', value: 55, color: 'bg-brand-green' }, { name: 'Cartão de Crédito', value: 30, color: 'bg-blue-500' }, { name: 'Cartão de Débito', value: 10, color: 'bg-indigo-400' }, { name: 'Dinheiro', value: 5, color: 'bg-gray-400' }];
-  if (period === '30d') return [{ name: 'Pix', value: 40, color: 'bg-brand-green' }, { name: 'Cartão de Crédito', value: 45, color: 'bg-blue-500' }, { name: 'Cartão de Débito', value: 10, color: 'bg-indigo-400' }, { name: 'Dinheiro', value: 5, color: 'bg-gray-400' }];
+  if (period === '30d' || period === 'all') return [{ name: 'Pix', value: 40, color: 'bg-brand-green' }, { name: 'Cartão de Crédito', value: 45, color: 'bg-blue-500' }, { name: 'Cartão de Débito', value: 10, color: 'bg-indigo-400' }, { name: 'Dinheiro', value: 5, color: 'bg-gray-400' }];
   
   return [
     { name: 'Pix', value: 45, color: 'bg-brand-green' },
@@ -52,7 +52,7 @@ export const getPaymentMethodsMock = (period) => {
 };
 
 export const getPeakHoursMock = (period) => {
-  const variation = period === '24h' ? 20 : period === '30d' ? -10 : 0;
+  const variation = (period === '24h') ? 20 : (period === '30d' || period === 'all') ? -10 : 0;
   return [
     { hora: '11:00', fluxo: Math.min(100, Math.max(10, 20 + variation)) }, 
     { hora: '12:00', fluxo: Math.min(100, Math.max(10, 85 + variation)) }, 
@@ -67,7 +67,7 @@ export const getPeakHoursMock = (period) => {
 };
 
 export const getTopWaitersMock = (period) => {
-  const m = period === '24h' ? 1 : period === '30d' ? 30 : 7;
+  const m = (period === '24h') ? 1 : (period === '30d') ? 30 : (period === 'all') ? 180 : 7;
   return [
     { id: 102, name: 'Carlos Silva', revenue: `R$ ${(607.14 * m).toLocaleString('pt-BR')}`, orders: 7 * m },
     { id: 105, name: 'Ana Souza', revenue: `R$ ${(555.71 * m).toLocaleString('pt-BR')}`, orders: 6 * m },
@@ -76,10 +76,21 @@ export const getTopWaitersMock = (period) => {
 };
 
 export const getCancellationsMock = (period) => {
-  const m = period === '24h' ? 0.2 : period === '30d' ? 4 : 1;
+  const m = (period === '24h') ? 0.2 : (period === '30d') ? 4 : (period === 'all') ? 24 : 1;
   return [
     { motivo: 'Demora no preparo', count: Math.ceil(18 * m), color: 'bg-red-500' },
     { motivo: 'Pedido errado / Erro do Garçom', count: Math.ceil(7 * m), color: 'bg-orange-400' },
     { motivo: 'Desistência / Cliente foi embora', count: Math.ceil(3 * m), color: 'bg-gray-400' },
+  ];
+};
+
+export const getTopProductsMock = (period) => {
+  const m = (period === '24h') ? 0.15 : (period === '30d') ? 4.5 : (period === 'all') ? 25 : 1;
+  
+  return [
+    { nome: 'Picanha na Chapa', categoria: 'Pratos', qtd: Math.ceil(142 * m), receita: `R$ ${(8236.00 * m).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, margem: '45%' },
+    { nome: 'Suco de Laranja 500ml', categoria: 'Bebidas', qtd: Math.ceil(310 * m), receita: `R$ ${(3100.00 * m).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, margem: '70%' },
+    { nome: 'Batata Frita Especial', categoria: 'Porções', qtd: Math.ceil(98 * m), receita: `R$ ${(1960.00 * m).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, margem: '60%' },
+    { nome: 'Pudim de Leite', categoria: 'Sobremesas', qtd: Math.ceil(45 * m), receita: `R$ ${(540.00 * m).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, margem: '80%' },
   ];
 };
