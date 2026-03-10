@@ -20,5 +20,9 @@
   "homepage": "https://github.com/laraono/pedidoFacil#readme",
   "devDependencies": {
     "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "react-dom": "^19.2.4",
+    "react-native-web": "^0.21.2"
   }
 }
