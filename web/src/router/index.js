@@ -9,12 +9,11 @@ import RegisterManager from '@/views/RegisterManager.vue';
 import EstabelecimentoName from '@/views/onboarding/EstabelecimentoName.vue';
 import AtendimentoType from '@/views/onboarding/AtendimentoType.vue';
 
-import ManagerLayout from '@/views/app/ManagerLayout.vue';
+import Header from '@/views/app/Header.vue';
 
-import ManagerDashboard from '@/views/app/ManagerDashboard.vue';
+import Dashboard from '@/views/app/Dashboard.vue';
 import EstablishmentInfo from '@/views/app/settings/EstablishmentInfo.vue';
 import RolePermissions from '@/views/app/settings/RolePermissions.vue';
-import MenuPersonalization from '@/views/app/settings/MenuPersonalization.vue';
 import MenuProducts from '@/views/app/settings/ProductsManagement.vue';
 import MenuCategories from '@/views/app/settings/CategoriesManagement.vue';
 import Menu from '@/views/app/Menu.vue';
@@ -31,13 +30,12 @@ const routes = [
 
   {
     path: '/app',
-    component: ManagerLayout,
+    component: Header,
     meta: { requiresAuth: true },
     children: [
-      { path: 'dashboard', name: 'dashboard', component: ManagerDashboard },
+      { path: 'dashboard', name: 'dashboard', component: Dashboard },
       { path: 'settings/establishment', name: 'establishment-settings', component: EstablishmentInfo, meta: { permission: PERMISSIONS.CONFIGURACAO } },
       { path: 'settings/roles', component: RolePermissions, meta: { permission: PERMISSIONS.CONFIGURACAO } },
-      { path: 'settings/menu', component: MenuPersonalization, meta: { permission: PERMISSIONS.CONFIGURACAO } },
       { path: '', redirect: 'dashboard' },
       { path: 'settings/categories', component: MenuCategories, meta: { permission: PERMISSIONS.CONFIGURACAO } },
       { path: 'settings/products', component: MenuProducts, meta: { permission: PERMISSIONS.CONFIGURACAO } },

@@ -1,194 +1,189 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
-import { useOnboardingStore } from '@/stores/onboarding';
-import { ArrowLeft, CheckCircle, Upload } from 'lucide-vue-next';
-import { maskCNPJ, isValidCNPJ } from '@/utils/validator';
-import { getEstablishmentMock, updateEstablishmentMock } from '@/mock/stablishmentmock';
 import localStorageService from '@/services/localStorageService';
+import { useToast } from '@/composables/useToast';
+import {
+  Store, Save, FileText, MapPin, Phone,
+  Clock, ArrowLeft, UploadCloud, AlertCircle, AlignLeft
+} from 'lucide-vue-next';
 
 const router = useRouter();
-const authStore = useAuthStore();
-const onboardingStore = useOnboardingStore();
+const { showToast } = useToast();
 
-const nomeEstabelecimento = ref('');
-const cnpj = ref('');
-const endereco = ref('');
-const metodosPagamento = ref([]);
-const formasAtendimento = ref([]);
 const isLoading = ref(false);
-const localError = ref(null);
-const fileInput = ref(null);
+const logoPreview = ref(null);
+const errors = ref({});
 
-const paymentOptions = ['Crédito', 'Débito', 'Dinheiro', 'Pix'];
-
-const serviceOptions = [
-  'Autoatendimento (totens)',
-  'Atendimento por garçons (tablets)',
-  'Atendimento no caixa'
-];
-
-watch(cnpj, (value) => {
-  if (!value) return;
-  const masked = maskCNPJ(value);
-  if (masked !== value) {
-    cnpj.value = masked;
-  }
+const form = ref({
+  name: '',
+  cnpj: '',
+  phone: '',
+  description: '',
 });
 
-onMounted(async () => {
-  const data = await getEstablishmentMock();
-
-  if (data?.info) {
-    nomeEstabelecimento.value = data.info.name || '';
-    cnpj.value = data.info.cnpj || '';
-    endereco.value = data.info.address || '';
-    metodosPagamento.value = data.info.paymentMethods || [];
-    formasAtendimento.value = data.info.serviceMethods || [];
+onMounted(() => {
+  const data = localStorageService.getOnboarding();
+  if (data) {
+    form.value = {
+      name: data.nome_estabelecimento || '',
+      cnpj: data.cnpj || '',
+      phone: data.telefone || '',
+      description: data.descricao || '',
+    };
   }
-
-  const nomeOnboarding = onboardingStore.estabelecimentoData.nome_estabelecimento;
-  if (nomeOnboarding) {
-    nomeEstabelecimento.value = nomeOnboarding;
-  }
-
-  const tiposAtendimentoOnboarding = onboardingStore.estabelecimentoData.tipo_atendimento;
-  if (tiposAtendimentoOnboarding?.length) {
-    formasAtendimento.value = tiposAtendimentoOnboarding
-      .map(tipo => {
-        if (tipo === 'Autoatendimento') return 'Autoatendimento (totens)';
-        if (tipo === 'Garçom') return 'Atendimento por garçons (tablets)';
-        return '';
-      })
-      .filter(Boolean);
-  }
+  logoPreview.value = localStorageService.getImage();
 });
 
-const saveInfo = async () => {
-  localError.value = null;
-  isLoading.value = true;
+const validateForm = () => {
+  errors.value = {};
+  if (!form.value.name) errors.value.name = "O nome fantasia é obrigatório.";
+  if (!form.value.cnpj) errors.value.cnpj = "O CNPJ é obrigatório.";
+  if (!form.value.phone) errors.value.phone = "Informe um telefone de contato.";
 
-  if (!isValidCNPJ(cnpj.value)) {
-    localError.value = 'CNPJ inválido.';
-    isLoading.value = false;
+  return Object.keys(errors.value).length === 0;
+};
+
+const handleLogoUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (e) => logoPreview.value = e.target.result;
+    reader.readAsDataURL(file);
+  }
+};
+
+const saveSettings = async () => {
+  // 1. Validação com erro aparecendo no topo
+  if (!validateForm()) {
+    showToast('Existem campos obrigatórios vazios.', 'error');
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // UX: Sobe a tela para mostrar os erros
     return;
   }
 
-  await updateEstablishmentMock({
-    name: nomeEstabelecimento.value,
-    cnpj: cnpj.value,
-    address: endereco.value,
-    paymentMethods: metodosPagamento.value,
-    serviceMethods: formasAtendimento.value
-  });
+  isLoading.value = true;
+  try {
+    // Lógica de salvamento no LocalStorage
+    localStorageService.saveOnboarding({
+      nome_estabelecimento: form.value.name,
+      cnpj: form.value.cnpj,
+      telefone: form.value.phone,
+      endereco: form.value.address,
+      descricao: form.value.description,
+      horario: form.value.openingHours
+    });
 
-  authStore.setConfigStepComplete('info');
+    if (logoPreview.value) localStorageService.saveImage(logoPreview.value);
 
-  isLoading.value = false;
-  router.push('/app/dashboard');
-};
+    // 2. Feedback de sucesso no topo
+    showToast('Dados do estabelecimento atualizados!', 'success');
 
-const triggerFileInput = () => {
-  fileInput.value.click()
-}
-
-const uploadImage = (event) => {  
-  const file = event.target.files[0];
-  if (file && file.type.startsWith('image/')) {
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      const base64String = e.target.result;
-      localStorageService.saveImage(base64String);
-      fileInput.value = base64String;
-    };
-
-    reader.readAsDataURL(file);
+  } catch (e) {
+    showToast('Erro crítico ao salvar dados.', 'error');
+  } finally {
+    isLoading.value = false;
   }
-}
+};
 </script>
 
 <template>
-  <main class="max-w-4xl mx-auto py-12 px-4 font-inter">
-    
-    <div class="flex items-center mb-8">
-        <button @click="router.back()" class="p-2 text-gray-500 hover:text-gray-800 transition-colors mr-4">
-            <ArrowLeft :size="30" />
+  <main class="max-w-6xl mx-auto py-12 px-6 font-inter animate-fadeIn">
+
+    <header class="flex items-center justify-between mb-10">
+      <div class="flex items-center gap-4">
+        <button @click="router.push('/app/dashboard')"
+          class="p-3 bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-white transition-all">
+          <ArrowLeft :size="20" />
         </button>
-        <h1 class="text-3xl font-bold text-gray-800 flex items-center tracking-tight">
-          Informações do Estabelecimento
-          <CheckCircle v-if="authStore.configStatus.info" :size="24" class="text-green-500 ml-4" />
-        </h1>
+        <div>
+          <h1 class="text-3xl font-black text-white tracking-tight">Meu Estabelecimento</h1>
+          <p class="text-gray-400 mt-1">Dados fiscais e de contato</p>
+        </div>
+      </div>
+
+      <button @click="saveSettings" :disabled="isLoading"
+        class="hidden sm:flex items-center gap-2 bg-brand-green text-black font-black px-8 py-4 rounded-2xl hover:bg-brand-green-hover transition-all active:scale-95 shadow-lg shadow-brand-green/20">
+        <Save :size="20" />
+        {{ isLoading ? 'Gravando...' : 'Salvar Dados' }}
+      </button>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <section class="lg:col-span-1 space-y-6">
+        <div class="bg-dark-card border border-white/5 rounded-[2.5rem] p-8 shadow-xl flex flex-col items-center">
+          <h3 class="text-lg font-bold text-white mb-6 w-full text-left">Logo da Marca</h3>
+
+          <div class="relative group cursor-pointer w-48 h-48 mb-6">
+            <div
+              class="relative w-full h-full bg-white/5 border-2 border-dashed border-white/10 rounded-[2.5rem] overflow-hidden flex flex-col items-center justify-center group-hover:border-brand-green/50 transition-all">
+              <img v-if="logoPreview" :src="logoPreview" class="w-full h-full object-contain p-4" />
+              <div v-else class="flex flex-col items-center text-gray-500">
+                <UploadCloud :size="40" class="mb-2" />
+                <span class="text-xs font-bold uppercase tracking-widest">Subir Logo</span>
+              </div>
+              <input type="file" @change="handleLogoUpload" accept="image/*"
+                class="absolute inset-0 opacity-0 cursor-pointer" />
+            </div>
+          </div>
+          <p class="text-[10px] text-gray-500 uppercase font-black tracking-widest">Clique para alterar</p>
+        </div>
+      </section>
+
+      <section class="lg:col-span-2 space-y-6">
+        <div class="bg-dark-card border border-white/5 rounded-[3rem] p-8 shadow-xl">
+          <div class="space-y-6">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <label class="text-xs font-black uppercase tracking-widest text-gray-500 ml-2">Nome do Negócio</label>
+                <input v-model="form.name" type="text" :class="{ 'border-red-500': errors.name }"
+                  class="admin-input w-full" placeholder="Ex: Hamburgueria 2000" />
+                <p v-if="errors.name" class="text-red-500 text-[10px] font-bold ml-2 flex items-center gap-1">
+                  <AlertCircle :size="10" /> {{ errors.name }}
+                </p>
+              </div>
+              <div class="space-y-2">
+                <label class="text-xs font-black uppercase tracking-widest text-gray-500 ml-2">CNPJ</label>
+                <input v-model="form.cnpj" type="text" :class="{ 'border-red-500': errors.cnpj }"
+                  class="admin-input w-full" placeholder="00.000.000/0001-00" />
+                <p v-if="errors.cnpj" class="text-red-500 text-[10px] font-bold ml-2 flex items-center gap-1">
+                  <AlertCircle :size="10" /> {{ errors.cnpj }}
+                </p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <label class="text-xs font-black uppercase tracking-widest text-gray-500 ml-2">WhatsApp /
+                  Contato</label>
+                <input v-model="form.phone" type="text" :class="{ 'border-red-500': errors.phone }"
+                  class="admin-input w-full" placeholder="(00) 00000-0000" />
+                <p v-if="errors.phone" class="text-red-500 text-[10px] font-bold ml-2 flex items-center gap-1">
+                  <AlertCircle :size="10" /> {{ errors.phone }}
+                </p>
+              </div>
+              <div class="space-y-2">
+                <label class="text-xs font-black uppercase tracking-widest text-gray-500 ml-2">Sobre o
+                  Estabelecimento</label>
+                <div class="relative">
+                  <AlignLeft class="absolute left-4 top-4 text-gray-500" :size="20" />
+                  <textarea v-model="form.description" rows="4" class="admin-input w-full pl-12 resize-none"
+                    placeholder="Conte um pouco sobre a história ou especialidades do seu negócio..."></textarea>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
 
-    <form @submit.prevent="saveInfo" class="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <div>
-          <h2 class="text-2xl font-bold text-gray-800 mb-4">Informações gerais</h2>
-          
-          <div class="mb-6">
-            <label for="nome" class="block text-gray-600 font-semibold mb-2">Nome do Estabelecimento:</label>
-            <input type="text" id="nome" v-model="nomeEstabelecimento" placeholder="Digite o nome" required
-                   minlength="3" maxlength="100"
-                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 transition-all outline-none" />
-          </div>
-
-          <div class="mb-6">
-            <label for="cnpj" class="block text-gray-600 font-semibold mb-2">CNPJ:</label>
-            <input type="text" id="cnpj" v-model="cnpj" placeholder="00.000.000/0000-00" required
-                   maxlength="18"
-                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 transition-all outline-none" />
-            <p v-if="localError" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
-              <CheckCircle :size="14" class="rotate-180" /> {{ localError }}
-            </p>
-          </div>
-
-          <div class="mb-6">
-            <label for="endereco" class="block text-gray-600 font-semibold mb-2">Endereço:</label>
-            <input type="text" id="endereco" v-model="endereco" placeholder="Rua, Número, Bairro, Cidade - UF"
-                   maxlength="255"
-                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 transition-all outline-none" />
-          </div>
-
-          <div class="mb-6">
-            <label class="block text-gray-600 font-semibold mb-2">Logo da Marca:</label>
-            <div class="p-3 border border-gray-300 rounded-lg bg-gray-50 flex justify-between items-center text-gray-900 cursor-pointer hover:bg-gray-100 transition-colors border-dashed border-2">
-              <span class="text-gray-500 text-sm">Fazer upload (PNG ou JPG)</span>
-              <Upload :size="20" class="text-gray-400" />
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <h2 class="text-2xl font-bold text-gray-800 mb-4">Configurações de Operação</h2>
-
-          <div class="mb-8">
-            <p class="block text-gray-600 font-semibold mb-3">Métodos de pagamento:</p>
-            <div v-for="option in paymentOptions" :key="option" class="flex items-center mb-2 group">
-              <input type="checkbox" :id="option" :value="option" v-model="metodosPagamento"
-                     class="h-5 w-5 text-brand-green border-gray-300 rounded focus:ring-brand-green transition-colors cursor-pointer" />
-              <label :for="option" class="ml-3 text-gray-700 cursor-pointer group-hover:text-gray-900 transition-colors font-medium">{{ option }}</label>
-            </div>
-          </div>
-
-          <div class="mb-6">
-            <p class="block text-gray-600 font-semibold mb-3">Formas de Atendimento:</p>
-            <div v-for="option in serviceOptions" :key="option" class="flex items-center mb-2 group">
-              <input type="checkbox" :id="option" :value="option" v-model="formasAtendimento"
-                     class="h-5 w-5 text-brand-green border-gray-300 rounded focus:ring-brand-green transition-colors cursor-pointer" />
-              <label :for="option" class="ml-3 text-gray-700 cursor-pointer group-hover:text-gray-900 transition-colors font-medium">{{ option }}</label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end">
-        <button type="submit" :disabled="isLoading"
-                class="py-3 px-10 bg-brand-green text-black font-bold rounded-xl hover:bg-brand-green-hover transition-all active:scale-95 disabled:bg-gray-300 shadow-lg shadow-brand-green/20">
-          {{ isLoading ? 'Salvando...' : 'Salvar Informações' }}
-        </button>
-      </div>
-    </form>
+    <div class="mt-8 sm:hidden">
+      <button @click="saveSettings" :disabled="isLoading"
+        class="w-full bg-brand-green text-black font-black py-5 rounded-3xl shadow-xl active:scale-95 transition-all">
+        Salvar Alterações
+      </button>
+    </div>
   </main>
 </template>

@@ -1,152 +1,201 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
-import { ArrowLeft, CheckCircle, Trash, HelpCircle, PlusCircle, Users } from 'lucide-vue-next';
-
-import { PERMISSIONS } from '@/utils/permissions';
-import { getRolesMock, saveRolesMock } from '@/mock/authmock';
+import { PERMISSIONS } from '@/utils/permissions'; //
+import { getRolesMock, saveRolesMock } from '@/mock/authmock'; //
+import { useToast } from '@/composables/useToast';
+import { 
+  ShieldCheck, ShieldAlert, Users, Trash2, Edit3, 
+  Plus, ArrowLeft, Lock, CheckCircle, X, AlertCircle 
+} from 'lucide-vue-next';
 
 const router = useRouter();
-const authStore = useAuthStore();
+const { showToast } = useToast();
 
+const roles = ref([]); // Começa vazio para carregar do mock
+const isModalOpen = ref(false);
+const isEditing = ref(false);
 const isLoading = ref(false);
-const roles = ref([]);
+const errors = ref({}); 
 
-const roleDescriptions = {
-  Gerente: "Possui acesso total ao sistema.",
-  Garçom: "Pode criar pedidos e enviar notificações."
-};
-
-const ALL_PERMISSIONS = [
-  { key: PERMISSIONS.RELATORIOS, label: "Acessar Dashboard e Relatórios" },
-  { key: PERMISSIONS.COZINHA, label: "Acessar Pedidos (Cozinha)" },
-  { key: PERMISSIONS.ESTOQUE, label: "Gerenciar Estoque" },
-  { key: PERMISSIONS.CARDAPIO, label: "Gerenciar Cardápio" },
-  { key: PERMISSIONS.FUNCIONARIOS, label: "Gerenciar Funcionários" },
-  { key: PERMISSIONS.CONFIGURACAO, label: "Configuração do Sistema" },
-  { key: PERMISSIONS.ASSINATURA, label: "Gerenciar Assinatura" },
-  { key: PERMISSIONS.CRIAR_PEDIDO, label: "Criar Pedido (Garçom)" },
-  { key: PERMISSIONS.NOTIFICACOES, label: "Enviar Notificações" }
+// Lista de permissões disponíveis seguindo o padrão
+const availablePermissions = [
+  { id: PERMISSIONS.RELATORIOS, label: 'Relatórios', desc: 'Acesso a métricas e desempenho.' },
+  { id: PERMISSIONS.COZINHA, label: 'Cozinha', desc: 'Gestão e preparo de pedidos.' },
+  { id: PERMISSIONS.ESTOQUE, label: 'Estoque', desc: 'Controle de insumos e produtos.' },
+  { id: PERMISSIONS.CARDAPIO, label: 'Cardápio', desc: 'Edição de itens e categorias.' },
+  { id: PERMISSIONS.FUNCIONARIOS, label: 'Funcionários', desc: 'Gestão de usuários e cargos.' },
+  { id: PERMISSIONS.CONFIGURACAO, label: 'Configuração', desc: 'Ajustes gerais do sistema.' },
+  { id: PERMISSIONS.CAIXA, label: 'Caixa', desc: 'Fluxo financeiro e recebimentos.' },
+  { id: PERMISSIONS.CRIAR_PEDIDO, label: 'Criar Pedido', desc: 'Lançamento de novas vendas.' },
+  { id: PERMISSIONS.COMANDAS_FINALIZADAS, label: 'Histórico', desc: 'Visualizar pedidos encerrados.' }
 ];
 
+const currentRole = ref({ id: null, name: '', permissions: [] });
+
+// Carrega APENAS os cargos do estabelecimento definidos no mock
 onMounted(() => {
   roles.value = getRolesMock();
 });
 
-const addRole = () => {
-  roles.value.push({
-    id: Date.now(),
-    name: 'Novo Cargo',
-    permissions: []
-  });
+const validateRole = () => {
+  errors.value = {};
+  let isValid = true;
+
+  if (!currentRole.value.name || currentRole.value.name.trim() === '') {
+    errors.value.name = "O nome do cargo é obrigatório.";
+    isValid = false;
+  }
+
+  if (currentRole.value.permissions.length === 0) {
+    errors.value.permissions = "Selecione pelo menos um nível de acesso.";
+    isValid = false;
+  }
+
+  return isValid;
 };
 
-const removeRole = (id) => {
-  if (id === 1) {
-    alert("Não é possível remover o Gerente.");
+const saveRole = async () => {
+  if (!validateRole()) {
+    showToast('Existem erros no formulário.', 'error');
     return;
   }
 
-  roles.value = roles.value.filter(role => role.id !== id);
+  isLoading.value = true;
+  try {
+    if (isEditing.value) {
+      const idx = roles.value.findIndex(r => r.id === currentRole.value.id);
+      roles.value[idx] = { ...currentRole.value };
+    } else {
+      roles.value.push({ ...currentRole.value, id: Date.now() });
+    }
+
+    // Persiste no estabelecimento através do mock
+    await saveRolesMock(roles.value);
+    
+    showToast(`Cargo ${currentRole.value.name} salvo com sucesso!`, 'success');
+    isModalOpen.value = false;
+  } catch (e) {
+    showToast('Erro ao salvar cargos.', 'error');
+  } finally {
+    isLoading.value = false;
+  }
 };
 
-const saveRoles = async () => {
-  isLoading.value = true;
+const openModal = (role = null) => {
+  errors.value = {};
+  if (role) {
+    currentRole.value = JSON.parse(JSON.stringify(role));
+    isEditing.value = true;
+  } else {
+    currentRole.value = { id: null, name: '', permissions: [] };
+    isEditing.value = false;
+  }
+  isModalOpen.value = true;
+};
 
-  await saveRolesMock(roles.value);
-
-  authStore.setConfigStepComplete('roles');
-  isLoading.value = false;
-
-  router.push('/app/dashboard');
+const togglePermission = (id) => {
+  const perms = currentRole.value.permissions;
+  const idx = perms.indexOf(id);
+  if (idx > -1) perms.splice(idx, 1);
+  else perms.push(id);
 };
 </script>
 
 <template>
-  <main class="max-w-4xl mx-auto py-12 px-4 font-inter">
+  <main class="max-w-6xl mx-auto py-12 px-6 font-inter">
     
-    <div class="flex items-center mb-8">
-        <button @click="router.back()" class="p-2 text-gray-500 hover:text-gray-800 transition-colors mr-4 outline-none">
-            <ArrowLeft :size="30" />
+    <header class="flex items-center justify-between mb-10">
+      <div class="flex items-center gap-4">
+        <button @click="router.push('/app/dashboard')" class="p-3 bg-white/5 border border-white/10 rounded-2xl text-gray-400">
+          <ArrowLeft :size="20" />
         </button>
-        <h1 class="text-3xl font-bold text-gray-800 flex items-center tracking-tight">
-          Cargos e Permissões
-          <CheckCircle v-if="authStore.configStatus.roles" :size="24" class="text-green-500 ml-4" />
-        </h1>
-        <button @click="addRole"
-                class="py-2.5 px-5 bg-brand-green text-black font-bold rounded-xl flex items-center hover:bg-brand-green-hover transition-all ml-auto shadow-md active:scale-95">
-            <PlusCircle :size="20" class="mr-2" />
-            Criar Cargo
-        </button>
-      </div>
-
-      <div class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-5 mb-8 rounded-r-xl shadow-sm" role="alert">
-        <div class="flex items-center mb-1">
-            <HelpCircle :size="20" class="mr-2 text-yellow-600" />
-            <p class="font-bold">Dica de Configuração</p>
+        <div>
+          <h1 class="text-3xl font-black text-white">Cargos e Permissões</h1>
+          <p class="text-gray-400 text-sm">Gerenciando acessos do estabelecimento</p>
         </div>
-        <p class="text-sm opacity-90 font-medium">Os cargos abaixo são sugestões padrão. Você pode personalizar as permissões de cada um ou criar novos cargos conforme a necessidade da sua equipe.</p>
       </div>
-      
-      <form @submit.prevent="saveRoles" class="space-y-6">
-        <div v-for="role in roles" :key="role.id" class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200 transition-all hover:shadow-md">
-          <div class="flex justify-between items-start mb-6">
-            <div class="w-full pr-4">
-                <label class="text-xs uppercase tracking-widest text-gray-500 font-bold mb-2 flex items-center space-x-2">
-                    <span>Nome do Cargo</span>
-                    <span class="relative group">
-                        <HelpCircle :size="16" class="text-brand-green cursor-help transition-colors" />
-                        <div class="absolute left-full top-0 ml-2 w-48 p-3 bg-gray-900 text-white text-[10px] leading-relaxed rounded-xl opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-xl pointer-events-none">
-                            {{ roleDescriptions[role.name] || 'Cargo customizado para funções específicas do estabelecimento.' }}
-                        </div>
-                    </span>
-                </label>
-                <input type="text" v-model="role.name" placeholder="Ex: Churrasqueiro" required
-                       minlength="3" maxlength="50"
-                       class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 outline-none transition-all font-semibold" />
-            </div>
-            <button @click="removeRole(role.id)" 
-                    type="button"
-                    title="Excluir Cargo"
-                    class="mt-7 p-2.5 rounded-xl transition-all outline-none"
-                    :class="{ 
-                        'text-red-500 hover:bg-red-50 active:scale-90': role.id > 4, 
-                        'text-gray-200 cursor-not-allowed': role.id <= 4 
-                    }"
-                    :disabled="role.id <= 4"
-            >
-                <Trash :size="24" />
-            </button>
-          </div>
+      <button @click="openModal()" class="btn-primary-admin">
+        <Plus :size="20" /> Novo Cargo
+      </button>
+    </header>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-gray-100">
-            <div>
-                <p class="text-sm font-bold text-gray-600 mb-4 uppercase tracking-wide">Permissões Habilitadas:</p>
-                <div class="space-y-3">
-                    <div v-for="perm in ALL_PERMISSIONS" :key="perm.key" class="flex items-center group cursor-pointer">
-                        <input type="checkbox" :id="`${role.id}-${perm.key}`" :value="perm.key" 
-                               v-model="role.permissions"
-                               class="h-5 w-5 text-brand-green border-gray-300 rounded focus:ring-brand-green cursor-pointer transition-colors" />
-                        <label :for="`${role.id}-${perm.key}`" class="ml-3 text-gray-600 text-sm font-medium cursor-pointer group-hover:text-gray-900 transition-colors">
-                            {{ perm.label }}
-                        </label>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div v-for="role in roles" :key="role.id" 
+           class="admin-card p-8 group transition-all hover:border-brand-green/30 relative">
+        <div class="flex justify-between items-start mb-6">
+          <ShieldCheck :class="text-brand-green" :size="24" />
+          <button @click="openModal(role)" class="text-gray-400 hover:text-white transition-colors">
+            <Edit3 :size="18" />
+          </button>
+        </div>
+        <h3 class="text-xl font-bold text-white">{{ role.name }}</h3>
+        <p class="text-[10px] font-black uppercase tracking-widest text-gray-500 mt-2">
+          {{ role.permissions.length }} Permissões Ativas
+        </p>
+      </div>
+    </div>
+
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="isModalOpen" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div class="bg-dark-card border border-white/10 w-full max-w-2xl rounded-[2.5rem] flex flex-col max-h-[90vh] shadow-2xl">
+            
+            <header class="p-8 border-b border-white/5 flex justify-between items-center bg-black/20">
+              <h2 class="text-2xl font-black text-white flex items-center gap-3">
+                <Lock :size="24" class="text-brand-green" /> 
+                {{ isEditing ? 'Editar Cargo' : 'Novo Cargo' }}
+              </h2>
+              <button @click="isModalOpen = false" class="p-2 text-gray-400 hover:text-white"><X :size="24" /></button>
+            </header>
+
+            <div class="p-8 overflow-y-auto custom-scrollbar space-y-8">
+              <div class="space-y-2">
+                <label class="text-xs font-black uppercase tracking-widest text-gray-500 ml-2">Nome do Cargo</label>
+                <input v-model="currentRole.name" type="text" 
+                       :class="errors.name ? 'border-red-500 bg-red-500/5' : 'border-white/10 bg-white/5'"
+                       class="w-full rounded-2xl p-4 text-white border focus:outline-none focus:border-brand-green/50 transition-all" 
+                       placeholder="Ex: Supervisor" />
+                <p v-if="errors.name" class="text-red-500 text-xs font-bold ml-2 flex items-center gap-1">
+                  <AlertCircle :size="12"/> {{ errors.name }}
+                </p>
+              </div>
+
+              <div class="space-y-4">
+                <label class="text-xs font-black uppercase tracking-widest text-gray-500 ml-2">Permissões de Acesso</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div v-for="perm in availablePermissions" :key="perm.id" 
+                       @click="togglePermission(perm.id)"
+                       :class="currentRole.permissions.includes(perm.id) ? 'border-brand-green bg-brand-green/5' : 'border-white/5 bg-white/5'"
+                       class="p-4 rounded-2xl border cursor-pointer transition-all flex items-start gap-4">
+                    <div class="mt-1">
+                      <div class="w-5 h-5 rounded border border-white/20 flex items-center justify-center"
+                           :class="currentRole.permissions.includes(perm.id) ? 'bg-brand-green border-brand-green' : ''">
+                        <CheckCircle v-if="currentRole.permissions.includes(perm.id)" :size="14" class="text-black" />
+                      </div>
                     </div>
+                    <div>
+                      <span class="block font-bold text-sm" :class="currentRole.permissions.includes(perm.id) ? 'text-brand-green' : 'text-white'">
+                        {{ perm.label }}
+                      </span>
+                      <span class="text-[9px] text-gray-500 font-black uppercase tracking-tighter">{{ perm.id }}</span>
+                    </div>
+                  </div>
                 </div>
+                <p v-if="errors.permissions" class="text-red-500 text-xs font-bold ml-2 flex items-center gap-1">
+                  <AlertCircle :size="12"/> {{ errors.permissions }}
+                </p>
+              </div>
             </div>
-            <div class="flex flex-col items-center justify-center bg-gray-50/50 rounded-2xl p-6 border border-gray-100/50">
-                <Users :size="80" class="text-gray-200 mb-2" />
-                <p class="text-[10px] text-gray-400 font-bold uppercase text-center leading-tight">Módulo de Acesso<br>Seguro PedidoFácil</p>
-            </div>
+
+            <footer class="p-8 border-t border-white/5 bg-black/20 flex justify-end gap-4">
+              <button @click="saveRole" class="btn-primary-admin px-12">
+                {{ isLoading ? 'Salvando...' : 'Salvar Cargo' }}
+              </button>
+            </footer>
           </div>
         </div>
-        
-        <div class="mt-10 pt-8 border-t border-gray-200 flex justify-end">
-            <button type="submit" :disabled="isLoading"
-                    class="py-4 px-12 bg-brand-green text-black font-extrabold rounded-2xl hover:bg-brand-green-hover transition-all active:scale-95 disabled:bg-gray-200 disabled:text-gray-400 shadow-lg shadow-brand-green/20">
-                {{ isLoading ? 'Processando...' : 'Finalizar Configuração de Cargos' }}
-            </button>
-        </div>
-      </form>
-    </main>
+      </Transition>
+    </Teleport>
+  </main>
 </template>

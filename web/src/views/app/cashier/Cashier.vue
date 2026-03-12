@@ -156,7 +156,7 @@
                                 </select>
                                 <div class="relative w-32">
                                     <span class="absolute left-3 top-2.5 text-gray-500 text-sm font-medium">R$</span>
-                                    <input type="text" :value="formatCurrency(method.amount)" @input="applyMask($event, method)"
+                                    <input type="text" :value="utils.formatCurrency(method.amount)" @input="applyMask($event, method)"
                                         class="border-gray-300 rounded-lg pl-8 pr-3 py-2 w-full text-right font-medium outline-none focus:ring-2 focus:ring-blue-500" placeholder="0,00" />
                                 </div>
                                 <button v-if="paymentSplits.length > 1" @click="removePaymentSplit(idx)" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Remover">
@@ -169,9 +169,9 @@
                                     + Adicionar divisão
                                 </button>
                                 <div class="text-sm font-medium text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                                    Total: R$ {{ formatCurrency(totalPayments) }}
+                                    Total: R$ {{ utils.formatCurrency(totalPayments) }}
                                     <span v-if="Math.abs(totalPayments - totalWithDiscount) > 0.01" class="text-red-500 font-bold ml-2">
-                                        (Falta R$ {{ formatCurrency(Math.abs(totalWithDiscount - totalPayments)) }})
+                                        (Falta R$ {{ utils.formatCurrency(Math.abs(totalWithDiscount - totalPayments)) }})
                                     </span>
                                 </div>
                             </div>
@@ -299,9 +299,8 @@ import { useClosedComandaStore } from '@/stores/closedComandas';
 import { useKitchenStore } from '@/stores/kitchen';
 import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router';
+import { useUtils } from '@/composables/useUtils.js';
 import { PERMISSIONS } from '@/utils/permissions';
-
-// Importação de ícones estilo Lucide (mesma biblioteca usada no KitchenTerminal)
 import { Monitor, Receipt, AlertTriangle, FileText, CheckCircle, X } from 'lucide-vue-next';
 
 const comandaStore = useComandaStore();
@@ -309,6 +308,8 @@ const closedComandaStore = useClosedComandaStore();
 const kitchenStore = useKitchenStore();
 const authStore = useAuthStore();
 const router = useRouter();
+const utils = useUtils();
+
 
 if (!authStore.hasPermission(PERMISSIONS.CAIXA)) {
     router.push('/app/dashboard');
@@ -385,11 +386,6 @@ const totalWithDiscount = computed(() => {
 const totalPayments = computed(() => {
     return paymentSplits.value.reduce((acc, m) => acc + (m.amount || 0), 0);
 });
-
-function formatCurrency(value) {
-    if (value === null || value === undefined) return '';
-    return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
 
 watch(numberOfPeople, (newVal, oldVal) => {
     if (!splitPayment.value) return;
@@ -633,7 +629,7 @@ function applyMask(event, method) {
 
     if (value === '') value = '0';
     method.amount = parseInt(value, 10) / 100;
-    event.target.value = formatCurrency(method.amount);
+    event.target.value = utils.formatCurrency(method.amount);
 }
 </script>
 

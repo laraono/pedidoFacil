@@ -1,20 +1,38 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
     "./index.html",
-    "./src/**/*.{vue,js,ts,jsx,tsx}", 
+    "./src/**/*.{vue,js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
       colors: {
-        'brand-green': '#00D26A',        
-        'brand-green-hover': '#00b058',  
-
-        'dark-bg': '#050505',            
-        'dark-card': '#121212',          
-
-        'header-default': '#2c2c2c',     
-        'header-kitchen': '#1a1a1a',     
+        purple: {
+          500: '#1A55E3',
+          600: '#1548C2',
+          300: '#5E6EED',
+          400: '#4F5FD1',
+        },
+        pink: {
+          500: '#FF0854',
+          600: '#E0074A',
+        },
+        green: {
+          500: '#00D284',
+          600: '#00B873',
+        },
+        blue: {
+          500: '#0DCAF0',
+          600: '#0BB5D6',
+        },
+        brand: {
+          green: '#00FF85',
+          'green-hover': '#00E676',
+        },
+        dark: {
+          bg: '#0B0E11',
+          card: '#1A1E24',
+        }
       },
       fontFamily: {
         'inter': ['Inter', 'sans-serif'],
