@@ -1,12 +1,12 @@
-export const getKpisMock = (period) => {
-  const multipliers = { '24h': 1, '7d': 7, '30d': 30, 'all': 180 }; // Adicionado multiplicador para 'all'
+export const getMainMetricsMock = (period) => {
+  const multipliers = { '24h': 1, '7d': 7, '30d': 30, 'all': 180 };
   const m = multipliers[period] || 7;
 
   return {
-    faturamento: (5335.70 * m).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-    ticketMedio: (85.25 + (Math.random() * 5)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    faturamento: 5335.70 * m,
+    ticketMedio: 87.50,
     cancelamentos: Math.floor(2 * m) + 1,
-    giroMesa: (4.1 + (Math.random() * 0.8)).toFixed(1)
+    giroMesa: 4.1
   };
 };
 
@@ -16,7 +16,7 @@ export const getRevenueChartMock = (period) => {
       { label: '10:00', value: 120 }, { label: '12:00', value: 450 }, { label: '14:00', value: 300 },
       { label: '18:00', value: 600 }, { label: '20:00', value: 950 }, { label: '22:00', value: 700 }
     ];
-  } else if (period === '30d' || period === 'all') { // Retornando dados mensais/gerais
+  } else if (period === '30d' || period === 'all') { 
     return [
       { label: 'Semana 1', value: 35000 }, { label: 'Semana 2', value: 42000 }, 
       { label: 'Semana 3', value: 38000 }, { label: 'Semana 4', value: 45000 }
@@ -86,11 +86,10 @@ export const getCancellationsMock = (period) => {
 
 export const getTopProductsMock = (period) => {
   const m = (period === '24h') ? 0.15 : (period === '30d') ? 4.5 : (period === 'all') ? 25 : 1;
-  
   return [
-    { nome: 'Picanha na Chapa', categoria: 'Pratos', qtd: Math.ceil(142 * m), receita: `R$ ${(8236.00 * m).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, margem: '45%' },
-    { nome: 'Suco de Laranja 500ml', categoria: 'Bebidas', qtd: Math.ceil(310 * m), receita: `R$ ${(3100.00 * m).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, margem: '70%' },
-    { nome: 'Batata Frita Especial', categoria: 'Porções', qtd: Math.ceil(98 * m), receita: `R$ ${(1960.00 * m).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, margem: '60%' },
-    { nome: 'Pudim de Leite', categoria: 'Sobremesas', qtd: Math.ceil(45 * m), receita: `R$ ${(540.00 * m).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, margem: '80%' },
+    { nome: 'Picanha na Chapa', categoria: 'Pratos', qtd: Math.ceil(142 * m), receita: `R$ ${(8236.00 * m).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, participacao: '22%' },
+    { nome: 'Suco de Laranja 500ml', categoria: 'Bebidas', qtd: Math.ceil(310 * m), receita: `R$ ${(3100.00 * m).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, participacao: '8%' },
+    { nome: 'Batata Frita Especial', categoria: 'Porções', qtd: Math.ceil(98 * m), receita: `R$ ${(1960.00 * m).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, participacao: '5%' },
+    { nome: 'Pudim de Leite', categoria: 'Sobremesas', qtd: Math.ceil(45 * m), receita: `R$ ${(540.00 * m).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, participacao: '1.5%' },
   ];
 };
