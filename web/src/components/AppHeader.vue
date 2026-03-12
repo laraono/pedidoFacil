@@ -7,10 +7,132 @@ import { allMenuItems } from '@/utils/navigation';
 import AppSidebar from './AppSidebar.vue'; // <-- Importamos o novo componente
 import imgLogo from '@/assets/logo.png'; 
 
+import { 
+  LogOut, 
+  Menu as MenuIcon, 
+  X, 
+  ChevronDown, 
+  BarChart3,      
+  ChefHat,        
+  Package,        
+  UtensilsCrossed,
+  Users,          
+  CreditCard,     
+  Tag,            
+  Palette,        
+  Shield,         
+  UserCog,         
+  BarChart,
+  LucideBarChart2,
+  StoreIcon
+} from 'lucide-vue-next';
+
+const authStore = useAuthStore();
 const router = useRouter();
 const authStore = useAuthStore();
 
 const isSidebarOpen = ref(false);
+const openMenus = ref({}); 
+
+const userName = computed(() => authStore.user?.name || '');
+
+const roleName = computed(() => authStore.user?.role?.name || authStore.role?.name || '');
+const roleId = computed(() => authStore.user?.role?.id || authStore.role?.id || 0);
+const roleCode = computed(() => authStore.user?.role?.role || authStore.role?.role || '');
+
+const establishmentName = ref('Carregando...');
+
+const publicRoutes = ['landing', 'login', 'register', 'OnboardingName', 'OnboardingType']; 
+
+const shouldShowNavbar = computed(() => {
+  return authStore.isAuthenticated && route.name && !publicRoutes.includes(route.name);
+});
+
+const allMenuItems = [
+  { 
+    label: establishmentName, 
+    route: '/app/dashboard', 
+    icon: StoreIcon,
+    permission: PERMISSIONS.RELATORIOS 
+  },
+  { 
+    label: 'Pedidos', 
+    route: '/app/kitchen', 
+    icon: ChefHat,
+    permission: PERMISSIONS.COZINHA 
+  },
+  { 
+    label: 'Relatórios', 
+    route: '/app/reports', 
+    icon: BarChart3,
+    permission: PERMISSIONS.RELATORIOS
+  },
+  { 
+    label: 'Estoque', 
+    route: '/app/...',
+    icon: Package,
+    permission: PERMISSIONS.ESTOQUE 
+  },
+  { 
+    label: 'Cardápio', 
+    icon: UtensilsCrossed,
+    permission: PERMISSIONS.CARDAPIO,
+    children: [
+      { label: 'Produtos e Categorias', route: '/app/...', icon: Tag }, 
+      { label: 'Personalizar Cardápio', route: '/app/settings/menu', icon: Palette }
+    ]
+  },
+  { 
+    label: 'Funcionários', 
+    icon: Users,
+    permission: PERMISSIONS.FUNCIONARIOS,
+    children: [
+      { label: 'Cargos e Permissões', route: '/app/settings/roles', icon: Shield }, 
+      { label: 'Controle de Usuários', route: '/app/settings/users', icon: UserCog }
+    ]
+  },
+  { 
+    label: 'Assinatura', 
+    route: '/app/...', 
+    icon: CreditCard,
+    permission: PERMISSIONS.ASSINATURA 
+  }
+];
+
+const visibleMenuItems = computed(() => {
+  return allMenuItems.filter(item => {
+    if (item.permission && !authStore.hasPermission(item.permission)) {
+      return false;
+    }
+    return true;
+  });
+});
+
+const headerColorClass = computed(() => {
+  const role = roleName.value.toLowerCase();
+  const code = roleCode.value.toUpperCase();
+  const id = roleId.value;
+
+  if (id === 2 || code === 'GERENTE' || role.includes('gerente')) {
+    return 'bg-blue-700 border-b border-blue-500'; 
+  }
+
+  if (id === 1 || code === 'ADMIN' || role.includes('admin')) {
+    return 'bg-black border-b border-gray-800'; 
+  }
+  
+  return 'bg-header-default border-b border-gray-700'; 
+});
+
+onMounted(async () => {
+  initMockEstablishment(); 
+  try {
+    const data = await getEstablishmentMock();
+    if (data && data.info) establishmentName.value = data.info.name;
+  } catch (error) {
+    establishmentName.value = 'Erro ao carregar';
+  }
+});
 
 const logout = () => {
   authStore.logout();

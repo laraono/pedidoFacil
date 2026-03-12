@@ -12,6 +12,7 @@ import AtendimentoType from '@/views/onboarding/AtendimentoType.vue';
 import Header from '@/views/app/Header.vue';
 
 import Dashboard from '@/views/app/Dashboard.vue';
+import ManagerReports from '@/views/app/ManagerReports.vue';
 import EstablishmentInfo from '@/views/app/settings/EstablishmentInfo.vue';
 import RolePermissions from '@/views/app/settings/RolePermissions.vue';
 import MenuProducts from '@/views/app/settings/ProductsManagement.vue';
@@ -43,7 +44,9 @@ const routes = [
       { path: '/app/kitchen', name: 'kitchen', component: KitchenTerminal, meta: { requiresAuth: true, permission: PERMISSIONS.COZINHA } },
       { path: 'menu', name: 'Menu', component: Menu, meta: { requiresAuth: true, permission: PERMISSIONS.CRIAR_PEDIDO } },
       { path: 'cashier', name: 'cashier', component: () => import('@/views/app/cashier/Cashier.vue'), meta: { requiresAuth: true, permission: PERMISSIONS.CAIXA } },
-      { path: 'closed', name: 'closed', component: () => import('@/views/app/cashier/ClosedComandas.vue'), meta: { requiresAuth: true, permission: PERMISSIONS.COMANDAS_FINALIZADAS } }
+      { path: 'closed', name: 'closed', component: () => import('@/views/app/cashier/ClosedComandas.vue'), meta: { requiresAuth: true, permission: PERMISSIONS.COMANDAS_FINALIZADAS } },
+      { path: 'reports', name: 'reports', component: ManagerReports, meta: { permission: PERMISSIONS.RELATORIOS } },
+
     ]
   }
 ];
@@ -62,7 +65,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (to.meta.permission && !auth.hasPermission(to.meta.permission)) {
-    return next('/app/dashboard');
+    return next({ name: 'dashboard' });
   }
 
   next();
