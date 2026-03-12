@@ -2,34 +2,31 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 export const useComandaStore = defineStore('comanda', () => {
-    const comandas = ref([]);
 
-    // Centraliza o cálculo para garantir precisão decimal
-    const calculateTotal = (orders) => {
-        return orders.reduce((acc, order) => acc + (order.price || 0), 0);
+    const comandas = ref([])
+
+    function addComanda(order) {
+        comandas.value.push({ orders: [order], id: comandas.value.length, total: order.price });
     };
 
-    const addComanda = (order) => {
-        const newId = comandas.value.length > 0 
-            ? Math.max(...comandas.value.map(c => c.id)) + 1 
-            : 1;
+    function updateComanda(id, order, totalPrice) {
+        const index = comandas.value.findIndex(c => c.id === id);
 
-        comandas.value.push({ 
-            id: newId, 
-            orders: [order], 
-            total: order.price,
-            createdAt: new Date().toISOString()
-        });
-    };
-
-    const updateComanda = (id, newOrder) => {
-        const comanda = comandas.value.find(c => c.id === id);
-        if (comanda) {
-            comanda.orders.push(newOrder);
-            // Recalcula o total na store, evitando erros da UI
-            comanda.total = calculateTotal(comanda.orders);
+        if (index !== -1) {
+            comandas.value[index].orders.push(order)
+            comandas.value[index].total += totalPrice
         }
+
     };
 
-    return { comandas, addComanda, updateComanda };
+    function removeComanda(id) {
+        comandas.value = comandas.value.filter(c => c.id !== id);
+    };
+
+    return {
+        comandas,
+        addComanda,
+        updateComanda,
+        removeComanda
+    };
 });

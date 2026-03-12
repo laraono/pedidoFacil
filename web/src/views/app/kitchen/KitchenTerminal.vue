@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useKitchenStore } from '@/stores/kitchen';
 import { PERMISSIONS } from '@/utils/permissions';
 import OrderCard from '@/components/kitchen/OrderCard.vue';
-import { Bell, Volume2, VolumeX, LogOut, UtensilsCrossed, List, ChefHat, CheckCircle } from 'lucide-vue-next';
+import { Bell, Volume2, VolumeX, UtensilsCrossed, List, ChefHat, CheckCircle } from 'lucide-vue-next';
 
 const AUDIO_URL = 'https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/pause.wav';
 const audioPlayer = new Audio(AUDIO_URL);
@@ -15,11 +15,10 @@ const router = useRouter();
 const authStore = useAuthStore();
 const kitchenStore = useKitchenStore();
 
-const activeTab = ref('pending'); // 'pending', 'preparing', 'ready'
+const activeTab = ref('pending');
 
 onMounted(() => {
   if (!authStore.hasPermission(PERMISSIONS.COZINHA)) {
-    alert('Acesso negado: Apenas cozinha.');
     router.push('/app/dashboard');
   }
 });
@@ -43,6 +42,24 @@ const simulateSocketEvent = () => {
 
 const handleMove = (id, status) => kitchenStore.moveOrder(id, status);
 const handleFinish = (id) => kitchenStore.finishOrder(id);
+
+const columns = [
+  { key: 'pending', label: 'Pendente', color: 'yellow', badgeClass: 'bg-yellow-500 text-black' },
+  { key: 'preparing', label: 'Preparo', color: 'blue', badgeClass: 'bg-blue-600 text-white border border-blue-400/30' },
+  { key: 'ready', label: 'Pronto', color: 'brand-green', badgeClass: 'bg-brand-green text-black' },
+];
+
+const columnOrders = (key) => {
+  if (key === 'pending') return kitchenStore.pendingOrders;
+  if (key === 'preparing') return kitchenStore.preparingOrders;
+  return kitchenStore.readyOrders;
+};
+
+const indicatorColor = (color) => {
+  if (color === 'yellow') return 'bg-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.4)]';
+  if (color === 'blue') return 'bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.4)]';
+  return 'bg-brand-green shadow-[0_0_15px_rgba(0,255,159,0.4)]';
+};
 </script>
 
 <template>
@@ -51,7 +68,7 @@ const handleFinish = (id) => kitchenStore.finishOrder(id);
     <header class="h-16 md:h-20 bg-zinc-900 border-b border-white/10 flex items-center justify-between px-6 md:px-8 shadow-2xl z-20 shrink-0">
       <div class="flex items-center gap-4">
         <div class="bg-brand-green p-2 rounded-xl text-black shadow-lg shadow-brand-green/20">
-             <UtensilsCrossed :size="20" class="md:w-6 md:h-6" />
+          <UtensilsCrossed :size="20" class="md:w-6 md:h-6" />
         </div>
         <div>
           <h1 class="text-white font-black text-lg tracking-tight leading-none uppercase">Fila de Pedidos</h1>
@@ -60,15 +77,15 @@ const handleFinish = (id) => kitchenStore.finishOrder(id);
       </div>
 
       <div class="flex items-center gap-3">
-        <button 
-          @click="simulateSocketEvent" 
+        <button
+          @click="simulateSocketEvent"
           class="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-xl text-xs font-black uppercase tracking-widest transition-all border border-white/5 flex items-center gap-2"
         >
           <Bell :size="14" /> <span class="hidden md:inline">Simular Entrada</span>
         </button>
 
-        <button 
-          @click="toggleAudio" 
+        <button
+          @click="toggleAudio"
           class="p-2.5 rounded-xl transition-all border"
           :class="audioEnabled ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'"
         >
@@ -80,110 +97,71 @@ const handleFinish = (id) => kitchenStore.finishOrder(id);
 
     <main class="flex-grow flex flex-col md:flex-row p-4 md:p-8 gap-6 overflow-hidden pb-24 md:pb-8 bg-black">
       
-      <section 
+      <section
+        v-for="col in columns"
+        :key="col.key"
         class="flex-1 flex-col min-w-0 md:min-w-[360px] bg-zinc-900/50 rounded-[2.5rem] border border-white/10 shadow-inner overflow-hidden transition-all"
-        :class="activeTab === 'pending' ? 'flex' : 'hidden md:flex'"
+        :class="activeTab === col.key ? 'flex' : 'hidden md:flex'"
       >
         <header class="p-6 flex justify-between items-center bg-white/[0.03] backdrop-blur-md z-10 border-b border-white/5">
           <div class="flex items-center gap-3">
-             <div class="w-2 h-6 bg-yellow-500 rounded-full shadow-[0_0_15px_rgba(234,179,8,0.4)]"></div>
-             <h2 class="font-black text-white text-sm uppercase tracking-widest">Pendente</h2>
+            <div class="w-2 h-6 rounded-full" :class="indicatorColor(col.color)"></div>
+            <h2 class="font-black text-white text-sm uppercase tracking-widest">{{ col.label }}</h2>
           </div>
-          <span class="bg-yellow-500 text-black font-black px-4 py-1 rounded-full text-xs">
-            {{ kitchenStore.pendingOrders.length }}
+          <span class="font-black px-4 py-1 rounded-full text-xs" :class="col.badgeClass">
+            {{ columnOrders(col.key).length }}
           </span>
         </header>
+
         <div class="flex-grow p-4 overflow-y-auto custom-scrollbar space-y-4">
-          <OrderCard v-for="order in kitchenStore.pendingOrders" :key="order.id" :order="order" @move="handleMove" />
+          <OrderCard
+            v-for="order in columnOrders(col.key)"
+            :key="order.id"
+            :order="order"
+            @move="handleMove"
+            @finish="handleFinish"
+          />
           
-          <div v-if="kitchenStore.pendingOrders.length === 0" class="flex flex-col items-center justify-center h-40 text-zinc-700">
-             <Bell :size="48" class="mb-2 opacity-20" />
-             <p class="text-[10px] font-black uppercase tracking-[0.2em]">Cozinha Limpa</p>
+          <div v-if="columnOrders(col.key).length === 0" class="flex flex-col items-center justify-center h-40 text-zinc-700">
+            <Bell :size="48" class="mb-2 opacity-20" />
+            <p class="text-[10px] font-black uppercase tracking-[0.2em]">Cozinha Limpa</p>
           </div>
-        </div>
-      </section>
-
-      <section 
-        class="flex-1 flex-col min-w-0 md:min-w-[360px] bg-zinc-900/50 rounded-[2.5rem] border border-white/10 shadow-inner overflow-hidden transition-all"
-        :class="activeTab === 'preparing' ? 'flex' : 'hidden md:flex'"
-      >
-        <header class="p-6 flex justify-between items-center bg-white/[0.03] backdrop-blur-md z-10 border-b border-white/5">
-          <div class="flex items-center gap-3">
-             <div class="w-2 h-6 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.4)]"></div>
-             <h2 class="font-black text-white text-sm uppercase tracking-widest">Preparo</h2>
-          </div>
-          <span class="bg-blue-600 text-white font-black px-4 py-1 rounded-full text-xs border border-blue-400/30">
-            {{ kitchenStore.preparingOrders.length }}
-          </span>
-        </header>
-        <div class="flex-grow p-4 overflow-y-auto custom-scrollbar space-y-4">
-          <OrderCard v-for="order in kitchenStore.preparingOrders" :key="order.id" :order="order" @move="handleMove" />
-        </div>
-      </section>
-
-      <section 
-        class="flex-1 flex-col min-w-0 md:min-w-[360px] bg-zinc-900/50 rounded-[2.5rem] border border-white/10 shadow-inner overflow-hidden transition-all"
-        :class="activeTab === 'ready' ? 'flex' : 'hidden md:flex'"
-      >
-        <header class="p-6 flex justify-between items-center bg-white/[0.03] backdrop-blur-md z-10 border-b border-white/5">
-          <div class="flex items-center gap-3">
-             <div class="w-2 h-6 bg-brand-green rounded-full shadow-[0_0_15px_rgba(0,255,159,0.4)]"></div>
-             <h2 class="font-black text-white text-sm uppercase tracking-widest">Pronto</h2>
-          </div>
-          <span class="bg-brand-green text-black font-black px-4 py-1 rounded-full text-xs">
-            {{ kitchenStore.readyOrders.length }}
-          </span>
-        </header>
-        <div class="flex-grow p-4 overflow-y-auto custom-scrollbar space-y-4">
-          <OrderCard v-for="order in kitchenStore.readyOrders" :key="order.id" :order="order" @finish="handleFinish" />
         </div>
       </section>
 
     </main>
 
     <nav class="fixed bottom-0 left-0 w-full bg-zinc-900 border-t border-white/5 shadow-2xl md:hidden z-50 px-8 py-3 pb-8 flex justify-between items-center">
-        
-        <button 
-            @click="activeTab = 'pending'"
-            class="flex flex-col items-center gap-1 p-2 transition-all relative"
-            :class="activeTab === 'pending' ? 'text-yellow-500' : 'text-gray-600'"
-        >
-            <div class="relative">
-                <List :size="24" stroke-width="3" />
-                <span v-if="kitchenStore.pendingOrders.length > 0" class="absolute -top-2 -right-3 bg-yellow-500 text-black text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-zinc-900">
-                    {{ kitchenStore.pendingOrders.length }}
-                </span>
-            </div>
-            <span class="text-[9px] font-black uppercase tracking-widest mt-1">Fila</span>
-        </button>
+      
+      <button @click="activeTab = 'pending'" class="flex flex-col items-center gap-1 p-2 transition-all relative" :class="activeTab === 'pending' ? 'text-yellow-500' : 'text-gray-600'">
+        <div class="relative">
+          <List :size="24" stroke-width="3" />
+          <span v-if="kitchenStore.pendingOrders.length > 0" class="absolute -top-2 -right-3 bg-yellow-500 text-black text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-zinc-900">
+            {{ kitchenStore.pendingOrders.length }}
+          </span>
+        </div>
+        <span class="text-[9px] font-black uppercase tracking-widest mt-1">Fila</span>
+      </button>
 
-        <button 
-            @click="activeTab = 'preparing'"
-            class="flex flex-col items-center gap-1 p-2 transition-all relative"
-            :class="activeTab === 'preparing' ? 'text-blue-500' : 'text-gray-600'"
-        >
-            <div class="relative">
-                <ChefHat :size="24" stroke-width="3" />
-                <span v-if="kitchenStore.preparingOrders.length > 0" class="absolute -top-2 -right-3 bg-blue-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-zinc-900">
-                    {{ kitchenStore.preparingOrders.length }}
-                </span>
-            </div>
-            <span class="text-[9px] font-black uppercase tracking-widest mt-1">Preparo</span>
-        </button>
+      <button @click="activeTab = 'preparing'" class="flex flex-col items-center gap-1 p-2 transition-all relative" :class="activeTab === 'preparing' ? 'text-blue-500' : 'text-gray-600'">
+        <div class="relative">
+          <ChefHat :size="24" stroke-width="3" />
+          <span v-if="kitchenStore.preparingOrders.length > 0" class="absolute -top-2 -right-3 bg-blue-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-zinc-900">
+            {{ kitchenStore.preparingOrders.length }}
+          </span>
+        </div>
+        <span class="text-[9px] font-black uppercase tracking-widest mt-1">Preparo</span>
+      </button>
 
-        <button 
-            @click="activeTab = 'ready'"
-            class="flex flex-col items-center gap-1 p-2 transition-all relative"
-            :class="activeTab === 'ready' ? 'text-brand-green' : 'text-gray-600'"
-        >
-            <div class="relative">
-                <CheckCircle :size="24" stroke-width="3" />
-                <span v-if="kitchenStore.readyOrders.length > 0" class="absolute -top-2 -right-3 bg-brand-green text-black text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-zinc-900">
-                    {{ kitchenStore.readyOrders.length }}
-                </span>
-            </div>
-            <span class="text-[9px] font-black uppercase tracking-widest mt-1">Pronto</span>
-        </button>
+      <button @click="activeTab = 'ready'" class="flex flex-col items-center gap-1 p-2 transition-all relative" :class="activeTab === 'ready' ? 'text-brand-green' : 'text-gray-600'">
+        <div class="relative">
+          <CheckCircle :size="24" stroke-width="3" />
+          <span v-if="kitchenStore.readyOrders.length > 0" class="absolute -top-2 -right-3 bg-brand-green text-black text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-zinc-900">
+            {{ kitchenStore.readyOrders.length }}
+          </span>
+        </div>
+        <span class="text-[9px] font-black uppercase tracking-widest mt-1">Pronto</span>
+      </button>
     </nav>
 
   </div>

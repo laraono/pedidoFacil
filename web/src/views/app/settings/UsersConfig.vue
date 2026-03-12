@@ -3,20 +3,25 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { isValidCPF, maskCPF } from '@/utils/validator';
-import { ArrowLeft, PlusCircle, Trash, Pencil, X, AlertCircle } from 'lucide-vue-next';
-import { getRolesMock, initMockRoles } from '@/mock/authmock'; 
+import { useToast } from '@/composables/useToast';
+import BaseInput from '@/components/ui/BaseInput.vue';
+import BaseSelect from '@/components/ui/BaseSelect.vue';
+import BaseButton from '@/components/ui/BaseButton.vue';
+import { ArrowLeft, PlusCircle, Trash, Pencil, X } from 'lucide-vue-next';
+import { getRolesMock, initMockRoles } from '@/mock/authmock';
 
-const USERS_KEY = "users";
+const USERS_KEY = 'users';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const { showToast } = useToast();
 
 const users = ref([]);
 const roles = ref([]);
 const isLoading = ref(false);
 const showForm = ref(false);
 const editingUser = ref(null);
-const localError = ref(null);
+const errors = ref({});
 
 const currentUser = computed(() => authStore.user);
 
@@ -26,20 +31,20 @@ const form = ref({
   email: '',
   cpf: '',
   password: '',
-  roleId: ''
+  roleId: '',
 });
+
+const roleOptions = computed(() =>
+  roles.value.map(r => ({ label: r.name, value: r.id }))
+);
 
 watch(
   () => form.value.cpf,
   (value) => {
     if (!value) return;
     const masked = maskCPF(value);
-    if (masked !== value) {
-      form.value.cpf = masked;
-    }
-    if (isValidCPF(masked)) {
-      localError.value = null;
-    }
+    if (masked !== value) form.value.cpf = masked;
+    if (isValidCPF(masked) && errors.value.cpf) delete errors.value.cpf;
   }
 );
 
@@ -54,34 +59,43 @@ function loadUsers() {
 }
 
 function openForm(user = null) {
+  errors.value = {};
   showForm.value = true;
-
   if (user) {
     editingUser.value = user.id;
     form.value = { ...user };
   } else {
     editingUser.value = null;
-    form.value = {
-      id: null,
-      name: '',
-      email: '',
-      cpf: '',
-      password: '',
-      roleId: ''
-    };
+    form.value = { id: null, name: '', email: '', cpf: '', password: '', roleId: '' };
   }
 }
 
 function closeForm() {
   showForm.value = false;
   editingUser.value = null;
+  errors.value = {};
+}
+
+function validateForm() {
+  errors.value = {};
+  if (!form.value.name || form.value.name.trim().length < 5)
+    errors.value.name = 'Nome deve ter ao menos 5 caracteres.';
+  if (!form.value.email)
+    errors.value.email = 'E-mail é obrigatório.';
+  if (!isValidCPF(form.value.cpf))
+    errors.value.cpf = 'O CPF inserido é inválido.';
+  if (!editingUser.value && !form.value.password)
+    errors.value.password = 'Senha é obrigatória.';
+  if (form.value.password && form.value.password.length < 6)
+    errors.value.password = 'Senha deve ter ao menos 6 caracteres.';
+  if (!form.value.roleId)
+    errors.value.roleId = 'Selecione um cargo.';
+  return Object.keys(errors.value).length === 0;
 }
 
 function saveUser() {
-  localError.value = null;
-
-  if (!isValidCPF(form.value.cpf)) {
-    localError.value = 'O CPF inserido é inválido.';
+  if (!validateForm()) {
+    showToast('Corrija os erros no formulário.', 'error');
     return;
   }
 
@@ -91,39 +105,24 @@ function saveUser() {
 
   if (form.value.id) {
     const index = list.findIndex(u => u.id === form.value.id);
-
-    if (form.value.id === currentUser.value?.id) {
-      form.value.roleId = list[index].roleId;
-    }
-
-    list[index] = {
-      ...list[index],
-      ...form.value
-    };
+    if (form.value.id === currentUser.value?.id) form.value.roleId = list[index].roleId;
+    list[index] = { ...list[index], ...form.value };
   } else {
-    list.push({
-      ...form.value,
-      id: Date.now(),
-      status: 'ATIVO'
-    });
+    list.push({ ...form.value, id: Date.now(), status: 'ATIVO' });
   }
 
   localStorage.setItem(USERS_KEY, JSON.stringify(list));
-
   loadUsers();
   closeForm();
+  showToast('Usuário salvo com sucesso!', 'success');
   isLoading.value = false;
 }
 
 function toggleStatus(user) {
   if (user.id === currentUser.value?.id) return;
-
   const list = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
   const index = list.findIndex(u => u.id === user.id);
-
-  list[index].status =
-    user.status === 'ATIVO' ? 'INATIVO' : 'ATIVO';
-
+  list[index].status = user.status === 'ATIVO' ? 'INATIVO' : 'ATIVO';
   localStorage.setItem(USERS_KEY, JSON.stringify(list));
   loadUsers();
 }
@@ -148,9 +147,9 @@ function isActive(status) {
         </div>
       </div>
 
-      <button v-if="!showForm" @click="openForm()" class="btn-primary-admin w-full sm:w-auto flex items-center justify-center gap-2">
-        <PlusCircle :size="20" /> Novo Usuário
-      </button>
+      <BaseButton v-if="!showForm" @click="openForm()" :icon="PlusCircle" class="w-full sm:w-auto">
+        Novo Usuário
+      </BaseButton>
     </header>
 
     <Transition name="fade">
@@ -159,8 +158,7 @@ function isActive(status) {
         
         <div class="flex justify-between items-center mb-8">
           <h2 class="text-2xl font-black text-white flex items-center gap-3">
-            <Pencil v-if="editingUser" :size="24" class="text-brand-green" /> 
-            <PlusCircle v-else :size="24" class="text-brand-green" /> 
+            <component :is="editingUser ? Pencil : PlusCircle" :size="24" class="text-brand-green" />
             {{ editingUser ? 'Editar Usuário' : 'Cadastrar Usuário' }}
           </h2>
           <button @click="closeForm" class="p-2 text-gray-400 hover:text-white transition-colors">
@@ -168,57 +166,53 @@ function isActive(status) {
           </button>
         </div>
 
-        <form @submit.prevent="saveUser" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div class="space-y-2">
-            <label class="text-xs font-black uppercase tracking-widest text-gray-500 ml-2">Nome Completo</label>
-            <input v-model="form.name" required type="text" minlength="5" maxlength="100" placeholder="Ex: João Silva"
-                   class="w-full rounded-2xl p-4 text-white bg-white/5 border border-white/10 focus:outline-none focus:border-brand-green/50 transition-all placeholder-gray-600" />
-          </div>
-
-          <div class="space-y-2">
-            <label class="text-xs font-black uppercase tracking-widest text-gray-500 ml-2">Email Profissional</label>
-            <input v-model="form.email" required type="email" maxlength="255" placeholder="exemplo@email.com"
-                   class="w-full rounded-2xl p-4 text-white bg-white/5 border border-white/10 focus:outline-none focus:border-brand-green/50 transition-all placeholder-gray-600" />
-          </div>
-
-          <div class="space-y-2">
-            <label class="text-xs font-black uppercase tracking-widest text-gray-500 ml-2">CPF</label>
-            <input v-model="form.cpf" required type="text" maxlength="14" placeholder="000.000.000-00"
-                   :class="localError ? 'border-red-500 bg-red-500/5' : 'border-white/10 bg-white/5'"
-                   class="w-full rounded-2xl p-4 text-white border focus:outline-none focus:border-brand-green/50 transition-all placeholder-gray-600" />
-            <p v-if="localError" class="text-red-500 text-xs font-bold ml-2 flex items-center gap-1 mt-2">
-              <AlertCircle :size="12"/> {{ localError }}
-            </p>
-          </div>
-
-          <div class="space-y-2">
-            <label class="text-xs font-black uppercase tracking-widest text-gray-500 ml-2">Senha</label>
-            <input v-model="form.password" :required="!editingUser" type="password" minlength="6" maxlength="64" placeholder="••••••••"
-                   class="w-full rounded-2xl p-4 text-white bg-white/5 border border-white/10 focus:outline-none focus:border-brand-green/50 transition-all placeholder-gray-600" />
-          </div>
-
-          <div class="space-y-2 md:col-span-2">
-            <label class="text-xs font-black uppercase tracking-widest text-gray-500 ml-2">Cargo</label>
-            <select v-model.number="form.roleId" required :disabled="editingUser === currentUser?.id"
-                    class="w-full rounded-2xl p-4 text-white bg-white/5 border border-white/10 focus:outline-none focus:border-brand-green/50 transition-all appearance-none disabled:opacity-50 disabled:cursor-not-allowed">
-              <option disabled value="" class="bg-zinc-900 text-gray-400">Selecione o cargo</option>
-              <option v-for="role in roles" :key="role.id" :value="role.id" class="bg-zinc-900 text-white">
-                {{ role.name }}
-              </option>
-            </select>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <BaseInput
+            v-model="form.name"
+            label="Nome Completo"
+            placeholder="Ex: João Silva"
+            :error="errors.name"
+          />
+          <BaseInput
+            v-model="form.email"
+            label="Email Profissional"
+            type="email"
+            placeholder="exemplo@email.com"
+            :error="errors.email"
+          />
+          <BaseInput
+            v-model="form.cpf"
+            label="CPF"
+            placeholder="000.000.000-00"
+            :error="errors.cpf"
+          />
+          <BaseInput
+            v-model="form.password"
+            label="Senha"
+            type="password"
+            :placeholder="editingUser ? 'Deixe em branco para manter' : '••••••••'"
+            :error="errors.password"
+          />
+          <div class="md:col-span-2">
+            <BaseSelect
+              v-model="form.roleId"
+              label="Cargo"
+              :options="roleOptions"
+              placeholder="Selecione o cargo"
+              :error="errors.roleId"
+              :disabled="editingUser === currentUser?.id"
+            />
           </div>
 
           <div class="md:col-span-2 flex justify-end gap-4 mt-4 pt-8 border-t border-white/5">
-            <button type="button" @click="closeForm"
-                    class="px-8 py-4 rounded-2xl text-gray-400 font-bold hover:bg-white/5 hover:text-white transition-colors">
+            <button type="button" @click="closeForm" class="px-8 py-4 rounded-2xl text-gray-400 font-bold hover:bg-white/5 hover:text-white transition-colors">
               Cancelar
             </button>
-            <button type="submit" :disabled="isLoading"
-                    class="btn-primary-admin px-8 py-4 disabled:opacity-50">
-              {{ isLoading ? 'Salvando...' : 'Salvar Usuário' }}
-            </button>
+            <BaseButton @click="saveUser" :isLoading="isLoading" class="px-8 py-4">
+              Salvar Usuário
+            </BaseButton>
           </div>
-        </form>
+        </div>
       </div>
     </Transition>
 
@@ -226,11 +220,11 @@ function isActive(status) {
       <table class="w-full text-left border-collapse">
         <thead class="bg-black/20 text-gray-500 uppercase text-[10px] font-black tracking-widest border-b border-white/5">
           <tr>
-            <th class="p-6 border-b border-white/5">Nome</th>
-            <th class="p-6 border-b border-white/5">Email</th>
-            <th class="p-6 border-b border-white/5 text-center">Status</th>
-            <th class="p-6 border-b border-white/5 text-center">Cargo</th>
-            <th class="p-6 border-b border-white/5 text-right">Ações</th>
+            <th class="p-6">Nome</th>
+            <th class="p-6">Email</th>
+            <th class="p-6 text-center">Status</th>
+            <th class="p-6 text-center">Cargo</th>
+            <th class="p-6 text-right">Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -238,8 +232,10 @@ function isActive(status) {
             <td class="p-6 font-bold text-white">{{ user.name }}</td>
             <td class="p-6 text-gray-400 text-sm">{{ user.email }}</td>
             <td class="p-6 text-center">
-              <span :class="isActive(user.status) ? 'bg-brand-green/10 text-brand-green border-brand-green/20' : 'bg-red-500/10 text-red-500 border-red-500/20'"
-                    class="px-3 py-1 border rounded-full text-[10px] font-black uppercase tracking-widest">
+              <span
+                :class="isActive(user.status) ? 'bg-brand-green/10 text-brand-green border-brand-green/20' : 'bg-red-500/10 text-red-500 border-red-500/20'"
+                class="px-3 py-1 border rounded-full text-[10px] font-black uppercase tracking-widest"
+              >
                 {{ user.status || 'ATIVO' }}
               </span>
             </td>
@@ -251,12 +247,18 @@ function isActive(status) {
                 <button @click="openForm(user)" class="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all">
                   <Pencil :size="18" />
                 </button>
-                <button v-if="user.id !== currentUser?.id" @click="toggleStatus(user)" 
-                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all">
+                <button
+                  v-if="user.id !== currentUser?.id"
+                  @click="toggleStatus(user)"
+                  class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                >
                   <Trash :size="18" />
                 </button>
               </div>
             </td>
+          </tr>
+          <tr v-if="users.length === 0">
+            <td colspan="5" class="p-12 text-center text-gray-600 text-sm font-bold">Nenhum usuário cadastrado.</td>
           </tr>
         </tbody>
       </table>
@@ -269,8 +271,10 @@ function isActive(status) {
             <p class="font-bold text-white text-lg">{{ user.name }}</p>
             <p class="text-sm text-gray-400 mt-1">{{ user.email }}</p>
           </div>
-          <span :class="isActive(user.status) ? 'bg-brand-green/10 text-brand-green border-brand-green/20' : 'bg-red-500/10 text-red-500 border-red-500/20'"
-                class="px-2 py-1 border rounded-full text-[9px] font-black uppercase tracking-widest">
+          <span
+            :class="isActive(user.status) ? 'bg-brand-green/10 text-brand-green border-brand-green/20' : 'bg-red-500/10 text-red-500 border-red-500/20'"
+            class="px-2 py-1 border rounded-full text-[9px] font-black uppercase tracking-widest"
+          >
             {{ user.status || 'ATIVO' }}
           </span>
         </div>
@@ -279,7 +283,6 @@ function isActive(status) {
           <span class="text-[10px] font-black uppercase tracking-widest text-gray-500 bg-white/5 px-3 py-1 rounded-lg border border-white/10">
             {{ roles.find(r => r.id === user.roleId)?.name || '-' }}
           </span>
-          
           <div class="flex gap-2">
             <button @click="openForm(user)" class="p-2 text-gray-400 hover:text-white bg-white/5 rounded-xl">
               <Pencil :size="18" />
@@ -295,13 +298,6 @@ function isActive(status) {
 </template>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-10px); }
 </style>

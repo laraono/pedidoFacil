@@ -12,7 +12,7 @@ export function initMockRoles() {
     {
       id: 1,
       name: 'Admin',
-      role: 'ADMIN', 
+      role: 'ADMIN',
       permissions: [
         PERMISSIONS.RELATORIOS,
         PERMISSIONS.COZINHA,
@@ -22,7 +22,7 @@ export function initMockRoles() {
         PERMISSIONS.CONFIGURACAO,
         PERMISSIONS.ASSINATURA,
         PERMISSIONS.CRIAR_PEDIDO,
-        PERMISSIONS.NOTIFICACOES 
+        PERMISSIONS.NOTIFICACOES
       ]
     },
     {
@@ -39,14 +39,14 @@ export function initMockRoles() {
         PERMISSIONS.ASSINATURA,
         PERMISSIONS.CRIAR_PEDIDO,
         PERMISSIONS.NOTIFICACOES,
-        PERMISSIONS.CAIXA, 
+        PERMISSIONS.CAIXA,
         PERMISSIONS.COMANDAS_FINALIZADAS,
       ]
     },
     {
       id: 4,
       name: 'Garçom',
-      role: 'GARCOM', 
+      role: 'GARCOM',
       permissions: [
         PERMISSIONS.CRIAR_PEDIDO,
         PERMISSIONS.NOTIFICACOES
@@ -55,20 +55,20 @@ export function initMockRoles() {
     {
       id: 5,
       name: 'Cozinheiro',
-      role: 'COZINHA', 
+      role: 'COZINHA',
       permissions: [
-        PERMISSIONS.COZINHA, 
+        PERMISSIONS.COZINHA,
         PERMISSIONS.ESTOQUE
       ]
     },
     {
       id: 6,
       name: 'Caixa',
-      role: 'CAIXA', 
+      role: 'CAIXA',
       permissions: [
         PERMISSIONS.CRIAR_PEDIDO,
-        PERMISSIONS.COZINHA, 
-        PERMISSIONS.CAIXA, 
+        PERMISSIONS.COZINHA,
+        PERMISSIONS.CAIXA,
         PERMISSIONS.ESTOQUE,
         PERMISSIONS.COMANDAS_FINALIZADAS,
       ]
@@ -113,7 +113,7 @@ export function initMockUsers() {
       roleId: 5,
       status: "ATIVO"
     },
-     {
+    {
       id: 6,
       name: "Roberta Caixa",
       email: "caixa@email.com",
@@ -143,7 +143,7 @@ export async function loginMock(email, password) {
     throw new Error("Usuário inativo. Entre em contato com o administrador.");
   }
 
-  const userRole = roles.find(r => r.id === user.roleId);
+  const userRole = roles.find(r => Number(r.id) === Number(user.roleId));
 
   if (!userRole) {
     console.error(`Cargo ID ${user.roleId} não encontrado para o usuário ${user.name}`);

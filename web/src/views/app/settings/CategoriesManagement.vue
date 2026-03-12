@@ -2,19 +2,22 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMenuStore } from '@/stores/productsManagement.js';
-import {
-  ArrowLeft, PlusCircle, Edit,
-  Image as ImageIcon, X, Archive,
-  RotateCcw, Trash2, AlertCircle
-} from 'lucide-vue-next';
+import { useToast } from '@/composables/useToast';
+import BaseInput from '@/components/ui/BaseInput.vue';
+import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmModal from '@/components/ui/ConfirmModal.vue';
+import {
+  ArrowLeft, PlusCircle, Edit, Image as ImageIcon,
+  X, Archive, RotateCcw, Trash2,
+} from 'lucide-vue-next';
 
 const router = useRouter();
 const menuStore = useMenuStore();
+const { showToast } = useToast();
 
 const showModal = ref(false);
 const isEditing = ref(false);
-
+const isLoading = ref(false);
 const showDeleted = ref(false);
 
 const displayedCategories = computed(() =>
@@ -24,40 +27,20 @@ const displayedCategories = computed(() =>
 const errors = ref({});
 const touched = ref({});
 
-const form = ref({
-  id: null,
-  name: '',
-  image: null,
-  imagePreview: null
-});
+const form = ref({ id: null, name: '', image: null, imagePreview: null });
 
 const confirmModal = ref({
-  show: false,
-  title: '',
-  message: '',
-  onConfirm: null,
-  data: null,
-  isError: false
+  show: false, title: '', message: '', onConfirm: null, data: null, isError: false,
 });
 
 const showConfirm = (title, message, onConfirm, data = null, options = {}) => {
-  confirmModal.value = {
-    show: true,
-    title,
-    message,
-    onConfirm,
-    data,
-    isError: options.isError || false
-  };
+  confirmModal.value = { show: true, title, message, onConfirm, data, isError: options.isError || false };
 };
 
 const validateField = (field) => {
   if (field === 'name') {
-    if (!form.value.name.trim()) {
-      errors.value.name = 'O nome da categoria é obrigatório.';
-    } else {
-      delete errors.value.name;
-    }
+    errors.value.name = !form.value.name.trim() ? 'O nome da categoria é obrigatório.' : '';
+    if (!errors.value.name) delete errors.value.name;
   }
 };
 
@@ -76,12 +59,7 @@ const openAddModal = () => {
 
 const openEditModal = (category) => {
   isEditing.value = true;
-  form.value = {
-    id: category.id,
-    name: category.name,
-    image: category.image,
-    imagePreview: category.image
-  };
+  form.value = { id: category.id, name: category.name, image: category.image, imagePreview: category.image };
   errors.value = {};
   touched.value = {};
   showModal.value = true;
@@ -97,73 +75,47 @@ const handleImageUpload = (event) => {
 
 const saveCategory = () => {
   touchField('name');
+  if (Object.keys(errors.value).length) return;
 
-  if (Object.keys(errors.value).length) {
-    document.querySelector('[name="name"]')?.focus();
-    return;
+  isLoading.value = true;
+  try {
+    const payload = { id: form.value.id, name: form.value.name, image: form.value.image };
+    if (isEditing.value) {
+      menuStore.updateCategory(payload);
+    } else {
+      menuStore.addCategory(payload);
+    }
+    showToast(`Categoria "${form.value.name}" salva com sucesso!`, 'success');
+    showModal.value = false;
+  } catch {
+    showToast('Erro ao salvar categoria.', 'error');
+  } finally {
+    isLoading.value = false;
   }
-
-  const payload = {
-    id: form.value.id,
-    name: form.value.name,
-    image: form.value.image
-  };
-
-  if (isEditing.value) {
-    menuStore.updateCategory(payload);
-  } else {
-    menuStore.addCategory(payload);
-  }
-  showModal.value = false;
 };
 
 const handleDelete = (category) => {
   const hasProducts = menuStore.activeProducts?.some(p => String(p.categoryId) === String(category.id));
-  
   if (hasProducts) {
     showConfirm(
-      'Ação Bloqueada', 
-      `Não é possível arquivar a categoria "${category.name}" pois existem produtos vinculados a ela. Remova ou altere a categoria dos produtos primeiro.`, 
-      null, 
-      null, 
-      { isError: true }
+      'Ação Bloqueada',
+      `Não é possível arquivar "${category.name}" pois existem produtos vinculados. Remova ou altere a categoria dos produtos primeiro.`,
+      null, null, { isError: true }
     );
     return;
   }
-
-  showConfirm(
-    'Arquivar Categoria',
-    `Deseja arquivar a categoria "${category.name}"?`,
-    (cat) => {
-      const result = menuStore.softDeleteCategory(cat.id);
-      if (result && !result.success) {
-        showConfirm('Erro', result.message, null, null, { isError: true });
-      }
-    },
-    category
-  );
+  showConfirm('Arquivar Categoria', `Deseja arquivar "${category.name}"?`, (cat) => {
+    const result = menuStore.softDeleteCategory(cat.id);
+    if (result && !result.success) showConfirm('Erro', result.message, null, null, { isError: true });
+  }, category);
 };
 
 const handleRestore = (category) => {
-  showConfirm(
-    'Restaurar Categoria',
-    `Restaurar categoria "${category.name}"?`,
-    (cat) => {
-      menuStore.restoreCategory(cat.id);
-    },
-    category
-  );
+  showConfirm('Restaurar Categoria', `Restaurar "${category.name}"?`, (cat) => menuStore.restoreCategory(cat.id), category);
 };
 
 const handlePermanentDelete = (category) => {
-  showConfirm(
-    'Excluir Permanentemente',
-    `Tem certeza? Esta ação é irreversível! A categoria "${category.name}" será excluída permanentemente.`,
-    (cat) => {
-      menuStore.permanentlyDeleteCategory(cat.id);
-    },
-    category
-  );
+  showConfirm('Excluir Permanentemente', `Esta ação é irreversível! "${category.name}" será excluída.`, (cat) => menuStore.permanentlyDeleteCategory(cat.id), category);
 };
 </script>
 
@@ -182,25 +134,24 @@ const handlePermanentDelete = (category) => {
       </div>
 
       <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-        <button @click="showDeleted = !showDeleted"
-          class="px-5 py-3 rounded-2xl flex items-center justify-center gap-2 transition-all font-bold text-sm border w-full sm:w-auto" 
-          :class="showDeleted
-            ? 'bg-white/10 text-white border-white/20'
-            : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white'">
+        <button
+          @click="showDeleted = !showDeleted"
+          class="px-5 py-3 rounded-2xl flex items-center justify-center gap-2 transition-all font-bold text-sm border w-full sm:w-auto"
+          :class="showDeleted ? 'bg-white/10 text-white border-white/20' : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white'"
+        >
           <Archive :size="18" />
           {{ showDeleted ? 'Ver Ativas' : 'Ver Arquivadas' }}
         </button>
 
-        <button v-if="!showDeleted" @click="openAddModal" class="btn-primary-admin w-full sm:w-auto flex items-center justify-center gap-2">
-          <PlusCircle :size="20" /> Nova Categoria
-        </button>
+        <BaseButton v-if="!showDeleted" @click="openAddModal" :icon="PlusCircle" class="w-full sm:w-auto">
+          Nova Categoria
+        </BaseButton>
       </div>
     </header>
 
     <div v-if="showDeleted" class="mb-8 p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl flex items-center justify-between">
       <p class="text-orange-400 text-sm font-bold flex items-center gap-2">
-        <Archive :size="18" />
-        Visualizando categorias arquivadas.
+        <Archive :size="18" /> Visualizando categorias arquivadas.
       </p>
       <button @click="showDeleted = false" class="text-orange-300 hover:text-orange-100 text-sm font-bold underline transition-colors">
         Voltar para ativas
@@ -218,18 +169,22 @@ const handlePermanentDelete = (category) => {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="cat in displayedCategories" :key="cat.id"
+          <tr v-if="displayedCategories.length === 0">
+            <td colspan="4" class="p-12 text-center text-gray-600 text-sm font-bold">Nenhuma categoria encontrada.</td>
+          </tr>
+          <tr
+            v-for="cat in displayedCategories"
+            :key="cat.id"
             class="hover:bg-white/5 border-b border-white/5 last:border-0 transition-colors"
-            :class="{ 'opacity-50 grayscale': cat.deletedAt }">
+            :class="{ 'opacity-50 grayscale': cat.deletedAt }"
+          >
             <td class="p-4 sm:p-6 w-20">
               <div class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center overflow-hidden border border-white/10">
                 <img v-if="cat.image" :src="cat.image" class="w-full h-full object-cover" />
                 <ImageIcon v-else class="text-gray-500" :size="20" />
               </div>
             </td>
-            <td class="p-4 sm:p-6 font-bold text-white text-sm sm:text-base truncate max-w-[150px] sm:max-w-none">
-              {{ cat.name }}
-            </td>
+            <td class="p-4 sm:p-6 font-bold text-white text-sm sm:text-base truncate max-w-[150px] sm:max-w-none">{{ cat.name }}</td>
             <td class="p-4 sm:p-6 whitespace-nowrap">
               <span v-if="cat.deletedAt" class="px-3 py-1 bg-white/10 text-gray-400 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest">
                 {{ new Date(cat.deletedAt).toLocaleDateString() }}
@@ -270,7 +225,7 @@ const handlePermanentDelete = (category) => {
             
             <header class="p-8 border-b border-white/5 flex justify-between items-center bg-black/20">
               <h2 class="text-2xl font-black text-white flex items-center gap-3">
-                <Edit :size="24" class="text-brand-green" /> 
+                <Edit :size="24" class="text-brand-green" />
                 {{ isEditing ? 'Editar Categoria' : 'Nova Categoria' }}
               </h2>
               <button @click="showModal = false" class="p-2 text-gray-400 hover:text-white transition-colors">
@@ -293,32 +248,34 @@ const handlePermanentDelete = (category) => {
                 </label>
               </div>
 
-              <div class="space-y-2">
-                <label class="text-xs font-black uppercase tracking-widest text-gray-500 ml-2">Nome da Categoria</label>
-                <input type="text" v-model="form.name" name="name" maxlength="50" 
-                  @blur="touchField('name')" @input="() => { if (touched.name) validateField('name'); }" 
-                  :class="errors.name ? 'border-red-500 bg-red-500/5' : 'border-white/10 bg-white/5'"
-                  class="w-full rounded-2xl p-4 text-white border focus:outline-none focus:border-brand-green/50 transition-all"
-                  placeholder="Ex: Bebidas" />
-                <p v-if="errors.name" class="text-red-500 text-xs font-bold ml-2 flex items-center gap-1">
-                  <AlertCircle :size="12"/> {{ errors.name }}
-                </p>
-              </div>
+              <BaseInput
+                v-model="form.name"
+                label="Nome da Categoria"
+                placeholder="Ex: Bebidas"
+                :error="errors.name"
+                @blur="touchField('name')"
+                @input="() => { if (touched.name) validateField('name'); }"
+              />
             </div>
 
             <footer class="p-8 border-t border-white/5 bg-black/20 flex justify-end gap-4">
               <button @click="showModal = false" class="px-6 py-3 rounded-2xl text-gray-400 font-bold hover:bg-white/5 hover:text-white transition-colors">
                 Cancelar
               </button>
-              <button @click="saveCategory" class="btn-primary-admin px-8">
+              <BaseButton @click="saveCategory" :isLoading="isLoading" class="px-8">
                 {{ isEditing ? 'Salvar Alterações' : 'Criar Categoria' }}
-              </button>
+              </BaseButton>
             </footer>
           </div>
         </div>
       </Transition>
     </Teleport>
 
-    <ConfirmModal :confirmModal="confirmModal" />
+    <ConfirmModal :confirmModal="confirmModal" @close="confirmModal.show = false" />
   </main>
 </template>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>

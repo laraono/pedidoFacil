@@ -1,311 +1,133 @@
 <script setup>
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { useMenuStore } from '@/stores/productsManagement.js';
-import {
-  ArrowLeft, PlusCircle, Edit,
-  Image as ImageIcon, X, Plus, Trash2, Search,
-  Archive, RotateCcw
-} from 'lucide-vue-next';
-import { ConfirmModal } from '@/components/ui/';
-// IMPORTANTE: Certifique-se de importar o seu ProductsModal aqui
-// import ProductsModal from '@/components/ProductsModal.vue'; 
+import { ref, computed } from "vue";
+import { useMenuStore } from "@/stores/productsManagement.js";
+import { useToast } from "@/composables/useToast";
+import { useConfirm } from "@/composables/useConfirm";
+import BaseButton from "@/components/ui/BaseButton.vue";
+import BaseInput from "@/components/ui/BaseInput.vue";
+import DataTable from "@/components/ui/DataTable.vue";
+import FormModal from "@/components/ui/FormModal.vue";
+import ConfirmModal from "@/components/ui/ConfirmModal.vue";
+import PageHeader from "@/components/ui/PageHeader.vue";
+import ToastMessage from "@/components/ui/ToastMessage.vue";
+import { PlusCircle, Edit, Archive, RotateCcw, Trash2, Image as ImageIcon } from "lucide-vue-next";
 
-const router = useRouter();
 const menuStore = useMenuStore();
-
-const searchQuery = ref('');
-const filterCategory = ref('');
+const { showToast } = useToast();
+const { confirmState, showConfirm } = useConfirm();
 
 const showDeleted = ref(false);
-
-const errors = ref({});
-const touched = ref({});
-
 const showModal = ref(false);
 const isEditing = ref(false);
+const isLoading = ref(false);
+const errors = ref({});
+const form = ref({ id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true });
 
-const confirmModal = ref({
-  show: false,
-  title: '',
-  message: '',
-  onConfirm: null,
-  data: null,
-  isError: false
-});
+const displayedProducts = computed(() => showDeleted.value ? menuStore.deletedProducts : menuStore.activeProducts);
+const categoryOptions = computed(() => menuStore.activeCategories.map(c => ({ label: c.name, value: c.id })));
 
-const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-  style: 'currency',
-  currency: 'BRL',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2
-});
-
-const defaultForm = {
-  id: null,
-  name: '',
-  description: '',
-  categoryId: '',
-  image: null,
-  imagePreview: null,
-  isAvailable: false,
-  sizes: [{ name: 'Padrão', price: 0 }],
-  addons: []
+const validate = () => {
+  const e = {};
+  if (!form.value.name?.trim()) e.name = "Nome do produto é obrigatório.";
+  const price = parseFloat(String(form.value.price).replace(",", "."));
+  if (!form.value.price || isNaN(price) || price <= 0) e.price = "Preço inválido.";
+  if (!form.value.categoryId) e.categoryId = "Selecione uma categoria.";
+  errors.value = e;
+  return Object.keys(e).length === 0;
 };
 
-const currentProductData = ref({ ...defaultForm });
+const openAdd = () => { isEditing.value = false; form.value = { id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true }; errors.value = {}; showModal.value = true; };
+const openEdit = (p) => { isEditing.value = true; form.value = { id: p.id, name: p.name, description: p.description || "", price: p.price, categoryId: p.categoryId, image: p.image, imagePreview: p.image, available: p.available !== false }; errors.value = {}; showModal.value = true; };
+const handleImageUpload = (e) => { const file = e.target.files[0]; if (!file) return; const url = URL.createObjectURL(file); form.value.imagePreview = url; form.value.image = url; };
 
-const filteredProducts = computed(() => {
-  const source = showDeleted.value ? menuStore.deletedProducts : menuStore.activeProducts;
-  const query = searchQuery.value.toLowerCase().trim();
-
-  return source.filter(product => {
-    const nameMatch = product.name.toLowerCase().includes(query);
-    const descMatch = (product.description || '').toLowerCase().includes(query);
-    const matchesSearch = query === '' || nameMatch || descMatch;
-
-    const productCat = String(product.categoryId);
-    const selectedCat = filterCategory.value;
-    const matchesCategory = selectedCat === '' || productCat === selectedCat;
-
-    return matchesSearch && matchesCategory;
-  });
-});
-
-const formatCurrency = (value) => {
-  return currencyFormatter.format(value);
+const save = () => {
+  if (!validate()) { showToast("Corrija os erros no formulário.", "error"); return; }
+  isLoading.value = true;
+  try {
+    const payload = { id: form.value.id, name: form.value.name, description: form.value.description, price: parseFloat(String(form.value.price).replace(",", ".")), categoryId: form.value.categoryId, image: form.value.image, available: form.value.available };
+    if (isEditing.value) menuStore.updateProduct(payload); else menuStore.addProduct(payload);
+    showToast(isEditing.value ? "Produto atualizado!" : "Produto criado!", "success");
+    showModal.value = false;
+  } catch { showToast("Erro ao salvar produto.", "error"); } finally { isLoading.value = false; }
 };
 
-const showConfirm = (title, message, onConfirm, data = null, options = {}) => {
-  confirmModal.value = {
-    show: true,
-    title,
-    message,
-    onConfirm,
-    data,
-    isError: options.isError || false
-  };
-};
+const handleDelete = (p) => showConfirm({ title: "Arquivar Produto", message: "Arquivar " + p.name + "?", onConfirm: () => { menuStore.softDeleteProduct(p.id); showToast(p.name + " arquivado.", "success"); } });
+const handleRestore = (p) => showConfirm({ title: "Restaurar Produto", message: "Restaurar " + p.name + "?", onConfirm: () => { menuStore.restoreProduct(p.id); showToast(p.name + " restaurado.", "success"); } });
+const handlePermanentDelete = (p) => showConfirm({ title: "Excluir Permanentemente", message: "Excluir " + p.name + " para sempre?", onConfirm: () => { menuStore.permanentlyDeleteProduct(p.id); showToast(p.name + " excluído.", "success"); } });
 
-const openAddModal = () => {
-  isEditing.value = false;
-  currentProductData.value = JSON.parse(JSON.stringify(defaultForm));
-  currentProductData.value.categoryId = menuStore.categories?.length ? menuStore.categories[0].id : '';
-  showModal.value = true;
-};
-
-const openEditModal = (product) => {
-  isEditing.value = true;
-  currentProductData.value = JSON.parse(JSON.stringify(product));
-  currentProductData.value.imagePreview = product.image;
-  showModal.value = true;
-};
-
-const handleSaveProduct = (formData) => {
-  if (isEditing.value) {
-    menuStore.updateProduct(formData);
-  } else {
-    menuStore.addProduct(formData);
-  }
-  showModal.value = false;
-};
-
-const handleSoftDelete = (product) => {
-  showConfirm(
-    'Arquivar Produto',
-    `Deseja arquivar o produto "${product.name}"?`,
-    (prod) => {
-      menuStore.softDeleteProduct(prod.id);
-    },
-    product
-  );
-};
-
-const handleRestore = (product) => {
-  showConfirm(
-    'Restaurar Produto',
-    `Restaurar produto "${product.name}"?`,
-    (prod) => {
-      menuStore.restoreProduct(prod.id);
-    },
-    product
-  );
-};
-
-const handlePermanentDelete = (product) => {
-  showConfirm(
-    'Excluir Permanentemente',
-    `Tem certeza? Esta ação é irreversível! O produto "${product.name}" será excluído permanentemente.`,
-    (prod) => {
-      menuStore.permanentlyDeleteProduct(prod.id);
-    },
-    product
-  );
-};
+const tableColumns = [ { key: "image", label: "Foto" }, { key: "name", label: "Produto", sortable: true }, { key: "price", label: "Preço" }, { key: "status", label: "Status" } ];
+const tableActions = computed(() => [
+  { icon: Edit,    tooltip: "Editar",    handler: openEdit,             condition: (p) => !p.deletedAt },
+  { icon: Archive, tooltip: "Arquivar",  handler: handleDelete,         condition: (p) => !p.deletedAt, class: "text-gray-400 hover:text-orange-400 hover:bg-orange-500/10 p-2 rounded-xl transition-all" },
+  { icon: RotateCcw, tooltip: "Restaurar", handler: handleRestore,      condition: (p) =>  p.deletedAt, class: "text-gray-400 hover:text-brand-green hover:bg-brand-green/10 p-2 rounded-xl transition-all" },
+  { icon: Trash2,  tooltip: "Excluir",   handler: handlePermanentDelete, condition: (p) => p.deletedAt, class: "text-gray-400 hover:text-red-400 hover:bg-red-500/10 p-2 rounded-xl transition-all" },
+]);
 </script>
 
 <template>
   <main class="max-w-6xl mx-auto py-12 px-6 font-inter">
-    
-    <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-10 gap-6">
-      <div class="flex items-center gap-4">
-        <button @click="router.back()" class="p-3 bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-white transition-colors">
-          <ArrowLeft :size="20" />
+    <ToastMessage />
+    <PageHeader title="Gerenciar Produtos" subtitle="Controle do cardápio">
+      <template #actions>
+        <button @click="showDeleted = !showDeleted" class="px-5 py-3 rounded-2xl flex items-center gap-2 font-bold text-sm border transition-all" :class="showDeleted ? 'bg-white/10 text-white border-white/20' : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white'">
+          <Archive :size="18" /> {{ showDeleted ? 'Ver Ativos' : 'Ver Arquivados' }}
         </button>
-        <div>
-          <h1 class="text-3xl font-black text-white">Gerenciar Produtos</h1>
-          <p class="text-gray-400 text-sm">Controle de itens do cardápio e disponibilidade</p>
+        <BaseButton v-if="!showDeleted" @click="openAdd" :icon="PlusCircle">Novo Produto</BaseButton>
+      </template>
+    </PageHeader>
+    <div v-if="showDeleted" class="mb-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl flex items-center justify-between">
+      <p class="text-orange-400 text-sm font-bold flex items-center gap-2"><Archive :size="16" /> Visualizando produtos arquivados.</p>
+      <button @click="showDeleted = false" class="text-orange-300 hover:text-orange-100 text-sm font-bold underline">Voltar para ativos</button>
+    </div>
+    <DataTable :columns="tableColumns" :data="displayedProducts" :actions="tableActions" emptyMessage="Nenhum produto encontrado.">
+      <template #cell-image="{ item }">
+        <div class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center overflow-hidden border border-white/10">
+          <img v-if="item.image" :src="item.image" class="w-full h-full object-cover" />
+          <ImageIcon v-else class="text-gray-500" :size="18" />
+        </div>
+      </template>
+      <template #cell-name="{ item }">
+        <span class="font-bold text-white" :class="{ 'opacity-50': item.deletedAt }">{{ item.name }}</span>
+        <p v-if="item.description" class="text-gray-500 text-xs mt-0.5">{{ item.description }}</p>
+      </template>
+      <template #cell-price="{ item }">
+        <span class="text-brand-green font-black">R$ {{ Number(item.price).toFixed(2) }}</span>
+      </template>
+      <template #cell-status="{ item }">
+        <span v-if="item.deletedAt" class="px-3 py-1 bg-white/10 text-gray-400 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest">Arquivado</span>
+        <span v-else-if="item.available === false" class="px-3 py-1 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded-full text-[10px] font-black uppercase tracking-widest">Indisponível</span>
+        <span v-else class="px-3 py-1 bg-brand-green/10 text-brand-green border border-brand-green/20 rounded-full text-[10px] font-black uppercase tracking-widest">Disponível</span>
+      </template>
+    </DataTable>
+    <FormModal :show="showModal" :title="isEditing ? 'Editar Produto' : 'Novo Produto'" :isLoading="isLoading" :saveLabel="isEditing ? 'Salvar Alterações' : 'Criar Produto'" size="md" @close="showModal = false" @save="save">
+      <div class="flex flex-col gap-5">
+        <div class="flex justify-center">
+          <label class="cursor-pointer group relative w-32 h-32 bg-white/5 rounded-2xl flex items-center justify-center overflow-hidden border-2 border-dashed border-white/20 hover:border-brand-green/50 transition-all">
+            <img v-if="form.imagePreview" :src="form.imagePreview" class="w-full h-full object-cover" />
+            <div v-else class="flex flex-col items-center text-gray-500 gap-1"><ImageIcon :size="30" /><span class="text-[10px] font-black uppercase tracking-widest">Foto</span></div>
+            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-black uppercase tracking-wider">Alterar</div>
+            <input type="file" class="hidden" accept="image/*" @change="handleImageUpload" />
+          </label>
+        </div>
+        <BaseInput v-model="form.name" label="Nome do Produto" placeholder="Ex: X-Burguer Especial" :maxlength="60" :error="errors.name" />
+        <BaseInput v-model="form.description" label="Descrição (opcional)" placeholder="Ingredientes, detalhes..." :maxlength="120" />
+        <BaseInput v-model="form.price" label="Preço (R$)" placeholder="0.00" :error="errors.price" />
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-black text-gray-300 uppercase tracking-widest ml-2">Categoria</label>
+          <select v-model="form.categoryId" class="w-full py-3.5 px-4 rounded-2xl border bg-white/5 border-white/15 text-white focus:outline-none focus:border-brand-green/50 transition-all appearance-none" :class="errors.categoryId ? '!border-red-500' : ''">
+            <option value="" disabled class="bg-zinc-900">Selecione uma categoria</option>
+            <option v-for="opt in categoryOptions" :key="opt.value" :value="opt.value" class="bg-zinc-900">{{ opt.label }}</option>
+          </select>
+          <p v-if="errors.categoryId" class="text-red-400 text-[11px] font-bold mt-0.5 ml-2">{{ errors.categoryId }}</p>
+        </div>
+        <div class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
+          <div><p class="text-sm font-bold text-white">Disponível no cardápio</p><p class="text-xs text-gray-500">Clientes poderão pedir este produto</p></div>
+          <button type="button" @click="form.available = !form.available" class="relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300" :class="form.available ? 'bg-brand-green' : 'bg-gray-600'">
+            <span class="inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-300" :class="form.available ? 'translate-x-6' : 'translate-x-1'" />
+          </button>
         </div>
       </div>
-
-      <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-        <button @click="showDeleted = !showDeleted"
-          class="px-5 py-3 rounded-2xl flex items-center justify-center gap-2 transition-all font-bold text-sm border w-full sm:w-auto" 
-          :class="showDeleted
-            ? 'bg-white/10 text-white border-white/20'
-            : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white'">
-          <Archive :size="18" />
-          {{ showDeleted ? 'Ver Ativos' : 'Ver Arquivados' }}
-        </button>
-
-        <button v-if="!showDeleted" @click="openAddModal" class="btn-primary-admin w-full sm:w-auto flex items-center justify-center gap-2">
-          <PlusCircle :size="20" /> Novo Produto
-        </button>
-      </div>
-    </header>
-
-    <div class="flex flex-col sm:flex-row gap-4 mb-8">
-      <div class="flex-1 relative">
-        <Search class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500" :size="20" />
-        <input type="text" v-model="searchQuery" placeholder="Buscar por nome ou descrição..."
-          class="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:outline-none focus:border-brand-green/50 text-white placeholder-gray-500 transition-all" />
-      </div>
-
-      <select v-model="filterCategory"
-        class="w-full sm:w-64 px-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:outline-none focus:border-brand-green/50 text-white appearance-none cursor-pointer transition-all">
-        <option value="" class="bg-zinc-900 text-white">Todas as categorias</option>
-        <option v-for="cat in menuStore.activeCategories" :key="cat.id" :value="String(cat.id)" class="bg-zinc-900 text-white">
-          {{ cat.name }}
-        </option>
-      </select>
-    </div>
-
-    <div v-if="showDeleted" class="mb-8 p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl flex items-center justify-between">
-      <p class="text-orange-400 text-sm font-bold flex items-center gap-2">
-        <Archive :size="18" />
-        Visualizando produtos arquivados.
-      </p>
-      <button @click="showDeleted = false" class="text-orange-300 hover:text-orange-100 text-sm font-bold underline transition-colors">
-        Voltar para ativos
-      </button>
-    </div>
-
-    <div class="bg-dark-card border border-white/10 rounded-2xl overflow-x-auto shadow-2xl">
-      <table class="w-full text-left border-collapse min-w-[740px]">
-        <thead class="bg-black/20 text-gray-500 uppercase text-[10px] font-black tracking-widest border-b border-white/5">
-          <tr>
-            <th class="p-4 sm:p-6 border-b border-white/5 w-20">Imagem</th>
-            <th class="p-4 sm:p-6 border-b border-white/5">Produto</th>
-            <th class="p-4 sm:p-6 border-b border-white/5 whitespace-nowrap">Categoria</th>
-            <th class="p-4 sm:p-6 border-b border-white/5 whitespace-nowrap">Preço (Base)</th>
-            <th class="p-4 sm:p-6 border-b border-white/5 text-center whitespace-nowrap">Disponível</th>
-            <th class="p-4 sm:p-6 border-b border-white/5 whitespace-nowrap">Status</th>
-            <th class="p-4 sm:p-6 border-b border-white/5 text-right whitespace-nowrap">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="prod in filteredProducts" :key="prod.id"
-            class="hover:bg-white/5 border-b border-white/5 last:border-0 transition-colors"
-            :class="{ 'opacity-50 grayscale': prod.deletedAt }">
-            <td class="p-4 sm:p-6 w-20">
-              <div class="w-12 h-12 sm:w-16 sm:h-16 bg-white/5 border border-white/10 rounded-2xl overflow-hidden flex items-center justify-center">
-                <img v-if="prod.image" :src="prod.image" class="w-full h-full object-cover" />
-                <ImageIcon v-else class="text-gray-500" :size="24" />
-              </div>
-            </td>
-            <td class="p-4 sm:p-6">
-              <p class="font-bold text-white text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">{{ prod.name }}</p>
-              <p class="text-xs text-gray-400 truncate max-w-[120px] sm:max-w-[200px] mt-1">{{ prod.description }}</p>
-            </td>
-            <td class="p-4 sm:p-6 whitespace-nowrap">
-              <span class="px-3 py-1 bg-white/10 text-gray-400 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest">
-                {{ menuStore.getCategoryName(prod.categoryId) }}
-              </span>
-            </td>
-            <td class="p-4 sm:p-6 font-mono text-sm text-brand-green font-bold whitespace-nowrap">
-              {{ formatCurrency(prod.sizes[0]?.price || 0) }}
-              <span v-if="prod.sizes.length > 1" class="text-[10px] text-gray-500 ml-1">(+{{ prod.sizes.length - 1 }})</span>
-            </td>
-            <td class="p-4 sm:p-6 text-center whitespace-nowrap">
-              <div class="flex flex-col items-center">
-                <button @click="menuStore.toggleAvailability(prod.id)"
-                  class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in focus:outline-none"
-                  :disabled="prod.deletedAt">
-                  <div
-                    :class="`w-10 h-5 rounded-full p-1 duration-300 ease-in-out border border-white/10 ${prod.isAvailable ? 'bg-brand-green border-brand-green/50' : 'bg-white/5'} ${prod.deletedAt ? 'opacity-50 cursor-not-allowed' : ''}`">
-                    <div
-                      :class="`bg-white w-3 h-3 rounded-full shadow-md transform duration-300 ease-in-out ${prod.isAvailable ? 'translate-x-5' : 'translate-x-0 bg-gray-500'}`">
-                    </div>
-                  </div>
-                </button>
-                <span class="text-[8px] mt-2 font-black tracking-widest uppercase"
-                  :class="prod.isAvailable ? 'text-brand-green' : 'text-gray-500'">
-                  {{ prod.isAvailable ? 'Ativo' : 'Inativo' }}
-                </span>
-              </div>
-            </td>
-            <td class="p-4 sm:p-6 whitespace-nowrap">
-              <span v-if="prod.deletedAt" class="px-3 py-1 bg-white/10 text-gray-400 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest">
-                Arquivado
-              </span>
-              <span v-else class="px-3 py-1 bg-brand-green/10 text-brand-green border border-brand-green/20 rounded-full text-[10px] font-black uppercase tracking-widest">
-                Ativo
-              </span>
-            </td>
-            <td class="p-4 sm:p-6 text-right whitespace-nowrap">
-              <div class="flex justify-end gap-2">
-                <template v-if="!prod.deletedAt">
-                  <button @click="openEditModal(prod)" class="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all" title="Editar">
-                    <Edit :size="18" />
-                  </button>
-                  <button @click="handleSoftDelete(prod)" class="p-2 text-gray-400 hover:text-orange-400 hover:bg-orange-500/10 rounded-xl transition-all" title="Arquivar">
-                    <Archive :size="18" />
-                  </button>
-                </template>
-                <template v-else>
-                  <button @click="handleRestore(prod)" class="p-2 text-gray-400 hover:text-brand-green hover:bg-brand-green/10 rounded-xl transition-all" title="Restaurar">
-                    <RotateCcw :size="18" />
-                  </button>
-                  <button @click="handlePermanentDelete(prod)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all" title="Deletar permanentemente">
-                    <Trash2 :size="18" />
-                  </button>
-                </template>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <ProductsModal v-if="showModal" :show="showModal" :isEditing="isEditing" :initialData="currentProductData"
-      :categories="menuStore.activeCategories" @close="showModal = false" @save="handleSaveProduct" />
-
-    <ConfirmModal :confirmModal="confirmModal" :showModal="confirmModal.show" />
+    </FormModal>
+    <ConfirmModal :confirmModal="confirmState" @close="confirmState.show = false" />
   </main>
 </template>
-
-<style scoped>
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-</style>
