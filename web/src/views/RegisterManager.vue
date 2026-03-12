@@ -42,6 +42,7 @@ async function handleSubmit() {
     localError.value = null;
     serverError.value = null;
 
+    // Validações
     if (!nome.value.trim().includes(' ')) {
         localError.value = 'Por favor, insira seu nome e sobrenome.';
         isLoading.value = false;
@@ -63,6 +64,7 @@ async function handleSubmit() {
         return;
     };
 
+    // Simulando processamento
     localStorage.setItem('onboarding_personal', JSON.stringify({
         nome: nome.value,
         email: email.value,

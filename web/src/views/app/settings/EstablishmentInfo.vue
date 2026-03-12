@@ -6,6 +6,7 @@ import { useOnboardingStore } from '@/stores/onboarding';
 import { ArrowLeft, CheckCircle, Upload } from 'lucide-vue-next';
 import { maskCNPJ, isValidCNPJ } from '@/utils/validator';
 import { getEstablishmentMock, updateEstablishmentMock } from '@/mock/stablishmentmock';
+import localStorageService from '@/services/localStorageService';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -18,6 +19,7 @@ const metodosPagamento = ref([]);
 const formasAtendimento = ref([]);
 const isLoading = ref(false);
 const localError = ref(null);
+const fileInput = ref(null);
 
 const paymentOptions = ['Crédito', 'Débito', 'Dinheiro', 'Pix'];
 
@@ -86,6 +88,25 @@ const saveInfo = async () => {
   isLoading.value = false;
   router.push('/app/dashboard');
 };
+
+const triggerFileInput = () => {
+  fileInput.value.click()
+}
+
+const uploadImage = (event) => {  
+  const file = event.target.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      const base64String = e.target.result;
+      localStorageService.saveImage(base64String);
+      fileInput.value = base64String;
+    };
+
+    reader.readAsDataURL(file);
+  }
+}
 </script>
 
 <template>

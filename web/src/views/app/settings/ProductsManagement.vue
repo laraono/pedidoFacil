@@ -12,7 +12,8 @@ const router = useRouter();
 const menuStore = useMenuStore();
 
 const searchQuery = ref('');
-const filterCategory = ref('');
+const filterCategory = ref(''); 
+
 const showDeleted = ref(false);
 
 const errors = ref({});
@@ -178,7 +179,6 @@ const removeSize = (index) => {
 const addAddon = () => {
   form.value.addons.push({ name: '', price: 0 });
 };
-
 const removeAddon = (index) => {
   form.value.addons.splice(index, 1);
 };

@@ -19,6 +19,7 @@ import MenuPersonalization from '@/views/app/settings/MenuPersonalization.vue';
 import MenuProducts from '@/views/app/settings/ProductsManagement.vue';
 import MenuCategories from '@/views/app/settings/CategoriesManagement.vue';
 import CreateUsers from '@/views/app/settings/UsersConfig.vue';
+import Menu from '@/views/app/Menu.vue';
 
 import KitchenTerminal from '@/views/app/kitchen/KitchenTerminal.vue'; 
 
@@ -45,7 +46,9 @@ const routes = [
       
       { path: 'settings/users', name: 'users-settings', component: CreateUsers, meta: { permission: PERMISSIONS.CONFIGURACAO } },
       
+      // Unindo as alterações: Mantive o caminho relativo e adicionei o Menu
       { path: 'kitchen', name: 'kitchen', component: KitchenTerminal, meta: { requiresAuth: true, permission: PERMISSIONS.COZINHA } },
+      { path: 'menu', name: 'Menu', component: Menu, meta: { requiresAuth: true, permission: PERMISSIONS.CRIAR_PEDIDO } },
       
       { path: '', redirect: { name: 'dashboard' } }
     ]

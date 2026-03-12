@@ -11,14 +11,14 @@ import {
 const router = useRouter();
 const menuStore = useMenuStore();
 
+const showModal = ref(false);
+const isEditing = ref(false);
+
 const showDeleted = ref(false);
 
 const displayedCategories = computed(() =>
   showDeleted.value ? menuStore.deletedCategories : menuStore.activeCategories
 );
-
-const showModal = ref(false);
-const isEditing = ref(false);
 
 const errors = ref({});
 const touched = ref({});
