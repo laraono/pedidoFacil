@@ -1,6 +1,6 @@
 import {
   BarChart3, ChefHat, UtensilsCrossed, Users,
-  DollarSign, HamburgerIcon, Package, Receipt, Settings
+  DollarSign, HamburgerIcon, Package, Receipt, Settings, StoreIcon
 } from 'lucide-vue-next';
 import { PERMISSIONS } from '@/utils/permissions';
 
@@ -39,7 +39,7 @@ export const allMenuItems = [
     callToAction: 'Personalize',
     permission: PERMISSIONS.CONFIGURACAO
   },
-    {
+  {
     label: 'Gerenciar Usuários',
     route: '/app/settings/users',
     icon: Users,
@@ -98,5 +98,12 @@ export const allMenuItems = [
     description: 'Histórico de comandas concluídas.',
     callToAction: 'Ver Histórico',
     permission: PERMISSIONS.COMANDAS_FINALIZADAS
+  },
+  {
+    label: 'Relatorios',
+    route: '/app/reports',
+    icon: StoreIcon,
+    description: 'Gráficos e relatórios.',
+    permission: PERMISSIONS.RELATORIOS
   }
 ];

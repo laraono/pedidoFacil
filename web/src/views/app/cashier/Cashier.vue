@@ -1,297 +1,210 @@
 <template>
-  <div class="h-screen bg-gray-50 flex flex-col font-inter overflow-hidden">
+  <div class="h-screen bg-black flex flex-col font-inter overflow-hidden text-white">
     
-    <header class="h-16 md:h-20 bg-header-kitchen border-b border-black/20 flex items-center justify-between px-4 md:px-8 shadow-md z-20 shrink-0 bg-slate-900">
-      <div class="flex items-center gap-3 md:gap-4">
-        <div class="bg-brand-green p-1.5 md:p-2 rounded-xl text-black shadow-lg shadow-brand-green/30">
+    <header class="h-16 md:h-20 bg-zinc-900 border-b border-white/10 flex items-center justify-between px-6 md:px-8 shadow-2xl z-20 shrink-0">
+      <div class="flex items-center gap-4">
+        <div class="bg-brand-green p-2 rounded-xl text-black shadow-lg shadow-brand-green/20">
              <Monitor :size="20" class="md:w-6 md:h-6" />
         </div>
-        <h1 class="text-white/90 font-bold text-lg hidden sm:block">Caixa de Operações</h1>
+        <div>
+          <h1 class="text-white font-black text-lg tracking-tight leading-none uppercase">Caixa de Operações</h1>
+          <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mt-1">Terminal de Liquidação</p>
+        </div>
       </div>
     </header>
 
-    <main class="flex-grow flex flex-col p-4 md:p-6 overflow-hidden pb-6">
-      <section class="flex-1 flex flex-col min-w-0 bg-gray-100/50 rounded-2xl md:rounded-[2rem] border border-gray-200/60 shadow-inner overflow-hidden">
+    <main class="flex-grow flex flex-col p-4 md:p-8 overflow-hidden bg-black">
+      <section class="flex-1 flex flex-col min-w-0 bg-zinc-900/50 rounded-[2.5rem] border border-white/10 shadow-inner overflow-hidden">
         
-        <header class="p-4 md:p-5 flex justify-between items-center bg-gray-100/50 backdrop-blur-sm z-10 border-b border-gray-200/50">
+        <header class="p-6 md:px-8 flex justify-between items-center bg-white/5 backdrop-blur-md z-10 border-b border-white/5">
           <div class="flex items-center gap-3">
-             <div class="w-2 md:w-3 h-6 md:h-8 bg-blue-500 rounded-full"></div>
-             <h2 class="font-extrabold text-gray-700 text-base md:text-lg uppercase tracking-wide">Comandas Abertas</h2>
+             <div class="w-2 h-6 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
+             <h2 class="font-black text-white text-base md:text-lg uppercase tracking-widest">Comandas Ativas</h2>
           </div>
-          <span class="bg-blue-500 text-white font-bold px-3 py-1 rounded-full text-sm shadow-sm shadow-blue-200">
+          <span class="bg-blue-600 text-white font-black px-4 py-1 rounded-full text-xs shadow-lg border border-blue-400/30">
             {{ comandaStore.comandas.length }}
           </span>
         </header>
 
-        <div class="flex-grow p-4 md:p-6 overflow-y-auto custom-scrollbar">
+        <div class="flex-grow p-6 md:p-8 overflow-y-auto custom-scrollbar">
             
-            <div v-if="comandaStore.comandas.length === 0" class="flex flex-col items-center justify-center h-full text-gray-400 opacity-60 min-h-[200px]">
-                <FileText :size="48" class="mb-2" />
-                <p class="font-medium">Nenhuma comanda aberta no momento.</p>
+            <div v-if="comandaStore.comandas.length === 0" class="flex flex-col items-center justify-center h-full text-gray-600 opacity-40 min-h-[200px]">
+                <FileText :size="48" class="mb-4" />
+                <p class="font-black uppercase tracking-widest text-sm">Nenhuma comanda ativa</p>
             </div>
 
-            <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 <div v-for="comanda in comandaStore.comandas" :key="comanda.id"
-                    class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 cursor-pointer hover:shadow-md hover:border-blue-200 transition-all group"
+                    class="bg-white/5 rounded-[2rem] border border-white/5 p-6 cursor-pointer hover:border-blue-500/50 hover:bg-white/[0.08] transition-all group relative overflow-hidden"
                     @click="openDetails(comanda)">
                     
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="font-extrabold text-gray-800 text-lg group-hover:text-blue-600 transition-colors">Comanda #{{ comanda.id }}</span>
-                        <span class="text-green-600 font-bold bg-green-50 px-2 py-1 rounded-lg">R$ {{ comanda.total.toFixed(2) }}</span>
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                          <span class="text-gray-500 text-[10px] font-black uppercase tracking-widest block mb-1">ID</span>
+                          <span class="font-black text-white text-xl tracking-tighter group-hover:text-blue-400 transition-colors">#{{ comanda.id }}</span>
+                        </div>
+                        <span class="text-brand-green font-black text-lg tracking-tighter">R$ {{ comanda.total.toFixed(2) }}</span>
                     </div>
                     
-                    <div class="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 p-2 rounded-lg border border-gray-100">
-                        <Receipt :size="16" />
-                        {{ comanda.orders.length }} pedido(s) vinculados
+                    <div class="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-black/40 p-3 rounded-xl border border-white/5">
+                        <Receipt :size="14" class="text-blue-500" />
+                        {{ comanda.orders.length }} pedidos vinculados
                     </div>
                 </div>
             </div>
-
         </div>
       </section>
     </main>
 
-    <div v-if="showDetails" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-[2rem] w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+    <div v-if="showDetails" class="fixed inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 z-50">
+        <div class="bg-zinc-900 border border-white/10 rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] flex flex-col shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden">
             
-            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <div class="flex items-center gap-3">
-                    <div class="bg-blue-100 p-2 rounded-xl text-blue-600">
+            <div class="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                <div class="flex items-center gap-4">
+                    <div class="bg-blue-500/10 p-3 rounded-2xl text-blue-500 border border-blue-500/20">
                         <Receipt :size="24" />
                     </div>
-                    <h2 class="text-2xl font-extrabold text-gray-800">Comanda #{{ selectedComanda.id }}</h2>
+                    <div>
+                      <h2 class="text-2xl font-black text-white uppercase tracking-tighter">Comanda #{{ selectedComanda.id }}</h2>
+                      <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest">Processamento Financeiro</p>
+                    </div>
                 </div>
-                <button @click="closeDetails" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-full transition-colors">
+                <button @click="closeDetails" class="p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-full transition-all">
                     <X :size="24" />
                 </button>
             </div>
 
-            <div class="p-6 overflow-y-auto custom-scrollbar">
-                
-                <h3 class="font-bold text-gray-700 mb-4 uppercase tracking-wide text-sm">Resumo de Pedidos</h3>
+            <div class="p-8 overflow-y-auto custom-scrollbar bg-zinc-900">
+                <h3 class="font-black text-gray-500 mb-6 uppercase tracking-[0.2em] text-[10px]">Detalhamento de Consumo</h3>
                 <div class="space-y-4">
-                    <div v-for="order in ordersWithStatus" :key="order.id" class="border border-gray-100 rounded-2xl p-4 bg-gray-50/50">
-                        <div class="flex justify-between items-center mb-3">
-                            <span class="font-bold text-gray-700">Pedido #{{ order.id }}</span>
-                            <span class="px-3 py-1 rounded-full text-xs font-bold" :class="{
-                                'bg-yellow-100 text-yellow-700': order.status === 'pending',
-                                'bg-blue-100 text-blue-700': order.status === 'preparing',
-                                'bg-green-100 text-green-700': order.status === 'ready'
+                    <div v-for="order in ordersWithStatus" :key="order.id" class="border border-white/5 rounded-3xl p-6 bg-white/[0.03]">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="font-black text-white text-sm uppercase tracking-widest">Pedido #{{ order.id }}</span>
+                            <span class="px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border" :class="{
+                                'border-yellow-500/30 bg-yellow-500/10 text-yellow-500': order.status === 'pending',
+                                'border-blue-500/30 bg-blue-500/10 text-blue-500': order.status === 'preparing',
+                                'border-brand-green/30 bg-brand-green/10 text-brand-green': order.status === 'ready'
                             }">
                                 {{ order.status === 'pending' ? 'Aguardando' : order.status === 'preparing' ? 'Preparando' : 'Pronto' }}
                             </span>
                         </div>
-                        <div class="text-sm space-y-1">
-                            <div v-for="item in order.items" :key="item.name" class="flex justify-between text-gray-600">
-                                <span>{{ item.amount }}x {{ item.name }}</span>
-                                <span class="font-medium">R$ {{ (item.price || 0).toFixed(2) }}</span>
+                        <div class="space-y-2 mb-4">
+                            <div v-for="item in order.items" :key="item.name" class="flex justify-between text-xs font-bold text-gray-400">
+                                <span class="tracking-wide">{{ item.amount }}x {{ item.name }}</span>
+                                <span class="text-gray-300">R$ {{ (item.price || 0).toFixed(2) }}</span>
                             </div>
                         </div>
-                        <div class="text-right font-bold text-gray-800 mt-3 pt-3 border-t border-gray-200 border-dashed">
-                            Total: R$ {{ order.price.toFixed(2) }}
+                        <div class="text-right font-black text-white text-sm mt-3 pt-3 border-t border-white/5 border-dashed">
+                            Total Pedido: <span class="text-blue-400 ml-2">R$ {{ order.price.toFixed(2) }}</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="mt-8 border border-gray-100 rounded-2xl p-5 bg-white shadow-sm">
-                    <div class="flex justify-between text-lg font-semibold text-gray-700">
-                        <span>Subtotal:</span>
-                        <span>R$ {{ subtotal.toFixed(2) }}</span>
+                <div class="mt-10 border border-white/10 rounded-3xl p-8 bg-black/40 shadow-inner">
+                    <div class="flex justify-between text-sm font-black text-gray-400 uppercase tracking-widest">
+                        <span>Subtotal da Conta:</span>
+                        <span class="text-white">R$ {{ subtotal.toFixed(2) }}</span>
                     </div>
 
-                    <div class="mt-5 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Aplicar Desconto</label>
-                        <div class="flex gap-3">
-                            <select v-model="discountType" class="border-gray-300 rounded-xl px-3 py-2 bg-white flex-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                    <div class="mt-6 p-6 bg-white/[0.03] rounded-2xl border border-white/5">
+                        <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Aplicar Ajuste/Desconto</label>
+                        <div class="flex gap-4">
+                            <select v-model="discountType" class="bg-zinc-800 border-none rounded-xl px-4 py-3 text-xs font-black uppercase text-white outline-none focus:ring-2 focus:ring-blue-500 flex-1">
                                 <option value="percent">Percentual (%)</option>
                                 <option value="fixed">Valor fixo (R$)</option>
                             </select>
-                            <input type="number" v-model.number="discountValue" min="0"
-                                :max="discountType === 'percent' ? 100 : subtotal"
-                                class="border-gray-300 rounded-xl px-3 py-2 bg-white w-32 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-center font-medium" />
+                            <input type="number" v-model.number="discountValue" 
+                                class="bg-zinc-800 border-none rounded-xl px-4 py-3 text-lg font-black text-center text-brand-green w-32 outline-none focus:ring-2 focus:ring-blue-500" />
                         </div>
                     </div>
 
-                    <div class="flex justify-between text-2xl font-extrabold text-brand-green mt-5">
-                        <span>Total a Pagar:</span>
-                        <span>R$ {{ totalWithDiscount.toFixed(2) }}</span>
+                    <div class="flex justify-between items-end mt-8">
+                        <span class="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Total Final</span>
+                        <span class="text-4xl font-black text-brand-green tracking-tighter drop-shadow-[0_0_15px_rgba(0,255,159,0.3)]">
+                          R$ {{ totalWithDiscount.toFixed(2) }}
+                        </span>
                     </div>
                 </div>
 
-                <div class="mt-8">
-                    <h3 class="font-bold text-gray-700 mb-4 uppercase tracking-wide text-sm">Configuração de Pagamento</h3>
+                <div class="mt-10">
+                    <h3 class="font-black text-gray-500 mb-6 uppercase tracking-[0.2em] text-[10px]">Método de Liquidação</h3>
                     
-                    <div class="bg-white border border-gray-100 p-5 rounded-2xl shadow-sm">
-                        <div class="mb-5 flex items-center gap-4">
-                            <label class="inline-flex items-center cursor-pointer">
-                                <input type="checkbox" v-model="splitPayment" class="mr-3 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                                <span class="font-medium text-gray-700">Dividir pagamento</span>
+                    <div class="bg-white/[0.02] border border-white/5 p-8 rounded-[2rem]">
+                        <div class="mb-6 flex items-center gap-6">
+                            <label class="flex items-center cursor-pointer group">
+                                <div class="relative">
+                                  <input type="checkbox" v-model="splitPayment" class="sr-only" />
+                                  <div class="w-12 h-6 bg-zinc-700 rounded-full transition-colors group-hover:bg-zinc-600" :class="{'bg-blue-600': splitPayment}"></div>
+                                  <div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform" :class="{'translate-x-6': splitPayment}"></div>
+                                </div>
+                                <span class="ml-3 font-black text-xs uppercase text-gray-400 tracking-widest">Dividir Pagamento</span>
                             </label>
                             
-                            <div v-if="splitPayment" class="flex items-center gap-3 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                                <span class="text-sm font-medium text-gray-600">Pessoas:</span>
-                                <input type="number" v-model.number="numberOfPeople" min="1" class="border-gray-300 rounded-md px-2 py-1 w-16 text-center outline-none focus:ring-2 focus:ring-blue-500" />
-                                <button @click="distributeEqually" class="px-3 py-1.5 bg-blue-100 text-blue-700 font-semibold rounded-md hover:bg-blue-200 text-sm transition-colors">
-                                    Distribuir
+                            <div v-if="splitPayment" class="flex items-center gap-4 bg-black/40 px-4 py-2 rounded-xl border border-white/10">
+                                <span class="text-[10px] font-black text-gray-500 uppercase">Pessoas:</span>
+                                <input type="number" v-model.number="numberOfPeople" class="bg-transparent text-white font-black w-12 text-center outline-none" />
+                                <button @click="distributeEqually" class="px-4 py-1.5 bg-blue-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-blue-500 transition-colors">
+                                    Calcular
                                 </button>
                             </div>
                         </div>
 
-                        <div v-if="!splitPayment" class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Método de pagamento</label>
-                            <select v-model="paymentSplits[0].type" class="border-gray-300 rounded-xl px-4 py-2.5 w-full bg-white outline-none focus:ring-2 focus:ring-blue-500">
-                                <option>Dinheiro</option>
-                                <option>Pix</option>
-                                <option>Cartão</option>
+                        <div v-if="!splitPayment" class="bg-zinc-800 rounded-2xl p-4">
+                            <select v-model="paymentSplits[0].type" class="bg-transparent border-none w-full text-white font-black uppercase tracking-widest text-sm outline-none">
+                                <option class="bg-zinc-900">Dinheiro</option>
+                                <option class="bg-zinc-900">Pix</option>
+                                <option class="bg-zinc-900">Cartão</option>
                             </select>
                         </div>
 
-                        <div v-else class="space-y-3">
-                            <div v-for="(method, idx) in paymentSplits" :key="idx" class="flex gap-3 items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
-                                <span class="font-bold text-gray-400 w-6">{{ idx + 1 }}.</span>
-                                <select v-model="method.type" class="border-gray-300 rounded-lg px-3 py-2 flex-1 bg-white outline-none focus:ring-2 focus:ring-blue-500">
-                                    <option>Dinheiro</option>
-                                    <option>Pix</option>
-                                    <option>Cartão</option>
+                        <div v-else class="space-y-4">
+                            <div v-for="(method, idx) in paymentSplits" :key="idx" class="flex gap-4 items-center bg-black/40 p-4 rounded-2xl border border-white/5">
+                                <span class="font-black text-blue-500 w-6 text-xs">{{ idx + 1 }}.</span>
+                                <select v-model="method.type" class="bg-zinc-800 border-none rounded-xl px-4 py-2 text-xs font-black uppercase text-white outline-none flex-1">
+                                    <option class="bg-zinc-900">Dinheiro</option>
+                                    <option class="bg-zinc-900">Pix</option>
+                                    <option class="bg-zinc-900">Cartão</option>
                                 </select>
-                                <div class="relative w-32">
-                                    <span class="absolute left-3 top-2.5 text-gray-500 text-sm font-medium">R$</span>
+                                <div class="relative w-40">
+                                    <span class="absolute left-4 top-2.5 text-brand-green text-[10px] font-black">R$</span>
                                     <input type="text" :value="utils.formatCurrency(method.amount)" @input="applyMask($event, method)"
-                                        class="border-gray-300 rounded-lg pl-8 pr-3 py-2 w-full text-right font-medium outline-none focus:ring-2 focus:ring-blue-500" placeholder="0,00" />
+                                        class="bg-zinc-800 border-none rounded-xl pl-10 pr-4 py-2 w-full text-right font-black text-white outline-none focus:ring-1 focus:ring-brand-green" />
                                 </div>
-                                <button v-if="paymentSplits.length > 1" @click="removePaymentSplit(idx)" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Remover">
+                                <button v-if="paymentSplits.length > 1" @click="removePaymentSplit(idx)" class="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-all">
                                     <X :size="20" />
                                 </button>
-                            </div>
-                            
-                            <div class="pt-2 flex justify-between items-center">
-                                <button @click="addPaymentSplit" class="text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors">
-                                    + Adicionar divisão
-                                </button>
-                                <div class="text-sm font-medium text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                                    Total: R$ {{ utils.formatCurrency(totalPayments) }}
-                                    <span v-if="Math.abs(totalPayments - totalWithDiscount) > 0.01" class="text-red-500 font-bold ml-2">
-                                        (Falta R$ {{ utils.formatCurrency(Math.abs(totalWithDiscount - totalPayments)) }})
-                                    </span>
-                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div class="p-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 rounded-b-[2rem]">
-                <button @click="closeDetails" class="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition-colors shadow-sm">
-                    Cancelar
+            <div class="p-8 border-t border-white/5 bg-white/[0.02] flex justify-end gap-4">
+                <button @click="closeDetails" class="px-8 py-3 bg-transparent border border-white/10 text-gray-400 font-black uppercase tracking-widest text-xs rounded-xl hover:bg-white/5 transition-all">
+                    Voltar
                 </button>
-                <button @click="handleFinalize" class="px-6 py-2.5 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors shadow-md shadow-green-500/30 flex items-center gap-2">
-                    <CheckCircle :size="18" /> Prosseguir
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div v-if="showRulesModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
-        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col items-center text-center">
-            <div class="w-16 h-16 bg-yellow-100 text-yellow-500 rounded-full flex items-center justify-center mb-4">
-                <AlertTriangle :size="32" />
-            </div>
-            <h3 class="text-xl font-extrabold text-gray-800 mb-2">Atenção</h3>
-            <p class="text-gray-600 mb-8">{{ rulesModalMessage }}</p>
-            <div class="flex gap-3 w-full">
-                <button @click="confirmRules(false)" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">
-                    Não, Voltar
-                </button>
-                <button @click="confirmRules(true)" class="flex-1 py-3 bg-yellow-500 text-white font-bold rounded-xl hover:bg-yellow-600 transition-colors shadow-md shadow-yellow-500/30">
-                    Sim, Continuar
+                <button @click="handleFinalize" class="px-8 py-3 bg-brand-green text-black font-black uppercase tracking-widest text-xs rounded-xl hover:bg-green-400 transition-all shadow-lg shadow-brand-green/20 flex items-center gap-3">
+                    <CheckCircle :size="18" /> Confirmar Pagamento
                 </button>
             </div>
         </div>
     </div>
 
-    <div v-if="paymentFlowActive" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
-        <div class="bg-white rounded-[2rem] p-8 max-w-lg w-full shadow-2xl border border-gray-100">
-            <h3 class="text-xl font-extrabold text-gray-800 mb-2">
-                Pagamento <span class="text-blue-500">{{ currentPaymentIndex + 1 }}</span> de {{ pendingPayments.length }}
-            </h3>
-            
-            <div class="bg-blue-50 rounded-xl p-4 mb-6 border border-blue-100 flex justify-between items-center">
-                <span class="font-bold text-gray-700 flex items-center gap-2">
-                    <Monitor v-if="pendingPayments[currentPaymentIndex]?.type !== 'Din'" :size="18" class="text-blue-500"/>
-                    {{ pendingPayments[currentPaymentIndex]?.type }}
-                </span>
-                <span class="text-xl font-extrabold text-blue-700">
-                    R$ {{ pendingPayments[currentPaymentIndex]?.amount.toFixed(2) }}
-                </span>
-            </div>
-
-            <div v-if="pendingPayments[currentPaymentIndex]?.type === 'Dinheiro'">
-                <label class="block text-sm font-bold text-gray-700 mb-2">Valor recebido do cliente</label>
-                <div class="relative mb-4">
-                    <span class="absolute left-4 top-3 text-gray-500 font-bold">R$</span>
-                    <input type="number" v-model.number="cashReceivedForCurrent" min="0" step="0.01"
-                        class="border-2 border-gray-200 rounded-xl pl-10 pr-4 py-3 w-full text-lg font-bold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all" 
-                        placeholder="0.00"
-                        @input="updateChangeBreakdown" />
-                </div>
-
-                <div v-if="cashReceivedForCurrent >= pendingPayments[currentPaymentIndex]?.amount" class="mt-4 bg-green-50 p-4 rounded-xl border border-green-100">
-                    <p class="font-bold text-green-800 mb-2">Troco Sugerido:</p>
-                    <p class="text-2xl font-extrabold text-green-600 mb-3">
-                        R$ {{ (cashReceivedForCurrent - pendingPayments[currentPaymentIndex]?.amount).toFixed(2) }}
-                    </p>
-                    <ul class="text-sm space-y-1">
-                        <li v-for="item in changeBreakdownList" :key="item.value" class="flex items-center gap-2 font-medium text-green-700">
-                            <span class="bg-green-200 px-2 py-0.5 rounded-md">{{ item.count }}x</span> {{ item.label }}
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="flex justify-end gap-3 mt-8">
-                <button @click="cancelPaymentFlow" class="px-5 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">
-                    Cancelar
-                </button>
-                <button v-if="pendingPayments[currentPaymentIndex]?.type === 'Dinheiro'" @click="confirmCashPayment" class="px-5 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors shadow-md shadow-green-500/30 flex items-center gap-2">
-                    <CheckCircle :size="18" /> Confirmar
-                </button>
-            </div>
-        </div>
     </div>
-
-    <div v-if="showConfirmNonCashModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[70]">
-        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center">
-            <div class="w-16 h-16 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Receipt :size="32" />
-            </div>
-            <h3 class="text-xl font-extrabold text-gray-800 mb-2">Aguardando Pagamento</h3>
-            <p class="text-gray-600 mb-6">
-                Confirme se o pagamento via <strong class="text-gray-800">{{ pendingNonCashPayment?.type }}</strong> no valor de
-                <strong class="text-gray-800">R$ {{ pendingNonCashPayment?.amount.toFixed(2) }}</strong> foi aprovado na maquininha.
-            </p>
-            <div class="flex flex-col gap-2">
-                <button @click="confirmNonCashPayment" class="w-full py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors shadow-md shadow-green-500/30">
-                    Pagamento Aprovado
-                </button>
-                <button @click="cancelNonCashPayment" class="w-full py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">
-                    Cancelar / Deu Erro
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div v-if="showAlertModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[80]">
-        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center">
-            <h3 class="text-xl font-extrabold text-gray-800 mb-2">Aviso</h3>
-            <p class="text-gray-600 mb-6">{{ alertMessage }}</p>
-            <button @click="showAlertModal = false" class="w-full py-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors shadow-md shadow-blue-500/30">
-                Entendido
-            </button>
-        </div>
-    </div>
-  </div>
 </template>
 
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+</style>
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { useComandaStore } from '@/stores/comandaManagement';
@@ -632,10 +545,3 @@ function applyMask(event, method) {
     event.target.value = utils.formatCurrency(method.amount);
 }
 </script>
-
-<style scoped>
-.custom-scrollbar::-webkit-scrollbar { width: 6px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-</style>

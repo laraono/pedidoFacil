@@ -36,39 +36,42 @@ const handleSort = (key) => {
 </script>
 
 <template>
-  <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-x-auto">
+  <div class="bg-dark-card border border-white/10 rounded-2xl overflow-x-auto shadow-2xl font-inter">
     <table class="w-full text-left border-collapse min-w-[740px]">
-      <thead class="bg-gray-50 text-gray-600 uppercase text-xs sm:text-sm font-semibold">
+      <thead class="bg-black/20 text-gray-500 uppercase text-[10px] font-black tracking-widest border-b border-white/5">
         <tr>
-          <th v-for="col in columns" :key="col.key" class="p-2 sm:p-4 border-b whitespace-nowrap">
-            <div class="flex items-center gap-1" :class="{ 'cursor-pointer select-none': col.sortable }" @click="handleSort(col.key)">
+          <th v-for="col in columns" :key="col.key" class="p-4 sm:p-6 whitespace-nowrap">
+            <div class="flex items-center gap-2" 
+                 :class="{ 'cursor-pointer select-none hover:text-white transition-colors': col.sortable }" 
+                 @click="handleSort(col.key)">
               {{ col.label }}
-              <span v-if="col.sortable && sortKey === col.key" class="text-gray-400">
+              <span v-if="col.sortable && sortKey === col.key" class="text-brand-green">
                 {{ sortOrder === 'asc' ? '↑' : '↓' }}
               </span>
             </div>
           </th>
-          <th v-if="actions.length" class="p-2 sm:p-4 border-b text-right whitespace-nowrap">Ações</th>
+          <th v-if="actions.length" class="p-4 sm:p-6 text-right whitespace-nowrap">Ações</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(item, idx) in sortedData" :key="item.id" class="hover:bg-gray-50 border-b last:border-0 transition-colors">
-          <td v-for="col in columns" :key="col.key" class="p-2 sm:p-4">
+        <tr v-for="(item, idx) in sortedData" :key="item.id" 
+            class="hover:bg-white/5 border-b border-white/5 last:border-0 transition-colors">
+          <td v-for="col in columns" :key="col.key" class="p-4 sm:p-6 text-sm text-white font-medium">
             <slot :name="`cell-${col.key}`" :item="item" :value="item[col.key]">
               {{ item[col.key] }}
             </slot>
           </td>
-          <td v-if="actions.length" class="p-2 sm:p-4 text-right whitespace-nowrap">
-            <div class="flex justify-end gap-1 sm:gap-2">
+          <td v-if="actions.length" class="p-4 sm:p-6 text-right whitespace-nowrap">
+            <div class="flex justify-end gap-2">
               <template v-for="act in actions" :key="act.label">
                 <button
                   v-if="!act.condition || act.condition(item)"
                   @click="act.handler(item)"
-                  class="p-1.5 sm:p-2 rounded-lg transition-colors"
-                  :class="act.class || 'text-gray-600 hover:bg-gray-100'"
+                  class="p-2 rounded-xl transition-all"
+                  :class="act.class || 'text-gray-400 hover:text-white hover:bg-white/5'"
                   :title="act.tooltip"
                 >
-                  <component :is="act.icon" :size="16" class="sm:w-5 sm:h-5" />
+                  <component :is="act.icon" :size="18" />
                 </button>
               </template>
             </div>

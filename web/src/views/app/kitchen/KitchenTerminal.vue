@@ -46,143 +46,144 @@ const handleFinish = (id) => kitchenStore.finishOrder(id);
 </script>
 
 <template>
-  <div class="h-screen bg-gray-50 flex flex-col font-inter overflow-hidden">
+  <div class="h-screen bg-black flex flex-col font-inter overflow-hidden text-white">
     
-    <header class="h-16 md:h-20 bg-header-kitchen border-b border-black/20 flex items-center justify-between px-4 md:px-8 shadow-md z-20 shrink-0">
-      <div class="flex items-center gap-3 md:gap-4">
-        <div class="bg-brand-green p-1.5 md:p-2 rounded-xl text-black shadow-lg shadow-brand-green/30">
+    <header class="h-16 md:h-20 bg-zinc-900 border-b border-white/10 flex items-center justify-between px-6 md:px-8 shadow-2xl z-20 shrink-0">
+      <div class="flex items-center gap-4">
+        <div class="bg-brand-green p-2 rounded-xl text-black shadow-lg shadow-brand-green/20">
              <UtensilsCrossed :size="20" class="md:w-6 md:h-6" />
         </div>
-        <h1 class="text-white/90 font-bold text-lg hidden sm:block">Fila de Pedidos</h1>
+        <div>
+          <h1 class="text-white font-black text-lg tracking-tight leading-none uppercase">Fila de Pedidos</h1>
+          <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mt-1">Monitor de Produção</p>
+        </div>
       </div>
 
-      <div class="flex items-center gap-2 md:gap-4">
+      <div class="flex items-center gap-3">
         <button 
           @click="simulateSocketEvent" 
-          class="px-3 py-2 md:px-5 md:py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs md:text-sm font-bold transition-colors flex items-center gap-2 border border-white/5"
+          class="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-xl text-xs font-black uppercase tracking-widest transition-all border border-white/5 flex items-center gap-2"
         >
-          <Bell :size="16" /> <span class="hidden md:inline">Simular</span>
+          <Bell :size="14" /> <span class="hidden md:inline">Simular Entrada</span>
         </button>
 
         <button 
           @click="toggleAudio" 
-          class="p-2 md:p-2.5 rounded-xl transition-colors border"
-          :class="audioEnabled ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'"
+          class="p-2.5 rounded-xl transition-all border"
+          :class="audioEnabled ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'"
         >
-          <Volume2 v-if="audioEnabled" :size="18" class="md:w-5 md:h-5" />
-          <VolumeX v-else :size="18" class="md:w-5 md:h-5" />
+          <Volume2 v-if="audioEnabled" :size="18" />
+          <VolumeX v-else :size="18" />
         </button>
-        
       </div>
     </header>
 
-    <main class="flex-grow flex flex-col md:flex-row p-4 md:p-6 gap-4 md:gap-6 overflow-hidden pb-24 md:pb-6">
+    <main class="flex-grow flex flex-col md:flex-row p-4 md:p-8 gap-6 overflow-hidden pb-24 md:pb-8 bg-black">
       
       <section 
-        class="flex-1 flex-col min-w-0 md:min-w-[360px] bg-gray-100/50 rounded-2xl md:rounded-[2rem] border border-gray-200/60 shadow-inner overflow-hidden"
+        class="flex-1 flex-col min-w-0 md:min-w-[360px] bg-zinc-900/50 rounded-[2.5rem] border border-white/10 shadow-inner overflow-hidden transition-all"
         :class="activeTab === 'pending' ? 'flex' : 'hidden md:flex'"
       >
-        <header class="p-4 md:p-5 flex justify-between items-center bg-gray-100/50 backdrop-blur-sm z-10 border-b border-gray-200/50">
+        <header class="p-6 flex justify-between items-center bg-white/[0.03] backdrop-blur-md z-10 border-b border-white/5">
           <div class="flex items-center gap-3">
-             <div class="w-2 md:w-3 h-6 md:h-8 bg-yellow-400 rounded-full"></div>
-             <h2 class="font-extrabold text-gray-700 text-base md:text-lg uppercase tracking-wide">Pendente</h2>
+             <div class="w-2 h-6 bg-yellow-500 rounded-full shadow-[0_0_15px_rgba(234,179,8,0.4)]"></div>
+             <h2 class="font-black text-white text-sm uppercase tracking-widest">Pendente</h2>
           </div>
-          <span class="bg-yellow-400 text-yellow-900 font-bold px-3 py-1 rounded-full text-sm shadow-sm">
+          <span class="bg-yellow-500 text-black font-black px-4 py-1 rounded-full text-xs">
             {{ kitchenStore.pendingOrders.length }}
           </span>
         </header>
-        <div class="flex-grow p-3 md:p-4 overflow-y-auto custom-scrollbar">
+        <div class="flex-grow p-4 overflow-y-auto custom-scrollbar space-y-4">
           <OrderCard v-for="order in kitchenStore.pendingOrders" :key="order.id" :order="order" @move="handleMove" />
           
-          <div v-if="kitchenStore.pendingOrders.length === 0" class="flex flex-col items-center justify-center h-40 text-gray-400 opacity-60">
-             <Bell :size="48" class="mb-2" />
-             <p>Sem pedidos</p>
+          <div v-if="kitchenStore.pendingOrders.length === 0" class="flex flex-col items-center justify-center h-40 text-zinc-700">
+             <Bell :size="48" class="mb-2 opacity-20" />
+             <p class="text-[10px] font-black uppercase tracking-[0.2em]">Cozinha Limpa</p>
           </div>
         </div>
       </section>
 
       <section 
-        class="flex-1 flex-col min-w-0 md:min-w-[360px] bg-gray-100/50 rounded-2xl md:rounded-[2rem] border border-gray-200/60 shadow-inner overflow-hidden"
+        class="flex-1 flex-col min-w-0 md:min-w-[360px] bg-zinc-900/50 rounded-[2.5rem] border border-white/10 shadow-inner overflow-hidden transition-all"
         :class="activeTab === 'preparing' ? 'flex' : 'hidden md:flex'"
       >
-        <header class="p-4 md:p-5 flex justify-between items-center bg-gray-100/50 backdrop-blur-sm z-10 border-b border-gray-200/50">
+        <header class="p-6 flex justify-between items-center bg-white/[0.03] backdrop-blur-md z-10 border-b border-white/5">
           <div class="flex items-center gap-3">
-             <div class="w-2 md:w-3 h-6 md:h-8 bg-blue-500 rounded-full"></div>
-             <h2 class="font-extrabold text-gray-700 text-base md:text-lg uppercase tracking-wide">Preparando</h2>
+             <div class="w-2 h-6 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.4)]"></div>
+             <h2 class="font-black text-white text-sm uppercase tracking-widest">Preparo</h2>
           </div>
-          <span class="bg-blue-500 text-white font-bold px-3 py-1 rounded-full text-sm shadow-sm shadow-blue-200">
+          <span class="bg-blue-600 text-white font-black px-4 py-1 rounded-full text-xs border border-blue-400/30">
             {{ kitchenStore.preparingOrders.length }}
           </span>
         </header>
-        <div class="flex-grow p-3 md:p-4 overflow-y-auto custom-scrollbar">
+        <div class="flex-grow p-4 overflow-y-auto custom-scrollbar space-y-4">
           <OrderCard v-for="order in kitchenStore.preparingOrders" :key="order.id" :order="order" @move="handleMove" />
         </div>
       </section>
 
       <section 
-        class="flex-1 flex-col min-w-0 md:min-w-[360px] bg-gray-100/50 rounded-2xl md:rounded-[2rem] border border-gray-200/60 shadow-inner overflow-hidden"
+        class="flex-1 flex-col min-w-0 md:min-w-[360px] bg-zinc-900/50 rounded-[2.5rem] border border-white/10 shadow-inner overflow-hidden transition-all"
         :class="activeTab === 'ready' ? 'flex' : 'hidden md:flex'"
       >
-        <header class="p-4 md:p-5 flex justify-between items-center bg-gray-100/50 backdrop-blur-sm z-10 border-b border-gray-200/50">
+        <header class="p-6 flex justify-between items-center bg-white/[0.03] backdrop-blur-md z-10 border-b border-white/5">
           <div class="flex items-center gap-3">
-             <div class="w-2 md:w-3 h-6 md:h-8 bg-brand-green rounded-full"></div>
-             <h2 class="font-extrabold text-gray-700 text-base md:text-lg uppercase tracking-wide">Pronto</h2>
+             <div class="w-2 h-6 bg-brand-green rounded-full shadow-[0_0_15px_rgba(0,255,159,0.4)]"></div>
+             <h2 class="font-black text-white text-sm uppercase tracking-widest">Pronto</h2>
           </div>
-          <span class="bg-brand-green text-white font-bold px-3 py-1 rounded-full text-sm shadow-sm shadow-green-200">
+          <span class="bg-brand-green text-black font-black px-4 py-1 rounded-full text-xs">
             {{ kitchenStore.readyOrders.length }}
           </span>
         </header>
-        <div class="flex-grow p-3 md:p-4 overflow-y-auto custom-scrollbar">
+        <div class="flex-grow p-4 overflow-y-auto custom-scrollbar space-y-4">
           <OrderCard v-for="order in kitchenStore.readyOrders" :key="order.id" :order="order" @finish="handleFinish" />
         </div>
       </section>
 
     </main>
 
-    <nav class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] md:hidden z-50 px-6 py-2 pb-5 flex justify-between items-center">
+    <nav class="fixed bottom-0 left-0 w-full bg-zinc-900 border-t border-white/5 shadow-2xl md:hidden z-50 px-8 py-3 pb-8 flex justify-between items-center">
         
         <button 
             @click="activeTab = 'pending'"
-            class="flex flex-col items-center gap-1 p-2 rounded-xl transition-all relative w-20"
-            :class="activeTab === 'pending' ? 'text-yellow-600 bg-yellow-50' : 'text-gray-400'"
+            class="flex flex-col items-center gap-1 p-2 transition-all relative"
+            :class="activeTab === 'pending' ? 'text-yellow-500' : 'text-gray-600'"
         >
             <div class="relative">
-                <List :size="24" stroke-width="2.5" />
-                <span v-if="kitchenStore.pendingOrders.length > 0" class="absolute -top-2 -right-2 bg-yellow-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border-2 border-white">
+                <List :size="24" stroke-width="3" />
+                <span v-if="kitchenStore.pendingOrders.length > 0" class="absolute -top-2 -right-3 bg-yellow-500 text-black text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-zinc-900">
                     {{ kitchenStore.pendingOrders.length }}
                 </span>
             </div>
-            <span class="text-[10px] font-bold uppercase tracking-wide">Fila</span>
+            <span class="text-[9px] font-black uppercase tracking-widest mt-1">Fila</span>
         </button>
 
         <button 
             @click="activeTab = 'preparing'"
-            class="flex flex-col items-center gap-1 p-2 rounded-xl transition-all relative w-20"
-            :class="activeTab === 'preparing' ? 'text-blue-600 bg-blue-50' : 'text-gray-400'"
+            class="flex flex-col items-center gap-1 p-2 transition-all relative"
+            :class="activeTab === 'preparing' ? 'text-blue-500' : 'text-gray-600'"
         >
             <div class="relative">
-                <ChefHat :size="24" stroke-width="2.5" />
-                <span v-if="kitchenStore.preparingOrders.length > 0" class="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border-2 border-white">
+                <ChefHat :size="24" stroke-width="3" />
+                <span v-if="kitchenStore.preparingOrders.length > 0" class="absolute -top-2 -right-3 bg-blue-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-zinc-900">
                     {{ kitchenStore.preparingOrders.length }}
                 </span>
             </div>
-            <span class="text-[10px] font-bold uppercase tracking-wide">Preparo</span>
+            <span class="text-[9px] font-black uppercase tracking-widest mt-1">Preparo</span>
         </button>
 
         <button 
             @click="activeTab = 'ready'"
-            class="flex flex-col items-center gap-1 p-2 rounded-xl transition-all relative w-20"
-            :class="activeTab === 'ready' ? 'text-green-600 bg-green-50' : 'text-gray-400'"
+            class="flex flex-col items-center gap-1 p-2 transition-all relative"
+            :class="activeTab === 'ready' ? 'text-brand-green' : 'text-gray-600'"
         >
             <div class="relative">
-                <CheckCircle :size="24" stroke-width="2.5" />
-                <span v-if="kitchenStore.readyOrders.length > 0" class="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border-2 border-white">
+                <CheckCircle :size="24" stroke-width="3" />
+                <span v-if="kitchenStore.readyOrders.length > 0" class="absolute -top-2 -right-3 bg-brand-green text-black text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-zinc-900">
                     {{ kitchenStore.readyOrders.length }}
                 </span>
             </div>
-            <span class="text-[10px] font-bold uppercase tracking-wide">Pronto</span>
+            <span class="text-[9px] font-black uppercase tracking-widest mt-1">Pronto</span>
         </button>
-
     </nav>
 
   </div>
@@ -191,6 +192,6 @@ const handleFinish = (id) => kitchenStore.finishOrder(id);
 <style scoped>
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.1); }
 </style>

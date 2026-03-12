@@ -1,70 +1,85 @@
 <template>
-  <div class="h-screen bg-gray-50 flex flex-col font-inter overflow-hidden">
+  <div class="h-screen bg-black flex flex-col font-inter overflow-hidden text-white">
     
-    <header class="h-16 md:h-20 bg-header-kitchen border-b border-black/20 flex items-center justify-between px-4 md:px-8 shadow-md z-20 shrink-0 bg-slate-900">
-      <div class="flex items-center gap-3 md:gap-4">
-        <div class="bg-brand-green p-1.5 md:p-2 rounded-xl text-black shadow-lg shadow-brand-green/30">
+    <header class="h-16 md:h-20 bg-zinc-900 border-b border-white/10 flex items-center justify-between px-6 md:px-8 shadow-2xl z-20 shrink-0">
+      <div class="flex items-center gap-4">
+        <div class="bg-brand-green p-2 rounded-xl text-black shadow-lg shadow-brand-green/20">
              <Receipt :size="20" class="md:w-6 md:h-6" />
         </div>
-        <h1 class="text-white/90 font-bold text-lg hidden sm:block">Comandas Finalizadas</h1>
+        <div>
+          <h1 class="text-white font-black text-lg tracking-tight leading-none">Comandas Finalizadas</h1>
+          <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mt-1">Histórico de Transações</p>
+        </div>
       </div>
     </header>
 
-    <main class="flex-grow flex flex-col p-4 md:p-6 overflow-hidden pb-6">
-      <section class="flex-1 flex flex-col min-w-0 bg-gray-100/50 rounded-2xl md:rounded-[2rem] border border-gray-200/60 shadow-inner overflow-hidden">
+    <main class="flex-grow flex flex-col p-4 md:p-8 overflow-hidden bg-black">
+      <section class="flex-1 flex flex-col min-w-0 bg-dark-card rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden">
         
-        <header class="p-4 md:p-5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-gray-100/50 backdrop-blur-sm z-10 border-b border-gray-200/50">
+        <header class="p-6 md:px-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-white/5 backdrop-blur-md z-10 border-b border-white/5">
           <div class="flex items-center gap-3">
-             <div class="w-2 md:w-3 h-6 md:h-8 bg-green-500 rounded-full"></div>
-             <h2 class="font-extrabold text-gray-700 text-base md:text-lg uppercase tracking-wide">Histórico</h2>
-             <span class="bg-green-500 text-white font-bold px-3 py-1 rounded-full text-sm shadow-sm shadow-green-200 ml-1">
+             <div class="w-2 h-6 bg-brand-green rounded-full shadow-[0_0_15px_rgba(0,255,159,0.4)]"></div>
+             <h2 class="font-black text-white text-base md:text-lg uppercase tracking-widest">Registros</h2>
+             <span class="bg-white/10 text-white font-black px-4 py-1 rounded-full text-xs border border-white/10 ml-2">
                 {{ filteredComandas.length }}
              </span>
           </div>
 
-          <div class="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-gray-200 shadow-sm hover:border-green-300 transition-colors">
-             <CalendarDays :size="18" class="text-gray-500" />
-             <select v-model="timeFilter" class="bg-transparent text-sm font-bold text-gray-700 outline-none cursor-pointer pr-2">
-                <option value="1">Últimas 24 horas</option>
-                <option value="7">Últimos 7 dias</option>
-                <option value="30">Últimos 30 dias</option>
-                <option value="all">Todo o período</option>
+          <div class="flex items-center gap-3 bg-white/5 px-4 py-2.5 rounded-2xl border border-white/10 hover:border-brand-green/40 transition-all group">
+             <CalendarDays :size="18" class="text-gray-500 group-hover:text-brand-green transition-colors" />
+             <select v-model="timeFilter" class="bg-transparent text-xs font-black uppercase tracking-widest text-gray-300 outline-none cursor-pointer pr-2 appearance-none">
+                <option value="1" class="bg-zinc-900 text-white">Últimas 24 horas</option>
+                <option value="7" class="bg-zinc-900 text-white">Últimos 7 dias</option>
+                <option value="30" class="bg-zinc-900 text-white">Últimos 30 dias</option>
+                <option value="all" class="bg-zinc-900 text-white">Todo o período</option>
              </select>
           </div>
         </header>
 
-        <div class="flex-grow p-4 md:p-6 overflow-y-auto custom-scrollbar">
+        <div class="flex-grow p-6 md:p-8 overflow-y-auto custom-scrollbar">
           
-          <div v-if="filteredComandas.length === 0" class="flex flex-col items-center justify-center h-full text-gray-400 opacity-60 min-h-[200px]">
-             <FileText :size="48" class="mb-2" />
-             <p class="font-medium text-center">Nenhuma comanda finalizada neste período.</p>
+          <div v-if="filteredComandas.length === 0" class="flex flex-col items-center justify-center h-full text-gray-600 min-h-[200px]">
+             <FileText :size="48" class="mb-4 opacity-20" />
+             <p class="font-black uppercase tracking-widest text-sm opacity-40">Nenhum registro encontrado</p>
           </div>
 
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-            <div v-for="comanda in filteredComandas" :key="comanda.id" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow flex flex-col gap-3">
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div v-for="comanda in filteredComandas" :key="comanda.id" 
+                 class="bg-white/5 p-6 rounded-[2rem] border border-white/5 hover:border-white/20 hover:bg-white/[0.07] transition-all group relative overflow-hidden">
               
-              <div class="flex justify-between items-center border-b border-gray-100 pb-3">
-                <span class="font-extrabold text-gray-800 text-lg">Comanda #{{ comanda.id }}</span>
-                <span class="text-green-600 font-bold bg-green-50 px-3 py-1 rounded-lg">
-                  R$ {{ comanda.total.toFixed(2) }}
+              <div class="flex justify-between items-start mb-6">
+                <div>
+                  <span class="text-gray-500 text-[10px] font-black uppercase tracking-widest block mb-1">Identificador</span>
+                  <span class="font-black text-white text-xl tracking-tighter">#{{ comanda.id }}</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-brand-green font-black text-xl tracking-tighter block">
+                    R$ {{ comanda.total.toFixed(2) }}
+                  </span>
+                  <span class="text-[8px] font-black uppercase tracking-widest text-brand-green/60">Total Pago</span>
+                </div>
+              </div>
+              
+              <div class="flex items-center gap-2 mb-6">
+                <div class="p-1.5 bg-brand-green/10 rounded-lg">
+                  <CheckCircle :size="14" class="text-brand-green" />
+                </div>
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                  {{ new Date(comanda.closedAt).toLocaleString('pt-BR') }}
                 </span>
               </div>
               
-              <div class="text-sm text-gray-500 flex items-center gap-2">
-                <CheckCircle :size="16" class="text-green-500" />
-                Fechada em: {{ new Date(comanda.closedAt).toLocaleString('pt-BR') }}
-              </div>
-              
-              <div class="text-sm mt-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                <span class="font-semibold text-gray-700 block mb-2">Detalhes do Pagamento:</span>
-                <ul class="space-y-1">
-                  <li v-for="p in comanda.paymentDetails?.payments" :key="p.type" class="flex justify-between text-gray-600">
-                    <span>{{ p.type }}</span>
-                    <span class="font-medium text-gray-800">R$ {{ p.amount.toFixed(2) }}</span>
+              <div class="bg-black/40 p-4 rounded-2xl border border-white/5">
+                <span class="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-3 border-b border-white/5 pb-2">Método de Liquidação</span>
+                <ul class="space-y-2">
+                  <li v-for="p in comanda.paymentDetails?.payments" :key="p.type" class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-gray-300">{{ p.type }}</span>
+                    <span class="font-mono text-sm font-bold text-white">R$ {{ p.amount.toFixed(2) }}</span>
                   </li>
                 </ul>
               </div>
 
+              <div class="absolute -bottom-4 -right-4 w-20 h-20 bg-brand-green/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </div>
           </div>
 
@@ -101,8 +116,23 @@ const filteredComandas = computed(() => {
 </script>
 
 <style scoped>
-.custom-scrollbar::-webkit-scrollbar { width: 6px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Garante que o select não mostre bordas brancas no foco mobile */
+select:focus {
+  ring: none;
+  border-color: rgba(0, 255, 159, 0.4);
+}
 </style>

@@ -7,27 +7,6 @@ import { allMenuItems } from '@/utils/navigation';
 import AppSidebar from './AppSidebar.vue'; // <-- Importamos o novo componente
 import imgLogo from '@/assets/logo.png'; 
 
-import { 
-  LogOut, 
-  Menu as MenuIcon, 
-  X, 
-  ChevronDown, 
-  BarChart3,      
-  ChefHat,        
-  Package,        
-  UtensilsCrossed,
-  Users,          
-  CreditCard,     
-  Tag,            
-  Palette,        
-  Shield,         
-  UserCog,         
-  BarChart,
-  LucideBarChart2,
-  StoreIcon
-} from 'lucide-vue-next';
-
-const authStore = useAuthStore();
 const router = useRouter();
 const authStore = useAuthStore();
 
@@ -47,57 +26,6 @@ const publicRoutes = ['landing', 'login', 'register', 'OnboardingName', 'Onboard
 const shouldShowNavbar = computed(() => {
   return authStore.isAuthenticated && route.name && !publicRoutes.includes(route.name);
 });
-
-const allMenuItems = [
-  { 
-    label: establishmentName, 
-    route: '/app/dashboard', 
-    icon: StoreIcon,
-    permission: PERMISSIONS.RELATORIOS 
-  },
-  { 
-    label: 'Pedidos', 
-    route: '/app/kitchen', 
-    icon: ChefHat,
-    permission: PERMISSIONS.COZINHA 
-  },
-  { 
-    label: 'Relatórios', 
-    route: '/app/reports', 
-    icon: BarChart3,
-    permission: PERMISSIONS.RELATORIOS
-  },
-  { 
-    label: 'Estoque', 
-    route: '/app/...',
-    icon: Package,
-    permission: PERMISSIONS.ESTOQUE 
-  },
-  { 
-    label: 'Cardápio', 
-    icon: UtensilsCrossed,
-    permission: PERMISSIONS.CARDAPIO,
-    children: [
-      { label: 'Produtos e Categorias', route: '/app/...', icon: Tag }, 
-      { label: 'Personalizar Cardápio', route: '/app/settings/menu', icon: Palette }
-    ]
-  },
-  { 
-    label: 'Funcionários', 
-    icon: Users,
-    permission: PERMISSIONS.FUNCIONARIOS,
-    children: [
-      { label: 'Cargos e Permissões', route: '/app/settings/roles', icon: Shield }, 
-      { label: 'Controle de Usuários', route: '/app/settings/users', icon: UserCog }
-    ]
-  },
-  { 
-    label: 'Assinatura', 
-    route: '/app/...', 
-    icon: CreditCard,
-    permission: PERMISSIONS.ASSINATURA 
-  }
-];
 
 const visibleMenuItems = computed(() => {
   return allMenuItems.filter(item => {
@@ -124,16 +52,6 @@ const headerColorClass = computed(() => {
   return 'bg-header-default border-b border-gray-700'; 
 });
 
-onMounted(async () => {
-  initMockEstablishment(); 
-  try {
-    const data = await getEstablishmentMock();
-    if (data && data.info) establishmentName.value = data.info.name;
-  } catch (error) {
-    establishmentName.value = 'Erro ao carregar';
-  }
-});
-
 const logout = () => {
   authStore.logout();
   router.push('/login');
@@ -143,10 +61,6 @@ const handleNavigation = (path) => {
   isSidebarOpen.value = false;
   router.push(path);
 };
-
-const visibleMenuItems = computed(() => {
-  return allMenuItems.filter(item => !item.permission || authStore.hasPermission(item.permission));
-});
 </script>
 
 <template>
@@ -156,7 +70,7 @@ const visibleMenuItems = computed(() => {
         @click="isSidebarOpen = true" 
         class="p-2 -ml-2 text-gray-400 hover:text-brand-green hover:bg-white/5 rounded-xl transition-all active:scale-95"
       >
-        <Menu class="w-7 h-7" />
+        <Menu class="w-7 h-7"/>
       </button>
 
       <div class="flex items-center cursor-pointer hover:opacity-80 transition-opacity" @click="router.push('/app/dashboard')">
