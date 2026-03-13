@@ -47,6 +47,27 @@ const routes = [
       { path: 'closed', name: 'closed', component: () => import('@/views/app/cashier/ClosedComandas.vue'), meta: { requiresAuth: true, permission: PERMISSIONS.COMANDAS_FINALIZADAS } },
       { path: 'reports', name: 'reports', component: ManagerReports, meta: { permission: PERMISSIONS.RELATORIOS } },
 
+      // Subscription (managers with ASSINATURA permission)
+      {
+        path: 'subscription',
+        name: 'subscription',
+        component: () => import('@/views/app/subscription/ManagerSubscription.vue'),
+        meta: { requiresAuth: true, permission: PERMISSIONS.ASSINATURA }
+      },
+
+      // Admin-only routes
+      {
+        path: 'admin/subscriptions',
+        name: 'admin-subscriptions',
+        component: () => import('@/views/app/admin/AdminSubscriptions.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'admin/reports',
+        name: 'admin-reports',
+        component: () => import('@/views/app/admin/AdminReports.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
     ]
   }
 ];
@@ -56,12 +77,16 @@ const router = createRouter({
   routes
 });
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const auth = useAuthStore();
   auth.loadSession();
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return next('/login');
+  }
+
+  if (to.meta.requiresAdmin && !auth.isAdmin) {
+    return next({ name: 'dashboard' });
   }
 
   if (to.meta.permission && !auth.hasPermission(to.meta.permission)) {

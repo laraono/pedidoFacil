@@ -11,6 +11,8 @@ import {
   getPeakHoursMock, getTopWaitersMock, getCancellationsMock,
   getPaymentMethodsMock, getTopProductsMock
 } from '@/mock/reportsmock';
+import ReportPrintLayout from '@/components/reports/ReportPrintLayout.vue';
+import localStorageService from '@/services/localStorageService';
 
 const router = useRouter();
 
@@ -47,8 +49,18 @@ watch(activeTab, () => {
   setTimeout(() => { isLoaded.value = true; }, 50);
 });
 
-const getMaxRevenue = () => Math.max(...revenueData.value.map(d => d.value));
+const getMaxRevenue = () => Math.max(...revenueData.value.map(d => d.value), 1);
 const getRevenueHeight = (val) => isLoaded.value ? `${(val / getMaxRevenue()) * 100}%` : '5%';
+
+const restaurantName = computed(() => {
+  try { return localStorageService.getOnboarding()?.nome_estabelecimento || 'Meu Restaurante'; }
+  catch { return 'Meu Restaurante'; }
+});
+
+const currentDate = computed(() =>
+  new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+);
+
 
 const totalCancellationsCount = computed(() => cancellations.value.reduce((acc, curr) => acc + curr.count, 0));
 
@@ -77,7 +89,8 @@ const exportToPDF = () => { window.print(); };
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto py-12 px-6 font-inter overflow-x-hidden">
+  <div>
+  <div class="max-w-7xl mx-auto py-12 px-6 font-inter overflow-x-hidden print:hidden">
 
     <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
       <div class="flex items-center gap-4">
@@ -294,6 +307,25 @@ const exportToPDF = () => { window.print(); };
       </div>
 
     </Transition>
+  </div>
+
+  <!-- Layout de impressão — visível apenas ao imprimir (window.print()) -->
+  <ReportPrintLayout
+    :restaurantName="restaurantName"
+    :performanceTitle="performanceTitle"
+    :currentDate="currentDate"
+    :metrics="kpis"
+    :revenueData="revenueData"
+    :getMaxRevenue="getMaxRevenue"
+    :salesByChannel="salesByChannel"
+    :paymentMethods="paymentMethods"
+    :topWaiters="topWaiters"
+    :peakHours="peakHours"
+    :cancellations="cancellations"
+    :totalCancellationsCount="totalCancellationsCount"
+    :financialImpact="financialImpact"
+    :topProducts="topProducts"
+  />
   </div>
 </template>
 

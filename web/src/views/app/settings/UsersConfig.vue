@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { isValidCPF, maskCPF } from '@/utils/validator';
@@ -38,15 +38,6 @@ const roleOptions = computed(() =>
   roles.value.map(r => ({ label: r.name, value: r.id }))
 );
 
-watch(
-  () => form.value.cpf,
-  (value) => {
-    if (!value) return;
-    const masked = maskCPF(value);
-    if (masked !== value) form.value.cpf = masked;
-    if (isValidCPF(masked) && errors.value.cpf) delete errors.value.cpf;
-  }
-);
 
 onMounted(() => {
   initMockRoles();
@@ -54,16 +45,21 @@ onMounted(() => {
   roles.value = getRolesMock();
 });
 
+function reloadRoles() {
+  roles.value = getRolesMock();
+}
+
 function loadUsers() {
   users.value = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
 }
 
 function openForm(user = null) {
   errors.value = {};
+  reloadRoles();
   showForm.value = true;
   if (user) {
     editingUser.value = user.id;
-    form.value = { ...user };
+    form.value = { ...user, roleId: user.roleId != null ? String(user.roleId) : '' };
   } else {
     editingUser.value = null;
     form.value = { id: null, name: '', email: '', cpf: '', password: '', roleId: '' };
@@ -78,10 +74,11 @@ function closeForm() {
 
 function validateForm() {
   errors.value = {};
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!form.value.name || form.value.name.trim().length < 5)
     errors.value.name = 'Nome deve ter ao menos 5 caracteres.';
-  if (!form.value.email)
-    errors.value.email = 'E-mail é obrigatório.';
+  if (!form.value.email || !emailRegex.test(form.value.email))
+    errors.value.email = 'Informe um e-mail válido.';
   if (!isValidCPF(form.value.cpf))
     errors.value.cpf = 'O CPF inserido é inválido.';
   if (!editingUser.value && !form.value.password)
@@ -118,14 +115,23 @@ function saveUser() {
   isLoading.value = false;
 }
 
-function toggleStatus(user) {
+function deleteUser(user) {
   if (user.id === currentUser.value?.id) return;
   const list = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
-  const index = list.findIndex(u => u.id === user.id);
-  list[index].status = user.status === 'ATIVO' ? 'INATIVO' : 'ATIVO';
-  localStorage.setItem(USERS_KEY, JSON.stringify(list));
+  const filtered = list.filter(u => u.id !== user.id);
+  localStorage.setItem(USERS_KEY, JSON.stringify(filtered));
   loadUsers();
+  showToast('Usuário removido.', 'success');
 }
+
+// Aplica máscara de CPF reativamente — bloqueia letras sem travar o campo
+watch(() => form.value.cpf, (val) => {
+  if (!val) return;
+  const masked = maskCPF(val);
+  if (masked !== val) {
+    nextTick(() => { form.value.cpf = masked; });
+  }
+});
 
 function isActive(status) {
   if (!status) return true;
@@ -249,7 +255,7 @@ function isActive(status) {
                 </button>
                 <button
                   v-if="user.id !== currentUser?.id"
-                  @click="toggleStatus(user)"
+                  @click="deleteUser(user)"
                   class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
                 >
                   <Trash :size="18" />
@@ -287,7 +293,7 @@ function isActive(status) {
             <button @click="openForm(user)" class="p-2 text-gray-400 hover:text-white bg-white/5 rounded-xl">
               <Pencil :size="18" />
             </button>
-            <button v-if="user.id !== currentUser?.id" @click="toggleStatus(user)" class="p-2 text-red-500 bg-red-500/10 rounded-xl">
+            <button v-if="user.id !== currentUser?.id" @click="deleteUser(user)" class="p-2 text-red-500 bg-red-500/10 rounded-xl">
               <Trash :size="18" />
             </button>
           </div>

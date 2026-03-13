@@ -1,12 +1,12 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { Clock, ChefHat, CheckCircle2, AlertTriangle, Hash, Flame } from 'lucide-vue-next';
+import { Clock, ChefHat, CheckCircle2, AlertTriangle, Hash, Flame, XCircle } from 'lucide-vue-next';
 
 const props = defineProps({
   order: { type: Object, required: true }
 });
 
-const emit = defineEmits(['move', 'finish']);
+const emit = defineEmits(['move', 'finish', 'cancel']);
 
 const elapsedTime = ref('00:00');
 const isDelayed = ref(false);
@@ -83,19 +83,31 @@ const statusTheme = computed(() => {
         <div class="flex items-center gap-3">
           <span class="font-black text-2xl text-white tracking-tighter">#{{ order.id }}</span>
           <div class="flex flex-col">
-            <span class="text-zinc-500 text-[9px] font-black uppercase tracking-[0.2em] leading-none">Mesa</span>
-            <span class="text-zinc-200 font-black text-base uppercase italic leading-none">{{ order.mesa }}</span>
+            <span class="text-zinc-500 text-[9px] font-black uppercase tracking-[0.2em] leading-none">Comanda</span>
+            <span class="text-zinc-200 font-black text-base uppercase italic leading-none">{{ order.comanda }}</span>
           </div>
         </div>
-        
-        <div 
-          class="flex items-center gap-2 font-mono text-xl font-black px-4 py-1.5 rounded-xl border transition-colors"
-          :class="isDelayed && order.status !== 'ready' 
-            ? 'bg-red-600 text-white border-red-400' 
-            : 'bg-black/40 text-zinc-300 border-white/5'"
-        >
-          <Clock :size="18" stroke-width="3" />
-          {{ elapsedTime }}
+
+        <div class="flex items-center gap-2">
+          <div
+            class="flex items-center gap-2 font-mono text-xl font-black px-4 py-1.5 rounded-xl border transition-colors"
+            :class="isDelayed && order.status !== 'ready'
+              ? 'bg-red-600 text-white border-red-400'
+              : 'bg-black/40 text-zinc-300 border-white/5'"
+          >
+            <Clock :size="18" stroke-width="3" />
+            {{ elapsedTime }}
+          </div>
+
+          <!-- Botão de cancelar no cabeçalho, longe das ações principais -->
+          <button
+            v-if="order.status !== 'ready'"
+            @click.stop="$emit('cancel', order.id)"
+            class="p-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/25 transition-all"
+            title="Cancelar pedido"
+          >
+            <XCircle :size="16" stroke-width="2.5" />
+          </button>
         </div>
       </div>
 
@@ -139,13 +151,14 @@ const statusTheme = computed(() => {
           <CheckCircle2 :size="18" stroke-width="3" /> Concluir Preparo
         </button>
 
-        <button 
+        <button
           v-if="order.status === 'ready'"
           @click="$emit('finish', order.id)"
           class="w-full py-4 bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10 rounded-xl font-black uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-3 transition-all"
         >
           Finalizar Entrega
         </button>
+
       </div>
     </div>
   </div>

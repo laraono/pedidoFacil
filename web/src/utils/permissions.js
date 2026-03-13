@@ -19,6 +19,7 @@ export const AVAILABLE_PERMISSIONS = [
   { id: PERMISSIONS.CARDAPIO, label: 'Cardápio', desc: 'Edição de itens e categorias.' },
   { id: PERMISSIONS.FUNCIONARIOS, label: 'Funcionários', desc: 'Gestão de usuários e cargos.' },
   { id: PERMISSIONS.CONFIGURACAO, label: 'Configuração', desc: 'Ajustes gerais do sistema.' },
+  { id: PERMISSIONS.ASSINATURA, label: 'Assinatura', desc: 'Gestão de pagamentos e planos.' },
   { id: PERMISSIONS.CAIXA, label: 'Caixa', desc: 'Fluxo financeiro e recebimentos.' },
   { id: PERMISSIONS.CRIAR_PEDIDO, label: 'Criar Pedido', desc: 'Lançamento de novas vendas.' },
   { id: PERMISSIONS.COMANDAS_FINALIZADAS, label: 'Histórico', desc: 'Visualizar pedidos encerrados.' },

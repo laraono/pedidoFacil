@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useMenuStore } from '@/stores/productsManagement';
 import { useComandaStore } from '@/stores/comandaManagement';
 import { useKitchenStore } from '@/stores/kitchen';
+import SubscriptionGuard from '@/components/SubscriptionGuard.vue';
 import { useToast } from '@/composables/useToast';
 import localStorageService from '@/services/localStorageService';
 import { getEstablishmentMock } from '@/mock/stablishmentmock';
@@ -38,6 +39,10 @@ const observacoesPermitidas = ref(true);
 const cart = ref([]);
 const isProductModalOpen = ref(false);
 const isCartModalOpen = ref(false);
+const isComandaModalOpen = ref(false);
+const selectedComandaId = ref(null);
+const newComandaNumber = ref('');
+const comandaUnitLabel = ref('Comanda');
 const activeCategoryId = ref(null);
 
 const currentProduct = ref(null);
@@ -53,6 +58,7 @@ onMounted(async () => {
   textColor.value = localStorageService.getTextColor() || '#FFFFFF';
   cardBg.value = localStorageService.getProductCardBg() || '#1A1E24';
   fontFamily.value = localStorageService.getFontFamily() || 'Inter, sans-serif';
+  comandaUnitLabel.value = localStorageService.getComandaUnitLabel() || 'Comanda';
 
   const savedImage = localStorageService.getImage();
   if (savedImage) imageUrl.value = savedImage;
@@ -122,8 +128,25 @@ const removeFromCart = (index) => {
   if (cart.value.length === 0) isCartModalOpen.value = false;
 };
 
-const finalizeOrder = () => {
+const openComandaModal = () => {
   if (cart.value.length === 0) return;
+  selectedComandaId.value = null;
+  newComandaNumber.value = '';
+  isComandaModalOpen.value = true;
+};
+
+const confirmAndSendToKitchen = () => {
+  if (!selectedComandaId.value) return;
+  if (selectedComandaId.value === 'new' && !newComandaNumber.value.trim()) return;
+
+  let targetComanda;
+  if (selectedComandaId.value === 'new') {
+    const label = `${comandaUnitLabel.value} ${newComandaNumber.value.trim()}`;
+    targetComanda = comandaStore.createComanda(label);
+  } else {
+    targetComanda = comandaStore.comandas.find(c => c.id === selectedComandaId.value);
+  }
+  if (!targetComanda) return;
 
   const finalOrder = {
     id: Date.now(),
@@ -138,7 +161,7 @@ const finalizeOrder = () => {
 
   const kitchenOrder = {
     id: Date.now(),
-    table: 'Balcão',
+    comanda: targetComanda.label,
     waiter: 'Autoatendimento',
     status: 'pending',
     createdAt: new Date(),
@@ -149,12 +172,13 @@ const finalizeOrder = () => {
     })),
   };
 
-  comandaStore.addComanda(finalOrder);
+  comandaStore.updateComanda(targetComanda.id, finalOrder);
   kitchenStore.addOrder(kitchenOrder);
 
   cart.value = [];
+  isComandaModalOpen.value = false;
   isCartModalOpen.value = false;
-  showToast('Pedido enviado para a cozinha com sucesso!', 'success');
+  showToast('Pedido enviado para a cozinha!', 'success');
 };
 
 const saveVisuals = () => {
@@ -165,6 +189,7 @@ const saveVisuals = () => {
   localStorageService.saveFontFamily(fontFamily.value);
   localStorageService.saveTextColor(textColor.value);
   localStorageService.saveProductCardBg(cardBg.value);
+  localStorageService.saveComandaUnitLabel(comandaUnitLabel.value);
   showToast('Aparência salva com sucesso!', 'success');
   closeVisuals();
 };
@@ -186,6 +211,7 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
 </script>
 
 <template>
+  <SubscriptionGuard featureName="O Cardápio">
   <div
     class="min-h-screen flex flex-col font-inter relative"
     :class="{ 'sm:pr-80': isEditMode }"
@@ -385,10 +411,92 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
                 <span class="font-bold opacity-60 uppercase tracking-wider text-sm">Total</span>
                 <span class="font-black text-3xl">{{ formatCurrency(cartTotal) }}</span>
               </div>
-              <button @click="finalizeOrder" :style="{ backgroundColor: buttonColor, color: buttonTextColor }" class="w-full py-5 font-black rounded-2xl shadow-xl transition-transform active:scale-95 flex justify-center items-center gap-2 text-lg">
+              <button @click="openComandaModal" :style="{ backgroundColor: buttonColor, color: buttonTextColor }" class="w-full py-5 font-black rounded-2xl shadow-xl transition-transform active:scale-95 flex justify-center items-center gap-2 text-lg">
                 Enviar para a Cozinha
               </button>
             </div>
+          </div>
+        </div>
+      </Transition>
+      <!-- Modal de seleção de comanda -->
+      <Transition enter-active-class="transition duration-300" enter-from-class="opacity-0" leave-active-class="transition duration-200" leave-to-class="opacity-0">
+        <div v-if="isComandaModalOpen" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div class="w-full sm:max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden flex flex-col max-h-[85vh] shadow-2xl animate-slideUp sm:animate-none" :style="{ backgroundColor: cardBg, fontFamily, color: textColor }">
+
+            <div class="p-6 flex justify-between items-center border-b border-white/10 shrink-0">
+              <h3 class="font-black text-2xl" :style="{ color: textColor }">Vincular Comanda</h3>
+              <button @click="isComandaModalOpen = false" class="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors" :style="{ color: textColor }">
+                <X :size="24" />
+              </button>
+            </div>
+
+            <div class="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-5 bg-black/5">
+
+              <!-- Comandas abertas -->
+              <div v-if="comandaStore.comandas.length > 0">
+                <p class="text-xs font-black uppercase tracking-widest opacity-60 mb-3" :style="{ color: textColor }">
+                  Comandas Abertas
+                </p>
+                <div class="space-y-2">
+                  <button
+                    v-for="comanda in comandaStore.comandas"
+                    :key="comanda.id"
+                    @click="selectedComandaId = comanda.id"
+                    class="w-full p-4 rounded-2xl border-2 text-left transition-all flex justify-between items-center"
+                    :style="selectedComandaId === comanda.id
+                      ? { borderColor: buttonColor, backgroundColor: buttonColor + '22' }
+                      : { borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(255,255,255,0.05)' }"
+                  >
+                    <span class="font-black text-base" :style="{ color: textColor }">{{ comanda.label }}</span>
+                    <span class="text-xs opacity-60 font-bold" :style="{ color: textColor }">{{ comanda.orders.length }} pedido(s)</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Nova comanda -->
+              <div>
+                <p class="text-xs font-black uppercase tracking-widest opacity-60 mb-3" :style="{ color: textColor }">
+                  Nova {{ comandaUnitLabel }}
+                </p>
+                <div
+                  class="rounded-2xl border-2 transition-all overflow-hidden"
+                  :style="selectedComandaId === 'new'
+                    ? { borderColor: buttonColor, backgroundColor: buttonColor + '22' }
+                    : { borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(255,255,255,0.05)' }"
+                >
+                  <button
+                    @click="selectedComandaId = 'new'"
+                    class="w-full p-4 text-left font-black text-base transition-all"
+                    :style="{ color: textColor }"
+                  >
+                    + Criar {{ comandaUnitLabel }}
+                  </button>
+                  <div v-if="selectedComandaId === 'new'" class="px-4 pb-4 flex items-center gap-3">
+                    <span class="font-bold text-sm shrink-0" :style="{ color: textColor }">{{ comandaUnitLabel }}</span>
+                    <input
+                      v-model="newComandaNumber"
+                      type="text"
+                      placeholder="Número ou nome..."
+                      class="flex-1 bg-white/10 border border-white/20 rounded-xl px-3 py-2 font-bold text-sm outline-none focus:border-white/40"
+                      :style="{ color: textColor }"
+                    />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="p-5 border-t border-white/10 shrink-0">
+              <button
+                @click="confirmAndSendToKitchen"
+                :disabled="!selectedComandaId || (selectedComandaId === 'new' && !newComandaNumber.trim())"
+                :style="{ backgroundColor: buttonColor, color: buttonTextColor }"
+                class="w-full py-5 font-black rounded-2xl shadow-xl transition-transform active:scale-95 flex justify-center items-center gap-2 text-lg disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChefHat :size="20" /> Confirmar e Enviar
+              </button>
+            </div>
+
           </div>
         </div>
       </Transition>
@@ -447,6 +555,17 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
             </select>
           </div>
 
+          <div class="pt-4 border-t border-white/10">
+            <label class="block text-sm font-bold text-gray-300 mb-2">Nome da Unidade (Comanda)</label>
+            <input
+              v-model="comandaUnitLabel"
+              type="text"
+              placeholder="Ex: Mesa, Comanda, Cabine..."
+              class="w-full bg-black/40 border border-white/10 text-white p-3 rounded-xl focus:border-brand-green outline-none text-sm"
+            />
+            <p class="text-[10px] text-gray-500 mt-1">Aparece como "{{ comandaUnitLabel }} 5", "{{ comandaUnitLabel }} 12"...</p>
+          </div>
+
           <div>
             <label class="flex items-center justify-between p-4 border border-white/5 rounded-2xl cursor-pointer hover:bg-white/5 transition-colors">
               <div>
@@ -471,6 +590,7 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
 
     <ToastMessage />
   </div>
+  </SubscriptionGuard>
 </template>
 
 <style scoped>

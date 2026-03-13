@@ -1,131 +1,270 @@
+<script setup>
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { useClosedComandaStore } from '@/stores/closedComandas';
+import SubscriptionGuard from '@/components/SubscriptionGuard.vue';
+import {
+  ArrowLeft, Receipt, ChevronDown, ChevronUp,
+  CheckCircle, CreditCard, Tag, Clock, PackageOpen
+} from 'lucide-vue-next';
+
+const router = useRouter();
+const closedStore = useClosedComandaStore();
+
+const search = ref('');
+const expandedId = ref(null);
+
+const filtered = computed(() => {
+  const q = search.value.toLowerCase();
+  return closedStore.closedComandas
+    .slice()
+    .reverse()
+    .filter(c =>
+      !q ||
+      String(c.id).includes(q) ||
+      c.orders?.some(o => o.items?.some(i => i.name?.toLowerCase().includes(q)))
+    );
+});
+
+function toggleExpand(id) {
+  expandedId.value = expandedId.value === id ? null : id;
+}
+
+function formatDate(iso) {
+  if (!iso) return '-';
+  return new Date(iso).toLocaleString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function formatCurrency(v) {
+  return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+// Total de itens de uma comanda
+function totalItems(comanda) {
+  return comanda.orders?.reduce((acc, o) => acc + (o.items?.reduce((a, i) => a + (i.amount || 1), 0) || 0), 0) || 0;
+}
+
+// Total final com desconto aplicado (salvo no paymentDetails)
+function finalTotal(comanda) {
+  const pd = comanda.paymentDetails;
+  if (!pd) return comanda.total || 0;
+  const sub = comanda.total || 0;
+  if (!pd.discountValue) return sub;
+  if (pd.discountType === 'percent') return sub * (1 - pd.discountValue / 100);
+  return Math.max(0, sub - pd.discountValue);
+}
+
+// Métodos de pagamento usados na comanda
+function paymentSummary(comanda) {
+  return comanda.paymentDetails?.payments || [];
+}
+</script>
+
 <template>
-  <div class="h-screen bg-black flex flex-col font-inter overflow-hidden text-white">
-    
-    <header class="h-16 md:h-20 bg-zinc-900 border-b border-white/10 flex items-center justify-between px-6 md:px-8 shadow-2xl z-20 shrink-0">
+  <SubscriptionGuard featureName="O Histórico de Comandas">
+  <main class="max-w-6xl mx-auto py-12 px-6 font-inter">
+
+    <!-- Header -->
+    <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-10 gap-4">
       <div class="flex items-center gap-4">
-        <div class="bg-brand-green p-2 rounded-xl text-black shadow-lg shadow-brand-green/20">
-          <Receipt :size="20" class="md:w-6 md:h-6" />
-        </div>
+        <button @click="router.back()"
+          class="p-3 bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-white hover:bg-white/10 transition-all">
+          <ArrowLeft :size="20" />
+        </button>
         <div>
-          <h1 class="text-white font-black text-lg tracking-tight leading-none">Comandas Finalizadas</h1>
-          <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mt-1">Histórico de Transações</p>
+          <h1 class="text-3xl font-black text-white tracking-tight">Comandas Finalizadas</h1>
+          <p class="text-gray-400 text-sm mt-1">Histórico completo de pedidos e pagamentos</p>
         </div>
+      </div>
+
+      <!-- Busca -->
+      <div class="relative w-full sm:w-72">
+        <Receipt :size="15" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+        <input v-model="search" placeholder="Buscar comanda ou produto..."
+          class="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white text-sm
+                 placeholder-gray-600 focus:outline-none focus:border-brand-green/30 transition-all" />
       </div>
     </header>
 
-    <main class="flex-grow flex flex-col p-4 md:p-8 overflow-hidden bg-black">
-      <section class="flex-1 flex flex-col min-w-0 bg-dark-card rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden">
-        
-        <header class="p-6 md:px-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-white/5 backdrop-blur-md z-10 border-b border-white/5">
-          <div class="flex items-center gap-3">
-            <div class="w-2 h-6 bg-brand-green rounded-full shadow-[0_0_15px_rgba(0,255,159,0.4)]"></div>
-            <h2 class="font-black text-white text-base md:text-lg uppercase tracking-widest">Registros</h2>
-            <span class="bg-white/10 text-white font-black px-4 py-1 rounded-full text-xs border border-white/10 ml-2">
-              {{ filteredComandas.length }}
-            </span>
-          </div>
+    <!-- Vazio -->
+    <div v-if="filtered.length === 0"
+      class="flex flex-col items-center justify-center py-24 text-gray-600">
+      <PackageOpen :size="52" class="mb-4 opacity-20" />
+      <p class="font-black uppercase tracking-widest text-sm opacity-40">
+        {{ search ? 'Nenhuma comanda encontrada' : 'Nenhuma comanda finalizada ainda' }}
+      </p>
+    </div>
 
-          <div class="flex items-center gap-3 bg-white/5 px-4 py-2.5 rounded-2xl border border-white/10 hover:border-brand-green/40 transition-all group">
-            <CalendarDays :size="18" class="text-gray-500 group-hover:text-brand-green transition-colors" />
-            <select v-model="timeFilter" class="bg-transparent text-xs font-black uppercase tracking-widest text-gray-300 outline-none cursor-pointer pr-2 appearance-none">
-              <option value="1" class="bg-zinc-900 text-white">Últimas 24 horas</option>
-              <option value="7" class="bg-zinc-900 text-white">Últimos 7 dias</option>
-              <option value="30" class="bg-zinc-900 text-white">Últimos 30 dias</option>
-              <option value="all" class="bg-zinc-900 text-white">Todo o período</option>
-            </select>
-          </div>
-        </header>
+    <!-- Lista de comandas -->
+    <div class="space-y-4">
+      <div v-for="comanda in filtered" :key="comanda.id"
+        class="bg-dark-card border border-white/5 rounded-[2rem] overflow-hidden shadow-xl transition-all">
 
-        <div class="flex-grow p-6 md:p-8 overflow-y-auto custom-scrollbar">
-          
-          <div v-if="filteredComandas.length === 0" class="flex flex-col items-center justify-center h-full text-gray-600 min-h-[200px]">
-            <FileText :size="48" class="mb-4 opacity-20" />
-            <p class="font-black uppercase tracking-widest text-sm opacity-40">Nenhum registro encontrado</p>
-          </div>
+        <!-- Cabeçalho da comanda (clicável) -->
+        <button
+          class="w-full flex items-center justify-between p-6 hover:bg-white/[0.03] transition-colors text-left gap-4"
+          @click="toggleExpand(comanda.id)"
+        >
+          <div class="flex items-center gap-4 min-w-0">
+            <!-- Ícone -->
+            <div class="shrink-0 w-11 h-11 rounded-2xl bg-brand-green/10 border border-brand-green/20
+                        flex items-center justify-center">
+              <CheckCircle :size="20" class="text-brand-green" />
+            </div>
 
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            <div
-              v-for="comanda in filteredComandas"
-              :key="comanda.id"
-              class="bg-white/5 p-6 rounded-[2rem] border border-white/5 hover:border-white/20 hover:bg-white/[0.07] transition-all group relative overflow-hidden"
-            >
-              <div class="flex justify-between items-start mb-6">
-                <div>
-                  <span class="text-gray-500 text-[10px] font-black uppercase tracking-widest block mb-1">Identificador</span>
-                  <span class="font-black text-white text-xl tracking-tighter">#{{ comanda.id }}</span>
-                </div>
-                <div class="text-right">
-                  <span class="text-brand-green font-black text-xl tracking-tighter block">
-                    {{ formatMoney(comanda.total) }}
-                  </span>
-                  <span class="text-[8px] font-black uppercase tracking-widest text-brand-green/60">Total Pago</span>
-                </div>
-              </div>
-              
-              <div class="flex items-center gap-2 mb-6">
-                <div class="p-1.5 bg-brand-green/10 rounded-lg">
-                  <CheckCircle :size="14" class="text-brand-green" />
-                </div>
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                  {{ new Date(comanda.closedAt).toLocaleString('pt-BR') }}
+            <div class="min-w-0">
+              <div class="flex items-center gap-3 flex-wrap">
+                <span class="text-white font-black text-lg tracking-tight">{{ comanda.label || '#' + comanda.id }}</span>
+                <span class="px-2 py-0.5 bg-brand-green/10 border border-brand-green/20
+                             text-brand-green text-[9px] font-black uppercase tracking-widest rounded-full">
+                  Finalizado
                 </span>
               </div>
-              
-              <div class="bg-black/40 p-4 rounded-2xl border border-white/5 mb-4">
-                <span class="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-3 border-b border-white/5 pb-2">Método de Liquidação</span>
-                <ul class="space-y-2">
-                  <li v-for="p in comanda.paymentDetails?.payments" :key="p.type + p.amount" class="flex justify-between items-center">
-                    <span class="text-xs font-bold text-gray-300">{{ p.type }}</span>
-                    <span class="font-mono text-sm font-bold text-white">{{ formatMoney(p.amount) }}</span>
-                  </li>
-                </ul>
+              <div class="flex items-center gap-3 mt-1 flex-wrap">
+                <span class="text-gray-500 text-xs font-bold flex items-center gap-1">
+                  <Clock :size="11" /> {{ formatDate(comanda.closedAt) }}
+                </span>
+                <span class="text-gray-600 text-xs font-bold">
+                  {{ comanda.orders?.length || 0 }} pedido(s) · {{ totalItems(comanda) }} item(s)
+                </span>
               </div>
-
-              <div v-if="comanda.paymentDetails?.discountValue > 0" class="text-[10px] font-bold text-orange-400 flex items-center gap-1">
-                <span>Desconto aplicado:</span>
-                <span v-if="comanda.paymentDetails.discountType === 'percent'">{{ comanda.paymentDetails.discountValue }}%</span>
-                <span v-else>{{ formatMoney(comanda.paymentDetails.discountValue) }}</span>
-              </div>
-
-              <div class="absolute -bottom-4 -right-4 w-20 h-20 bg-brand-green/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </div>
           </div>
 
-        </div>
-      </section>
-    </main>
+          <div class="flex items-center gap-6 shrink-0">
+            <div class="text-right hidden sm:block">
+              <p class="text-[10px] font-black text-gray-600 uppercase tracking-widest">Total</p>
+              <p class="text-brand-green font-black text-xl">{{ formatCurrency(finalTotal(comanda)) }}</p>
+            </div>
+            <component :is="expandedId === comanda.id ? ChevronUp : ChevronDown"
+              :size="20" class="text-gray-500" />
+          </div>
+        </button>
 
-  </div>
+        <!-- Detalhe expandido -->
+        <Transition
+          enter-active-class="transition-all duration-300 ease-out"
+          enter-from-class="opacity-0 -translate-y-2"
+          enter-to-class="opacity-100 translate-y-0"
+          leave-active-class="transition-all duration-200 ease-in"
+          leave-from-class="opacity-100"
+          leave-to-class="opacity-0"
+        >
+          <div v-if="expandedId === comanda.id" class="border-t border-white/5">
+            <div class="p-6 space-y-6">
+
+              <!-- ── Todos os Pedidos ── -->
+              <div>
+                <h3 class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-4">
+                  Pedidos da Comanda
+                </h3>
+
+                <div v-if="!comanda.orders || comanda.orders.length === 0"
+                  class="text-gray-600 text-sm font-bold text-center py-6">
+                  Nenhum pedido registrado.
+                </div>
+
+                <div v-else class="space-y-3">
+                  <div v-for="order in comanda.orders" :key="order.id"
+                    class="bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden">
+
+                    <!-- Header do pedido -->
+                    <div class="flex items-center justify-between px-5 py-3 bg-black/20">
+                      <span class="text-white font-black text-sm uppercase tracking-widest">
+                        Pedido #{{ order.id }}
+                      </span>
+                      <span class="text-brand-green font-black">
+                        {{ formatCurrency(order.price || 0) }}
+                      </span>
+                    </div>
+
+                    <!-- Itens do pedido -->
+                    <div class="px-5 py-4 space-y-2">
+                      <div v-if="!order.items || order.items.length === 0"
+                        class="text-gray-600 text-xs font-bold">
+                        Sem itens registrados.
+                      </div>
+                      <div v-else v-for="item in order.items" :key="item.name + item.amount"
+                        class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                          <span class="w-6 h-6 rounded-lg bg-white/5 border border-white/10
+                                       flex items-center justify-center text-[10px] font-black text-gray-400">
+                            {{ item.amount || 1 }}x
+                          </span>
+                          <span class="text-white text-sm font-bold">{{ item.name }}</span>
+                        </div>
+                        <span class="text-gray-400 text-sm font-bold">
+                          {{ formatCurrency((item.price || 0) * (item.amount || 1)) }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── Resumo financeiro ── -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                <!-- Subtotal / Desconto / Total -->
+                <div class="p-5 bg-white/[0.03] border border-white/5 rounded-2xl space-y-3">
+                  <h3 class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3">
+                    Resumo Financeiro
+                  </h3>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-400 font-bold">Subtotal</span>
+                    <span class="text-white font-black">{{ formatCurrency(comanda.total) }}</span>
+                  </div>
+                  <div v-if="comanda.paymentDetails?.discountValue" class="flex justify-between text-sm">
+                    <span class="text-gray-400 font-bold">
+                      Desconto
+                      <span class="text-gray-600 text-xs">
+                        ({{ comanda.paymentDetails.discountType === 'percent'
+                          ? comanda.paymentDetails.discountValue + '%'
+                          : formatCurrency(comanda.paymentDetails.discountValue) }})
+                      </span>
+                    </span>
+                    <span class="text-orange-400 font-black">
+                      - {{ formatCurrency(comanda.total - finalTotal(comanda)) }}
+                    </span>
+                  </div>
+                  <div class="flex justify-between text-sm border-t border-white/5 pt-3">
+                    <span class="text-white font-black uppercase tracking-widest text-xs">Total Pago</span>
+                    <span class="text-brand-green font-black text-lg">{{ formatCurrency(finalTotal(comanda)) }}</span>
+                  </div>
+                </div>
+
+                <!-- Pagamentos -->
+                <div class="p-5 bg-white/[0.03] border border-white/5 rounded-2xl">
+                  <h3 class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3">
+                    Forma(s) de Pagamento
+                  </h3>
+                  <div v-if="paymentSummary(comanda).length === 0"
+                    class="text-gray-600 text-xs font-bold">Não informado.</div>
+                  <div v-else class="space-y-2">
+                    <div v-for="(p, i) in paymentSummary(comanda)" :key="i"
+                      class="flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <CreditCard :size="14" class="text-gray-500" />
+                        <span class="text-white text-sm font-bold">{{ p.type }}</span>
+                      </div>
+                      <span class="text-brand-green font-black text-sm">{{ formatCurrency(p.amount) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </Transition>
+      </div>
+    </div>
+  </main>
+  </SubscriptionGuard>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue';
-import { useClosedComandaStore } from '@/stores/closedComandas';
-import { Receipt, FileText, CheckCircle, CalendarDays } from 'lucide-vue-next';
-
-const closedComandaStore = useClosedComandaStore();
-const closedComandas = closedComandaStore.closedComandas;
-
-const timeFilter = ref('1');
-
-const filteredComandas = computed(() => {
-  if (timeFilter.value === 'all') return closedComandas;
-  const now = new Date().getTime();
-  const daysInMs = parseInt(timeFilter.value) * 24 * 60 * 60 * 1000;
-  return closedComandas.filter(c => {
-    if (!c.closedAt) return false;
-    return (now - new Date(c.closedAt).getTime()) <= daysInMs;
-  });
-});
-
-const formatMoney = (val) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
-</script>
-
 <style scoped>
-.custom-scrollbar::-webkit-scrollbar { width: 6px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
-select:focus { border-color: rgba(0, 255, 159, 0.4); }
+.font-inter { font-family: 'Inter', sans-serif; }
 </style>

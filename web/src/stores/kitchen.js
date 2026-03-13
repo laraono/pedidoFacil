@@ -5,10 +5,10 @@ export const useKitchenStore = defineStore('kitchen', () => {
   const orders = ref([
     {
       id: 101,
-      table: 'Mesa 04',
+      comanda: 'Mesa 04',
       waiter: 'Carlos',
       status: 'pending',
-      createdAt: new Date(Date.now() - 1000 * 60 * 15), 
+      createdAt: new Date(Date.now() - 1000 * 60 * 15),
       items: [
         { name: 'X-Bacon', amount: 2, obs: 'Sem cebola' },
         { name: 'Coca-Cola Zero', amount: 2, obs: '' }
@@ -16,10 +16,10 @@ export const useKitchenStore = defineStore('kitchen', () => {
     },
     {
       id: 102,
-      table: 'Balcão',
+      comanda: 'Balcão',
       waiter: 'Ana',
       status: 'preparing',
-      createdAt: new Date(Date.now() - 1000 * 60 * 5), 
+      createdAt: new Date(Date.now() - 1000 * 60 * 5),
       items: [
         { name: 'Isca de Peixe', amount: 1, obs: 'Molho extra' }
       ]
@@ -51,7 +51,7 @@ export const useKitchenStore = defineStore('kitchen', () => {
     const newId = Math.floor(Math.random() * 1000) + 200;
     const newOrder = {
       id: newId,
-      mesa: `Mesa ${Math.floor(Math.random() * 20) + 1}`,
+      comanda: `Mesa ${Math.floor(Math.random() * 20) + 1}`,
       waiter: 'Sistema',
       status: 'pending',
       createdAt: new Date(),

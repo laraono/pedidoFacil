@@ -5,7 +5,8 @@ import { useAuthStore } from '@/stores/auth';
 import { useKitchenStore } from '@/stores/kitchen';
 import { PERMISSIONS } from '@/utils/permissions';
 import OrderCard from '@/components/kitchen/OrderCard.vue';
-import { Bell, Volume2, VolumeX, UtensilsCrossed, List, ChefHat, CheckCircle } from 'lucide-vue-next';
+import SubscriptionGuard from '@/components/SubscriptionGuard.vue';
+import { Bell, Volume2, VolumeX, UtensilsCrossed, List, ChefHat, CheckCircle, XCircle, X } from 'lucide-vue-next';
 
 const AUDIO_URL = 'https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/pause.wav';
 const audioPlayer = new Audio(AUDIO_URL);
@@ -43,6 +44,26 @@ const simulateSocketEvent = () => {
 const handleMove = (id, status) => kitchenStore.moveOrder(id, status);
 const handleFinish = (id) => kitchenStore.finishOrder(id);
 
+const cancelTargetId = ref(null);
+const cancelReason = ref('');
+
+const openCancelModal = (id) => {
+  cancelTargetId.value = id;
+  cancelReason.value = '';
+};
+
+const confirmCancel = () => {
+  if (!cancelReason.value.trim()) return;
+  kitchenStore.finishOrder(cancelTargetId.value);
+  cancelTargetId.value = null;
+  cancelReason.value = '';
+};
+
+const dismissCancelModal = () => {
+  cancelTargetId.value = null;
+  cancelReason.value = '';
+};
+
 const columns = [
   { key: 'pending', label: 'Pendente', color: 'yellow', badgeClass: 'bg-yellow-500 text-black' },
   { key: 'preparing', label: 'Preparo', color: 'blue', badgeClass: 'bg-blue-600 text-white border border-blue-400/30' },
@@ -63,6 +84,7 @@ const indicatorColor = (color) => {
 </script>
 
 <template>
+  <SubscriptionGuard featureName="A Cozinha">
   <div class="h-screen bg-black flex flex-col font-inter overflow-hidden text-white">
     
     <header class="h-16 md:h-20 bg-zinc-900 border-b border-white/10 flex items-center justify-between px-6 md:px-8 shadow-2xl z-20 shrink-0">
@@ -120,6 +142,7 @@ const indicatorColor = (color) => {
             :order="order"
             @move="handleMove"
             @finish="handleFinish"
+            @cancel="openCancelModal"
           />
           
           <div v-if="columnOrders(col.key).length === 0" class="flex flex-col items-center justify-center h-40 text-zinc-700">
@@ -164,7 +187,49 @@ const indicatorColor = (color) => {
       </button>
     </nav>
 
+  <!-- Modal de cancelamento da cozinha -->
+  <div v-if="cancelTargetId !== null" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
+    <div class="bg-zinc-900 border border-red-500/20 rounded-[2rem] p-8 w-full max-w-md shadow-2xl">
+      <div class="flex items-start gap-4 mb-6">
+        <div class="p-3 bg-red-500/10 rounded-2xl border border-red-500/20 shrink-0">
+          <XCircle :size="22" class="text-red-400" />
+        </div>
+        <div>
+          <p class="text-white font-black text-base mb-1">Cancelar Pedido</p>
+          <p class="text-gray-400 text-sm leading-relaxed">Informe o motivo do cancelamento. Esse pedido será removido da fila.</p>
+        </div>
+      </div>
+
+      <select
+        v-model="cancelReason"
+        class="w-full bg-zinc-800 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white outline-none focus:border-red-500/40 mb-6 cursor-pointer"
+      >
+        <option value="" disabled>Selecione o motivo...</option>
+        <option value="Demora no preparo">Demora no preparo</option>
+        <option value="Pedido errado / Erro do Garçom">Pedido errado / Erro do Garçom</option>
+        <option value="Desistência / Cliente foi embora">Desistência / Cliente foi embora</option>
+      </select>
+
+      <div class="flex gap-3">
+        <button
+          @click="dismissCancelModal"
+          class="flex-1 px-6 py-3 bg-white/5 border border-white/10 text-gray-400 font-black uppercase tracking-widest text-xs rounded-xl hover:bg-white/10 transition-all"
+        >
+          Voltar
+        </button>
+        <button
+          @click="confirmCancel"
+          :disabled="!cancelReason.trim()"
+          class="flex-1 px-6 py-3 bg-red-500 text-white font-black uppercase tracking-widest text-xs rounded-xl hover:bg-red-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          Confirmar Cancelamento
+        </button>
+      </div>
+    </div>
   </div>
+
+  </div>
+  </SubscriptionGuard>
 </template>
 
 <style scoped>

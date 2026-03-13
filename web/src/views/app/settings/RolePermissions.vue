@@ -8,7 +8,7 @@ import { useFormValidation } from '@/composables/useFormValidation';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import {
-  ShieldCheck, Plus, ArrowLeft, Lock, CheckCircle, X, AlertCircle
+  ShieldCheck, Plus, ArrowLeft, Lock, CheckCircle, X, AlertCircle, Trash2
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -72,6 +72,12 @@ const openModal = (role = null) => {
   isModalOpen.value = true;
 };
 
+const deleteRole = async (role) => {
+  roles.value = roles.value.filter(r => r.id !== role.id);
+  await saveRolesMock(roles.value);
+  showToast(`Cargo "${role.name}" excluído.`, 'success');
+};
+
 const togglePermission = (id) => {
   const perms = currentRole.value.permissions;
   const idx = perms.indexOf(id);
@@ -115,6 +121,13 @@ const togglePermission = (id) => {
       >
         <div class="flex justify-between items-start mb-6">
           <ShieldCheck class="text-brand-green" :size="24" />
+          <button
+            @click.stop="deleteRole(role)"
+            class="p-1.5 text-gray-600 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+            title="Excluir cargo"
+          >
+            <Trash2 :size="16" />
+          </button>
         </div>
         <h3 class="text-xl font-bold text-white">{{ role.name }}</h3>
         <p class="text-[10px] font-black uppercase tracking-widest text-gray-500 mt-2">

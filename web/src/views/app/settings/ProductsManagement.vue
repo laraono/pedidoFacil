@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useMenuStore } from "@/stores/productsManagement.js";
 import { useToast } from "@/composables/useToast";
 import { useConfirm } from "@/composables/useConfirm";
@@ -37,8 +37,16 @@ const validate = () => {
 };
 
 const openAdd = () => { isEditing.value = false; form.value = { id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true }; errors.value = {}; showModal.value = true; };
-const openEdit = (p) => { isEditing.value = true; form.value = { id: p.id, name: p.name, description: p.description || "", price: p.price, categoryId: p.categoryId, image: p.image, imagePreview: p.image, available: p.available !== false }; errors.value = {}; showModal.value = true; };
+const openEdit = (p) => { isEditing.value = true; form.value = { id: p.id, name: p.name, description: p.description || "", price: p.price != null ? String(p.price).replace('.', ',') : "", categoryId: p.categoryId, image: p.image, imagePreview: p.image, available: p.available !== false }; errors.value = {}; showModal.value = true; };
 const handleImageUpload = (e) => { const file = e.target.files[0]; if (!file) return; const url = URL.createObjectURL(file); form.value.imagePreview = url; form.value.image = url; };
+
+// Permite apenas dígitos, vírgula e ponto no campo de preço
+watch(() => form.value.price, (val) => {
+  if (val === null || val === undefined) return;
+  const s = String(val);
+  const cleaned = s.replace(/[^\d,\.]/g, '');
+  if (cleaned !== s) form.value.price = cleaned;
+});
 
 const save = () => {
   if (!validate()) { showToast("Corrija os erros no formulário.", "error"); return; }
@@ -111,7 +119,7 @@ const tableActions = computed(() => [
         </div>
         <BaseInput v-model="form.name" label="Nome do Produto" placeholder="Ex: X-Burguer Especial" :maxlength="60" :error="errors.name" />
         <BaseInput v-model="form.description" label="Descrição (opcional)" placeholder="Ingredientes, detalhes..." :maxlength="120" />
-        <BaseInput v-model="form.price" label="Preço (R$)" placeholder="0.00" :error="errors.price" />
+        <BaseInput v-model="form.price" label="Preço (R$)" placeholder="Ex: 12,90" :error="errors.price" />
         <div class="flex flex-col gap-1">
           <label class="text-xs font-black text-gray-300 uppercase tracking-widest ml-2">Categoria</label>
           <select v-model="form.categoryId" class="w-full py-3.5 px-4 rounded-2xl border bg-white/5 border-white/15 text-white focus:outline-none focus:border-brand-green/50 transition-all appearance-none" :class="errors.categoryId ? '!border-red-500' : ''">

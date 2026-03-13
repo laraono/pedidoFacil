@@ -1,6 +1,7 @@
 import {
-  BarChart3, ChefHat, UtensilsCrossed, Users,
-  DollarSign, HamburgerIcon, Package, Receipt, Settings, StoreIcon
+  ChefHat, UtensilsCrossed, Users,
+  DollarSign, HamburgerIcon, Package, Receipt, Settings, StoreIcon,
+  CreditCard, ShieldAlert
 } from 'lucide-vue-next';
 import { PERMISSIONS } from '@/utils/permissions';
 
@@ -100,10 +101,38 @@ export const allMenuItems = [
     permission: PERMISSIONS.COMANDAS_FINALIZADAS
   },
   {
-    label: 'Relatorios',
+    label: 'Relatórios',
     route: '/app/reports',
     icon: StoreIcon,
     description: 'Gráficos e relatórios.',
     permission: PERMISSIONS.RELATORIOS
-  }
+  },
+  {
+    label: 'Assinatura',
+    route: '/app/subscription',
+    icon: CreditCard,
+    description: 'Gerencie seu plano e pagamentos.',
+    callToAction: 'Ver Assinatura',
+    permission: PERMISSIONS.ASSINATURA
+  },
+];
+
+// Itens exclusivos do painel Admin (não filtrados por permission, mas por isAdmin)
+export const adminMenuItems = [
+  {
+    label: 'Assinaturas',
+    route: '/app/admin/subscriptions',
+    icon: ShieldAlert,
+    description: 'Controle de todos os gerentes.',
+    callToAction: 'Ver Assinaturas',
+    adminOnly: true
+  },
+  {
+    label: 'Relatórios Admin',
+    route: '/app/admin/reports',
+    icon: StoreIcon,
+    description: 'Faturamento da plataforma.',
+    callToAction: 'Ver Relatórios',
+    adminOnly: true
+  },
 ];

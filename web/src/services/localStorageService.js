@@ -10,6 +10,7 @@ const STORAGE_KEYS = {
   FONT: 'fontFamily',
   TEXT_COLOR: 'textColor',
   CARD_BG: 'productCardBg',
+  COMANDA_UNIT_LABEL: 'comandaUnitLabel',
 };
 
 function getItem(key, defaultValue = null) {
@@ -61,5 +62,8 @@ export default {
 
   getProductCardBg() { return localStorage.getItem(STORAGE_KEYS.CARD_BG) || '#1A1E24'; },
   saveProductCardBg(value) { localStorage.setItem(STORAGE_KEYS.CARD_BG, value); },
+
+  getComandaUnitLabel() { return localStorage.getItem(STORAGE_KEYS.COMANDA_UNIT_LABEL) || 'Comanda'; },
+  saveComandaUnitLabel(value) { localStorage.setItem(STORAGE_KEYS.COMANDA_UNIT_LABEL, value); },
 
 };
