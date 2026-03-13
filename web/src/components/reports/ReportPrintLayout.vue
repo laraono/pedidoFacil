@@ -1,26 +1,26 @@
 <script setup>
 const props = defineProps({
-  restaurantName:          String,
-  performanceTitle:        String,
-  currentDate:             String,
-  metrics:                 Object,
-  revenueData:             Array,
-  getMaxRevenue:           Function,
-  salesByChannel:          Array,
-  paymentMethods:          Array,
-  topWaiters:              Array,
-  peakHours:               Array,
-  cancellations:           Array,
+  restaurantName: String,
+  performanceTitle: String,
+  currentDate: String,
+  metrics: Object,
+  revenueData: Array,
+  getMaxRevenue: Function,
+  salesByChannel: Array,
+  paymentMethods: Array,
+  topWaiters: Array,
+  peakHours: Array,
+  cancellations: Array,
   totalCancellationsCount: Number,
-  financialImpact:         String,
-  topProducts:             Array,
+  financialImpact: String,
+  topProducts: Array,
 });
 
 const getMetricLabel = (key) => ({
-  faturamento:  'Faturamento',
-  ticketMedio:  'Ticket Médio',
-  cancelamentos:'Cancelamentos',
-  giroMesa:     'Giro de Mesa',
+  faturamento: 'Faturamento',
+  ticketMedio: 'Ticket Médio',
+  cancelamentos: 'Cancelamentos',
+  giroMesa: 'Giro de Mesa',
 }[key] ?? key);
 
 // Values from kpis mock are already formatted strings (e.g. "R$ 1.234,56")
@@ -50,8 +50,9 @@ const maxRev = () => {
         <div style="width:44px; height:44px; background:#f3f4f6; border:1px solid #e5e7eb;
                     border-radius:8px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
-            <polyline points="9 22 9 12 15 12 15 22" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="#10b981" stroke-width="2"
+              stroke-linecap="round" />
+            <polyline points="9 22 9 12 15 12 15 22" stroke="#10b981" stroke-width="2" stroke-linecap="round" />
           </svg>
         </div>
         <div>
@@ -61,7 +62,8 @@ const maxRev = () => {
         </div>
       </div>
       <div style="text-align:right;">
-        <p style="font-size:10px; font-weight:900; color:#111; text-transform:uppercase; letter-spacing:0.08em; margin:0;">
+        <p
+          style="font-size:10px; font-weight:900; color:#111; text-transform:uppercase; letter-spacing:0.08em; margin:0;">
           {{ performanceTitle }}
         </p>
         <p style="font-size:9px; color:#9ca3af; font-weight:600; margin:3px 0 0;">
@@ -74,8 +76,7 @@ const maxRev = () => {
     <p style="font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em;
               color:#111; margin: 0 0 10px;">Resumo Executivo</p>
     <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:20px;">
-      <div v-for="(val, key) in metrics" :key="key"
-        style="border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px;
+      <div v-for="(val, key) in metrics" :key="key" style="border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px;
                background:#f9fafb; overflow:hidden;">
         <p style="font-size:8px; font-weight:900; text-transform:uppercase; letter-spacing:0.08em;
                   color:#9ca3af; margin:0 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
@@ -102,12 +103,12 @@ const maxRev = () => {
             style="width:100%; text-align:center; font-size:10px; color:#9ca3af; align-self:center;">
             Sem dados.
           </div>
-          <div v-else v-for="(data, i) in revenueData" :key="i"
-            style="display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+          <div v-else v-for="(data, i) in revenueData" :key="i" style="display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
                    flex:1; height:100%; min-width:0;">
-            <span style="font-size:6px; font-weight:700; color:#374151; margin-bottom:2px;
+            <span
+              style="font-size:6px; font-weight:700; color:#374151; margin-bottom:2px;
                          white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; text-align:center;">
-              {{ data.value >= 1000 ? (data.value/1000).toFixed(1)+'k' : data.value }}
+              {{ data.value >= 1000 ? (data.value / 1000).toFixed(1) + 'k' : data.value }}
             </span>
             <div style="width:100%; background:#10b981; border-radius:3px 3px 0 0;"
               :style="{ height: `${(data.value / maxRev()) * 90}%`, minHeight: '3px' }"></div>
@@ -115,6 +116,29 @@ const maxRev = () => {
                          margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
                          max-width:100%; text-align:center;">
               {{ data.label.substring(0, 3) }}
+            </span>
+          </div>
+        </div>
+        <p style="font-size:9px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em;
+                  color:#111; margin: 8px 8px;">Fluxo por Hora</p>
+        <!-- Fluxo horário -->
+        <div style="border:1px solid #e5e7eb; border-radius:12px; padding:10px;
+                    display:flex; align-items:flex-end; justify-content:space-between;
+                    height:100px; gap:3px; background:#fafafa;">
+          <div v-if="!peakHours || peakHours.length === 0"
+            style="width:100%; text-align:center; font-size:9px; color:#9ca3af; align-self:center;">
+            Sem picos de fluxo.
+          </div>
+          <div v-else v-for="h in peakHours" :key="h.hora" style="display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+                   flex:1; height:100%; min-width:0;">
+            <div :style="{
+              height: `${h.fluxo}%`, minHeight: '3px', background: '#f97316',
+              width: '100%', borderRadius: '2px 2px 0 0'
+            }"></div>
+            <span
+              style="font-size:6px; font-weight:900; color:#9ca3af; margin-top:3px;
+                         white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; text-align:center;">
+              {{ h.hora }}
             </span>
           </div>
         </div>
@@ -130,7 +154,8 @@ const maxRev = () => {
             style="font-size:9px; color:#9ca3af; font-weight:600;">Sem vendas registradas.</div>
           <div v-else v-for="channel in salesByChannel" :key="channel.name" style="margin-bottom:6px;">
             <div style="display:flex; justify-content:space-between; font-size:8px; margin-bottom:3px;">
-              <span style="color:#374151; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:6px;">
+              <span
+                style="color:#374151; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:6px;">
                 {{ channel.name }}
               </span>
               <span style="font-weight:900; color:#111; white-space:nowrap;">{{ channel.value }}%</span>
@@ -154,7 +179,8 @@ const maxRev = () => {
             style="font-size:9px; color:#9ca3af; font-weight:600;">Sem pagamentos.</div>
           <div v-else v-for="method in paymentMethods" :key="method.name" style="margin-bottom:6px;">
             <div style="display:flex; justify-content:space-between; font-size:8px; margin-bottom:3px;">
-              <span style="color:#374151; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:6px;">
+              <span
+                style="color:#374151; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:6px;">
                 {{ method.name }}
               </span>
               <span style="font-weight:900; color:#111; white-space:nowrap;">{{ method.value }}%</span>
@@ -184,36 +210,16 @@ const maxRev = () => {
         <div style="border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin-bottom:8px; background:#fff;">
           <p style="font-size:8px; font-weight:900; text-transform:uppercase; letter-spacing:0.06em;
                     color:#6b7280; margin:0 0 8px;">Top Staff (Vendas)</p>
-          <div v-if="!topWaiters || topWaiters.length === 0"
-            style="font-size:9px; color:#9ca3af; font-weight:600;">Sem dados de staff.</div>
-          <div v-else v-for="(waiter, index) in topWaiters" :key="waiter.id"
-            style="display:flex; justify-content:space-between; align-items:center;
+          <div v-if="!topWaiters || topWaiters.length === 0" style="font-size:9px; color:#9ca3af; font-weight:600;">Sem
+            dados de staff.</div>
+          <div v-else v-for="(waiter, index) in topWaiters" :key="waiter.id" style="display:flex; justify-content:space-between; align-items:center;
                    font-size:9px; padding: 4px 0; border-bottom:1px solid #f3f4f6;">
-            <span style="font-weight:700; color:#374151; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:6px;">
+            <span
+              style="font-weight:700; color:#374151; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:6px;">
               {{ index + 1 }}. {{ waiter.name }}
               <span style="font-size:8px; color:#9ca3af; font-weight:400;">({{ waiter.orders }} ped.)</span>
             </span>
             <span style="font-weight:900; color:#111; white-space:nowrap;">{{ waiter.revenue }}</span>
-          </div>
-        </div>
-
-        <!-- Fluxo horário -->
-        <div style="border:1px solid #e5e7eb; border-radius:12px; padding:10px;
-                    display:flex; align-items:flex-end; justify-content:space-between;
-                    height:80px; gap:3px; background:#fafafa;">
-          <div v-if="!peakHours || peakHours.length === 0"
-            style="width:100%; text-align:center; font-size:9px; color:#9ca3af; align-self:center;">
-            Sem picos de fluxo.
-          </div>
-          <div v-else v-for="h in peakHours" :key="h.hora"
-            style="display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
-                   flex:1; height:100%; min-width:0;">
-            <div :style="{ height: `${h.fluxo}%`, minHeight: '3px', background: '#f97316',
-                           width: '100%', borderRadius: '2px 2px 0 0' }"></div>
-            <span style="font-size:6px; font-weight:900; color:#9ca3af; margin-top:3px;
-                         white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; text-align:center;">
-              {{ h.hora }}
-            </span>
           </div>
         </div>
       </div>
@@ -329,12 +335,17 @@ const maxRev = () => {
 <style>
 /* Oculto na tela — visível somente na impressão */
 @media screen {
-  .report-print-root { display: none; }
+  .report-print-root {
+    display: none;
+  }
 }
 
 @media print {
+
   /* Esconde TUDO da página */
-  body * { visibility: hidden; }
+  body * {
+    visibility: hidden;
+  }
 
   /* Mostra apenas o relatório */
   .report-print-root,
@@ -353,6 +364,9 @@ const maxRev = () => {
     print-color-adjust: exact !important;
   }
 
-  @page { size: A4; margin: 10mm 14mm; }
+  @page {
+    size: A4;
+    margin: 10mm 14mm;
+  }
 }
 </style>
