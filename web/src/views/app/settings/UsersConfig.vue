@@ -109,13 +109,14 @@ function saveUser() {
 
   isLoading.value = true;
 
+  const userToSave = { ...form.value, roleId: form.value.roleId ? Number(form.value.roleId) : null };
+
   if (form.value.id) {
     const index = list.findIndex(u => u.id === form.value.id);
-
-    if (form.value.id === currentUser.value?.id) form.value.roleId = list[index].roleId;
-    list[index] = { ...list[index], ...form.value };
+    if (form.value.id === currentUser.value?.id) userToSave.roleId = list[index].roleId;
+    list[index] = { ...list[index], ...userToSave };
   } else {
-    list.push({ ...form.value, id: Date.now(), status: 'ATIVO' });
+    list.push({ ...userToSave, id: Date.now(), status: 'ATIVO' });
   }
 
   localStorage.setItem(USERS_KEY, JSON.stringify(list));

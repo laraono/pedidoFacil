@@ -47,7 +47,7 @@ export const useAuthStore = defineStore('auth', {
     hasPermission(permission) {
       if (!this.user || !this.user.roleId) return false;
 
-      const role = this.roles.find(r => r.id === this.user.roleId);
+      const role = this.roles.find(r => Number(r.id) === Number(this.user.roleId));
       if (!role) return false;
 
       return role.permissions.includes(permission);
