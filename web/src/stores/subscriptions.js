@@ -81,14 +81,14 @@ export const useSubscriptionStore = defineStore('subscription', () => {
 
   // Admin mock: all manager subscriptions
   const adminSubscriptions = [
-    { id: 1, establishment: 'Burger Palace', manager: 'João Silva', plan: 'anual', status: 'ativo', nextDueDate: '2026-10-15', amount: 49.90, users: 8 },
-    { id: 2, establishment: 'Pizza Viva', manager: 'Maria Costa', plan: 'mensal', status: 'ativo', nextDueDate: '2026-03-28', amount: 79.90, users: 5 },
-    { id: 3, establishment: 'Tacos & Co', manager: 'Pedro Alves', plan: 'mensal', status: 'expirado', nextDueDate: '2026-02-10', amount: 79.90, users: 3 },
-    { id: 4, establishment: 'Sushi Express', manager: 'Ana Tanaka', plan: 'anual', status: 'ativo', nextDueDate: '2026-11-05', amount: 49.90, users: 12 },
-    { id: 5, establishment: 'Café Mooca', manager: 'Carlos Mendes', plan: 'mensal', status: 'desativado', nextDueDate: '2026-01-20', amount: 79.90, users: 2 },
-    { id: 6, establishment: 'Churrasco do Rei', manager: 'Roberto Lima', plan: 'anual', status: 'ativo', nextDueDate: '2026-08-22', amount: 49.90, users: 9 },
-    { id: 7, establishment: 'Açaí Tropical', manager: 'Fernanda Rocha', plan: 'mensal', status: 'ativo', nextDueDate: '2026-04-01', amount: 79.90, users: 4 },
-    { id: 8, establishment: 'Cantina Italiana', manager: 'Giuseppe Ferri', plan: 'anual', status: 'expirado', nextDueDate: '2026-01-30', amount: 49.90, users: 6 },
+    { id: 1, establishment: 'Burger Palace', manager: 'João Silva', email: 'joao.silva@burgerpalace.com', phone: '(11) 98765-4321', plan: 'anual', status: 'ativo', nextDueDate: '2026-10-15', amount: 49.90, users: 8 },
+    { id: 2, establishment: 'Pizza Viva', manager: 'Maria Costa', email: 'maria.costa@pizzaviva.com', phone: '(21) 99887-6543', plan: 'mensal', status: 'ativo', nextDueDate: '2026-03-28', amount: 79.90, users: 5 },
+    { id: 3, establishment: 'Tacos & Co', manager: 'Pedro Alves', email: 'pedro@tacosco.com', phone: '(31) 97654-3210', plan: 'mensal', status: 'expirado', nextDueDate: '2026-02-10', amount: 79.90, users: 3 },
+    { id: 4, establishment: 'Sushi Express', manager: 'Ana Tanaka', email: 'ana.tanaka@sushiexpress.com', phone: '(11) 96543-2109', plan: 'anual', status: 'ativo', nextDueDate: '2026-11-05', amount: 49.90, users: 12 },
+    { id: 5, establishment: 'Café Mooca', manager: 'Carlos Mendes', email: 'carlos@cafemooca.com', phone: '(11) 95432-1098', plan: 'mensal', status: 'desativado', nextDueDate: '2026-01-20', amount: 79.90, users: 2 },
+    { id: 6, establishment: 'Churrasco do Rei', manager: 'Roberto Lima', email: 'roberto@churrascodrei.com', phone: '(41) 94321-0987', plan: 'anual', status: 'ativo', nextDueDate: '2026-08-22', amount: 49.90, users: 9 },
+    { id: 7, establishment: 'Açaí Tropical', manager: 'Fernanda Rocha', email: 'fernanda@acaitropical.com', phone: '(85) 93210-9876', plan: 'mensal', status: 'ativo', nextDueDate: '2026-04-01', amount: 79.90, users: 4 },
+    { id: 8, establishment: 'Cantina Italiana', manager: 'Giuseppe Ferri', email: 'giuseppe@cantina.com', phone: '(11) 92109-8765', plan: 'anual', status: 'expirado', nextDueDate: '2026-01-30', amount: 49.90, users: 6 },
   ];
 
   loadSubscription();

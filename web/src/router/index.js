@@ -25,6 +25,8 @@ import KitchenTerminal from '@/views/app/kitchen/KitchenTerminal.vue';
 const routes = [
   { path: '/', name: 'landing', component: LandingPage },
   { path: '/login', name: 'login', component: Login },
+  { path: '/forgot-password', name: 'forgot-password', component: () => import('@/views/ForgotPassword.vue') },
+  { path: '/reset-password', name: 'reset-password', component: () => import('@/views/ResetPassword.vue') },
   { path: '/register', name: 'register', component: RegisterManager },
   { path: '/onboarding/name', name: 'OnboardingName', component: EstabelecimentoName },
   { path: '/onboarding/type', name: 'OnboardingType', component: AtendimentoType },
@@ -67,6 +69,18 @@ const routes = [
         name: 'admin-reports',
         component: () => import('@/views/app/admin/AdminReports.vue'),
         meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'admin/users',
+        name: 'admin-users',
+        component: () => import('@/views/app/admin/AdminUsers.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'settings/profile',
+        name: 'manager-profile',
+        component: () => import('@/views/app/settings/ManagerProfile.vue'),
+        meta: { requiresAuth: true }
       },
     ]
   }

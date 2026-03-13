@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router';
 import { useSubscriptionStore } from '@/stores/subscriptions';
 import {
   ArrowLeft, ShieldAlert, Users, CheckCircle2, AlertTriangle,
-  XCircle, Search, Calendar, CreditCard
+  XCircle, Search, Calendar, CreditCard, UserCircle, X, Mail, Phone, MapPin
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -12,6 +12,10 @@ const subscriptionStore = useSubscriptionStore();
 
 const search = ref('');
 const filterStatus = ref('todos');
+
+const selectedManager = ref(null);
+const openManagerModal = (sub) => { selectedManager.value = sub; };
+const closeManagerModal = () => { selectedManager.value = null; };
 
 const allSubs = computed(() => subscriptionStore.adminSubscriptions);
 
@@ -128,6 +132,7 @@ const formatDate = (d) =>
             <th class="text-left px-4 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 hidden lg:table-cell">Vencimento</th>
             <th class="text-right px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 hidden sm:table-cell">Valor</th>
             <th class="text-right px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 hidden lg:table-cell">Usuários</th>
+            <th class="px-4 py-4"></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-white/5">
@@ -175,6 +180,15 @@ const formatDate = (d) =>
                 {{ sub.users }}
               </div>
             </td>
+            <td class="px-4 py-4">
+              <button
+                @click="openManagerModal(sub)"
+                class="p-2 rounded-xl text-zinc-500 hover:text-brand-green hover:bg-brand-green/10 transition-all"
+                title="Ver dados do gerente"
+              >
+                <UserCircle :size="18" />
+              </button>
+            </td>
           </tr>
 
           <tr v-if="filtered.length === 0">
@@ -188,4 +202,85 @@ const formatDate = (d) =>
     </div>
 
   </main>
+
+  <!-- Manager contact modal -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div v-if="selectedManager" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-white/10 w-full max-w-md rounded-[2.5rem] shadow-2xl">
+          <div class="p-8 border-b border-white/5 flex justify-between items-center bg-black/20">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-brand-green/10 border border-brand-green/20 flex items-center justify-center">
+                <UserCircle :size="20" class="text-brand-green" />
+              </div>
+              <div>
+                <h2 class="text-lg font-black text-white">Dados do Gerente</h2>
+                <p class="text-xs text-zinc-500">{{ selectedManager.establishment }}</p>
+              </div>
+            </div>
+            <button @click="closeManagerModal" class="p-2 text-gray-400 hover:text-white transition-colors">
+              <X :size="20" />
+            </button>
+          </div>
+
+          <div class="p-8 space-y-4">
+            <div class="flex items-center gap-3 p-4 bg-white/5 rounded-2xl">
+              <UserCircle :size="16" class="text-zinc-400 shrink-0" />
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Nome</p>
+                <p class="text-sm font-bold text-white">{{ selectedManager.manager }}</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3 p-4 bg-white/5 rounded-2xl">
+              <Mail :size="16" class="text-zinc-400 shrink-0" />
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">E-mail</p>
+                <p class="text-sm font-bold text-white">{{ selectedManager.email || 'Não informado' }}</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3 p-4 bg-white/5 rounded-2xl">
+              <Phone :size="16" class="text-zinc-400 shrink-0" />
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Telefone</p>
+                <p class="text-sm font-bold text-white">{{ selectedManager.phone || 'Não informado' }}</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3 p-4 bg-white/5 rounded-2xl">
+              <CreditCard :size="16" class="text-zinc-400 shrink-0" />
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Plano / Valor</p>
+                <p class="text-sm font-bold text-white capitalize">
+                  {{ selectedManager.plan }} —
+                  {{ selectedManager.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}/mês
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3 p-4 bg-white/5 rounded-2xl">
+              <Calendar :size="16" class="text-zinc-400 shrink-0" />
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Próximo Vencimento</p>
+                <p class="text-sm font-bold text-white">{{ formatDate(selectedManager.nextDueDate) }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-8 pt-0">
+            <button @click="closeManagerModal"
+              class="w-full py-3 rounded-2xl text-zinc-400 font-bold hover:bg-white/5 transition-colors">
+              Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>

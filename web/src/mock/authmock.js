@@ -84,6 +84,7 @@ export function initMockUsers() {
     {
       id: 1,
       name: "Admin",
+      username: "admin",
       email: "admin@email.com",
       password: "123456",
       roleId: 1,
@@ -92,6 +93,7 @@ export function initMockUsers() {
     {
       id: 2,
       name: "Gerente da Loja",
+      username: "gerente",
       email: "gerente@email.com",
       password: "123456",
       roleId: 2,
@@ -100,6 +102,7 @@ export function initMockUsers() {
     {
       id: 4,
       name: "Pedro Garçom",
+      username: "garcom",
       email: "garcom@email.com",
       password: "123456",
       roleId: 4,
@@ -108,6 +111,7 @@ export function initMockUsers() {
     {
       id: 5,
       name: "João Cozinha",
+      username: "cozinha",
       email: "cozinha@email.com",
       password: "123456",
       roleId: 5,
@@ -116,6 +120,7 @@ export function initMockUsers() {
     {
       id: 6,
       name: "Roberta Caixa",
+      username: "caixa",
       email: "caixa@email.com",
       password: "123456",
       roleId: 6,
@@ -126,14 +131,17 @@ export function initMockUsers() {
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
 }
 
-export async function loginMock(email, password) {
+export async function loginMock(username, password) {
   initMockRoles();
   initMockUsers();
 
   const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
   const roles = JSON.parse(localStorage.getItem(ROLES_KEY)) || [];
 
-  const user = users.find(u => u.email === email && u.password === password);
+  // Support both username and legacy email login
+  const user = users.find(u =>
+    (u.username === username || u.email === username) && u.password === password
+  );
 
   if (!user) {
     throw new Error("Credenciais inválidas");

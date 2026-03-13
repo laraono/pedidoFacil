@@ -2,16 +2,15 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import { LogIn, Lock, Mail, AlertCircle, ArrowRight } from 'lucide-vue-next';
+import { LogIn, Lock, User, AlertCircle, ArrowRight } from 'lucide-vue-next';
 import { BaseInput, BaseButton } from '@/components/ui';
 import imgOndas from '@/assets/ondas.png';
 import { PERMISSIONS } from '@/utils/permissions';
 
-
 const authStore = useAuthStore();
 const router = useRouter();
 
-const email = ref('');
+const username = ref('');
 const senha = ref('');
 const isLoading = ref(false);
 const serverError = ref(null);
@@ -21,40 +20,31 @@ const handleLogin = async () => {
   serverError.value = null;
 
   try {
-    await authStore.login({
-      email: email.value,
-      senha: senha.value
-    });
+    await authStore.login({ username: username.value, senha: senha.value });
+
+    if (authStore.isAdmin) {
+      router.push('/app/dashboard');
+      return;
+    }
 
     const rotasPossiveis = [
-      { permission: PERMISSIONS.RELATORIOS, route: "/app/dashboard" },
-      { permission: PERMISSIONS.COZINHA, route: "/app/kitchen" },
-      { permission: PERMISSIONS.ESTOQUE, route: "/app/stock" },
-      { permission: PERMISSIONS.CARDAPIO, route: "/app/menu/manage" }, 
-      { permission: PERMISSIONS.FUNCIONARIOS, route: "/app/settings/roles" },
-      { permission: PERMISSIONS.CONFIGURACAO, route: "/app/settings/establishment" }, 
-      { permission: PERMISSIONS.ASSINATURA, route: "/app/subscription" }
+      { permission: PERMISSIONS.RELATORIOS, route: '/app/dashboard' },
+      { permission: PERMISSIONS.COZINHA, route: '/app/kitchen' },
+      { permission: PERMISSIONS.CONFIGURACAO, route: '/app/settings/establishment' },
+      { permission: PERMISSIONS.ASSINATURA, route: '/app/subscription' }
     ];
 
     const destino = rotasPossiveis.find(item => authStore.hasPermission(item.permission));
+    router.push(destino ? destino.route : '/app/dashboard');
 
-    if (destino) {
-      router.push(destino.route);
-    } else {
-      router.push("/app/dashboard");
-    }
-
-  }  catch (err) {
-  serverError.value = `Erro: ${err.message || 'Falha de login'}`;
-
+  } catch (err) {
+    serverError.value = `Erro: ${err.message || 'Falha de login'}`;
   } finally {
     isLoading.value = false;
   }
 };
 
-const goToPlans = () => {
-  router.push({ path: '/', hash: '#planos' });
-};
+const goToPlans = () => router.push({ path: '/', hash: '#planos' });
 </script>
 
 <template>
@@ -75,44 +65,51 @@ const goToPlans = () => {
       </div>
 
       <form @submit.prevent="handleLogin" class="space-y-5">
-        <BaseInput 
-          v-model="email" 
-          type="email" 
-          placeholder="exemplo@email.com" 
-          :icon="Mail" 
-          dark 
-          required 
-        />
-        
-        <BaseInput 
-          v-model="senha" 
-          type="password" 
-          placeholder="A sua palavra-passe" 
-          :icon="Lock" 
-          dark 
-          required 
+        <BaseInput
+          v-model="username"
+          type="text"
+          placeholder="Nome de usuário"
+          :icon="User"
+          dark
+          required
         />
 
-        <div class="pt-4">
-          <BaseButton 
-            type="submit" 
-            variant="brand" 
-            size="lg" 
+        <BaseInput
+          v-model="senha"
+          type="password"
+          placeholder="Senha"
+          :icon="Lock"
+          dark
+          required
+        />
+
+        <div class="flex justify-end">
+          <a @click.prevent="router.push('/forgot-password')" href="/forgot-password"
+            class="text-xs text-gray-500 hover:text-brand-green transition-colors cursor-pointer">
+            Esqueci minha senha
+          </a>
+        </div>
+
+        <div class="pt-2">
+          <BaseButton
+            type="submit"
+            variant="brand"
+            size="lg"
             class="w-full"
-            :isLoading="isLoading" 
+            :isLoading="isLoading"
             :icon="LogIn"
           >
             Entrar no sistema
           </BaseButton>
         </div>
       </form>
-      
+
       <div class="mt-10 pt-6 border-t border-white/5 text-center">
-          <p class="text-gray-400 text-sm mb-3">Ainda não é cliente?</p>
-          <a @click.prevent="goToPlans" href="/#planos" class="inline-flex items-center gap-2 text-brand-green font-bold hover:text-white transition-colors cursor-pointer group">
-            Conheça os nossos planos
-            <ArrowRight class="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </a>
+        <p class="text-gray-400 text-sm mb-3">Ainda não é cliente?</p>
+        <a @click.prevent="goToPlans" href="/#planos" class="inline-flex items-center gap-2 text-brand-green font-bold hover:text-white transition-colors cursor-pointer group">
+          Conheça os nossos planos
+          <ArrowRight class="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </a>
       </div>
     </div>
   </div>

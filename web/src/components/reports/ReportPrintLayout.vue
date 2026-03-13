@@ -23,11 +23,9 @@ const getMetricLabel = (key) => ({
   giroMesa:     'Giro de Mesa',
 }[key] ?? key);
 
-const formatCurrency = (val) =>
-  Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-const formatMetric = (key, val) =>
-  (key === 'faturamento' || key === 'ticketMedio') ? formatCurrency(val) : val;
+// Values from kpis mock are already formatted strings (e.g. "R$ 1.234,56")
+// so we pass them through directly instead of trying to re-parse them
+const formatMetric = (_key, val) => val;
 
 const maxRev = () => {
   if (typeof props.getMaxRevenue === 'function') return props.getMaxRevenue();
@@ -329,32 +327,31 @@ const maxRev = () => {
 </template>
 
 <style>
-/* Oculto por padrão na tela */
-.report-print-root {
-  display: none;
+/* Oculto na tela — visível somente na impressão */
+@media screen {
+  .report-print-root { display: none; }
 }
 
 @media print {
-  /* Mostra somente na impressão */
-  .report-print-root {
-    display: block !important;
-  }
+  /* Esconde TUDO da página */
+  body * { visibility: hidden; }
 
-  /* Esconde elementos da UI que não devem aparecer no PDF */
-  header, aside, nav,
-  [class*="print:hidden"] {
-    display: none !important;
-  }
-
-  /* Garante que cores do relatório sejam impressas */
+  /* Mostra apenas o relatório */
   .report-print-root,
   .report-print-root * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    color-adjust: exact !important;
+    visibility: visible;
   }
 
-  body { margin: 0 !important; }
+  /* Posiciona o relatório no topo da página */
+  .report-print-root {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 
   @page { size: A4; margin: 10mm 14mm; }
 }

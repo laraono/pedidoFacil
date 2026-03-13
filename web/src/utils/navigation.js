@@ -1,7 +1,7 @@
 import {
   ChefHat, UtensilsCrossed, Users,
   DollarSign, HamburgerIcon, Package, Receipt, Settings, StoreIcon,
-  CreditCard, ShieldAlert
+  CreditCard, ShieldAlert, UserCog
 } from 'lucide-vue-next';
 import { PERMISSIONS } from '@/utils/permissions';
 
@@ -115,6 +115,14 @@ export const allMenuItems = [
     callToAction: 'Ver Assinatura',
     permission: PERMISSIONS.ASSINATURA
   },
+  {
+    label: 'Meu Perfil',
+    route: '/app/settings/profile',
+    icon: Users,
+    description: 'Dados pessoais para contato e cobranças.',
+    callToAction: 'Editar Perfil',
+    permission: PERMISSIONS.CONFIGURACAO
+  },
 ];
 
 // Itens exclusivos do painel Admin (não filtrados por permission, mas por isAdmin)
@@ -133,6 +141,14 @@ export const adminMenuItems = [
     icon: StoreIcon,
     description: 'Faturamento da plataforma.',
     callToAction: 'Ver Relatórios',
+    adminOnly: true
+  },
+  {
+    label: 'Usuários Admin',
+    route: '/app/admin/users',
+    icon: UserCog,
+    description: 'Gerenciar contas com acesso ao painel admin.',
+    callToAction: 'Gerenciar',
     adminOnly: true
   },
 ];

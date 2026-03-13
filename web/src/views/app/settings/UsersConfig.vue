@@ -28,6 +28,7 @@ const currentUser = computed(() => authStore.user);
 const form = ref({
   id: null,
   name: '',
+  username: '',
   email: '',
   cpf: '',
   password: '',
@@ -62,7 +63,7 @@ function openForm(user = null) {
     form.value = { ...user, roleId: user.roleId != null ? String(user.roleId) : '' };
   } else {
     editingUser.value = null;
-    form.value = { id: null, name: '', email: '', cpf: '', password: '', roleId: '' };
+    form.value = { id: null, name: '', username: '', email: '', cpf: '', password: '', roleId: '' };
   }
 }
 
@@ -74,11 +75,10 @@ function closeForm() {
 
 function validateForm() {
   errors.value = {};
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!form.value.name || form.value.name.trim().length < 5)
     errors.value.name = 'Nome deve ter ao menos 5 caracteres.';
-  if (!form.value.email || !emailRegex.test(form.value.email))
-    errors.value.email = 'Informe um e-mail válido.';
+  if (!form.value.username || form.value.username.trim().length < 3)
+    errors.value.username = 'Nome de usuário deve ter ao menos 3 caracteres.';
   if (!isValidCPF(form.value.cpf))
     errors.value.cpf = 'O CPF inserido é inválido.';
   if (!editingUser.value && !form.value.password)
@@ -96,12 +96,22 @@ function saveUser() {
     return;
   }
 
-  isLoading.value = true;
-
   const list = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+
+  const duplicate = list.find(u =>
+    u.username === form.value.username.trim() && u.id !== form.value.id
+  );
+  if (duplicate) {
+    errors.value.username = 'Este nome de usuário já está em uso.';
+    showToast('Nome de usuário já existe.', 'error');
+    return;
+  }
+
+  isLoading.value = true;
 
   if (form.value.id) {
     const index = list.findIndex(u => u.id === form.value.id);
+
     if (form.value.id === currentUser.value?.id) form.value.roleId = list[index].roleId;
     list[index] = { ...list[index], ...form.value };
   } else {
@@ -180,11 +190,10 @@ function isActive(status) {
             :error="errors.name"
           />
           <BaseInput
-            v-model="form.email"
-            label="Email Profissional"
-            type="email"
-            placeholder="exemplo@email.com"
-            :error="errors.email"
+            v-model="form.username"
+            label="Nome de Usuário"
+            placeholder="ex: joao_silva"
+            :error="errors.username"
           />
           <BaseInput
             v-model="form.cpf"
@@ -227,7 +236,7 @@ function isActive(status) {
         <thead class="bg-black/20 text-gray-500 uppercase text-[10px] font-black tracking-widest border-b border-white/5">
           <tr>
             <th class="p-6">Nome</th>
-            <th class="p-6">Email</th>
+            <th class="p-6">Usuário</th>
             <th class="p-6 text-center">Status</th>
             <th class="p-6 text-center">Cargo</th>
             <th class="p-6 text-right">Ações</th>
@@ -236,7 +245,7 @@ function isActive(status) {
         <tbody>
           <tr v-for="user in users" :key="user.id" class="hover:bg-white/5 border-b border-white/5 last:border-0 transition-colors">
             <td class="p-6 font-bold text-white">{{ user.name }}</td>
-            <td class="p-6 text-gray-400 text-sm">{{ user.email }}</td>
+            <td class="p-6 text-gray-400 text-sm">{{ user.username || user.email }}</td>
             <td class="p-6 text-center">
               <span
                 :class="isActive(user.status) ? 'bg-brand-green/10 text-brand-green border-brand-green/20' : 'bg-red-500/10 text-red-500 border-red-500/20'"
@@ -275,7 +284,7 @@ function isActive(status) {
         <div class="flex justify-between items-start mb-4">
           <div>
             <p class="font-bold text-white text-lg">{{ user.name }}</p>
-            <p class="text-sm text-gray-400 mt-1">{{ user.email }}</p>
+            <p class="text-sm text-gray-400 mt-1">@{{ user.username || user.email }}</p>
           </div>
           <span
             :class="isActive(user.status) ? 'bg-brand-green/10 text-brand-green border-brand-green/20' : 'bg-red-500/10 text-red-500 border-red-500/20'"

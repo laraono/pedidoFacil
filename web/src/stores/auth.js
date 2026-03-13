@@ -19,9 +19,9 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    async login({ email, senha }) {
+    async login({ username, senha }) {
       try {
-        const user = await loginMock(email, senha);
+        const user = await loginMock(username, senha);
         this.user = user;
         this.isAuthenticated = true;
         this.roles = await getRolesMock();

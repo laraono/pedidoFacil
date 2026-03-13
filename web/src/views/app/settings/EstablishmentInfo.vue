@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import localStorageService from '@/services/localStorageService';
 import { useToast } from '@/composables/useToast';
-import { Save, ArrowLeft, UploadCloud, AlertCircle } from 'lucide-vue-next';
+import { Save, ArrowLeft, UploadCloud, AlertCircle, Smartphone, Copy, CheckCheck, RefreshCw } from 'lucide-vue-next';
 
 const router = useRouter();
 const { showToast } = useToast();
@@ -12,6 +12,22 @@ const isLoading = ref(false);
 const logoPreview = ref(null);
 const errors = ref({});
 const touched = ref({});
+
+// Autoatendimento
+const selfService = ref(false);
+const selfServiceCode = ref('');
+const codeCopied = ref(false);
+
+const generateCode = () => {
+  selfServiceCode.value = Math.floor(100000 + Math.random() * 900000).toString();
+  localStorage.setItem('selfServiceCode', selfServiceCode.value);
+};
+
+const copyCode = () => {
+  navigator.clipboard.writeText(selfServiceCode.value);
+  codeCopied.value = true;
+  setTimeout(() => { codeCopied.value = false; }, 2000);
+};
 
 const form = ref({ name: '', cnpj: '', phone: '', description: '' });
 const originalForm = ref(null);
@@ -48,6 +64,13 @@ onMounted(() => {
   }
   originalForm.value = { ...form.value };
   logoPreview.value = localStorageService.getImage();
+  selfService.value = localStorage.getItem('selfServiceEnabled') === 'true';
+  const savedCode = localStorage.getItem('selfServiceCode');
+  if (savedCode) {
+    selfServiceCode.value = savedCode;
+  } else {
+    generateCode();
+  }
 });
 
 const validateAll = () => {
@@ -197,6 +220,84 @@ const saveSettings = async () => {
       </section>
     </div>
 
+    <!-- Autoatendimento -->
+    <div class="mt-8">
+      <div class="bg-dark-card border border-white/5 rounded-[2.5rem] p-8 shadow-xl">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h3 class="text-base font-black text-white">Autoatendimento</h3>
+            <p class="text-sm text-gray-400 mt-1">Permite que clientes façam pedidos pelo aplicativo móvel.</p>
+          </div>
+          <button
+            @click="() => { selfService = !selfService; localStorage.setItem('selfServiceEnabled', selfService); }"
+            class="relative w-14 h-7 rounded-full transition-colors duration-300 flex items-center"
+            :class="selfService ? 'bg-brand-green' : 'bg-white/10'"
+          >
+            <span class="absolute w-5 h-5 bg-white rounded-full shadow transition-all duration-300"
+              :class="selfService ? 'left-8' : 'left-1'" />
+          </button>
+        </div>
+
+        <Transition name="slide-down">
+          <div v-if="selfService" class="mt-6 border-t border-white/5 pt-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Download app -->
+              <div class="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 bg-brand-green/10 border border-brand-green/20 rounded-xl flex items-center justify-center">
+                    <Smartphone :size="22" class="text-brand-green" />
+                  </div>
+                  <div>
+                    <p class="font-black text-white text-sm">Aplicativo Mobile</p>
+                    <p class="text-xs text-gray-400">Para iOS e Android</p>
+                  </div>
+                </div>
+                <p class="text-xs text-gray-400 leading-relaxed">
+                  Os clientes baixam o app PedidoFácil e inserem o código do seu estabelecimento para acessar o cardápio.
+                </p>
+                <div class="flex gap-2">
+                  <a href="#" class="flex-1 text-center py-2.5 px-4 bg-black border border-white/20 rounded-xl text-xs font-black text-white hover:bg-white/5 transition-colors">
+                    App Store
+                  </a>
+                  <a href="#" class="flex-1 text-center py-2.5 px-4 bg-black border border-white/20 rounded-xl text-xs font-black text-white hover:bg-white/5 transition-colors">
+                    Google Play
+                  </a>
+                </div>
+              </div>
+
+              <!-- Access code -->
+              <div class="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
+                <div>
+                  <p class="font-black text-white text-sm mb-1">Código de Acesso</p>
+                  <p class="text-xs text-gray-400">Compartilhe este código com seus clientes</p>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="flex-1 bg-black/40 border border-brand-green/20 rounded-2xl px-6 py-4 text-center">
+                    <span class="text-4xl font-black text-brand-green tracking-[0.3em]">{{ selfServiceCode }}</span>
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <button @click="copyCode"
+                    class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-brand-green/10 border border-brand-green/20 rounded-xl text-xs font-black transition-all"
+                    :class="codeCopied ? 'text-brand-green' : 'text-brand-green hover:bg-brand-green/20'"
+                  >
+                    <component :is="codeCopied ? CheckCheck : Copy" :size="14" />
+                    {{ codeCopied ? 'Copiado!' : 'Copiar código' }}
+                  </button>
+                  <button @click="generateCode"
+                    class="p-2.5 bg-white/5 border border-white/10 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+                    title="Gerar novo código"
+                  >
+                    <RefreshCw :size="14" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </div>
+    </div>
+
     <div class="mt-8 sm:hidden">
       <button @click="saveSettings" :disabled="!isDirty || isLoading"
         class="w-full bg-brand-green text-black font-black py-5 rounded-3xl shadow-xl active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
@@ -206,3 +307,19 @@ const saveSettings = async () => {
 
   </main>
 </template>
+
+<style scoped>
+.slide-down-enter-active, .slide-down-leave-active {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+.slide-down-enter-from, .slide-down-leave-to {
+  opacity: 0;
+  max-height: 0;
+  transform: translateY(-8px);
+}
+.slide-down-enter-to, .slide-down-leave-from {
+  opacity: 1;
+  max-height: 600px;
+}
+</style>
