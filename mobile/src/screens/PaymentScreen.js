@@ -1,50 +1,45 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   Modal,
   ActivityIndicator,
   ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Feather,
   MaterialCommunityIcons,
   FontAwesome5,
 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+
 import { useCart } from "../contexts/CartContext";
-import colors from "../theme/colors";
+import { useTheme } from "../contexts/ThemeContext";
+import BrandHeader from "../components/ui/BrandHeader";
 
 const PAYMENT_METHODS = [
   { id: "credito", label: "Crédito", icon: "credit-card", color: "#E85D5D" },
-  {
-    id: "debito",
-    label: "Débito",
-    icon: "credit-card-outline",
-    color: "#4A90E2",
-  },
+  { id: "debito", label: "Débito", icon: "credit-card-outline", color: "#4A90E2" },
   { id: "pix", label: "Pix", icon: "qrcode", color: "#48B8A6" },
   { id: "dinheiro", label: "Dinheiro", icon: "cash", color: "#4CAF50" },
   { id: "misto", label: "Misto", icon: "swap-horizontal", color: "#829356" },
-  {
-    id: "cancelar",
-    label: "Cancelar Pedido",
-    icon: "close-circle",
-    color: "#D0021B",
-  },
+  { id: "cancelar", label: "Cancelar", icon: "close-circle", color: "#D0021B" },
 ];
 
 export default function PaymentScreen() {
   const navigation = useNavigation();
   const { clearCart } = useCart();
+  const { theme } = useTheme();
 
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState("Aguardando pagamento...");
+  const [paymentStatus, setPaymentStatus] = useState("Processando...");
   const [isApproved, setIsApproved] = useState(false);
+
+  const styles = useMemo(() => getStyles(theme), [theme]);
 
   const handleConfirm = () => {
     if (!selectedMethod) return;
@@ -57,8 +52,8 @@ export default function PaymentScreen() {
     setIsProcessing(true);
     setPaymentStatus(
       selectedMethod === "pix"
-        ? "Aguardar leitura do QR Code..."
-        : "A processar pagamento...",
+        ? "Aguardando pagamento Pix..."
+        : "Autorizando pagamento..."
     );
     setIsApproved(false);
 
@@ -75,32 +70,21 @@ export default function PaymentScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <BrandHeader title="Pagamento" showBack={true} />
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* HEADER IDÊNTICO */}
-        <View style={styles.appHeader}>
-          <Text style={styles.appHeaderTitle}>Restaurante Exemplo</Text>
-        </View>
-
         <View style={styles.centerWrapper}>
-          <View style={styles.header}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-            >
-              <Feather
-                name="arrow-left-circle"
-                size={28}
-                color={colors.textDark}
-              />
-            </TouchableOpacity>
-          </View>
+          <Text
+            style={styles.mainTitle}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            Selecione a forma de pagamento
+          </Text>
 
-          <Text style={styles.mainTitle}>Métodos de Pagamento</Text>
-
-          {/* GRELHA RESPONSIVA */}
           <View style={styles.gridContainer}>
             {PAYMENT_METHODS.map((method) => {
               const isSelected = selectedMethod === method.id;
@@ -112,90 +96,105 @@ export default function PaymentScreen() {
                     isSelected && styles.methodCardSelected,
                   ]}
                   onPress={() => setSelectedMethod(method.id)}
+                  activeOpacity={0.7}
                 >
-                  <MaterialCommunityIcons
-                    name={method.icon}
-                    size={40}
-                    color={method.color}
-                    style={styles.methodIcon}
-                  />
-                  <Text style={styles.methodLabel}>{method.label}</Text>
+                  <View
+                    style={[
+                      styles.iconWrapper,
+                      isSelected && styles.iconWrapperSelected,
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name={method.icon}
+                      size={48}
+                      color={isSelected ? theme.textoBotoes : method.color}
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      styles.methodLabel,
+                      isSelected && styles.methodLabelSelected,
+                    ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
+                    {method.label}
+                  </Text>
                 </TouchableOpacity>
               );
             })}
           </View>
 
           <View style={styles.brandsContainer}>
-            <Text style={styles.brandsTitle}>Bandeiras Aceitas</Text>
-            <View style={styles.brandsIconsRow}>
-              <FontAwesome5
-                name="cc-visa"
-                size={32}
-                color="#1A1F71"
-                style={styles.brandIcon}
-              />
-              <FontAwesome5
-                name="cc-mastercard"
-                size={32}
-                color="#EB001B"
-                style={styles.brandIcon}
-              />
-              <FontAwesome5
-                name="cc-amex"
-                size={32}
-                color="#2E77BC"
-                style={styles.brandIcon}
-              />
-              <FontAwesome5
-                name="cc-paypal"
-                size={32}
-                color="#003087"
-                style={styles.brandIcon}
-              />
+            <Text style={styles.brandsTitle}>Aceitamos</Text>
+            <View style={styles.brandsWrapper}>
+              <FontAwesome5 name="cc-visa" size={32} color="#1A1F71" />
+              <FontAwesome5 name="cc-mastercard" size={32} color="#EB001B" />
+              <FontAwesome5 name="cc-amex" size={32} color="#2E77BC" />
+              <FontAwesome5 name="cc-paypal" size={32} color="#003087" />
             </View>
-          </View>
-
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={[
-                styles.btnConfirm,
-                !selectedMethod && styles.btnConfirmDisabled,
-              ]}
-              disabled={!selectedMethod}
-              onPress={handleConfirm}
-            >
-              <Text style={styles.btnConfirmText}>Confirmar</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
 
+      <View style={styles.fixedFooter}>
+        <TouchableOpacity
+          style={[
+            styles.btnConfirm,
+            !selectedMethod && styles.btnConfirmDisabled,
+          ]}
+          disabled={!selectedMethod}
+          onPress={handleConfirm}
+          activeOpacity={0.8}
+        >
+          <Text
+            style={[
+              styles.btnConfirmText,
+              !selectedMethod && styles.btnConfirmTextDisabled,
+            ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            Confirmar Pagamento
+          </Text>
+          <Feather
+            name="check-circle"
+            size={20}
+            color={!selectedMethod ? theme.textoSecundario : theme.textoBotoes}
+            style={styles.btnIcon}
+          />
+        </TouchableOpacity>
+      </View>
+
       <Modal visible={isProcessing} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {selectedMethod === "pix" && !isApproved && (
+            {selectedMethod === "pix" && !isApproved ? (
               <MaterialCommunityIcons
                 name="qrcode-scan"
-                size={100}
-                color={colors.textDark}
-                style={{ marginBottom: 20 }}
+                size={120}
+                color={theme.corBotoes}
+                style={styles.modalIcon}
               />
-            )}
+            ) : null}
+
             {isApproved ? (
               <Feather
                 name="check-circle"
-                size={60}
-                color={colors.success}
-                style={{ marginBottom: 20 }}
+                size={100}
+                color={theme.corBotoes}
+                style={styles.modalIcon}
               />
-            ) : (
+            ) : selectedMethod !== "pix" ? (
               <ActivityIndicator
-                size="large"
-                color={colors.primary}
-                style={{ marginBottom: 20 }}
+                size={100}
+                color={theme.corBotoes}
+                style={styles.modalIcon}
               />
-            )}
-            <Text style={styles.modalStatusText}>{paymentStatus}</Text>
+            ) : null}
+            <Text style={styles.modalStatusText} numberOfLines={2} adjustsFontSizeToFit>
+              {paymentStatus}
+            </Text>
           </View>
         </View>
       </Modal>
@@ -203,110 +202,166 @@ export default function PaymentScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background },
-  scrollContent: { flexGrow: 1 },
-  appHeader: {
-    height: 70,
-    backgroundColor: "#1e90ff",
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 4,
+const getStyles = (theme) => StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.fundoGeral,
   },
-  appHeaderTitle: { color: "white", fontSize: 22, fontWeight: "900" },
-  centerWrapper: { flex: 1, alignSelf: "center", width: "100%", maxWidth: 800 },
-  header: { paddingHorizontal: 20, paddingTop: 20, alignItems: "flex-start" },
-  backButton: { padding: 5 },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 120,
+  },
+  centerWrapper: {
+    flex: 1,
+    alignSelf: "center",
+    width: "100%",
+    maxWidth: 900,
+    paddingHorizontal: 20,
+  },
   mainTitle: {
-    fontSize: 24,
-    fontWeight: "900",
-    color: colors.textDark,
+    fontSize: 28,
+    fontWeight: "800",
+    color: theme.corTextoPrincipal,
     textAlign: "center",
-    marginTop: 10,
-    marginBottom: 30,
+    marginTop: 40,
+    marginBottom: 40,
+    letterSpacing: -0.5,
   },
   gridContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
-    paddingHorizontal: 10,
-    gap: 15,
-  }, 
+    gap: 20,
+  },
   methodCard: {
-    width: 140,
-    height: 120,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+    width: "45%",
+    maxWidth: 220,
+    aspectRatio: 1.2,
+    backgroundColor: theme.fundoProdutos,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
     borderWidth: 2,
-    borderColor: "transparent",
+    borderColor: theme.borda,
+    padding: 15,
   },
   methodCardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: "#F0F8FF",
+    borderColor: theme.corBotoes,
+    backgroundColor: theme.corBotoes,
+    transform: [{ scale: 1.02 }],
   },
-  methodIcon: { marginBottom: 8 },
+  iconWrapper: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: theme.fundoGeral,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  iconWrapperSelected: {
+    backgroundColor: "rgba(0,0,0,0.1)",
+  },
   methodLabel: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: colors.textDark,
-    textAlign: "center",
-  },
-  brandsContainer: { alignItems: "center", marginTop: 40, paddingBottom: 20 },
-  brandsTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: colors.textDark,
-    marginBottom: 15,
+    fontWeight: "700",
+    color: theme.corTextoPrincipal,
+    textAlign: "center",
+    width: "100%",
   },
-  brandsIconsRow: {
+  methodLabelSelected: {
+    color: theme.textoBotoes,
+  },
+  brandsContainer: {
+    alignItems: "center",
+    marginTop: 60,
+    paddingBottom: 20,
+  },
+  brandsTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: theme.textoSecundario,
+    textTransform: "uppercase",
+    letterSpacing: 2,
+    marginBottom: 20,
+  },
+  brandsWrapper: {
     flexDirection: "row",
     justifyContent: "center",
-    flexWrap: "wrap",
-  },
-  brandIcon: { marginHorizontal: 10, marginBottom: 10 },
-  footer: { paddingHorizontal: 30, paddingBottom: 40, marginTop: 20 },
-  btnConfirm: {
-    backgroundColor: colors.primary,
-    paddingVertical: 16,
-    borderRadius: 8,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 6,
+    flexWrap: "wrap",
+    gap: 24,
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 20,
   },
-  btnConfirmDisabled: {
-    backgroundColor: "#A0C8F0",
-    shadowOpacity: 0,
-    elevation: 0,
+  fixedFooter: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: theme.fundoGeral,
+    paddingHorizontal: 30,
+    paddingVertical: 24,
+    borderTopWidth: 1,
+    borderTopColor: theme.borda,
+    alignItems: "center",
   },
-  btnConfirmText: { color: colors.textLight, fontSize: 20, fontWeight: "bold" },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+  btnConfirm: {
+    flexDirection: "row",
+    backgroundColor: theme.corBotoes,
+    width: "100%",
+    maxWidth: 600,
+    height: 64,
+    borderRadius: 32,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  btnConfirmDisabled: {
+    backgroundColor: theme.fundoProdutos,
+    borderWidth: 1,
+    borderColor: theme.borda,
+  },
+  btnConfirmText: {
+    color: theme.textoBotoes,
+    fontSize: 16,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  btnConfirmTextDisabled: {
+    color: theme.textoSecundario,
+  },
+  btnIcon: {
+    marginLeft: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
   },
   modalContent: {
-    width: 300,
-    maxWidth: "80%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 30,
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: theme.fundoProdutos,
+    borderRadius: 32,
+    padding: 40,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: theme.borda,
+  },
+  modalIcon: {
+    marginBottom: 32,
   },
   modalStatusText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: colors.textDark,
+    fontSize: 24,
+    fontWeight: "800",
+    color: theme.corTextoPrincipal,
     textAlign: "center",
+    lineHeight: 32,
   },
 });

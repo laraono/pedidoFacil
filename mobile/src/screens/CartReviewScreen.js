@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -6,23 +6,25 @@ import {
   TouchableOpacity,
   FlatList,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context"; 
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
 import { useCart } from "../contexts/CartContext";
+import { useTheme } from "../contexts/ThemeContext";
 import CartItemRow from "../components/CartItemRow";
 import BrandHeader from "../components/ui/BrandHeader";
 import ProductModal from "../components/ProductModal";
-import colors from "../theme/colors";
 
 export default function CartReviewScreen() {
   const navigation = useNavigation();
-  const { cartItems, addToCart, removeFromCart, updateCartItem, cartTotal } =
-    useCart();
+  const { cartItems, addToCart, removeFromCart, updateCartItem, cartTotal } = useCart();
+  const { theme } = useTheme();
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+
+  const styles = useMemo(() => getStyles(theme), [theme]);
 
   const handleDecrease = (item) => {
     if (item.quantity > 1) {
@@ -48,100 +50,91 @@ export default function CartReviewScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* COMPONENTE REUTILIZÁVEL: CABEÇALHO COM BOTÃO VOLTAR */}
-      <BrandHeader title="Restaurante Exemplo" />
+      <BrandHeader title="Revisão do Pedido" showBack={false} />
 
       <View style={styles.centerWrapper}>
-        <View style={styles.navHeader}>
+        <View style={styles.headerRow}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backButton}
+            activeOpacity={0.7}
           >
-            <Feather
-              name="arrow-left-circle"
-              size={28}
-              color={colors.textDark}
-            />
+            <Feather name="arrow-left" size={28} color={theme.corTextoPrincipal} />
           </TouchableOpacity>
-          <Text style={styles.title}>Confira seu pedido</Text>
-          <View style={{ width: 28 }} />
+          <Text style={styles.pageTitle} numberOfLines={1} adjustsFontSizeToFit>
+            Seus Itens
+          </Text>
+          <View style={styles.spacer} />
         </View>
 
         <FlatList
           data={cartItems}
-          keyExtractor={(item, index) =>
-            `${item.id}-${item.size.name}-${index}`
-          }
+          keyExtractor={(item, index) => `${item.id}-${item.size.name}-${index}`}
           contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>Seu carrinho está vazio.</Text>
+            <View style={styles.emptyContainer}>
+              <Feather name="shopping-cart" size={48} color={theme.textoSecundario} style={styles.emptyIcon} />
+              <Text style={styles.emptyText}>Seu carrinho está vazio.</Text>
+            </View>
           }
           renderItem={({ item }) => (
             <CartItemRow
               item={item}
               onIncrease={() => addToCart(item, item.size, 1)}
               onDecrease={() => handleDecrease(item)}
-              onEdit={() => openEditModal(item)} 
+              onEdit={() => openEditModal(item)}
             />
           )}
         />
 
-        <View style={styles.bottomSection}>
-          <View style={styles.discountCard}>
-            <View style={styles.discountLeft}>
-              <View style={styles.discountRow}>
-                <Feather
-                  name="tag"
-                  size={16}
-                  color={colors.textLight}
-                  style={{ marginRight: 6 }}
-                />
-                <Text style={styles.discountTitle}>Cupom de Desconto</Text>
+        {cartItems.length > 0 ? (
+          <View style={styles.bottomPanel}>
+            <TouchableOpacity style={styles.couponCard} activeOpacity={0.8}>
+              <View style={styles.couponLeft}>
+                <Feather name="tag" size={20} color={theme.categoriaAtiva} />
+                <Text style={styles.couponText}>Adicionar cupom de desconto</Text>
               </View>
-              <TouchableOpacity>
-                <Text style={styles.discountAction}>Adicionar {">"}</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.discountRight}>
-              <Feather
-                name="shopping-bag"
-                size={18}
-                color={colors.textLight}
-                style={{ marginRight: 6 }}
-              />
-              <Text style={styles.totalText}>
-                Total: R${cartTotal.toFixed(2).replace(".", ",")}
+              <Feather name="chevron-right" size={20} color={theme.textoSecundario} />
+            </TouchableOpacity>
+
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Total a pagar</Text>
+              <Text style={styles.totalValue} numberOfLines={1} adjustsFontSizeToFit>
+                R$ {cartTotal.toFixed(2).replace(".", ",")}
               </Text>
             </View>
-          </View>
 
-          <View style={styles.actionButtons}>
-            <TouchableOpacity
-              style={styles.btnContinue}
-              onPress={() => navigation.navigate("Menu")}
-            >
-              <Feather name="arrow-left" size={18} color={colors.textLight} />
-              <Text style={styles.btnContinueText}>Continuar comprando</Text>
-            </TouchableOpacity>
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity
+                style={styles.btnSecondary}
+                onPress={() => navigation.navigate("Menu")}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.btnSecondaryText} numberOfLines={1} adjustsFontSizeToFit>
+                  Adicionar Mais
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.btnPayment,
-                cartItems.length === 0 && { opacity: 0.5 },
-              ]}
-              disabled={cartItems.length === 0}
-              onPress={() => navigation.navigate("Payment")}
-            >
-              <Text style={styles.btnPaymentText}>Ir para o pagamento</Text>
-              <Feather name="arrow-right" size={18} color={colors.textLight} />
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.btnPrimary}
+                onPress={() => navigation.navigate("Payment")}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.btnPrimaryText} numberOfLines={1} adjustsFontSizeToFit>
+                  Avançar
+                </Text>
+                <Feather name="arrow-right" size={20} color={theme.textoBotoes} style={styles.btnIcon} />
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        ) : null}
       </View>
+
       <ProductModal
         visible={editModalVisible}
         product={editingItem}
-        cartItem={editingItem} 
+        cartItem={editingItem}
         onClose={() => setEditModalVisible(false)}
         onConfirm={handleConfirmEdit}
       />
@@ -149,99 +142,155 @@ export default function CartReviewScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background },
-  centerWrapper: { flex: 1, alignSelf: "center", width: "100%", maxWidth: 800 },
-  navHeader: {
+const getStyles = (theme) => StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.fundoGeral,
+  },
+  centerWrapper: {
+    flex: 1,
+    alignSelf: "center",
+    width: "100%",
+    maxWidth: 900,
+  },
+  headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 24,
   },
-  backButton: { padding: 5 },
-  title: { fontSize: 22, fontWeight: "bold", color: colors.textDark },
-  listContent: { paddingBottom: 20 },
+  backButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.fundoProdutos,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: theme.borda,
+  },
+  pageTitle: {
+    flex: 1,
+    fontSize: 24,
+    fontWeight: "800",
+    color: theme.corTextoPrincipal,
+    textAlign: "center",
+    paddingHorizontal: 16,
+  },
+  spacer: {
+    width: 48,
+  },
+  listContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    flexGrow: 1,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 80,
+  },
+  emptyIcon: {
+    marginBottom: 16,
+    opacity: 0.5,
+  },
   emptyText: {
-    textAlign: "center",
-    marginTop: 40,
-    fontSize: 16,
-    color: "#999",
-    fontWeight: "bold",
+    fontSize: 18,
+    color: theme.textoSecundario,
+    fontWeight: "600",
   },
-  bottomSection: {
-    padding: 20,
-    backgroundColor: colors.background,
+  bottomPanel: {
+    backgroundColor: theme.fundoGeral,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
     borderTopWidth: 1,
-    borderColor: "#EEEEEE",
+    borderTopColor: theme.borda,
   },
-  discountCard: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
+  couponCard: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 6,
+    backgroundColor: theme.fundoProdutos,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: theme.borda,
+    borderStyle: "dashed",
+    marginBottom: 24,
   },
-  discountLeft: { justifyContent: "space-between" },
-  discountRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
-  discountTitle: { color: colors.textLight, fontWeight: "bold", fontSize: 16 },
-  discountAction: { color: colors.textLight, fontSize: 14 },
-  discountRight: {
+  couponLeft: {
     flexDirection: "row",
     alignItems: "center",
-    flexShrink: 1,
-    marginLeft: 10,
+    gap: 12,
   },
-  totalText: {
-    color: colors.textLight,
+  couponText: {
+    color: theme.categoriaAtiva,
     fontSize: 16,
-    fontWeight: "bold",
-    flexShrink: 1,
+    fontWeight: "700",
   },
-  actionButtons: {
+  totalRow: {
     flexDirection: "row",
+    alignItems: "flex-end",
     justifyContent: "space-between",
-    gap: 10,
+    marginBottom: 32,
   },
-  btnContinue: {
+  totalLabel: {
+    fontSize: 18,
+    color: theme.textoSecundario,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  totalValue: {
+    fontSize: 36,
+    fontWeight: "900",
+    color: theme.corBotoes,
+    flexShrink: 1,
+    paddingLeft: 16,
+  },
+  actionButtonsContainer: {
     flexDirection: "row",
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    paddingHorizontal: 15,
-    borderRadius: 25,
-    alignItems: "center",
+    gap: 16,
+  },
+  btnSecondary: {
     flex: 1,
+    height: 60,
+    backgroundColor: theme.fundoProdutos,
+    borderRadius: 30,
     justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: theme.borda,
+    paddingHorizontal: 16,
   },
-  btnContinueText: {
-    color: colors.textLight,
-    fontWeight: "bold",
-    fontSize: 13,
-    marginLeft: 6,
-    textAlign: "center",
+  btnSecondaryText: {
+    color: theme.corTextoPrincipal,
+    fontSize: 16,
+    fontWeight: "700",
   },
-  btnPayment: {
+  btnPrimary: {
+    flex: 1.5,
     flexDirection: "row",
-    backgroundColor: colors.success,
-    paddingVertical: 14,
-    paddingHorizontal: 15,
-    borderRadius: 25,
-    alignItems: "center",
-    flex: 1,
+    height: 60,
+    backgroundColor: theme.corBotoes,
+    borderRadius: 30,
     justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 16,
   },
-  btnPaymentText: {
-    color: colors.textLight,
-    fontWeight: "bold",
-    fontSize: 13,
-    marginRight: 6,
-    textAlign: "center",
+  btnPrimaryText: {
+    color: theme.textoBotoes,
+    fontSize: 18,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  btnIcon: {
+    marginLeft: 8,
   },
 });

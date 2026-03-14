@@ -1,20 +1,28 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import colors from '../theme/colors';
+import { useTheme } from '../contexts/ThemeContext'; // <--- IMPORT DO TEMA
 
 export default function CartItemRow({ item, onIncrease, onDecrease, onEdit }) {
+  const { theme } = useTheme();
+
+  // Mágica: Cria os estilos baseados no tema dinâmico
+  const styles = useMemo(() => getStyles(theme), [theme]);
+
   return (
     <View style={styles.container}>
       <View style={styles.controls}>
+        {/* Botão Menos: Discreto no Dark Mode */}
         <TouchableOpacity style={styles.btnMinus} onPress={onDecrease}>
-          <Feather name="minus" size={16} color={colors.textDark} />
+          <Feather name="minus" size={16} color={theme.corTextoPrincipal} />
         </TouchableOpacity>
         
+        {/* Quantidade */}
         <Text style={styles.qty}>{item.quantity}</Text>
         
+        {/* Botão Mais: Destaque Neon */}
         <TouchableOpacity style={styles.btnPlus} onPress={onIncrease}>
-          <Feather name="plus" size={16} color={colors.textLight} />
+          <Feather name="plus" size={16} color={theme.textoBotoes} />
         </TouchableOpacity>
       </View>
 
@@ -23,7 +31,7 @@ export default function CartItemRow({ item, onIncrease, onDecrease, onEdit }) {
         {item.name} {item.size?.name !== 'Padrão' ? `(${item.size?.name})` : ''}
       </Text>
 
-      {/* Botão Editar */}
+      {/* Botão Editar: Pílula escura moderna */}
       <TouchableOpacity style={styles.btnEdit} onPress={onEdit}>
         <Text style={styles.btnEditText}>Editar</Text>
       </TouchableOpacity>
@@ -31,13 +39,14 @@ export default function CartItemRow({ item, onIncrease, onDecrease, onEdit }) {
   );
 }
 
-const styles = StyleSheet.create({
+// Estilos Dinâmicos
+const getStyles = (theme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: theme.borda, // Linha separadora sutil
     paddingHorizontal: 20,
   },
   controls: {
@@ -50,7 +59,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.qtyBg,
+    backgroundColor: theme.borda, // Fundo cinza escuro para combinar com dark mode
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -58,30 +67,32 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.primary,
+    backgroundColor: theme.corBotoes, // Verde Neon
     justifyContent: 'center',
     alignItems: 'center',
   },
   qty: {
     fontSize: 18,
     fontWeight: '900',
-    color: colors.textDark,
+    color: theme.corTextoPrincipal, // Texto branco
   },
   name: {
     flex: 1,
     fontSize: 16,
     fontWeight: 'bold',
-    color: colors.textDark,
+    color: theme.corTextoPrincipal, // Texto branco
     marginHorizontal: 15,
   },
   btnEdit: {
-    backgroundColor: colors.success,
+    backgroundColor: theme.fundoProdutos, // Fundo do card
+    borderWidth: 1,
+    borderColor: theme.borda, // Bordinha elegante
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
   },
   btnEditText: {
-    color: colors.textLight,
+    color: theme.categoriaAtiva, // Texto Azul para mostrar que é uma ação secundária
     fontWeight: 'bold',
     fontSize: 14,
   }
