@@ -47,7 +47,7 @@ export class Comanda {
         type: 'datetime',
         nullable: true
     })
-    deletedAt: Date
+    deletedAt?: Date
 
     @OneToMany(() => Order, (pedido) => pedido.comanda)
     pedidos: Order[]

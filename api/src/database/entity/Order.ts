@@ -31,7 +31,7 @@ export class Order {
         type: 'datetime',
         nullable: true
     })
-    deletedAt: Date
+    deletedAt?: Date
 
     @ManyToOne(() => Comanda, (comanda) => comanda.pedidos)
     comanda: Comanda

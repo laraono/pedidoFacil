@@ -40,7 +40,7 @@ export class Size {
         type: 'datetime',
         nullable: true
     })
-    deletedAt: Date
+    deletedAt?: Date
 
     @ManyToOne(() => Product, (product) => product.sizes)
     product: Product

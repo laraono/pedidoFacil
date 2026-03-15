@@ -47,7 +47,7 @@ export class Product {
         type: 'datetime',
         nullable: true
     })
-    deletedAt: Date
+    deletedAt?: Date
 
     @OneToMany(() => Size, (sizes) => sizes.product)
     sizes: Size[]
