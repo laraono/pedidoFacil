@@ -14,5 +14,13 @@ export class ComandaRepository extends Repository<Comanda>{
     async listComandas() {
         return await this.find()
     }
+
+    async getComanda(comandaId: number) {
+        return await this.findOne({
+            where: {
+                id: comandaId
+            }
+        })
+    }
     
 }
