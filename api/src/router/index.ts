@@ -1,0 +1,1 @@
+export {comandaRouter} from './ComandaRouter'
