@@ -16,6 +16,16 @@ export class ProductRepository extends Repository<Product>{
         return await this.find()
     }
 
+    async listProductsByCategory(categoryId: number) {
+        return await this.find({
+            where: {
+                category: {
+                    id: categoryId
+                }
+            }
+        })
+    }
+
     async getProduct(productId: number) {
         return await this.findOne({
             where: {

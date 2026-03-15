@@ -11,5 +11,17 @@ export class SizeRepository extends Repository<Size>{
     async createSize(size: CreateSize) {
         return await this.save(size)
     }
+
+    async getSize(sizeId: number) {
+        return await this.findOne({
+            where: {
+                id: sizeId
+            }
+        })
+    }
+
+    async getSizesByProduct(productId: number) {
+        
+    }
     
 }

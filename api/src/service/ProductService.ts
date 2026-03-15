@@ -50,6 +50,6 @@ export class ProductService {
     }
 
     async getProduct(productId: number) {
-        return await this.getProduct(productId)
+        return await this.productRepository.getProduct(productId)
     }
 }

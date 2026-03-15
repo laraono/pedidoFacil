@@ -2,7 +2,7 @@ import express from 'express';
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 import cors from 'cors'
-import { comandaRouter, orderRouter } from './router';
+import { categoryRouter, comandaRouter, orderRouter, productRouter } from './router';
 
 dotenv.config();
 
@@ -29,8 +29,10 @@ app.get('/', async (req, res) => {
     }
 });
 
+app.use('api/v1', categoryRouter)
 app.use('/api/v1', comandaRouter)
 app.use('/api/v1', orderRouter)
+app.use('/api/v1', productRouter)
 
 const PORT = 3000;
 app.listen(PORT, () => {

@@ -1,5 +1,6 @@
 import { DataSource, Repository } from "typeorm";
 import { Order } from "../database";
+import { OrderParams } from "../dto";
 
 export class OrderRepository extends Repository<Order>{
 
@@ -7,7 +8,7 @@ export class OrderRepository extends Repository<Order>{
         super(Order, dataSource.createEntityManager());
     }
 
-    async createOrder(order: Order) {
+    async createOrder(order: OrderParams) {
         return await this.save(order)
     }
 

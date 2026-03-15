@@ -1,14 +1,24 @@
-import { categoryService, comandaService } from '../service'
+import { categoryService, comandaService, orderService, productService } from '../service'
 import { CategoryController } from './CategoryController'
 import { ComandaController } from './ComandaController'
-
-export {CategoryController} from './CategoryController'
-export {ComandaController} from './ComandaController'
+import { OrderController } from './OrderController'
+import { ProductController } from './ProductController'
 
 const categoryController: CategoryController = new CategoryController(categoryService)
 const comandaController: ComandaController = new ComandaController(comandaService)
+const orderController: OrderController = new OrderController(orderService)
+const productController: ProductController = new ProductController(productService)
 
 export {
     categoryController,
-    comandaController
+    comandaController,
+    orderController,
+    productController
+}
+
+export {
+    CategoryController, 
+    ComandaController, 
+    OrderController,
+    ProductController
 }

@@ -11,5 +11,17 @@ export class AddonRepository extends Repository<Addon>{
     async createAddon(addon: CreateAddon) {
         return await this.save(addon)
     }
+
+    async getAddon(addonId: number) {
+        return await this.findOne({
+            where: {
+                id: addonId
+            }
+        })
+    }
+
+    async getAddonsByProduct(productId: number) {
+        
+    }
     
 }

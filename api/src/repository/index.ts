@@ -3,6 +3,7 @@ import { AddonRepository } from './AddonRepository'
 import { CategoryRepository } from './CategoryRepository'
 import { ComandaRepository } from './ComandaRepository'
 import { OrderRepository } from './OrderRepository'
+import { ProductOrderRepository } from './ProductOrderRepository'
 import { ProductRepository } from './ProductRepository'
 import { SizeRepository } from './SizeRepository'
 
@@ -11,6 +12,7 @@ const categoryRepository: CategoryRepository = new CategoryRepository(AppDataSou
 const comandaRepository: ComandaRepository = new ComandaRepository(AppDataSource)
 const orderRepository: OrderRepository = new OrderRepository(AppDataSource)
 const productRepository: ProductRepository = new ProductRepository(AppDataSource)
+const productOrderRepository: ProductOrderRepository = new ProductOrderRepository(AppDataSource)
 const sizeRepository: SizeRepository = new SizeRepository(AppDataSource)
 
 export {
@@ -19,9 +21,10 @@ export {
     comandaRepository,
     orderRepository,
     productRepository,
+    productOrderRepository,
     sizeRepository
 }
 
 export {
-    AddonRepository, CategoryRepository, ComandaRepository, OrderRepository, ProductRepository, SizeRepository
+    AddonRepository, CategoryRepository, ComandaRepository, OrderRepository, ProductRepository, ProductOrderRepository, SizeRepository
 }
