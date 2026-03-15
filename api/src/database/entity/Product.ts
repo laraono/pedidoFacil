@@ -24,9 +24,9 @@ export class Product {
         type: 'varchar',
         name: 'description',
         nullable: false,
-        default: false
+        default: true
     })
-    description: string
+    description?: string
 
     @Column({
         type: 'boolean',
@@ -40,7 +40,7 @@ export class Product {
         type: 'datetime',
         nullable: false
     })
-    createdAt: Date
+    createdAt!: Date
 
     @Column({
         name: 'deleted_at',
@@ -50,15 +50,15 @@ export class Product {
     deletedAt?: Date
 
     @OneToMany(() => Size, (sizes) => sizes.product)
-    sizes: Size[]
+    sizes!: Size[]
 
     @OneToMany(() => Addon, (addons) => addons.product)
-    addons: Addon[]
+    addons!: Addon[]
 
     @ManyToOne(() => Category, (category) => category.products)
-    category: Category
+    category!: Category
 
     @OneToMany(() => ProductOrder, (productOrders) => productOrders.product)
-    productOrders: ProductOrder[]
+    productOrders!: ProductOrder[]
 
 }

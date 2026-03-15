@@ -27,11 +27,11 @@ export class Comanda {
     status: ComandaStatus
 
     @Column({
+        name: 'total',
         type: "decimal",
         precision: 10,
         scale: 2,
         nullable: false
-
     })
     total: number
 

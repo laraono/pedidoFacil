@@ -1,8 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, OneToOne } from "typeorm"
-import { Comanda } from "./Comanda"
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm"
 import { Size } from "./Size"
 import { Addon } from "./Addon"
-import { Category } from "./Category"
 import { Product } from "./Product"
 import { Order } from "./Order"
 
@@ -27,6 +25,15 @@ export class ProductOrder {
         nullable: false
     })
     quantity: string
+
+    @Column({
+        name: 'price',
+        type: "decimal",
+        precision: 10,
+        scale: 2,
+        nullable: false
+    })
+    price: number
 
     @Column({
         name: 'created_at',

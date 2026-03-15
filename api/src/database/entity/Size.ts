@@ -1,6 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, OneToOne, ManyToOne } from "typeorm"
-import { Comanda } from "./Comanda"
-import { Order } from "./Order"
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne } from "typeorm"
 import { Product } from "./Product"
 import { ProductOrder } from "./ProductOrder"
 
@@ -21,11 +19,13 @@ export class Size {
     name: string
 
     @Column({
-        type: 'varchar',
-        name: 'description',
+        name: 'price',
+        type: "decimal",
+        precision: 10,
+        scale: 2,
         nullable: false
     })
-    price: string
+    price: number
 
     @Column({
         type: "decimal",

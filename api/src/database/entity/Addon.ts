@@ -19,11 +19,13 @@ export class Addon {
     name: string
 
     @Column({
-        type: 'varchar',
-        name: 'description',
+        name: 'price',
+        type: "decimal",
+        precision: 10,
+        scale: 2,
         nullable: false
     })
-    price: string
+    price: number
 
     @Column({
         type: "decimal",
