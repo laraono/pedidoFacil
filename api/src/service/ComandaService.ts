@@ -1,4 +1,4 @@
-import { Comanda } from "../database/entity";
+import { Comanda } from "../database";
 import { ComandaStatus } from "../enum";
 import { ComandaRepository } from "../repository";
 
@@ -25,5 +25,9 @@ export class ComandaService {
 
     async listComandas() {
         return await this.comandaRepository.listComandas()
+    }
+
+    async getComanda(comandaId) {
+        return await this.getComanda(comandaId)
     }
 }
