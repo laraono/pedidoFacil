@@ -36,6 +36,15 @@ export class Product {
     isAvailable: boolean
 
     @Column({
+        name: 'price',
+        type: "decimal",
+        precision: 10,
+        scale: 2,
+        nullable: false
+    })
+    price: number
+
+    @Column({
         name: 'created_at',
         type: 'datetime',
         nullable: false

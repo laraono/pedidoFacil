@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, PrimaryColumn, JoinColumn } from "typeorm"
 import { Size } from "./Size"
 import { Addon } from "./Addon"
 import { Product } from "./Product"
@@ -7,24 +7,31 @@ import { Order } from "./Order"
 @Entity({name: 'ProdutoPedido'})
 export class ProductOrder {
 
-    @PrimaryGeneratedColumn({
-        name: 'id'
+    @PrimaryColumn({
+        name: 'id-produto',
+        type: 'int'
     })
-    id: number
+    productId: number
+
+    @PrimaryColumn({
+        name: 'id-pedido',
+        type: 'int'
+    })
+    orderId: number
 
     @Column({
         type: 'varchar',
         name: 'observation',
-        nullable: false
+        nullable: true
     })
-    observation: string
+    observation?: string
 
     @Column({
         type: 'int',
         name: 'quantity',
         nullable: false
     })
-    quantity: string
+    quantity: number
 
     @Column({
         name: 'price',
@@ -43,15 +50,17 @@ export class ProductOrder {
     createdAt: Date
 
     @OneToMany(() => Size, (sizes) => sizes.productOrders)
-    size: Size
+    size?: Size
 
     @OneToMany(() => Addon, (addons) => addons.productOrders)
-    addon: Addon
+    addon?: Addon
 
     @OneToMany(() => Product, (category) => category.productOrders)
+    @JoinColumn({name: 'id-produto'})
     product: Product
 
     @OneToMany(() => Order, (category) => category.productOrders)
+    @JoinColumn({name: 'id-pedido'})
     order: Order
 
 }

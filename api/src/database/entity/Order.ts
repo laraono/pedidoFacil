@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm"
-import { PedidoStatus } from "../../enum"
+import { OrderStatus } from "../../enum"
 import { Comanda } from "./Comanda"
 import { ProductOrder } from "./ProductOrder"
 
@@ -17,7 +17,7 @@ export class Order {
         nullable: false,
         length: 30
     })
-    status: PedidoStatus
+    status: OrderStatus
 
     @Column({
         name: 'created_at',
