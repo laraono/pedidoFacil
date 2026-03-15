@@ -27,7 +27,7 @@ export class ComandaService {
         return await this.comandaRepository.listComandas()
     }
 
-    async getComanda(comandaId) {
+    async getComanda(comandaId: number) {
         return await this.getComanda(comandaId)
     }
 }

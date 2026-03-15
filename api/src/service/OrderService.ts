@@ -3,13 +3,6 @@ import { OrderStatus } from "../enum/status";
 import { OrderRepository } from "../repository";
 import { ComandaService } from "./ComandaService";
 
-type CreateOder = {
-    id: number,
-    comandaId: number,
-    status: OrderStatus,
-    products: Array<number>
-}
-
 export class OrderService {
 
     private orderRepository: OrderRepository
