@@ -1,5 +1,5 @@
 import express from 'express'
 
-export const comandaRouter = express.Router();
+export const orderRouter = express.Router();
 
-comandaRouter.post('/commands/:commandId/orders',);
+orderRouter.post('/commands/:commandId/orders',);
