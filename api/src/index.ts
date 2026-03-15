@@ -1,11 +1,14 @@
 import express from 'express';
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
+import cors from 'cors'
+import { comandaRouter, orderRouter } from './router';
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
+app.use(cors())
 
 // Configuração da conexão com o banco
 const db = mysql.createPool({
@@ -25,6 +28,9 @@ app.get('/', async (req, res) => {
         res.status(500).json({ error: 'Erro ao conectar no banco', details: error });
     }
 });
+
+app.use('/api/v1', comandaRouter)
+app.use('/api/v1', orderRouter)
 
 const PORT = 3000;
 app.listen(PORT, () => {
