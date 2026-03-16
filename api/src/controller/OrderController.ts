@@ -17,5 +17,23 @@ export class OrderController {
 
         res.status(201).send(orderId)
     }
+
+    async updateOrderStatus(req, res) {
+        await this.orderService.updateOrderStatus(req.params, req.body)
+
+        res.sendStatus(204)
+    }
+
+    async listOrders(req, res) {
+        const orders = await this.orderService.listOrders()
+
+        res.status(200).send(orders)
+    }
+
+    async listOrdersByComanda(req, res) {
+        const orders = await this.orderService.listOrdersByComanda(req.params)
+
+        res.status(200).send(orders)
+    }
     
 }

@@ -1,6 +1,7 @@
 import { DataSource, Repository } from "typeorm";
 import { Order } from "../database";
 import { OrderParams } from "../dto";
+import { OrderStatus } from "../enum";
 
 export class OrderRepository extends Repository<Order>{
 
@@ -24,6 +25,10 @@ export class OrderRepository extends Repository<Order>{
                 }
             }
         })
+    }
+
+    async updateOrderStatus(id: number, status: OrderStatus) {
+        await this.update(id, {status})
     }
     
 }

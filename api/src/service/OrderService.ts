@@ -1,5 +1,6 @@
 import { Comanda, Order } from "../database";
 import { CreateOrder, ItensArray, ProductOrderParams } from "../dto";
+import { OrderStatus } from "../enum";
 import { AddonRepository, OrderRepository, ProductOrderRepository, SizeRepository } from "../repository";
 import { ComandaService } from "./ComandaService";
 import { ProductService } from "./ProductService";
@@ -50,6 +51,10 @@ export class OrderService {
 
     async listOrdersByComanda(comandaId: number) {
         return await this.orderRepository.listOrdersByComanda(comandaId)
+    }
+
+    async updateOrderStatus(orderId: number, status: OrderStatus) {
+        await this.orderRepository.updateOrderStatus(orderId, status)
     }
 
     async saveItens(itens: ItensArray[], order: Order) {
