@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, DeleteDateColumn } from "typeorm"
 import { OrderStatus } from "../../enum"
 import { Comanda } from "./Comanda"
 import { ProductOrder } from "./ProductOrder"
@@ -19,14 +19,13 @@ export class Order {
     })
     status: OrderStatus
 
-    @Column({
-        name: 'created_at',
-        type: 'datetime',
-        nullable: false
-    })
-    createdAt: Date
+    @CreateDateColumn({ 
+        type: "timestamp", 
+        default: () => "CURRENT_TIMESTAMP(6)"
+        })
+    created_at: Date;
 
-    @Column({
+    @DeleteDateColumn({
         name: 'deleted_at',
         type: 'datetime',
         nullable: true

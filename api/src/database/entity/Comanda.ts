@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, DeleteDateColumn } from "typeorm"
 import { ComandaStatus } from "../../enum"
 import { Order } from "./Order"
 
@@ -35,14 +35,13 @@ export class Comanda {
     })
     total: number
 
-    @Column({
-        name: 'created_at',
-        type: 'datetime',
-        nullable: false
-    })
-    createdAt: Date
+    @CreateDateColumn({ 
+        type: "timestamp", 
+        default: () => "CURRENT_TIMESTAMP(6)"
+        })
+    created_at: Date;
 
-    @Column({
+    @DeleteDateColumn({
         name: 'deleted_at',
         type: 'datetime',
         nullable: true

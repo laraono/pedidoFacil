@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, DeleteDateColumn } from "typeorm"
 import { Product } from "./Product"
 import { ProductOrder } from "./ProductOrder"
 
@@ -27,15 +27,13 @@ export class Addon {
     })
     price: number
 
-    @Column({
-        type: "decimal",
-        precision: 10,
-        scale: 2,
-        nullable: false
-    })
-    createdAt: Date
+    @CreateDateColumn({ 
+        type: "timestamp", 
+        default: () => "CURRENT_TIMESTAMP(6)"
+        })
+    created_at: Date;
 
-    @Column({
+    @DeleteDateColumn({
         name: 'deleted_at',
         type: 'datetime',
         nullable: true

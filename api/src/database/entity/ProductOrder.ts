@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, PrimaryColumn, JoinColumn } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, PrimaryColumn, JoinColumn, CreateDateColumn, DeleteDateColumn, ManyToOne } from "typeorm"
 import { Size } from "./Size"
 import { Addon } from "./Addon"
 import { Product } from "./Product"
@@ -18,6 +18,12 @@ export class ProductOrder {
         type: 'int'
     })
     orderId: number
+
+    @PrimaryColumn({
+        name: 'id-tamanho',
+        type: 'int'
+    })
+    sizeId: number
 
     @Column({
         type: 'varchar',
@@ -42,24 +48,31 @@ export class ProductOrder {
     })
     price: number
 
-    @Column({
-        name: 'created_at',
-        type: 'datetime',
-        nullable: false
-    })
-    createdAt: Date
+    @CreateDateColumn({ 
+        type: "timestamp", 
+        default: () => "CURRENT_TIMESTAMP(6)"
+        })
+    created_at: Date;
 
-    @OneToMany(() => Size, (sizes) => sizes.productOrders)
+    @DeleteDateColumn({
+        name: 'deleted_at',
+        type: 'datetime',
+        nullable: true
+    })
+    deletedAt?: Date
+
+    @ManyToOne(() => Size, (sizes) => sizes.productOrders)
+    @JoinColumn({name: 'id-tamanho'})
     size?: Size
 
-    @OneToMany(() => Addon, (addons) => addons.productOrders)
+    @ManyToOne(() => Addon, (addons) => addons.productOrders)
     addon?: Addon
 
-    @OneToMany(() => Product, (category) => category.productOrders)
+    @ManyToOne(() => Product, (category) => category.productOrders)
     @JoinColumn({name: 'id-produto'})
     product: Product
 
-    @OneToMany(() => Order, (category) => category.productOrders)
+    @ManyToOne(() => Order, (category) => category.productOrders)
     @JoinColumn({name: 'id-pedido'})
     order: Order
 
