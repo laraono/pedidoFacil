@@ -10,7 +10,7 @@
         "migration:run": "npm run build && npm run typeorm -- migration:run -d ./build/database/data-source.js",
         "migration:revert": "npm run build && npm run typeorm -- migration:revert -d ./build/database/data-source.js",
         "start": "node ./build/index.js",
-        "dev": "ts-node ./src/index.ts"
+        "dev": "nodemon --exec ts-node ./src/index.ts"
     },
     "keywords": [],
     "author": "",
@@ -21,9 +21,11 @@
         "dotenv": "^17.3.1",
         "express": "^5.2.1",
         "mysql2": "^3.19.1",
+        "nodemon": "^3.1.14",
         "reflect-metadata": "^0.2.2",
         "ts-node": "^10.9.2",
-        "typeorm": "^0.3.28"
+        "typeorm": "^0.3.28",
+        "zod": "^4.3.6"
     },
     "devDependencies": {
         "@types/express": "^5.0.6",
