@@ -33,9 +33,12 @@ export class ProductService {
         const createdProduct = await this.productRepository.createProduct(product) 
 
         if(createdProduct) {
-            addons.forEach(async (add) => {
-                await this.addonRepository.createAddon({...add, product: createdProduct})
-            })
+            if(addons && addons.length > 0) {
+                addons.forEach(async (add) => {
+                    await this.addonRepository.createAddon({...add, product: createdProduct})
+                })
+            }
+                
 
             sizes.forEach(async (size) => {
                 await this.sizeRepository.createSize({...size, product: createdProduct})

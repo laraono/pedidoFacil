@@ -1,4 +1,5 @@
 import { Comanda } from "../database";
+import { CreateComanda } from "../dto";
 import { ComandaStatus } from "../enum";
 import { ComandaRepository } from "../repository";
 
@@ -10,10 +11,9 @@ export class ComandaService {
         this.comandaRepository = comandaRepository
     }
 
-    async createComanda(comanda: Comanda) {
+    async createComanda(comanda: CreateComanda) {
         if(!comanda.total) 
             comanda.total = 0
-        
 
         if(!comanda.status) 
             comanda.status = ComandaStatus.ABERTA
@@ -28,6 +28,12 @@ export class ComandaService {
     }
 
     async getComanda(comandaId: number) {
-        return await this.getComanda(comandaId)
+        return await this.comandaRepository.getComanda(comandaId)
+    }
+
+    async updateComandaTotal(comanda: Comanda, total: number) {
+        total += Number(comanda.total)
+        await this.comandaRepository.updateComandaTotal(comanda.id, total)
+
     }
 }

@@ -1,4 +1,4 @@
-import { Order } from "../database";
+import { Comanda, Order } from "../database";
 import { CreateOrder, ItensArray, ProductOrderParams } from "../dto";
 import { AddonRepository, OrderRepository, ProductOrderRepository, SizeRepository } from "../repository";
 import { ComandaService } from "./ComandaService";
@@ -54,6 +54,8 @@ export class OrderService {
 
     async saveItens(itens: ItensArray[], order: Order) {
 
+        let total = 0
+
         itens.forEach(async (iten) => {
             const validatedProduct = await this.validateItens(iten)
 
@@ -62,10 +64,13 @@ export class OrderService {
                 order,
                 observation: iten.observation,
                 quantity: iten.quantity,
-                price: validatedProduct.product.price
+                price: validatedProduct.size.price
             }
 
+            total += Number(productOrder.price)
+
             await this.productOrderRepository.createProductOrder(productOrder)
+            await this.comandaService.updateComandaTotal(order.comanda, total)
 
         })
 
@@ -78,13 +83,19 @@ export class OrderService {
             return
         }
 
-        const size = itens.sizeId ? await this.sizeRepository.getSize(itens.sizeId) : undefined
+        const size =  await this.sizeRepository.getSize(itens.sizeId)
+
+        if(!size) {
+            return
+        }
+
         const addon = itens.addOnId ? await this.addonRepository.getAddon(itens.addOnId) : undefined
 
         return  {
             product, size, addon
         }
 
-
     }
+
+    
 } 
