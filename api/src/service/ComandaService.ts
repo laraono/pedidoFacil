@@ -34,6 +34,9 @@ export class ComandaService {
     async updateComandaTotal(comanda: Comanda, total: number) {
         total += Number(comanda.total)
         await this.comandaRepository.updateComandaTotal(comanda.id, total)
+    }
 
+    async updateComandaStatus(comandaId: number, status: ComandaStatus) {
+        await this.comandaRepository.updateComandaStatus(comandaId, status)
     }
 }

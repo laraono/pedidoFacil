@@ -26,8 +26,6 @@ export class ComandaRepository extends Repository<Comanda>{
     }
 
     async updateComandaTotal(comandaId: number, total: number) {
-
-        console.log(total)
         await this.update(comandaId, {total})
     }
 

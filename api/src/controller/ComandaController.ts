@@ -21,4 +21,10 @@ export class ComandaController {
         res.status(200).send(comandas)
     }
     
+    async updateComandaStatus(req, res: Response) {
+        await this.comandaService.updateComandaStatus(req.params, req.body)
+        
+        res.sendStatus(204)
+    }
+    
 }
