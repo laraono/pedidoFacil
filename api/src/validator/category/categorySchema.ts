@@ -14,7 +14,6 @@ export const createCategorySchema = z.object({
 export const validateCreateCategory = 
     (req: Request, res: Response, next: NextFunction) => {
         try {
-            console.log(req.body)
             const name = createCategorySchema.parse(req.body)
 
             req.body = name

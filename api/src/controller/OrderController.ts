@@ -9,7 +9,7 @@ export class OrderController {
         this.orderService = orderService
     }
 
-    async createOrder(req: Request, res: Response) {
+    async createOrder(req, res: Response) {
 
         const {comandaId} = req.params
 

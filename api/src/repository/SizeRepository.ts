@@ -13,7 +13,7 @@ export class SizeRepository extends Repository<Size>{
     }
 
     async getSize(sizeId: number) {
-        return await this.findOne({
+        return await this.findOne( {
             where: {
                 id: sizeId
             }
@@ -22,6 +22,6 @@ export class SizeRepository extends Repository<Size>{
 
     async getSizesByProduct(productId: number) {
         
-    }
+    }   
     
 }

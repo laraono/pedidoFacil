@@ -1,5 +1,7 @@
 import { DataSource, Repository } from "typeorm";
 import { Comanda } from "../database";
+import { CreateComanda } from "../dto";
+import { ComandaStatus } from "../enum";
 
 export class ComandaRepository extends Repository<Comanda>{
 
@@ -7,7 +9,7 @@ export class ComandaRepository extends Repository<Comanda>{
         super(Comanda, dataSource.createEntityManager());
     }
 
-    async createComanda(comanda: Comanda) {
+    async createComanda(comanda: CreateComanda) {
         return await this.save(comanda)
     }
 
@@ -21,6 +23,16 @@ export class ComandaRepository extends Repository<Comanda>{
                 id: comandaId
             }
         })
+    }
+
+    async updateComandaTotal(comandaId: number, total: number) {
+
+        console.log(total)
+        await this.update(comandaId, {total})
+    }
+
+    async updateComandaStatus(comandaId: number, status: ComandaStatus) {
+        await this.update(comandaId, {status})
     }
     
 }
