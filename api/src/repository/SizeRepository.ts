@@ -22,6 +22,6 @@ export class SizeRepository extends Repository<Size>{
 
     async getSizesByProduct(productId: number) {
         
-    }   
+    }
     
 }

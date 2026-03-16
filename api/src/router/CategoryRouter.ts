@@ -4,6 +4,6 @@ import { validateCreateCategory } from '../validator';
 
 export const categoryRouter = express.Router();
 
-categoryRouter.get('/categories', validateCreateCategory, (req, res) => categoryController.listCategories(req, res))
+categoryRouter.get('/categories', (req, res) => categoryController.listCategories(req, res))
 
-categoryRouter.post('/categories', (req, res) => categoryController.createCategory(req, res))
+categoryRouter.post('/categories', validateCreateCategory, (req, res) => categoryController.createCategory(req, res))

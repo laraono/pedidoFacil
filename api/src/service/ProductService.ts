@@ -52,6 +52,10 @@ export class ProductService {
         return await this.productRepository.listProducts()
     }
 
+    async listProductsByCategory(categoryId: number) {
+        return await this.productRepository.listProductsByCategory(categoryId)
+    }
+ 
     async getProduct(productId: number) {
         return await this.productRepository.getProduct(productId)
     }
