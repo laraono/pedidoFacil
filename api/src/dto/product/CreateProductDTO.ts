@@ -15,7 +15,7 @@ export type AddonParams = {
 export type CreateProduct = {
     product: ProductParams,
     addons?: Array<AddonParams>,
-    sizes?: Array<AddonParams>
+    sizes: Array<AddonParams>
 }
 
 export type CreateAddon = {

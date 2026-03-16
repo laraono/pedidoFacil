@@ -11,7 +11,7 @@ export type ItensArray = {
     productId: number,
     quantity: number,
     addOnId?: number,
-    sizeId?: number,
+    sizeId: number,
     observation?: string
 }
 
@@ -27,7 +27,7 @@ export type ProductOrderParams = {
     quantity: number,
     price: number,
     product: Product,
-    size?: Size,
+    size: Size,
     addon?: Addon,
 }
 
