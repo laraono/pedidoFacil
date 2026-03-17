@@ -17,8 +17,7 @@ export const createOrderchema = z.object({
         itens: z.object({
             productId: z.coerce.number().int().positive(),
             quantity: z.coerce.number().int().positive(),
-            sizeId: z.coerce.number().int().positive(),
-            addonId: z.coerce.number().int().positive().optional(),
+            productVariationId: z.coerce.number().int().positive().optional(),
             observation: z.string().optional()
         }).array()
     })

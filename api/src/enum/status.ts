@@ -10,3 +10,8 @@ export enum ComandaStatus {
     ABERTA = 'Aberta',
     FECHADA = 'Fechada'
 }
+
+export enum ProductStatus {
+    ACTIVE ='Ativo',
+    INACTIVE = 'Inativo'
+}

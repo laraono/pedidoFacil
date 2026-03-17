@@ -1,4 +1,1 @@
-export {CreateProduct} from './CreateProductDTO'
-export {CreateAddon} from './CreateProductDTO'
-export {CreateSize} from './CreateProductDTO'
-export {ProductParams} from './CreateProductDTO'
+export {CreateProduct, CreateProductVariation, ProductParams, ProductVariationParams} from './CreateProductDTO'

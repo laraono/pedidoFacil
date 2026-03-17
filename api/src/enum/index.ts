@@ -1,1 +1,1 @@
-export {ComandaStatus, OrderStatus} from './status'
+export {ComandaStatus, OrderStatus, ProductStatus} from './status'

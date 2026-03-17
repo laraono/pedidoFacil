@@ -1,4 +1,4 @@
-import { Addon, Comanda, Order, Product, Size } from "../../database"
+import { Comanda, Order, Product, ProductVariation } from "../../database"
 import { OrderStatus } from "../../enum"
 
 export type CreateOrder = {
@@ -10,11 +10,9 @@ export type CreateOrder = {
 export type ItensArray = {
     productId: number,
     quantity: number,
-    addOnId?: number,
-    sizeId: number,
+    productVariationId?: number,
     observation?: string
 }
-
 
 export type OrderParams = {
     status: OrderStatus,
@@ -27,8 +25,7 @@ export type ProductOrderParams = {
     quantity: number,
     price: number,
     product: Product,
-    size: Size,
-    addon?: Addon,
+    productVariation?: ProductVariation,
 }
 
 

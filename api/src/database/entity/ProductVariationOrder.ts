@@ -3,8 +3,8 @@ import { ProductVariation } from "./ProductVariation"
 import { Product } from "./Product"
 import { Order } from "./Order"
 
-@Entity({name: 'ItemPedido'})
-export class ProductOrder {
+@Entity({name: 'ItemPedidoVariacao'})
+export class ProductVariationOrder {
 
     @PrimaryColumn({
         name: 'id-pedido',
@@ -13,10 +13,10 @@ export class ProductOrder {
     orderId: number
 
     @PrimaryColumn({
-        name: 'id-produto',
+        name: 'id-produto-variacao',
         type: 'int'
     })
-    productId: number
+    productVariationId: number
 
     @Column({
         type: 'varchar',
@@ -54,9 +54,9 @@ export class ProductOrder {
     })
     deletedAt?: Date
 
-    @ManyToOne(() => Product, (product) => product.productOrders)
-    @JoinColumn({name: 'id-produto'})
-    product: Product
+    @ManyToOne(() => ProductVariation, (productVariation) => productVariation.productVariationOrders)
+    @JoinColumn({name: 'id-produto-variacao'})
+    productVariation: ProductVariation
 
     @ManyToOne(() => Order, (category) => category.productOrders)
     @JoinColumn({name: 'id-pedido'})

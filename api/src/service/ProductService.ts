@@ -1,28 +1,25 @@
 import { CreateProduct } from "../dto";
-import { AddonRepository, ProductRepository, SizeRepository } from "../repository";
+import { ProductRepository, ProductVariationRepository } from "../repository";
 import { CategoryService } from "./CategoryService";
 
 export class ProductService {
 
-    private addonRepository: AddonRepository
     private categoryService: CategoryService
     private productRepository: ProductRepository
-    private sizeRepository: SizeRepository
+    private productVariationRepository: ProductVariationRepository
 
     constructor(
-        addonRepository: AddonRepository,
         categoryService: CategoryService, 
         productRepository: ProductRepository, 
-        sizeRepository: SizeRepository
+        productVariationRepository: ProductVariationRepository
     ) {
-        this.addonRepository = addonRepository
         this.categoryService = categoryService
         this.productRepository = productRepository
-        this.sizeRepository = sizeRepository
+        this.productVariationRepository = productVariationRepository
     }
 
     async createProduct(params: CreateProduct) {
-        const {addons, product, sizes} = params
+        const {product, productVariations} = params
 
         const category = await this.categoryService.getCategory(product.categoryId)
 
@@ -32,16 +29,9 @@ export class ProductService {
 
         const createdProduct = await this.productRepository.createProduct(product) 
 
-        if(createdProduct) {
-            if(addons && addons.length > 0) {
-                addons.forEach(async (add) => {
-                    await this.addonRepository.createAddon({...add, product: createdProduct})
-                })
-            }
-                
-
-            sizes.forEach(async (size) => {
-                await this.sizeRepository.createSize({...size, product: createdProduct})
+        if(createdProduct) { 
+            productVariations.forEach(async (productVariation) => {
+                await this.productVariationRepository.createProductVariation({...productVariation, product: createdProduct})
             })
         }
 

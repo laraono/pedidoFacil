@@ -1,31 +1,28 @@
-import { Comanda, Order } from "../database";
+import { Order } from "../database";
 import { CreateOrder, ItensArray, ProductOrderParams } from "../dto";
 import { OrderStatus } from "../enum";
-import { AddonRepository, OrderRepository, ProductOrderRepository, SizeRepository } from "../repository";
+import {  OrderRepository, ProductOrderRepository, ProductVariationRepository } from "../repository";
 import { ComandaService } from "./ComandaService";
 import { ProductService } from "./ProductService";
 
 export class OrderService {
 
-    private addonRepository: AddonRepository
     private orderRepository: OrderRepository
     private productOrderRepository: ProductOrderRepository
-    private sizeRepository: SizeRepository
+    private productVariationRepository: ProductVariationRepository
     private comandaService: ComandaService
     private productService: ProductService
 
     constructor(
-        addonRepository: AddonRepository,
         orderRepository: OrderRepository,
         productOrderRepository: ProductOrderRepository,
-        sizeRepository: SizeRepository,
+        productVariationRepository: ProductVariationRepository,
         comandaService: ComandaService,
         productService: ProductService
     ) {
-        this.addonRepository = addonRepository
         this.orderRepository = orderRepository
         this.productOrderRepository = productOrderRepository
-        this.sizeRepository = sizeRepository
+        this.productVariationRepository = productVariationRepository
         this.comandaService = comandaService
         this.productService = productService
     }
@@ -64,12 +61,20 @@ export class OrderService {
         itens.forEach(async (iten) => {
             const validatedProduct = await this.validateItens(iten)
 
+            const value1 = Number(validatedProduct.product.basePrice)
+
+            const value2 = validatedProduct.productVariation 
+                ? Number(validatedProduct.productVariation.addPrice )
+                : 0
+
+            const price = value1 + value2
+
             const productOrder: ProductOrderParams = {
                 ...validatedProduct,
                 order,
                 observation: iten.observation,
                 quantity: iten.quantity,
-                price: validatedProduct.size.price
+                price
             }
 
             total += Number(productOrder.price)
@@ -88,17 +93,12 @@ export class OrderService {
             return
         }
 
-        const size =  await this.sizeRepository.getSize(itens.sizeId)
+        const productVariation =  await this.productVariationRepository.getProductVariation(itens.productVariationId)
 
-        if(!size) {
-            return
+        return {
+            product, productVariation
         }
 
-        const addon = itens.addOnId ? await this.addonRepository.getAddon(itens.addOnId) : undefined
-
-        return  {
-            product, size, addon
-        }
 
     }
 

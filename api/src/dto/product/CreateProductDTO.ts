@@ -1,31 +1,29 @@
 import { Product } from "../../database"
+import { ProductStatus } from "../../enum"
 
 export type ProductParams = {
     name: string,
     description?: string, 
     isAvailable: boolean,
-    categoryId: number
+    categoryId: number,
+    basePrice: number,
+    status: ProductStatus
 }
 
-export type AddonParams = {
+export type ProductVariationParams = {
     name: string,
-    price: number
+    addPrice: number,
+    status: ProductStatus
 }
 
 export type CreateProduct = {
     product: ProductParams,
-    addons?: Array<AddonParams>,
-    sizes: Array<AddonParams>
+    productVariations: Array<ProductVariationParams>
 }
 
-export type CreateAddon = {
+export type CreateProductVariation = {
     name: string,
-    price: number,
-    product: Product
-}
-
-export type CreateSize = {
-    name: string,
-    price: number,
+    addPrice: number,
+    status: ProductStatus,
     product: Product
 }

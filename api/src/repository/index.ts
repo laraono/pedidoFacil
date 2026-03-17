@@ -1,30 +1,27 @@
 import { AppDataSource } from '../database'
-import { AddonRepository } from './AddonRepository'
 import { CategoryRepository } from './CategoryRepository'
 import { ComandaRepository } from './ComandaRepository'
 import { OrderRepository } from './OrderRepository'
 import { ProductOrderRepository } from './ProductOrderRepository'
 import { ProductRepository } from './ProductRepository'
-import { SizeRepository } from './SizeRepository'
+import { ProductVariationRepository } from './ProductVariationRepository'
 
-const addonRepository: AddonRepository = new AddonRepository(AppDataSource)
 const categoryRepository: CategoryRepository = new CategoryRepository(AppDataSource)
 const comandaRepository: ComandaRepository = new ComandaRepository(AppDataSource)
 const orderRepository: OrderRepository = new OrderRepository(AppDataSource)
 const productRepository: ProductRepository = new ProductRepository(AppDataSource)
 const productOrderRepository: ProductOrderRepository = new ProductOrderRepository(AppDataSource)
-const sizeRepository: SizeRepository = new SizeRepository(AppDataSource)
+const productVariationRepository: ProductVariationRepository = new ProductVariationRepository(AppDataSource)
 
 export {
-    addonRepository,
     categoryRepository,
     comandaRepository,
     orderRepository,
     productRepository,
     productOrderRepository,
-    sizeRepository
+    productVariationRepository
 }
 
 export {
-    AddonRepository, CategoryRepository, ComandaRepository, OrderRepository, ProductRepository, ProductOrderRepository, SizeRepository
+    CategoryRepository, ComandaRepository, OrderRepository, ProductRepository, ProductOrderRepository, ProductVariationRepository
 }
