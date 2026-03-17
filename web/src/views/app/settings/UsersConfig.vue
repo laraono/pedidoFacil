@@ -22,6 +22,7 @@ const isLoading = ref(false);
 const showForm = ref(false);
 const editingUser = ref(null);
 const errors = ref({});
+const confirmDeleteUser = ref(null);
 
 const currentUser = computed(() => authStore.user);
 
@@ -79,7 +80,7 @@ function validateForm() {
     errors.value.name = 'Nome deve ter ao menos 5 caracteres.';
   if (!form.value.username || form.value.username.trim().length < 3)
     errors.value.username = 'Nome de usuário deve ter ao menos 3 caracteres.';
-  if (!isValidCPF(form.value.cpf))
+  if (form.value.cpf && !isValidCPF(form.value.cpf))
     errors.value.cpf = 'O CPF inserido é inválido.';
   if (!editingUser.value && !form.value.password)
     errors.value.password = 'Senha é obrigatória.';
@@ -126,13 +127,14 @@ function saveUser() {
   isLoading.value = false;
 }
 
-function deleteUser(user) {
-  if (user.id === currentUser.value?.id) return;
+function confirmAndDeleteUser() {
+  const user = confirmDeleteUser.value;
+  if (!user || user.id === currentUser.value?.id) return;
   const list = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
-  const filtered = list.filter(u => u.id !== user.id);
-  localStorage.setItem(USERS_KEY, JSON.stringify(filtered));
+  localStorage.setItem(USERS_KEY, JSON.stringify(list.filter(u => u.id !== user.id)));
   loadUsers();
   showToast('Usuário removido.', 'success');
+  confirmDeleteUser.value = null;
 }
 
 // Aplica máscara de CPF reativamente — bloqueia letras sem travar o campo
@@ -265,7 +267,7 @@ function isActive(status) {
                 </button>
                 <button
                   v-if="user.id !== currentUser?.id"
-                  @click="deleteUser(user)"
+                  @click="confirmDeleteUser = user"
                   class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
                 >
                   <Trash :size="18" />
@@ -303,7 +305,7 @@ function isActive(status) {
             <button @click="openForm(user)" class="p-2 text-gray-400 hover:text-white bg-white/5 rounded-xl">
               <Pencil :size="18" />
             </button>
-            <button v-if="user.id !== currentUser?.id" @click="deleteUser(user)" class="p-2 text-red-500 bg-red-500/10 rounded-xl">
+            <button v-if="user.id !== currentUser?.id" @click="confirmDeleteUser = user" class="p-2 text-red-500 bg-red-500/10 rounded-xl">
               <Trash :size="18" />
             </button>
           </div>
@@ -311,6 +313,28 @@ function isActive(status) {
       </div>
     </div>
   </main>
+
+  <Teleport to="body">
+    <Transition name="fade">
+      <div v-if="confirmDeleteUser" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[110] flex items-center justify-center p-4">
+        <div class="bg-dark-card border border-white/10 w-full max-w-sm rounded-[2rem] p-8 shadow-2xl">
+          <div class="flex items-start gap-4 mb-6">
+            <div class="p-3 bg-red-500/10 rounded-2xl border border-red-500/20 shrink-0">
+              <Trash :size="20" class="text-red-400" />
+            </div>
+            <div>
+              <p class="text-white font-black text-base">Excluir usuário?</p>
+              <p class="text-gray-400 text-sm mt-1"><span class="text-white font-bold">{{ confirmDeleteUser.name }}</span> será removido permanentemente.</p>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <button @click="confirmDeleteUser = null" class="flex-1 py-3 rounded-2xl text-gray-400 font-bold hover:bg-white/5 transition-colors border border-white/10">Cancelar</button>
+            <button @click="confirmAndDeleteUser" class="flex-1 py-3 rounded-2xl bg-red-500 text-white font-black hover:bg-red-400 transition-colors">Excluir</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>

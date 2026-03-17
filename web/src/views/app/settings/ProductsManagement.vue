@@ -21,7 +21,7 @@ const showModal = ref(false);
 const isEditing = ref(false);
 const isLoading = ref(false);
 const errors = ref({});
-const form = ref({ id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true });
+const form = ref({ id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true, sizes: [] });
 
 const displayedProducts = computed(() => showDeleted.value ? menuStore.deletedProducts : menuStore.activeProducts);
 const categoryOptions = computed(() => menuStore.activeCategories.map(c => ({ label: c.name, value: c.id })));
@@ -30,29 +30,50 @@ const validate = () => {
   const e = {};
   if (!form.value.name?.trim()) e.name = "Nome do produto é obrigatório.";
   const price = parseFloat(String(form.value.price).replace(",", "."));
-  if (!form.value.price || isNaN(price) || price <= 0) e.price = "Preço inválido.";
+  if (form.value.sizes.length === 0 && (!form.value.price || isNaN(price) || price <= 0)) e.price = "Preço inválido.";
   if (!form.value.categoryId) e.categoryId = "Selecione uma categoria.";
+  const badSize = form.value.sizes.some(s => s.name.trim() && (isNaN(parseFloat(String(s.price).replace(',', '.'))) || parseFloat(String(s.price).replace(',', '.')) <= 0));
+  if (badSize) e.sizes = "Informe um preço válido para cada tamanho.";
   errors.value = e;
   return Object.keys(e).length === 0;
 };
 
-const openAdd = () => { isEditing.value = false; form.value = { id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true }; errors.value = {}; showModal.value = true; };
-const openEdit = (p) => { isEditing.value = true; form.value = { id: p.id, name: p.name, description: p.description || "", price: p.price != null ? String(p.price).replace('.', ',') : "", categoryId: p.categoryId, image: p.image, imagePreview: p.image, available: p.available !== false }; errors.value = {}; showModal.value = true; };
+const openAdd = () => { isEditing.value = false; form.value = { id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true, sizes: [] }; errors.value = {}; showModal.value = true; };
+const openEdit = (p) => { isEditing.value = true; form.value = { id: p.id, name: p.name, description: p.description || "", price: p.price != null ? String(p.price).replace('.', ',') : "", categoryId: p.categoryId, image: p.image, imagePreview: p.image, available: p.available !== false, sizes: p.sizes ? p.sizes.map(s => ({ name: s.name, price: String(s.price).replace('.', ',') })) : [] }; errors.value = {}; showModal.value = true; };
+
+const addSize = () => form.value.sizes.push({ name: '', price: '' });
+const removeSize = (i) => form.value.sizes.splice(i, 1);
 const handleImageUpload = (e) => { const file = e.target.files[0]; if (!file) return; const url = URL.createObjectURL(file); form.value.imagePreview = url; form.value.image = url; };
 
-// Permite apenas dígitos, vírgula e ponto no campo de preço
-watch(() => form.value.price, (val) => {
-  if (val === null || val === undefined) return;
-  const s = String(val);
-  const cleaned = s.replace(/[^\d,\.]/g, '');
-  if (cleaned !== s) form.value.price = cleaned;
-});
+const applyPriceMask = (raw) => {
+  let val = String(raw).replace(/[^\d,]/g, '');
+  const commaIdx = val.indexOf(',');
+  if (commaIdx !== -1) {
+    val = val.slice(0, commaIdx + 1) + val.slice(commaIdx + 1).replace(/,/g, '');
+    val = val.slice(0, commaIdx + 3);
+  }
+  // Remove leading zeros from integer part
+  const parts = val.split(',');
+  parts[0] = parts[0].replace(/^0+(\d)/, '$1');
+  return parts.join(',');
+};
+
+const onPriceInput = (e) => {
+  form.value.price = applyPriceMask(e.target.value);
+};
+
+const onSizePriceInput = (e, i) => {
+  form.value.sizes[i].price = applyPriceMask(e.target.value);
+};
 
 const save = () => {
   if (!validate()) { showToast("Corrija os erros no formulário.", "error"); return; }
   isLoading.value = true;
   try {
-    const payload = { id: form.value.id, name: form.value.name, description: form.value.description, price: parseFloat(String(form.value.price).replace(",", ".")), categoryId: form.value.categoryId, image: form.value.image, available: form.value.available };
+    const parsedSizes = form.value.sizes
+      .filter(s => s.name.trim())
+      .map(s => ({ name: s.name.trim(), price: parseFloat(String(s.price).replace(',', '.')) || 0 }));
+    const payload = { id: form.value.id, name: form.value.name, description: form.value.description, price: parseFloat(String(form.value.price).replace(",", ".")), categoryId: form.value.categoryId, image: form.value.image, available: form.value.available, sizes: parsedSizes };
     if (isEditing.value) menuStore.updateProduct(payload); else menuStore.addProduct(payload);
     showToast(isEditing.value ? "Produto atualizado!" : "Produto criado!", "success");
     showModal.value = false;
@@ -99,7 +120,7 @@ const tableActions = computed(() => [
         <p v-if="item.description" class="text-gray-500 text-xs mt-0.5">{{ item.description }}</p>
       </template>
       <template #cell-price="{ item }">
-        <span class="text-brand-green font-black">R$ {{ Number(item.price).toFixed(2) }}</span>
+        <span class="text-brand-green font-black">R$ {{ Number(item.price ?? item.sizes?.[0]?.price ?? 0).toFixed(2) }}</span>
       </template>
       <template #cell-status="{ item }">
         <span v-if="item.deletedAt" class="px-3 py-1 bg-white/10 text-gray-400 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest">Arquivado</span>
@@ -119,7 +140,19 @@ const tableActions = computed(() => [
         </div>
         <BaseInput v-model="form.name" label="Nome do Produto" placeholder="Ex: X-Burguer Especial" :maxlength="60" :error="errors.name" />
         <BaseInput v-model="form.description" label="Descrição (opcional)" placeholder="Ingredientes, detalhes..." :maxlength="120" />
-        <BaseInput v-model="form.price" label="Preço (R$)" placeholder="Ex: 12,90" :error="errors.price" />
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-black text-gray-300 uppercase tracking-widest ml-2">Preço base (R$)</label>
+          <input
+            :value="form.price"
+            @input="onPriceInput"
+            inputmode="numeric"
+            placeholder="0,00"
+            class="w-full py-3.5 px-4 rounded-2xl border bg-white/5 border-white/15 text-white focus:outline-none focus:border-brand-green/50 transition-all"
+            :class="errors.price ? '!border-red-500' : ''"
+          />
+          <p v-if="errors.price" class="text-red-400 text-[11px] font-bold mt-0.5 ml-2">{{ errors.price }}</p>
+          <p class="text-gray-500 text-[10px] ml-2">Usado quando não há tamanhos configurados.</p>
+        </div>
         <div class="flex flex-col gap-1">
           <label class="text-xs font-black text-gray-300 uppercase tracking-widest ml-2">Categoria</label>
           <select v-model="form.categoryId" class="w-full py-3.5 px-4 rounded-2xl border bg-white/5 border-white/15 text-white focus:outline-none focus:border-brand-green/50 transition-all appearance-none" :class="errors.categoryId ? '!border-red-500' : ''">
@@ -133,6 +166,37 @@ const tableActions = computed(() => [
           <button type="button" @click="form.available = !form.available" class="relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300" :class="form.available ? 'bg-brand-green' : 'bg-gray-600'">
             <span class="inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-300" :class="form.available ? 'translate-x-6' : 'translate-x-1'" />
           </button>
+        </div>
+
+        <!-- Tamanhos / Variações -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-bold text-white">Tamanhos / Variações</p>
+              <p class="text-xs text-gray-500">Se configurados, substituem o preço base no cardápio</p>
+            </div>
+            <button type="button" @click="addSize" class="flex items-center gap-1.5 px-3 py-2 bg-brand-green/10 text-brand-green border border-brand-green/20 rounded-xl text-xs font-black hover:bg-brand-green/20 transition-colors">
+              <PlusCircle :size="14" /> Adicionar
+            </button>
+          </div>
+          <div v-for="(size, i) in form.sizes" :key="i" class="flex gap-2 items-center">
+            <input
+              v-model="size.name"
+              placeholder="Nome (ex: Grande)"
+              class="flex-1 py-2.5 px-3 rounded-xl border bg-white/5 border-white/15 text-white text-sm focus:outline-none focus:border-brand-green/50 transition-all"
+            />
+            <input
+              :value="size.price"
+              @input="onSizePriceInput($event, i)"
+              inputmode="numeric"
+              placeholder="0,00"
+              class="w-24 py-2.5 px-3 rounded-xl border bg-white/5 border-white/15 text-white text-sm text-right focus:outline-none focus:border-brand-green/50 transition-all"
+            />
+            <button type="button" @click="removeSize(i)" class="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all">
+              <Trash2 :size="16" />
+            </button>
+          </div>
+          <p v-if="errors.sizes" class="text-red-400 text-[11px] font-bold ml-1">{{ errors.sizes }}</p>
         </div>
       </div>
     </FormModal>

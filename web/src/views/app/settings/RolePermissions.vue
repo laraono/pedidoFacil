@@ -18,6 +18,7 @@ const roles = ref([]);
 const isModalOpen = ref(false);
 const isEditing = ref(false);
 const isLoading = ref(false);
+const confirmDeleteRole = ref(null);
 
 const currentRole = ref({ id: null, name: '', permissions: [] });
 
@@ -38,7 +39,10 @@ onMounted(() => {
 
 const saveRole = async () => {
   if (!validateAll(currentRole.value)) {
-    showToast('Existem erros no formulário.', 'error');
+    const msg = !currentRole.value.permissions?.length
+      ? 'Selecione ao menos uma permissão antes de salvar o cargo.'
+      : 'Preencha o nome do cargo.';
+    showToast(msg, 'error');
     return;
   }
 
@@ -72,10 +76,13 @@ const openModal = (role = null) => {
   isModalOpen.value = true;
 };
 
-const deleteRole = async (role) => {
+const deleteRole = async () => {
+  const role = confirmDeleteRole.value;
+  if (!role) return;
   roles.value = roles.value.filter(r => r.id !== role.id);
   await saveRolesMock(roles.value);
   showToast(`Cargo "${role.name}" excluído.`, 'success');
+  confirmDeleteRole.value = null;
 };
 
 const togglePermission = (id) => {
@@ -122,7 +129,7 @@ const togglePermission = (id) => {
         <div class="flex justify-between items-start mb-6">
           <ShieldCheck class="text-brand-green" :size="24" />
           <button
-            @click.stop="deleteRole(role)"
+            @click.stop="confirmDeleteRole = role"
             class="p-1.5 text-gray-600 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
             title="Excluir cargo"
           >
@@ -147,6 +154,29 @@ const togglePermission = (id) => {
         </div>
       </div>
     </div>
+
+    <!-- Confirmação de exclusão -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="confirmDeleteRole" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[110] flex items-center justify-center p-4">
+          <div class="bg-dark-card border border-white/10 w-full max-w-sm rounded-[2rem] p-8 shadow-2xl">
+            <div class="flex items-start gap-4 mb-6">
+              <div class="p-3 bg-red-500/10 rounded-2xl border border-red-500/20 shrink-0">
+                <Trash2 :size="20" class="text-red-400" />
+              </div>
+              <div>
+                <p class="text-white font-black text-base">Excluir cargo?</p>
+                <p class="text-gray-400 text-sm mt-1">O cargo <span class="text-white font-bold">"{{ confirmDeleteRole.name }}"</span> será removido permanentemente. Usuários com este cargo perderão as permissões.</p>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <button @click="confirmDeleteRole = null" class="flex-1 py-3 rounded-2xl text-gray-400 font-bold hover:bg-white/5 transition-colors border border-white/10">Cancelar</button>
+              <button @click="deleteRole" class="flex-1 py-3 rounded-2xl bg-red-500 text-white font-black hover:bg-red-400 transition-colors">Excluir</button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
     <Teleport to="body">
       <Transition name="fade">

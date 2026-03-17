@@ -120,8 +120,18 @@
                   <option value="percent">Percentual (%)</option>
                   <option value="fixed">Valor fixo (R$)</option>
                 </select>
-                <input type="number" v-model.number="discountValue"
-                  class="bg-zinc-800 border border-white/10 rounded-xl px-4 py-3 text-lg font-black text-center text-brand-green w-32 outline-none focus:ring-2 focus:ring-blue-500" />
+                <div class="relative">
+                  <input
+                    :value="discountRaw"
+                    @input="onDiscountInput"
+                    inputmode="numeric"
+                    :placeholder="discountType === 'percent' ? '0' : '0,00'"
+                    class="bg-zinc-800 border border-white/10 rounded-xl px-4 py-3 text-lg font-black text-center text-brand-green w-32 outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-black text-gray-500 pointer-events-none">
+                    {{ discountType === 'percent' ? '%' : 'R$' }}
+                  </span>
+                </div>
               </div>
             </div>
             <div class="flex justify-between items-end mt-8">
@@ -386,6 +396,32 @@ const selectedComanda = ref(null);
 const showDetails = ref(false);
 const discountType = ref('percent');
 const discountValue = ref(0);
+const discountRaw = ref('');
+
+const applyDiscountMask = (raw) => {
+  let val = String(raw).replace(/[^\d,]/g, '');
+  const commaIdx = val.indexOf(',');
+  if (commaIdx !== -1) {
+    val = val.slice(0, commaIdx + 1) + val.slice(commaIdx + 1).replace(/,/g, '');
+    val = val.slice(0, commaIdx + 3);
+  }
+  const parts = val.split(',');
+  parts[0] = parts[0].replace(/^0+(\d)/, '$1');
+  return parts.join(',');
+};
+
+const onDiscountInput = (e) => {
+  if (discountType.value === 'percent') {
+    const digits = e.target.value.replace(/\D/g, '');
+    const num = Math.min(100, parseInt(digits, 10) || 0);
+    discountValue.value = num;
+    discountRaw.value = num === 0 ? '' : String(num);
+  } else {
+    const masked = applyDiscountMask(e.target.value);
+    discountRaw.value = masked;
+    discountValue.value = parseFloat(masked.replace(',', '.')) || 0;
+  }
+};
 const paymentSplits = ref([{ type: 'Dinheiro', amount: 0 }]);
 const splitPayment = ref(false);
 const numberOfPeople = ref(1);
@@ -429,6 +465,8 @@ const isFinalizeDisabled = computed(() => {
   }
   return totalWithDiscount.value <= 0;
 });
+
+watch(discountType, () => { discountValue.value = 0; discountRaw.value = ''; });
 
 watch(numberOfPeople, (newVal) => {
   const num = Math.max(2, newVal);

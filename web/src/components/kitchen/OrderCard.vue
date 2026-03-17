@@ -3,7 +3,8 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { Clock, ChefHat, CheckCircle2, AlertTriangle, Hash, Flame, XCircle } from 'lucide-vue-next';
 
 const props = defineProps({
-  order: { type: Object, required: true }
+  order: { type: Object, required: true },
+  alertMinutes: { type: Number, default: 15 }
 });
 
 const emit = defineEmits(['move', 'finish', 'cancel']);
@@ -23,8 +24,7 @@ const updateTimer = () => {
 
   elapsedTime.value = h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`;
   
-  // Define atraso (ex: 15 minutos para teste, ajuste conforme necessário)
-  isDelayed.value = diff > 900; 
+  isDelayed.value = diff > props.alertMinutes * 60;
 };
 
 onMounted(() => {

@@ -6,7 +6,7 @@ import { useKitchenStore } from '@/stores/kitchen';
 import { PERMISSIONS } from '@/utils/permissions';
 import OrderCard from '@/components/kitchen/OrderCard.vue';
 import SubscriptionGuard from '@/components/SubscriptionGuard.vue';
-import { Bell, Volume2, VolumeX, UtensilsCrossed, List, ChefHat, CheckCircle, XCircle, X } from 'lucide-vue-next';
+import { Bell, Volume2, VolumeX, UtensilsCrossed, List, ChefHat, CheckCircle, XCircle, X, ArrowLeft, Settings, Clock } from 'lucide-vue-next';
 
 const AUDIO_URL = 'https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/pause.wav';
 const audioPlayer = new Audio(AUDIO_URL);
@@ -17,6 +17,15 @@ const authStore = useAuthStore();
 const kitchenStore = useKitchenStore();
 
 const activeTab = ref('pending');
+const showTimerSettings = ref(false);
+const alertMinutes = ref(Number(localStorage.getItem('kitchenAlertMinutes') || 15));
+
+const saveAlertMinutes = () => {
+  const val = Math.max(1, Math.min(120, alertMinutes.value));
+  alertMinutes.value = val;
+  localStorage.setItem('kitchenAlertMinutes', String(val));
+  showTimerSettings.value = false;
+};
 
 onMounted(() => {
   if (!authStore.hasPermission(PERMISSIONS.COZINHA)) {
@@ -88,7 +97,10 @@ const indicatorColor = (color) => {
   <div class="h-screen bg-black flex flex-col font-inter overflow-hidden text-white">
     
     <header class="h-16 md:h-20 bg-zinc-900 border-b border-white/10 flex items-center justify-between px-6 md:px-8 shadow-2xl z-20 shrink-0">
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-3">
+        <button @click="router.push('/app/dashboard')" class="p-2 bg-white/5 border border-white/10 rounded-xl text-gray-400 hover:text-white transition-colors" title="Voltar ao Dashboard">
+          <ArrowLeft :size="18" />
+        </button>
         <div class="bg-brand-green p-2 rounded-xl text-black shadow-lg shadow-brand-green/20">
           <UtensilsCrossed :size="20" class="md:w-6 md:h-6" />
         </div>
@@ -105,6 +117,34 @@ const indicatorColor = (color) => {
         >
           <Bell :size="14" /> <span class="hidden md:inline">Simular Entrada</span>
         </button>
+
+        <!-- Timer settings -->
+        <div class="relative">
+          <button
+            @click="showTimerSettings = !showTimerSettings"
+            class="p-2.5 rounded-xl transition-all border bg-white/5 text-gray-400 border-white/10 hover:text-white hover:bg-white/10"
+            title="Configurar alerta de tempo"
+          >
+            <Clock :size="18" />
+          </button>
+          <div v-if="showTimerSettings" class="absolute right-0 top-12 z-50 bg-zinc-900 border border-white/10 rounded-2xl p-5 shadow-2xl w-64">
+            <p class="text-xs font-black uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
+              <Clock :size="12" /> Alerta de atraso
+            </p>
+            <div class="flex items-center gap-3">
+              <input
+                v-model.number="alertMinutes"
+                type="number" min="1" max="120"
+                class="flex-1 bg-zinc-800 border border-white/10 rounded-xl px-3 py-2 text-white text-sm font-black text-center outline-none focus:border-brand-green/50"
+              />
+              <span class="text-gray-400 text-sm font-bold">min</span>
+            </div>
+            <p class="text-gray-600 text-[10px] mt-2">Pedido fica vermelho após este tempo</p>
+            <button @click="saveAlertMinutes" class="w-full mt-3 py-2 bg-brand-green text-black text-xs font-black uppercase rounded-xl hover:bg-brand-green/80 transition-colors">
+              Salvar
+            </button>
+          </div>
+        </div>
 
         <button
           @click="toggleAudio"
@@ -140,6 +180,7 @@ const indicatorColor = (color) => {
             v-for="order in columnOrders(col.key)"
             :key="order.id"
             :order="order"
+            :alertMinutes="alertMinutes"
             @move="handleMove"
             @finish="handleFinish"
             @cancel="openCancelModal"

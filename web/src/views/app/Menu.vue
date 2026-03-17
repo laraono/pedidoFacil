@@ -11,7 +11,7 @@ import ToastMessage from '@/components/ui/ToastMessage.vue';
 import { useUtils } from '@/composables/useUtils';
 import {
   Utensils, X, Plus, Minus, ShoppingBag,
-  Trash2, ChefHat, CheckCircle2, Palette,
+  Trash2, ChefHat, CheckCircle2, Palette, ArrowLeft,
 } from 'lucide-vue-next';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -75,7 +75,7 @@ onMounted(async () => {
 const backgroundStyle = computed(() => ({ backgroundColor: bgColor.value }));
 
 const productsByCategory = computed(() => {
-  const activeProducts = menuStore.activeProducts;
+  const activeProducts = menuStore.activeProducts.filter(p => p.available !== false);
   return menuStore.activeCategories.map(category => ({
     ...category,
     products: activeProducts.filter(p => p.categoryId === category.id),
@@ -96,7 +96,9 @@ const openProductModal = (product) => {
   currentProduct.value = product;
   currentQuantity.value = 1;
   currentObservation.value = '';
-  selectedSize.value = product.sizes?.length > 0 ? product.sizes[0] : null;
+  selectedSize.value = product.sizes?.length > 0
+    ? product.sizes[0]
+    : { name: 'Padrão', price: product.price ?? 0 };
   isProductModalOpen.value = true;
 };
 
@@ -191,12 +193,11 @@ const saveVisuals = () => {
   localStorageService.saveProductCardBg(cardBg.value);
   localStorageService.saveComandaUnitLabel(comandaUnitLabel.value);
   showToast('Aparência salva com sucesso!', 'success');
-  closeVisuals();
 };
 
 const closeVisuals = () => {
   isEditMode.value = false;
-  router.push({ path: route.path });
+  router.push('/app/dashboard');
 };
 
 const checkEditMode = () => {
@@ -278,7 +279,7 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
                 <div class="flex items-center justify-between mt-6 pt-4 border-t border-white/5 z-10">
                   <div class="flex flex-col">
                     <span v-if="product.sizes?.length > 1" class="text-[10px] opacity-70 uppercase tracking-widest font-bold mb-0.5" :style="{ color: textColor }">A partir de</span>
-                    <span class="font-black text-xl" :style="{ color: buttonColor }">{{ formatCurrency(product.sizes?.[0]?.price || 0) }}</span>
+                    <span class="font-black text-xl" :style="{ color: buttonColor }">{{ formatCurrency(product.sizes?.[0]?.price ?? product.price ?? 0) }}</span>
                   </div>
                   <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold transition-transform group-hover:scale-110 shadow-lg" :style="{ backgroundColor: buttonColor, color: buttonTextColor }">
                     <Plus :size="20" />
@@ -480,6 +481,15 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
                       class="flex-1 bg-white/10 border border-white/20 rounded-xl px-3 py-2 font-bold text-sm outline-none focus:border-white/40"
                       :style="{ color: textColor }"
                     />
+                    <button
+                      type="button"
+                      @click="newComandaNumber = String(Math.floor(Math.random() * 900) + 100)"
+                      class="shrink-0 px-3 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-white/10 hover:bg-white/20"
+                      :style="{ color: textColor }"
+                      title="Número aleatório"
+                    >
+                      # Aleatório
+                    </button>
                   </div>
                 </div>
               </div>
@@ -508,9 +518,14 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
           <h2 class="font-bold text-lg flex items-center gap-2 text-brand-green">
             <Palette :size="20" /> Editor Visual
           </h2>
-          <button @click="closeVisuals" class="text-gray-400 hover:text-white transition-colors bg-white/5 p-1.5 rounded-lg">
-            <X :size="20" />
-          </button>
+          <div class="flex items-center gap-2">
+            <button @click="router.push('/app/dashboard')" class="text-gray-400 hover:text-white transition-colors bg-white/5 p-1.5 rounded-lg" title="Ir ao Dashboard">
+              <ArrowLeft :size="18" />
+            </button>
+            <button @click="closeVisuals" class="text-gray-400 hover:text-white transition-colors bg-white/5 p-1.5 rounded-lg" title="Fechar editor">
+              <X :size="20" />
+            </button>
+          </div>
         </div>
 
         <div class="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
