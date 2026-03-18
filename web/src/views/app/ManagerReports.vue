@@ -3,13 +3,13 @@ import { ref, onMounted, watch, computed } from 'vue';
 import {
   DollarSign, Users, TrendingUp, AlertTriangle,
   BarChart3, UserCheck, Flame, CreditCard,
-  Target, Download, PackageOpen, ArrowLeft
+  Target, Download, PackageOpen, ArrowLeft, Tag
 } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
 import {
   getKpisMock, getRevenueChartMock, getSalesByChannelMock,
   getPeakHoursMock, getTopWaitersMock, getCancellationsMock,
-  getPaymentMethodsMock, getTopProductsMock
+  getPaymentMethodsMock, getTopProductsMock, getCouponUsageMock
 } from '@/mock/reportsmock';
 import ReportPrintLayout from '@/components/reports/ReportPrintLayout.vue';
 import localStorageService from '@/services/localStorageService';
@@ -28,6 +28,7 @@ const topWaiters = ref([]);
 const cancellations = ref([]);
 const paymentMethods = ref([]);
 const topProducts = ref([]);
+const couponUsage = ref([]);
 
 const loadData = () => {
   isLoaded.value = false;
@@ -39,8 +40,11 @@ const loadData = () => {
   cancellations.value = getCancellationsMock(dateFilter.value);
   paymentMethods.value = getPaymentMethodsMock(dateFilter.value);
   topProducts.value = getTopProductsMock(dateFilter.value);
+  couponUsage.value = getCouponUsageMock(dateFilter.value);
   setTimeout(() => { isLoaded.value = true; }, 50);
 };
+
+const maxCouponUses = () => Math.max(...couponUsage.value.map(c => c.uses), 1);
 
 onMounted(() => loadData());
 watch(dateFilter, () => loadData());
@@ -124,7 +128,8 @@ const exportToPDF = () => { window.print(); };
         {id:'geral', n:'Visão Geral', i: BarChart3},
         {id:'operacional', n:'Operacional', i: Users},
         {id:'financeiro', n:'Financeiro', i: DollarSign},
-        {id:'produtos', n:'Produtos', i: PackageOpen}
+        {id:'produtos', n:'Produtos', i: PackageOpen},
+        {id:'cupons', n:'Cupons', i: Tag}
       ]"
         :key="tab.id" @click="activeTab = tab.id"
         class="flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all duration-300 border whitespace-nowrap"
@@ -306,6 +311,34 @@ const exportToPDF = () => { window.print(); };
         </div>
       </div>
 
+      <div v-else-if="activeTab === 'cupons'" class="pb-12">
+        <div class="bg-dark-card border border-white/10 rounded-[2.5rem] p-8">
+          <h3 class="text-sm font-black text-white flex items-center gap-3 mb-8 uppercase tracking-widest">
+            <Tag :size="18" class="text-brand-green" /> Uso de Cupons no Período
+          </h3>
+          <div v-if="couponUsage.length === 0" class="flex items-center justify-center h-40 text-gray-600">
+            <p class="text-[10px] font-black uppercase tracking-[0.2em]">Nenhum cupom utilizado no período.</p>
+          </div>
+          <div v-else class="space-y-6">
+            <div v-for="coupon in couponUsage" :key="coupon.code" class="space-y-2">
+              <div class="flex justify-between items-end">
+                <div class="flex items-center gap-3">
+                  <span class="text-[10px] font-black text-white uppercase tracking-widest font-mono">{{ coupon.code }}</span>
+                  <span class="text-[9px] font-black text-gray-600 uppercase">
+                    {{ coupon.type === 'percent' ? coupon.discount + '%' : 'R$ ' + coupon.discount }}
+                  </span>
+                </div>
+                <span class="text-sm font-black text-brand-green">{{ coupon.uses }} usos</span>
+              </div>
+              <div class="w-full bg-white/5 h-4 rounded-full overflow-hidden border border-white/5">
+                <div class="h-full rounded-full bg-brand-green transition-all duration-1000"
+                  :style="{ width: isLoaded ? `${(coupon.uses / maxCouponUses()) * 100}%` : '0%' }"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </Transition>
   </div>
 
@@ -325,6 +358,8 @@ const exportToPDF = () => { window.print(); };
     :totalCancellationsCount="totalCancellationsCount"
     :financialImpact="financialImpact"
     :topProducts="topProducts"
+    :couponUsage="couponUsage"
+    :maxCouponUses="maxCouponUses"
   />
   </div>
 </template>

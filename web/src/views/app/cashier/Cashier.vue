@@ -134,8 +134,45 @@
                 </div>
               </div>
             </div>
+            <!-- Cupom de Desconto -->
+            <div class="mt-6 p-6 bg-white/[0.03] rounded-2xl border border-white/5">
+              <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <Tag :size="12" /> Cupom de Desconto
+              </label>
+              <div v-if="appliedCoupon" class="flex items-center justify-between p-3 bg-brand-green/10 border border-brand-green/20 rounded-xl">
+                <div class="flex items-center gap-2">
+                  <Tag :size="14" class="text-brand-green" />
+                  <span class="font-black text-brand-green text-sm font-mono tracking-widest">{{ appliedCoupon.code }}</span>
+                  <span class="text-gray-400 text-xs">— {{ appliedCoupon.type === 'percent' ? appliedCoupon.value + '%' : 'R$ ' + Number(appliedCoupon.value).toFixed(2) }} off</span>
+                </div>
+                <button @click="removeCoupon" class="p-1 text-gray-500 hover:text-red-400 transition-colors">
+                  <XCircle :size="16" />
+                </button>
+              </div>
+              <div v-else class="flex gap-3">
+                <input
+                  v-model="couponCodeInput"
+                  @keydown.enter="applyCoupon"
+                  placeholder="Digite o código..."
+                  class="flex-1 bg-zinc-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm font-black text-white placeholder:text-gray-600 outline-none focus:border-brand-green/40 uppercase"
+                />
+                <button
+                  @click="applyCoupon"
+                  class="px-4 py-2.5 bg-white/5 border border-white/10 text-gray-300 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-white/10 transition-all"
+                >
+                  Aplicar
+                </button>
+              </div>
+              <p v-if="couponError" class="text-red-400 text-[11px] font-bold mt-2 ml-1">{{ couponError }}</p>
+            </div>
+
             <div class="flex justify-between items-end mt-8">
-              <span class="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Total Final</span>
+              <div>
+                <span class="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Total Final</span>
+                <div v-if="appliedCoupon" class="text-[10px] text-brand-green font-bold mt-0.5">
+                  Cupom: − R$ {{ couponDiscount.toFixed(2) }}
+                </div>
+              </div>
               <span class="text-4xl font-black text-brand-green tracking-tighter drop-shadow-[0_0_15px_rgba(0,255,159,0.3)]">
                 R$ {{ totalWithDiscount.toFixed(2) }}
               </span>
@@ -373,13 +410,15 @@ import { ref, computed, watch } from 'vue';
 import { useComandaStore } from '@/stores/comandaManagement';
 import { useClosedComandaStore } from '@/stores/closedComandas';
 import { useKitchenStore } from '@/stores/kitchen';
+import { useCouponStore } from '@/stores/coupons';
 import { useToast } from '@/composables/useToast';
 import { useUtils } from '@/composables/useUtils.js';
-import { Monitor, Receipt, AlertTriangle, FileText, CheckCircle, X, AlertCircle } from 'lucide-vue-next';
+import { Monitor, Receipt, AlertTriangle, FileText, CheckCircle, X, AlertCircle, Tag, XCircle } from 'lucide-vue-next';
 
 const comandaStore = useComandaStore();
 const closedComandaStore = useClosedComandaStore();
 const kitchenStore = useKitchenStore();
+const couponStore = useCouponStore();
 const utils = useUtils();
 const { showToast } = useToast();
 
@@ -449,9 +488,12 @@ const subtotal = computed(() => selectedComanda.value?.total || 0);
 
 const totalWithDiscount = computed(() => {
   const sub = subtotal.value;
-  if (!discountValue.value) return sub;
-  if (discountType.value === 'percent') return sub * (1 - discountValue.value / 100);
-  return Math.max(0, sub - discountValue.value);
+  let afterManual = sub;
+  if (discountValue.value) {
+    if (discountType.value === 'percent') afterManual = sub * (1 - discountValue.value / 100);
+    else afterManual = Math.max(0, sub - discountValue.value);
+  }
+  return Math.max(0, afterManual - couponDiscount.value);
 });
 
 const totalPayments = computed(() => paymentSplits.value.reduce((sum, s) => sum + (s.amount || 0), 0));
@@ -466,7 +508,30 @@ const isFinalizeDisabled = computed(() => {
   return totalWithDiscount.value <= 0;
 });
 
-watch(discountType, () => { discountValue.value = 0; discountRaw.value = ''; });
+watch(discountType, () => { discountValue.value = 0; discountRaw.value = ''; appliedCoupon.value = null; couponCodeInput.value = ''; couponError.value = ''; });
+
+const couponCodeInput = ref('');
+const appliedCoupon = ref(null);
+const couponError = ref('');
+
+const applyCoupon = () => {
+  couponError.value = '';
+  if (!couponCodeInput.value.trim()) return;
+  const coupon = couponStore.findByCode(couponCodeInput.value);
+  if (!coupon) { couponError.value = 'Cupom não encontrado ou inativo.'; return; }
+  if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) { couponError.value = 'Este cupom está vencido.'; return; }
+  appliedCoupon.value = coupon;
+  couponError.value = '';
+};
+
+const removeCoupon = () => { appliedCoupon.value = null; couponCodeInput.value = ''; couponError.value = ''; };
+
+const couponDiscount = computed(() => {
+  if (!appliedCoupon.value) return 0;
+  const sub = subtotal.value;
+  if (appliedCoupon.value.type === 'percent') return sub * (appliedCoupon.value.value / 100);
+  return Math.min(appliedCoupon.value.value, sub);
+});
 
 watch(numberOfPeople, (newVal) => {
   const num = Math.max(2, newVal);
@@ -518,6 +583,10 @@ function openDetails(comanda) {
   selectedComanda.value = comanda;
   discountType.value = 'percent';
   discountValue.value = 0;
+  discountRaw.value = '';
+  appliedCoupon.value = null;
+  couponCodeInput.value = '';
+  couponError.value = '';
   splitPayment.value = false;
   numberOfPeople.value = 2;
   paymentSplits.value = [{ type: 'Dinheiro', amount: 0 }];
@@ -612,7 +681,7 @@ function finishPaymentFlow() {
     ...selectedComanda.value,
     closedAt: new Date().toISOString(),
     status: 'FINALIZADO',
-    paymentDetails: { discountType: discountType.value, discountValue: discountValue.value, payments: pendingPayments.value },
+    paymentDetails: { discountType: discountType.value, discountValue: discountValue.value, coupon: appliedCoupon.value ? appliedCoupon.value.code : null, couponDiscount: couponDiscount.value, payments: pendingPayments.value },
   };
   closedComandaStore.addClosedComanda(closedComanda);
   comandaStore.removeComanda(selectedComanda.value.id);

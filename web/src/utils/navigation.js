@@ -1,7 +1,7 @@
 import {
   ChefHat, UtensilsCrossed, Users,
   DollarSign, HamburgerIcon, Package, Receipt, Settings, StoreIcon,
-  CreditCard, ShieldAlert, UserCog
+  CreditCard, ShieldAlert, UserCog, Tag, FileText
 } from 'lucide-vue-next';
 import { PERMISSIONS } from '@/utils/permissions';
 
@@ -66,6 +66,24 @@ export const allMenuItems = [
     description: 'Configure seus pratos e preços.',
     callToAction: 'Gerenciar Produtos',
     permission: PERMISSIONS.CONFIGURACAO
+  },
+  {
+    label: 'Cupons de Desconto',
+    route: '/app/settings/coupons',
+    icon: Tag,
+    image: rolesImage,
+    description: 'Crie e gerencie cupons promocionais.',
+    callToAction: 'Gerenciar Cupons',
+    permission: PERMISSIONS.CUPONS
+  },
+  {
+    label: 'Notas Fiscais',
+    route: '/app/settings/nf',
+    icon: FileText,
+    image: rolesImage,
+    description: 'Emissão e gestão de NF-e.',
+    callToAction: 'Gerenciar NF',
+    permission: PERMISSIONS.NOTA_FISCAL
   },
   {
     label: 'Cardápio',

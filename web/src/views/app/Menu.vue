@@ -144,6 +144,11 @@ const confirmAndSendToKitchen = () => {
   let targetComanda;
   if (selectedComandaId.value === 'new') {
     const label = `${comandaUnitLabel.value} ${newComandaNumber.value.trim()}`;
+    const duplicate = comandaStore.comandas.some(c => c.label.trim().toLowerCase() === label.trim().toLowerCase());
+    if (duplicate) {
+      showToast(`Já existe uma comanda com o nome "${label}". Use outro número.`, 'error');
+      return;
+    }
     targetComanda = comandaStore.createComanda(label);
   } else {
     targetComanda = comandaStore.comandas.find(c => c.id === selectedComandaId.value);
@@ -472,23 +477,24 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
                   >
                     + Criar {{ comandaUnitLabel }}
                   </button>
-                  <div v-if="selectedComandaId === 'new'" class="px-4 pb-4 flex items-center gap-3">
-                    <span class="font-bold text-sm shrink-0" :style="{ color: textColor }">{{ comandaUnitLabel }}</span>
-                    <input
-                      v-model="newComandaNumber"
-                      type="text"
-                      placeholder="Número ou nome..."
-                      class="flex-1 bg-white/10 border border-white/20 rounded-xl px-3 py-2 font-bold text-sm outline-none focus:border-white/40"
-                      :style="{ color: textColor }"
-                    />
+                  <div v-if="selectedComandaId === 'new'" class="px-4 pb-4 flex flex-col gap-2">
+                    <div class="flex items-center gap-3">
+                      <span class="font-bold text-sm shrink-0" :style="{ color: textColor }">{{ comandaUnitLabel }}</span>
+                      <input
+                        v-model="newComandaNumber"
+                        type="text"
+                        placeholder="Número ou nome..."
+                        class="flex-1 bg-white/10 border border-white/20 rounded-xl px-3 py-2 font-bold text-sm outline-none focus:border-white/40"
+                        :style="{ color: textColor }"
+                      />
+                    </div>
                     <button
                       type="button"
                       @click="newComandaNumber = String(Math.floor(Math.random() * 900) + 100)"
-                      class="shrink-0 px-3 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-white/10 hover:bg-white/20"
+                      class="w-full py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-white/10 hover:bg-white/20 text-center"
                       :style="{ color: textColor }"
-                      title="Número aleatório"
                     >
-                      # Aleatório
+                      # Número Aleatório
                     </button>
                   </div>
                 </div>

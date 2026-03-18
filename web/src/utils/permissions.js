@@ -9,7 +9,9 @@ export const PERMISSIONS = {
   CRIAR_PEDIDO: 'CRIAR_PEDIDO',
   NOTIFICACOES: 'NOTIFICACOES',
   CAIXA: 'CAIXA',
-  COMANDAS_FINALIZADAS: 'COMANDAS_FINALIZADAS'
+  COMANDAS_FINALIZADAS: 'COMANDAS_FINALIZADAS',
+  CUPONS: 'CUPONS',
+  NOTA_FISCAL: 'NOTA_FISCAL',
 };
 
 export const AVAILABLE_PERMISSIONS = [
@@ -23,4 +25,6 @@ export const AVAILABLE_PERMISSIONS = [
   { id: PERMISSIONS.CAIXA, label: 'Caixa', desc: 'Fluxo financeiro e recebimentos.' },
   { id: PERMISSIONS.CRIAR_PEDIDO, label: 'Criar Pedido', desc: 'Lançamento de novas vendas.' },
   { id: PERMISSIONS.COMANDAS_FINALIZADAS, label: 'Histórico', desc: 'Visualizar pedidos encerrados.' },
+  { id: PERMISSIONS.CUPONS, label: 'Cupons', desc: 'Gerenciar cupons de desconto.' },
+  { id: PERMISSIONS.NOTA_FISCAL, label: 'Nota Fiscal', desc: 'Emissão e gestão de NF-e.' },
 ];
