@@ -4,11 +4,29 @@ import { useRouter } from 'vue-router';
 import { useSubscriptionStore } from '@/stores/subscriptions';
 import {
   ArrowLeft, ShieldAlert, Users, CheckCircle2, AlertTriangle,
-  XCircle, Search, Calendar, CreditCard, UserCircle, X, Mail, Phone, MapPin
+  XCircle, Search, Calendar, CreditCard, UserCircle, X, Mail, Phone, MapPin, DollarSign, Save
 } from 'lucide-vue-next';
 
 const router = useRouter();
 const subscriptionStore = useSubscriptionStore();
+
+// Plan price editing
+const editingPrices = ref(false);
+const priceForm = ref({ monthly: subscriptionStore.planPrices.monthly, annual: subscriptionStore.planPrices.annual });
+const applyPriceMaskAdmin = (raw) => {
+  let val = String(raw).replace(/[^\d,]/g, '');
+  const ci = val.indexOf(',');
+  if (ci !== -1) { val = val.slice(0, ci + 1) + val.slice(ci + 1).replace(/,/g, ''); val = val.slice(0, ci + 3); }
+  const parts = val.split(','); parts[0] = parts[0].replace(/^0+(\d)/, '$1'); return parts.join(',');
+};
+const onPriceFormInput = (field, e) => { priceForm.value[field] = applyPriceMaskAdmin(e.target.value); };
+const savePlanPrices = () => {
+  const monthly = parseFloat(String(priceForm.value.monthly).replace(',', '.'));
+  const annual = parseFloat(String(priceForm.value.annual).replace(',', '.'));
+  if (isNaN(monthly) || monthly <= 0 || isNaN(annual) || annual <= 0) return;
+  subscriptionStore.updatePlanPrices({ monthly, annual });
+  editingPrices.value = false;
+};
 
 const search = ref('');
 const filterStatus = ref('todos');
@@ -65,6 +83,59 @@ const formatDate = (d) =>
         <p class="text-gray-400 text-sm">Controle de todos os gerentes e seus planos</p>
       </div>
     </header>
+
+    <!-- Plan price editor -->
+    <div class="bg-dark-card border border-white/10 rounded-[2rem] p-6 mb-8">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-brand-green/10 border border-brand-green/20 rounded-xl">
+            <DollarSign :size="16" class="text-brand-green" />
+          </div>
+          <div>
+            <p class="text-white font-black text-sm">Preços dos Planos</p>
+            <p class="text-gray-500 text-xs">Atualiza Landing Page e telas de assinatura dos gerentes</p>
+          </div>
+        </div>
+        <button v-if="!editingPrices" @click="editingPrices = true; priceForm = { monthly: String(subscriptionStore.planPrices.monthly).replace('.', ','), annual: String(subscriptionStore.planPrices.annual).replace('.', ',') }"
+          class="px-4 py-2 rounded-xl text-xs font-black border border-white/10 bg-white/5 text-gray-400 hover:text-white hover:border-white/20 transition-all">
+          Editar
+        </button>
+      </div>
+      <div class="flex flex-wrap gap-4">
+        <template v-if="!editingPrices">
+          <div class="flex-1 min-w-[120px] bg-white/5 rounded-2xl p-4 text-center border border-white/5">
+            <p class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Mensal</p>
+            <p class="text-2xl font-black text-white">R$ {{ subscriptionStore.planPrices.monthly.toFixed(2).replace('.', ',') }}</p>
+            <p class="text-[10px] text-gray-600 mt-0.5">/mês</p>
+          </div>
+          <div class="flex-1 min-w-[120px] bg-white/5 rounded-2xl p-4 text-center border border-white/5">
+            <p class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Anual</p>
+            <p class="text-2xl font-black text-brand-green">R$ {{ subscriptionStore.planPrices.annual.toFixed(2).replace('.', ',') }}</p>
+            <p class="text-[10px] text-gray-600 mt-0.5">/mês</p>
+          </div>
+        </template>
+        <template v-else>
+          <div class="flex flex-wrap gap-3 flex-1 items-end">
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Plano Mensal (R$)</label>
+              <input :value="priceForm.monthly" @input="onPriceFormInput('monthly', $event)" inputmode="numeric"
+                class="py-2.5 px-4 rounded-2xl border bg-white/5 border-white/15 text-white text-sm focus:outline-none focus:border-brand-green/50 w-36" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Plano Anual (R$)</label>
+              <input :value="priceForm.annual" @input="onPriceFormInput('annual', $event)" inputmode="numeric"
+                class="py-2.5 px-4 rounded-2xl border bg-white/5 border-white/15 text-white text-sm focus:outline-none focus:border-brand-green/50 w-36" />
+            </div>
+            <div class="flex gap-2">
+              <button @click="editingPrices = false" class="py-2.5 px-4 rounded-2xl text-gray-400 font-bold text-sm border border-white/10 hover:bg-white/5 transition-colors">Cancelar</button>
+              <button @click="savePlanPrices" class="py-2.5 px-5 rounded-2xl bg-brand-green text-black font-black text-sm hover:opacity-90 flex items-center gap-2">
+                <Save :size="14" /> Salvar
+              </button>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
 
     <!-- KPI cards -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">

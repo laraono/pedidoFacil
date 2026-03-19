@@ -6,6 +6,15 @@ const SUBSCRIPTION_KEY = 'subscription';
 export const useSubscriptionStore = defineStore('subscription', () => {
   const subscription = ref(null);
 
+  const planPrices = ref(
+    JSON.parse(localStorage.getItem('planPrices') || 'null') || { monthly: 79.90, annual: 49.90 }
+  );
+
+  function updatePlanPrices(prices) {
+    planPrices.value = { ...prices };
+    localStorage.setItem('planPrices', JSON.stringify(planPrices.value));
+  }
+
   function loadSubscription() {
     const saved = localStorage.getItem(SUBSCRIPTION_KEY);
     if (saved) {
@@ -53,7 +62,7 @@ export const useSubscriptionStore = defineStore('subscription', () => {
   function recordPayment(method) {
     if (!subscription.value) return;
     const today = new Date().toISOString().split('T')[0];
-    const amount = subscription.value.plan === 'anual' ? 49.90 : 79.90;
+    const amount = subscription.value.plan === 'anual' ? planPrices.value.annual : planPrices.value.monthly;
 
     subscription.value.history.unshift({
       id: Date.now(),
@@ -97,11 +106,13 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     subscription,
     isActive,
     daysUntilDue,
+    planPrices,
     adminSubscriptions,
     loadSubscription,
     updateStatus,
     updatePaymentMethod,
     updatePlan,
+    updatePlanPrices,
     recordPayment
   };
 });

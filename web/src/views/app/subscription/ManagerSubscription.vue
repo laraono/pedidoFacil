@@ -27,7 +27,11 @@ const statusConfig = computed(() => {
 });
 
 const planLabel = computed(() => sub.value?.plan === 'anual' ? 'Anual' : 'Mensal');
-const planPrice = computed(() => sub.value?.plan === 'anual' ? 'R$ 49,90/mês' : 'R$ 79,90/mês');
+const planPrice = computed(() => {
+  const prices = subscriptionStore.planPrices;
+  const val = sub.value?.plan === 'anual' ? prices.annual : prices.monthly;
+  return 'R$ ' + val.toFixed(2).replace('.', ',') + '/mês';
+});
 
 const formattedDueDate = computed(() => {
   if (!sub.value?.nextDueDate) return '—';
@@ -207,9 +211,9 @@ const confirmPayment = () => {
               <div class="pt-2 border-t border-white/5 flex items-center justify-between text-sm">
                 <span class="text-zinc-400">Valor</span>
                 <span class="font-black text-white">
-                  {{ sub?.plan === 'anual'
-                    ? 'R$ 49,90'
-                    : 'R$ 79,90' }}
+                  R$ {{ sub?.plan === 'anual'
+                    ? subscriptionStore.planPrices.annual.toFixed(2).replace('.', ',')
+                    : subscriptionStore.planPrices.monthly.toFixed(2).replace('.', ',') }}
                 </span>
               </div>
             </div>

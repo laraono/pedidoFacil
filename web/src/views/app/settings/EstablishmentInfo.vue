@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import localStorageService from '@/services/localStorageService';
 import { useToast } from '@/composables/useToast';
-import { Save, ArrowLeft, UploadCloud, AlertCircle, Smartphone, Copy, CheckCheck, RefreshCw } from 'lucide-vue-next';
+import { Save, ArrowLeft, UploadCloud, AlertCircle, Smartphone, Copy, CheckCheck, RefreshCw, Banknote } from 'lucide-vue-next';
 
 const router = useRouter();
 const { showToast } = useToast();
@@ -12,6 +12,17 @@ const isLoading = ref(false);
 const logoPreview = ref(null);
 const errors = ref({});
 const touched = ref({});
+
+// Métodos de pagamento
+const ALL_PAYMENT_METHODS = ['Dinheiro', 'Cartão Débito', 'Cartão Crédito', 'PIX'];
+const paymentMethods = ref([...ALL_PAYMENT_METHODS]);
+const originalPaymentMethods = ref([...ALL_PAYMENT_METHODS]);
+
+const togglePaymentMethod = (method) => {
+  const idx = paymentMethods.value.indexOf(method);
+  if (idx === -1) paymentMethods.value.push(method);
+  else if (paymentMethods.value.length > 1) paymentMethods.value.splice(idx, 1);
+};
 
 // Autoatendimento
 const selfService = ref(false);
@@ -31,10 +42,14 @@ const copyCode = () => {
 
 const form = ref({ name: '', cnpj: '', phone: '', description: '' });
 const originalForm = ref(null);
+const originalLogo = ref(null);
 
 const isDirty = computed(() =>
-  originalForm.value !== null &&
-  JSON.stringify(form.value) !== JSON.stringify(originalForm.value)
+  originalForm.value !== null && (
+    JSON.stringify(form.value) !== JSON.stringify(originalForm.value) ||
+    logoPreview.value !== originalLogo.value ||
+    JSON.stringify([...paymentMethods.value].sort()) !== JSON.stringify([...originalPaymentMethods.value].sort())
+  )
 );
 
 const maskCNPJ = (v) => {
@@ -63,7 +78,13 @@ onMounted(() => {
     };
   }
   originalForm.value = { ...form.value };
+  originalLogo.value = logoPreview.value;
   logoPreview.value = localStorageService.getImage();
+  const savedMethods = localStorage.getItem('paymentMethods');
+  if (savedMethods) {
+    paymentMethods.value = JSON.parse(savedMethods);
+    originalPaymentMethods.value = [...paymentMethods.value];
+  }
   selfService.value = localStorage.getItem('selfServiceEnabled') === 'true';
   const savedCode = localStorage.getItem('selfServiceCode');
   if (savedCode) {
@@ -75,13 +96,11 @@ onMounted(() => {
 
 const validateAll = () => {
   errors.value = {};
-  touched.value = { name: true, cnpj: true, phone: true, description: true };
+  touched.value = { name: true, cnpj: true, phone: true };
 
   if (!form.value.name.trim()) errors.value.name = 'O nome fantasia é obrigatório.';
-  if (!form.value.cnpj.trim()) errors.value.cnpj = 'O CNPJ é obrigatório.';
-  else if (form.value.cnpj.replace(/\D/g, '').length < 14) errors.value.cnpj = 'CNPJ incompleto.';
-  if (!form.value.phone.trim()) errors.value.phone = 'Informe um telefone de contato.';
-  else if (form.value.phone.replace(/\D/g, '').length < 10) errors.value.phone = 'Telefone incompleto.';
+  if (form.value.cnpj.trim() && form.value.cnpj.replace(/\D/g, '').length < 14) errors.value.cnpj = 'CNPJ incompleto.';
+  if (form.value.phone.trim() && form.value.phone.replace(/\D/g, '').length < 10) errors.value.phone = 'Telefone incompleto.';
 
   return Object.keys(errors.value).length === 0;
 };
@@ -108,7 +127,10 @@ const saveSettings = async () => {
       descricao: form.value.description,
     });
     if (logoPreview.value) localStorageService.saveImage(logoPreview.value);
+    localStorage.setItem('paymentMethods', JSON.stringify(paymentMethods.value));
     originalForm.value = { ...form.value };
+    originalLogo.value = logoPreview.value;
+    originalPaymentMethods.value = [...paymentMethods.value];
     showToast('Dados atualizados com sucesso!', 'success');
   } catch {
     showToast('Erro ao salvar os dados.', 'error');
@@ -218,6 +240,40 @@ const saveSettings = async () => {
           </div>
         </div>
       </section>
+    </div>
+
+    <!-- Métodos de Pagamento -->
+    <div class="mt-8">
+      <div class="bg-dark-card border border-white/5 rounded-[2.5rem] p-8 shadow-xl">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 bg-brand-green/10 border border-brand-green/20 rounded-xl flex items-center justify-center">
+            <Banknote :size="20" class="text-brand-green" />
+          </div>
+          <div>
+            <h3 class="text-base font-black text-white">Métodos de Pagamento</h3>
+            <p class="text-sm text-gray-400 mt-0.5">Selecione os métodos aceitos no seu estabelecimento.</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <button
+            v-for="method in ALL_PAYMENT_METHODS"
+            :key="method"
+            type="button"
+            @click="togglePaymentMethod(method)"
+            class="flex items-center gap-2 px-5 py-3 rounded-2xl border-2 font-bold text-sm transition-all"
+            :class="paymentMethods.includes(method)
+              ? 'bg-brand-green/10 border-brand-green/40 text-brand-green'
+              : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'"
+          >
+            <div class="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
+              :class="paymentMethods.includes(method) ? 'bg-brand-green border-brand-green' : 'border-white/20'">
+              <svg v-if="paymentMethods.includes(method)" viewBox="0 0 10 10" class="w-2.5 h-2.5 text-black fill-none stroke-current stroke-2"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg>
+            </div>
+            {{ method }}
+          </button>
+        </div>
+        <p v-if="paymentMethods.length === 0" class="text-red-400 text-xs font-bold mt-3">Selecione ao menos um método.</p>
+      </div>
     </div>
 
     <!-- Autoatendimento -->

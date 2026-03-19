@@ -202,7 +202,7 @@
               </div>
 
               <div v-if="!splitPayment" class="flex gap-3 flex-wrap">
-                <button v-for="method in ['Dinheiro', 'Cartão Débito', 'Cartão Crédito', 'PIX']" :key="method"
+                <button v-for="method in enabledPaymentMethods" :key="method"
                   @click="paymentSplits[0].type = method"
                   class="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border"
                   :class="paymentSplits[0]?.type === method
@@ -218,7 +218,7 @@
                     :class="!split.amount || split.amount <= 0 ? 'bg-red-500/5 border-red-500/30' : 'bg-black/20 border-white/5'">
                     <select v-model="split.type"
                       class="bg-zinc-800 border border-white/10 rounded-xl px-3 py-2 text-xs font-black text-white outline-none flex-1">
-                      <option v-for="m in ['Dinheiro', 'Cartão Débito', 'Cartão Crédito', 'PIX']" :key="m">{{ m }}</option>
+                      <option v-for="m in enabledPaymentMethods" :key="m">{{ m }}</option>
                     </select>
                     <input type="text" :value="utils.formatCurrency(split.amount)"
                       @input="applyMask($event, split)"
@@ -421,6 +421,14 @@ const kitchenStore = useKitchenStore();
 const couponStore = useCouponStore();
 const utils = useUtils();
 const { showToast } = useToast();
+
+const ALL_PAYMENT_METHODS = ['Dinheiro', 'Cartão Débito', 'Cartão Crédito', 'PIX'];
+const enabledPaymentMethods = computed(() => {
+  try {
+    const saved = localStorage.getItem('paymentMethods');
+    return saved ? JSON.parse(saved) : ALL_PAYMENT_METHODS;
+  } catch { return ALL_PAYMENT_METHODS; }
+});
 
 const denominations = [
   { label: 'R$ 200', value: 200 }, { label: 'R$ 100', value: 100 },

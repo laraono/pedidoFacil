@@ -1,14 +1,23 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import PageHeader from '@/components/ui/PageHeader.vue';
 import ToastMessage from '@/components/ui/ToastMessage.vue';
 import { useToast } from '@/composables/useToast';
+import localStorageService from '@/services/localStorageService';
 import {
   FileText, Download, Search, CheckCircle2, XCircle,
-  AlertTriangle, Clock, RefreshCw, Eye, FileDown
+  AlertTriangle, Clock, RefreshCw, Eye, FileDown, Building2
 } from 'lucide-vue-next';
 
 const { showToast } = useToast();
+const router = useRouter();
+
+const hasCnpj = ref(true);
+onMounted(() => {
+  const data = localStorageService.getOnboarding();
+  hasCnpj.value = !!data?.cnpj?.trim();
+});
 
 const activeTab = ref('todas');
 const searchQuery = ref('');
@@ -79,6 +88,31 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
 <template>
   <main class="max-w-7xl mx-auto py-12 px-6 font-inter">
     <ToastMessage />
+
+    <!-- CNPJ guard -->
+    <div v-if="!hasCnpj" class="flex items-center justify-center min-h-[60vh]">
+      <div class="bg-dark-card border border-white/10 rounded-[2rem] p-10 max-w-md w-full text-center shadow-2xl">
+        <div class="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-5">
+          <AlertTriangle :size="28" class="text-amber-400" />
+        </div>
+        <h2 class="text-xl font-black text-white mb-3">Dados fiscais não configurados</h2>
+        <p class="text-sm text-gray-400 mb-2 leading-relaxed">
+          A emissão de Notas Fiscais requer o <span class="text-white font-bold">CNPJ</span> do estabelecimento cadastrado.
+        </p>
+        <p class="text-xs text-gray-500 mb-8 leading-relaxed">
+          Adicione o CNPJ nas configurações do estabelecimento para habilitar este módulo.
+        </p>
+        <button
+          @click="router.push('/app/settings/establishment')"
+          class="w-full py-3.5 rounded-2xl bg-brand-green text-black font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-brand-green-hover transition-colors active:scale-95"
+        >
+          <Building2 :size="16" />
+          Ir para Meu Estabelecimento
+        </button>
+      </div>
+    </div>
+
+    <template v-if="hasCnpj">
     <PageHeader title="Notas Fiscais" subtitle="Emissão e gestão de NF-e">
       <template #actions>
         <button
@@ -274,5 +308,6 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
         </button>
       </div>
     </div>
+    </template>
   </main>
 </template>

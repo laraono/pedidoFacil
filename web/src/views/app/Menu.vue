@@ -45,6 +45,7 @@ const newComandaNumber = ref('');
 const comandaUnitLabel = ref('Comanda');
 const activeCategoryId = ref(null);
 
+
 const currentProduct = ref(null);
 const currentQuantity = ref(1);
 const currentObservation = ref('');
@@ -294,9 +295,13 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
             </div>
           </div>
 
-          <div v-if="productsByCategory.length === 0" class="flex flex-col items-center justify-center h-full opacity-50">
-            <ChefHat class="w-16 h-16 mb-4" :style="{ color: textColor }" />
-            <p class="text-lg font-bold" :style="{ color: textColor }">O cardápio está a ser preparado.</p>
+          <div v-if="productsByCategory.length === 0" class="flex flex-col items-center justify-center h-full text-center px-6 py-12">
+            <ChefHat class="w-16 h-16 mb-4 opacity-30" :style="{ color: textColor }" />
+            <p class="text-lg font-bold mb-2" :style="{ color: textColor }">Sem itens disponíveis no cardápio</p>
+            <p class="text-sm opacity-60" :style="{ color: textColor }">
+              Altere a disponibilidade de produtos em
+              <a href="/app/settings/products" class="underline font-bold hover:opacity-80 transition-opacity">Gerenciar Produtos</a>.
+            </p>
           </div>
         </main>
       </div>
@@ -517,6 +522,7 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
         </div>
       </Transition>
     </Teleport>
+
 
     <Transition appear enter-active-class="transition duration-500 ease-out" enter-from-class="translate-x-full opacity-0" enter-to-class="translate-x-0 opacity-100" leave-active-class="transition duration-400 ease-in" leave-from-class="translate-x-0 opacity-100" leave-to-class="translate-x-full opacity-0">
       <aside v-if="isEditMode" class="fixed top-0 right-0 w-full sm:w-80 h-screen bg-gray-900 border-l border-white/10 z-[100] flex flex-col shadow-2xl text-white font-inter">

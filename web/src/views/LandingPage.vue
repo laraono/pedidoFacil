@@ -1,6 +1,7 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useSubscriptionStore } from '@/stores/subscriptions';
 import { User, Menu, X, Check } from 'lucide-vue-next';
 
 import imgLogo from '@/assets/logo.png'; 
@@ -11,6 +12,8 @@ import imgInterface from '@/assets/pedidos.png';
 
 const router = useRouter();
 const isMenuOpen = ref(false);
+const subscriptionStore = useSubscriptionStore();
+const planPrices = computed(() => subscriptionStore.planPrices);
 
 const navigateToLogin = () => { router.push('/login'); };
 const toggleMenu = () => { isMenuOpen.value = !isMenuOpen.value; };
@@ -104,6 +107,9 @@ const scrollToSection = (sectionId) => {
               <button @click="scrollToSection('planos')" class="bg-brand-green text-black font-extrabold py-2 px-5 lg:py-5 lg:px-14 rounded-lg lg:rounded-2xl text-xs lg:text-xl hover:bg-brand-green-hover transition-all shadow-xl shadow-brand-green/20 w-auto transform hover:-translate-y-1 active:scale-95">
                 Ver Planos e Começar
               </button>
+              <button @click="scrollToSection('planos')" class="border border-white/20 text-white font-extrabold py-2 px-5 lg:py-5 lg:px-14 rounded-lg lg:rounded-2xl text-xs lg:text-xl hover:bg-white/5 transition-all w-auto">
+                Conheça nossos planos
+              </button>
             </div>
           </div>
         </section>
@@ -190,7 +196,7 @@ const scrollToSection = (sectionId) => {
               
               <div class="flex-1 bg-dark-card px-8 py-12 rounded-[2.5rem] border border-white/5 flex flex-col items-center hover:border-brand-green/20 transition-all max-w-md mx-auto w-full h-full hover:shadow-2xl">
                  <h3 class="text-brand-green text-3xl font-black mb-4">Mensal</h3>
-                 <div class="text-white text-5xl lg:text-6xl font-black mb-2 tracking-tighter">R$79,90<span class="text-xl font-normal text-gray-500 tracking-normal">/mês</span></div>
+                 <div class="text-white text-5xl lg:text-6xl font-black mb-2 tracking-tighter">R${{ planPrices.monthly.toFixed(2).replace('.',',') }}<span class="text-xl font-normal text-gray-500 tracking-normal">/mês</span></div>
                  
                  <div class="w-full h-px bg-white/5 my-8"></div>
 
@@ -214,7 +220,7 @@ const scrollToSection = (sectionId) => {
                  <div class="absolute top-0 right-0 bg-brand-green text-black font-black text-[10px] px-5 py-2.5 rounded-bl-2xl rounded-tr-[2.5rem] uppercase tracking-wider">RECOMENDADO</div>
 
                  <h3 class="text-brand-green text-3xl font-black mb-4">Anual</h3>
-                 <div class="text-white text-5xl lg:text-6xl font-black mb-2 tracking-tighter">R$49,90<span class="text-xl font-normal text-gray-500 tracking-normal">/mês</span></div>
+                 <div class="text-white text-5xl lg:text-6xl font-black mb-2 tracking-tighter">R${{ planPrices.annual.toFixed(2).replace('.',',') }}<span class="text-xl font-normal text-gray-500 tracking-normal">/mês</span></div>
                  
                  <div class="w-full h-px bg-white/5 my-8"></div>
 

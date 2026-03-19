@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import localStorageService from '@/services/localStorageService';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { LogOut, User, Menu, ShieldAlert } from 'lucide-vue-next';
@@ -11,6 +12,15 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 const isSidebarOpen = ref(false);
+
+const establishmentName = ref('');
+const establishmentLogo = ref('');
+
+onMounted(() => {
+  const data = localStorageService.getOnboarding();
+  establishmentName.value = data?.nome_estabelecimento || '';
+  establishmentLogo.value = localStorageService.getImage() || '';
+});
 
 const roleName = computed(() => authStore.user?.role?.name || '');
 const isAdmin = computed(() => authStore.isAdmin);
@@ -54,6 +64,15 @@ const handleNavigation = (path) => {
       <div class="flex items-center cursor-pointer hover:opacity-80 transition-opacity" @click="router.push('/app/dashboard')">
         <img :src="imgLogo" alt="PedidoFácil" class="h-9 sm:h-12 object-contain" />
       </div>
+    </div>
+
+    <!-- Establishment name + logo -->
+    <div v-if="establishmentName" class="hidden md:flex items-center gap-2.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full">
+      <div class="w-6 h-6 rounded-lg overflow-hidden bg-white/10 flex items-center justify-center shrink-0">
+        <img v-if="establishmentLogo" :src="establishmentLogo" class="w-full h-full object-contain p-0.5" />
+        <div v-else class="w-3 h-3 rounded-sm bg-brand-green/40" />
+      </div>
+      <span class="text-white text-xs font-bold max-w-[120px] truncate">{{ establishmentName }}</span>
     </div>
 
     <div class="flex items-center gap-3">
