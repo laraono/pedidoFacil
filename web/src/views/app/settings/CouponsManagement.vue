@@ -104,9 +104,9 @@ const doDelete = () => {
 const isExpired = (c) => c.expiresAt && new Date(c.expiresAt) < new Date();
 
 const statusOf = (c) => {
-  if (isExpired(c)) return { label: 'Vencido', cls: 'bg-red-500/10 text-red-400 border-red-500/20' };
-  if (c.active === false) return { label: 'Inativo', cls: 'bg-white/10 text-gray-400 border-white/10' };
-  return { label: 'Ativo', cls: 'bg-brand-green/10 text-brand-green border-brand-green/20' };
+  if (isExpired(c)) return { label: 'Vencido', cls: 'bg-danger-light text-danger border-danger' };
+  if (c.active === false) return { label: 'Inativo', cls: 'bg-gray-100 text-[#757575] border-[#E0E0E0]' };
+  return { label: 'Ativo', cls: 'bg-accent-light text-accent border-accent/30' };
 };
 </script>
 
@@ -119,7 +119,7 @@ const statusOf = (c) => {
       </template>
     </PageHeader>
 
-    <div v-if="store.coupons.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-600">
+    <div v-if="store.coupons.length === 0" class="flex flex-col items-center justify-center py-20 text-[#757575]">
       <Tag :size="48" class="mb-4 opacity-20" />
       <p class="font-black uppercase tracking-widest text-sm opacity-40">Nenhum cupom cadastrado</p>
     </div>
@@ -128,52 +128,52 @@ const statusOf = (c) => {
       <div
         v-for="coupon in store.coupons"
         :key="coupon.id"
-        class="bg-dark-card border border-white/10 rounded-[2rem] p-6 flex flex-col gap-4 transition-all hover:border-white/20"
+        class="bg-white border border-[#E0E0E0] rounded p-6 flex flex-col gap-4 transition-all hover:border-[#E0E0E0]"
       >
         <div class="flex items-start justify-between gap-2">
           <div class="flex items-center gap-3 min-w-0">
-            <div class="p-2.5 bg-brand-green/10 border border-brand-green/20 rounded-2xl shrink-0">
-              <Tag :size="18" class="text-brand-green" />
+            <div class="p-2.5 bg-accent-light border border-accent/30 rounded shrink-0">
+              <Tag :size="18" class="text-accent" />
             </div>
             <div class="min-w-0">
-              <p class="font-black text-white text-base tracking-widest font-mono truncate">{{ coupon.code }}</p>
-              <p v-if="coupon.description" class="text-gray-500 text-xs mt-0.5 truncate">{{ coupon.description }}</p>
+              <p class="font-black text-[#212121] text-base tracking-widest font-mono truncate">{{ coupon.code }}</p>
+              <p v-if="coupon.description" class="text-[#757575] text-xs mt-0.5 truncate">{{ coupon.description }}</p>
             </div>
           </div>
-          <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border shrink-0" :class="statusOf(coupon).cls">
+          <span class="px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest border shrink-0" :class="statusOf(coupon).cls">
             {{ statusOf(coupon).label }}
           </span>
         </div>
 
-        <div class="flex items-center gap-2 p-3 bg-white/[0.03] rounded-2xl border border-white/5">
-          <component :is="coupon.type === 'percent' ? BadgePercent : DollarSign" :size="16" class="text-brand-green shrink-0" />
-          <span class="text-brand-green font-black text-xl">
+        <div class="flex items-center gap-2 p-3 bg-gray-50 rounded border border-[#E0E0E0]">
+          <component :is="coupon.type === 'percent' ? BadgePercent : DollarSign" :size="16" class="text-accent shrink-0" />
+          <span class="text-accent font-black text-xl">
             {{ coupon.type === 'percent' ? coupon.value + '%' : 'R$ ' + Number(coupon.value).toFixed(2) }}
           </span>
-          <span class="text-gray-500 text-xs ml-1">{{ coupon.type === 'percent' ? 'de desconto' : 'fixo' }}</span>
+          <span class="text-[#757575] text-xs ml-1">{{ coupon.type === 'percent' ? 'de desconto' : 'fixo' }}</span>
         </div>
 
-        <div class="flex items-center gap-2 text-xs" :class="isExpired(coupon) ? 'text-red-400' : 'text-gray-500'">
+        <div class="flex items-center gap-2 text-xs" :class="isExpired(coupon) ? 'text-danger' : 'text-[#757575]'">
           <Calendar :size="13" />
           <span v-if="!coupon.expiresAt">Sem data de validade</span>
           <span v-else-if="isExpired(coupon)">Vencido em {{ new Date(coupon.expiresAt).toLocaleDateString('pt-BR') }}</span>
           <span v-else>Válido até {{ new Date(coupon.expiresAt).toLocaleDateString('pt-BR') }}</span>
         </div>
 
-        <div class="flex items-center justify-between pt-3 border-t border-white/5 mt-auto">
+        <div class="flex items-center justify-between pt-3 border-t border-[#E0E0E0] mt-auto">
           <button
             @click="toggleActive(coupon)"
             class="flex items-center gap-1.5 text-xs font-bold transition-colors"
-            :class="coupon.active !== false ? 'text-brand-green hover:opacity-70' : 'text-gray-500 hover:text-gray-300'"
+            :class="coupon.active !== false ? 'text-accent hover:opacity-70' : 'text-[#757575] hover:text-[#757575]'"
           >
             <Power :size="13" />
             {{ coupon.active !== false ? 'Ativo' : 'Inativo' }}
           </button>
           <div class="flex gap-1">
-            <button @click="openEdit(coupon)" class="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all" title="Editar">
+            <button @click="openEdit(coupon)" class="p-2 text-[#757575] hover:text-[#212121] hover:bg-gray-50 rounded transition-all" title="Editar">
               <Edit :size="16" />
             </button>
-            <button @click="confirmDelete = coupon" class="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all" title="Excluir">
+            <button @click="confirmDelete = coupon" class="p-2 text-[#757575] hover:text-danger hover:bg-danger-light rounded transition-all" title="Excluir">
               <Trash2 :size="16" />
             </button>
           </div>
@@ -207,18 +207,18 @@ const statusOf = (c) => {
         />
         <div class="flex gap-4">
           <div class="flex-1 flex flex-col gap-1">
-            <label class="text-xs font-black text-gray-300 uppercase tracking-widest ml-2">Tipo</label>
+            <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-2">Tipo</label>
             <select
               v-model="form.type"
               @change="form.value = ''"
-              class="w-full py-3.5 px-4 rounded-2xl border bg-white/5 border-white/15 text-white focus:outline-none focus:border-brand-green/50 transition-all appearance-none"
+              class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] focus:outline-none focus:border-primary/50 transition-all appearance-none"
             >
-              <option value="percent" class="bg-zinc-900">Percentual (%)</option>
-              <option value="fixed" class="bg-zinc-900">Valor fixo (R$)</option>
+              <option value="percent" class="bg-white">Percentual (%)</option>
+              <option value="fixed" class="bg-white">Valor fixo (R$)</option>
             </select>
           </div>
           <div class="flex-1 flex flex-col gap-1">
-            <label class="text-xs font-black text-gray-300 uppercase tracking-widest ml-2">
+            <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-2">
               {{ form.type === 'percent' ? 'Desconto (%)' : 'Desconto (R$)' }}
             </label>
             <div class="relative">
@@ -227,37 +227,37 @@ const statusOf = (c) => {
                 @input="onValueInput"
                 inputmode="numeric"
                 :placeholder="form.type === 'percent' ? '0' : '0,00'"
-                class="w-full py-3.5 px-4 rounded-2xl border bg-white/5 border-white/15 text-white focus:outline-none focus:border-brand-green/50 transition-all pr-10"
+                class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] focus:outline-none focus:border-primary/50 transition-all pr-10"
                 :class="errors.value ? '!border-red-500' : ''"
               />
-              <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-gray-500 pointer-events-none">
+              <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-[#757575] pointer-events-none">
                 {{ form.type === 'percent' ? '%' : 'R$' }}
               </span>
             </div>
-            <p v-if="errors.value" class="text-red-400 text-[11px] font-bold mt-0.5 ml-2">{{ errors.value }}</p>
+            <p v-if="errors.value" class="text-danger text-[11px] font-bold mt-0.5 ml-2">{{ errors.value }}</p>
           </div>
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-black text-gray-300 uppercase tracking-widest ml-2">Data de Validade (opcional)</label>
+          <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-2">Data de Validade (opcional)</label>
           <input
             v-model="form.expiresAt"
             type="date"
-            class="w-full py-3.5 px-4 rounded-2xl border bg-white/5 border-white/15 text-white focus:outline-none focus:border-brand-green/50 transition-all"
+            class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] focus:outline-none focus:border-primary/50 transition-all"
           />
-          <p class="text-gray-500 text-[10px] ml-2">Deixe em branco para cupom sem validade.</p>
+          <p class="text-[#757575] text-[10px] ml-2">Deixe em branco para cupom sem validade.</p>
         </div>
-        <div class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
+        <div class="flex items-center justify-between p-4 bg-gray-50 rounded border border-[#E0E0E0]">
           <div>
-            <p class="text-sm font-bold text-white">Cupom ativo</p>
-            <p class="text-xs text-gray-500">Cupons inativos não podem ser usados no caixa</p>
+            <p class="text-sm font-bold text-[#212121]">Cupom ativo</p>
+            <p class="text-xs text-[#757575]">Cupons inativos não podem ser usados no caixa</p>
           </div>
           <button
             type="button"
             @click="form.active = !form.active"
-            class="relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300"
-            :class="form.active ? 'bg-brand-green' : 'bg-gray-600'"
+            class="relative inline-flex h-7 w-12 items-center rounded transition-colors duration-300"
+            :class="form.active ? 'bg-accent' : 'bg-gray-600'"
           >
-            <span class="inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-300" :class="form.active ? 'translate-x-6' : 'translate-x-1'" />
+            <span class="inline-block h-5 w-5 transform rounded bg-white transition-transform duration-300" :class="form.active ? 'translate-x-6' : 'translate-x-1'" />
           </button>
         </div>
       </div>
@@ -265,20 +265,20 @@ const statusOf = (c) => {
 
     <Teleport to="body">
       <Transition name="fade">
-        <div v-if="confirmDelete" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[110] flex items-center justify-center p-4">
-          <div class="bg-dark-card border border-white/10 w-full max-w-sm rounded-[2rem] p-8 shadow-2xl">
+        <div v-if="confirmDelete" class="fixed inset-0 bg-black/50  z-[110] flex items-center justify-center p-4">
+          <div class="bg-white border border-[#E0E0E0] w-full max-w-sm rounded p-8 shadow-2xl">
             <div class="flex items-start gap-4 mb-6">
-              <div class="p-3 bg-red-500/10 rounded-2xl border border-red-500/20 shrink-0">
-                <Trash2 :size="20" class="text-red-400" />
+              <div class="p-3 bg-danger-light rounded border border-danger shrink-0">
+                <Trash2 :size="20" class="text-danger" />
               </div>
               <div>
-                <p class="text-white font-black text-base">Excluir cupom?</p>
-                <p class="text-gray-400 text-sm mt-1">O cupom <span class="text-white font-bold font-mono">{{ confirmDelete.code }}</span> será removido permanentemente.</p>
+                <p class="text-[#212121] font-black text-base">Excluir cupom?</p>
+                <p class="text-[#757575] text-sm mt-1">O cupom <span class="text-[#212121] font-bold font-mono">{{ confirmDelete.code }}</span> será removido permanentemente.</p>
               </div>
             </div>
             <div class="flex gap-3">
-              <button @click="confirmDelete = null" class="flex-1 py-3 rounded-2xl text-gray-400 font-bold hover:bg-white/5 transition-colors border border-white/10">Cancelar</button>
-              <button @click="doDelete" class="flex-1 py-3 rounded-2xl bg-red-500 text-white font-black hover:bg-red-400 transition-colors">Excluir</button>
+              <button @click="confirmDelete = null" class="flex-1 py-3 rounded text-[#757575] font-bold hover:bg-gray-50 transition-colors border border-[#E0E0E0]">Cancelar</button>
+              <button @click="doDelete" class="flex-1 py-3 rounded bg-danger text-white font-black hover:bg-red-400 transition-colors">Excluir</button>
             </div>
           </div>
         </div>

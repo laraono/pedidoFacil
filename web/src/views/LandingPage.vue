@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router';
 import { useSubscriptionStore } from '@/stores/subscriptions';
 import { User, Menu, X, Check } from 'lucide-vue-next';
 
-import imgLogo from '@/assets/logo.png'; 
+import imgLogo from '@/assets/light-logo.png'; 
 import imgOndas from '@/assets/ondas.png';
 import imgTotem from '@/assets/totem.png'; 
 import imgGraficos from '@/assets/graficos.png';
@@ -32,7 +32,7 @@ const scrollToSection = (sectionId) => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-dark-bg font-inter relative overflow-hidden">
+  <div class="min-h-screen bg-page font-inter relative overflow-hidden">
     
     <div 
       class="absolute left-0 w-full z-0 pointer-events-none opacity-90 top-[5%] h-[12vh] lg:top-[12%] lg:h-[60vh]"
@@ -54,31 +54,31 @@ const scrollToSection = (sectionId) => {
           <img :src="imgLogo" alt="Logo PedidoFácil" class="h-9 lg:h-32 w-auto object-contain" />
           
           <button @click="toggleMenu" class="lg:hidden p-1 ml-auto z-50 relative">
-            <component :is="isMenuOpen ? X : Menu" class="w-7 h-7 text-brand-green" />
+            <component :is="isMenuOpen ? X : Menu" class="w-7 h-7 text-accent" />
           </button>
         </div>
         
         <div class="flex-[2] flex justify-center items-center hidden lg:flex">
-          <nav class="space-x-10 text-lg font-bold text-white">
-            <a @click.prevent="scrollToSection('sobre')" href="#sobre" class="hover:text-brand-green transition-colors cursor-pointer">Sobre</a>
-            <a @click.prevent="scrollToSection('planos')" href="#planos" class="hover:text-brand-green transition-colors cursor-pointer">Planos</a>
-            <a @click.prevent="scrollToSection('contato')" href="#contato" class="hover:text-brand-green transition-colors cursor-pointer">Contato</a>
+          <nav class="space-x-10 text-lg font-bold text-[#212121]">
+            <a @click.prevent="scrollToSection('sobre')" href="#sobre" class="hover:text-accent transition-colors cursor-pointer">Sobre</a>
+            <a @click.prevent="scrollToSection('planos')" href="#planos" class="hover:text-accent transition-colors cursor-pointer">Planos</a>
+            <a @click.prevent="scrollToSection('contato')" href="#contato" class="hover:text-accent transition-colors cursor-pointer">Contato</a>
           </nav>
         </div>
         
         <div class="flex-1 flex justify-end hidden lg:flex">
-          <a @click.prevent="navigateToLogin" class="flex items-center space-x-2 text-white font-semibold text-lg cursor-pointer hover:text-brand-green group">
+          <a @click.prevent="navigateToLogin" class="flex items-center space-x-2 text-[#212121] font-semibold text-lg cursor-pointer hover:text-accent group">
             <span>Login</span>
-            <User class="text-white group-hover:text-brand-green transition-colors" :size="24" />
+            <User class="text-[#212121] group-hover:text-accent transition-colors" :size="24" />
           </a>
         </div>
       </header>
 
-      <div v-if="isMenuOpen" class="lg:hidden bg-dark-bg/95 backdrop-blur-md border-b border-white/5 p-5 absolute top-[60px] left-0 w-full z-40 shadow-2xl">
-        <a href="#sobre" @click.prevent="scrollToSection('sobre')" class="block py-4 border-b border-white/5 text-white text-base font-bold text-center">Sobre nós</a>
-        <a href="#planos" @click.prevent="scrollToSection('planos')" class="block py-4 border-b border-white/5 text-white text-base font-bold text-center">Planos</a>
-        <a href="#contato" @click.prevent="scrollToSection('contato')" class="block py-4 border-b border-white/5 text-white text-base font-bold text-center">Contato</a>
-         <a @click="navigateToLogin" class="block py-4 text-brand-green text-base font-bold text-center flex justify-center items-center gap-2 cursor-pointer hover:bg-brand-green/10 rounded-lg mt-2 transition-all">
+      <div v-if="isMenuOpen" class="lg:hidden bg-white border-b border-[#E0E0E0] p-5 absolute top-[60px] left-0 w-full z-40 shadow-2xl">
+        <a href="#sobre" @click.prevent="scrollToSection('sobre')" class="block py-4 border-b border-[#E0E0E0] text-[#212121] text-base font-bold text-center">Sobre nós</a>
+        <a href="#planos" @click.prevent="scrollToSection('planos')" class="block py-4 border-b border-[#E0E0E0] text-[#212121] text-base font-bold text-center">Planos</a>
+        <a href="#contato" @click.prevent="scrollToSection('contato')" class="block py-4 border-b border-[#E0E0E0] text-[#212121] text-base font-bold text-center">Contato</a>
+         <a @click="navigateToLogin" class="block py-4 text-accent text-base font-bold text-center flex justify-center items-center gap-2 cursor-pointer hover:bg-primary-dark/10 rounded mt-2 transition-all">
             <User :size="18" /> Login
         </a>
       </div>
@@ -95,77 +95,74 @@ const scrollToSection = (sectionId) => {
             
             <img :src="imgLogo" alt="Logo" class="h-10 lg:h-48 w-auto mb-5 lg:mb-10 object-contain" />
             
-            <h1 class="text-white font-extrabold mb-4 lg:mb-8 text-lg lg:text-[60px] leading-tight lg:leading-[1.1]">
+            <h1 class="text-[#212121] font-extrabold mb-4 lg:mb-8 text-lg lg:text-[60px] leading-tight lg:leading-[1.1]">
               Personalize a experiência do seu restaurante
             </h1>
             
-            <p class="text-gray-200 mb-6 lg:mb-12 text-[15px] lg:text-[22px] leading-relaxed lg:leading-[34px] max-w-full lg:max-w-[650px]">
-              Bem-vindo ao PedidoFácil. Nossa plataforma é a <strong class="text-brand-green">solução ideal</strong> para <strong class="text-white">restaurantes</strong> que querem <strong class="text-white">modernizar</strong> sua operação e <strong class="text-brand-green">aumentar as vendas</strong>.
+            <p class="text-[#212121] mb-6 lg:mb-12 text-[15px] lg:text-[22px] leading-relaxed lg:leading-[34px] max-w-full lg:max-w-[650px]">
+              Bem-vindo ao PedidoFácil. Nossa plataforma é a <strong class="text-[#212121]">solução ideal</strong> para <strong class="text-[#212121]">restaurantes</strong> que querem <strong class="text-[#212121]">modernizar</strong> sua operação e <strong class="text-[#212121]">aumentar as vendas</strong>.
             </p>
             
             <div class="flex flex-col lg:flex-row gap-3 w-full lg:w-auto">
-              <button @click="scrollToSection('planos')" class="bg-brand-green text-black font-extrabold py-2 px-5 lg:py-5 lg:px-14 rounded-lg lg:rounded-2xl text-xs lg:text-xl hover:bg-brand-green-hover transition-all shadow-xl shadow-brand-green/20 w-auto transform hover:-translate-y-1 active:scale-95">
-                Ver Planos e Começar
-              </button>
-              <button @click="scrollToSection('planos')" class="border border-white/20 text-white font-extrabold py-2 px-5 lg:py-5 lg:px-14 rounded-lg lg:rounded-2xl text-xs lg:text-xl hover:bg-white/5 transition-all w-auto">
+              <button @click="scrollToSection('planos')" class="bg-primary text-white font-extrabold py-2 px-5 lg:py-5 lg:px-14 rounded lg:rounded text-xs lg:text-xl hover:bg-primary-dark transition-all shadow-xl shadow-primary/20 w-auto transform hover:-translate-y-1 active:scale-95">
                 Conheça nossos planos
               </button>
             </div>
           </div>
         </section>
 
-        <section class="w-full max-w-[1200px] px-5 lg:px-0 py-16 flex flex-col lg:flex-row justify-around items-center gap-12 lg:gap-0 bg-white/[0.03] rounded-[2.5rem] backdrop-blur-sm border border-white/5 mx-5 lg:mx-0 shadow-2xl">
+        <section class="w-full max-w-[1200px] px-5 lg:px-0 py-16 flex flex-col lg:flex-row justify-around items-center gap-12 lg:gap-0 bg-white rounded border border-[#E0E0E0] mx-5 lg:mx-0 shadow-2xl">
             <div class="flex flex-col items-center text-center">
-              <span class="text-gray-500 text-lg font-bold mb-1 uppercase tracking-widest">Diversos</span>
-              <span class="text-brand-green text-[56px] font-black mb-2 leading-tight">Benefícios</span>
-              <span class="text-white text-xl font-medium max-w-[250px]">Para Aproveitar</span>
+              <span class="text-[#757575] text-lg font-bold mb-1 uppercase tracking-widest">Diversos</span>
+              <span class="text-accent text-[56px] font-black mb-2 leading-tight">Benefícios</span>
+              <span class="text-[#212121] text-xl font-medium max-w-[250px]">Para Aproveitar</span>
             </div>
-            <div class="hidden lg:block w-px h-24 bg-white/10"></div>
+            <div class="hidden lg:block w-px h-24 bg-gray-100"></div>
             <div class="flex flex-col items-center text-center">
-              <span class="text-gray-500 text-lg font-bold mb-1 uppercase tracking-widest">Maior</span>
-              <span class="text-brand-green text-[56px] font-black mb-2 leading-tight">Praticidade</span>
-              <span class="text-white text-xl font-medium max-w-[250px]">Com os pedidos</span>
+              <span class="text-[#757575] text-lg font-bold mb-1 uppercase tracking-widest">Maior</span>
+              <span class="text-accent text-[56px] font-black mb-2 leading-tight">Praticidade</span>
+              <span class="text-[#212121] text-xl font-medium max-w-[250px]">Com os pedidos</span>
             </div>
-            <div class="hidden lg:block w-px h-24 bg-white/10"></div>
+            <div class="hidden lg:block w-px h-24 bg-gray-100"></div>
             <div class="flex flex-col items-center text-center">
-              <span class="text-gray-500 text-lg font-bold mb-1 uppercase tracking-widest">Gestão</span>
-              <span class="text-brand-green text-[56px] font-black mb-2 leading-tight">Fácil</span>
-              <span class="text-white text-xl font-medium max-w-[250px]">De onde você estiver</span>
+              <span class="text-[#757575] text-lg font-bold mb-1 uppercase tracking-widest">Gestão</span>
+              <span class="text-accent text-[56px] font-black mb-2 leading-tight">Fácil</span>
+              <span class="text-[#212121] text-xl font-medium max-w-[250px]">De onde você estiver</span>
             </div>
         </section>
 
         <section id="sobre" class="w-full max-w-[1200px] px-5 lg:px-0 py-24 text-center">
-          <h2 class="text-white text-3xl lg:text-[42px] font-bold mb-10 leading-tight tracking-tight">
+          <h2 class="text-[#212121] text-3xl lg:text-[42px] font-bold mb-10 leading-tight tracking-tight">
             Otimize seu restaurante e aumente as vendas
           </h2>
 
-          <div class="text-gray-300 text-lg lg:text-xl leading-[30px] mb-16 max-w-[800px] mx-auto space-y-6">
-            <p>Uma <strong class="text-brand-green">plataforma completa para a gestão do seu restaurante</strong>.</p>
+          <div class="text-[#757575] text-lg lg:text-xl leading-[30px] mb-16 max-w-[800px] mx-auto space-y-6">
+            <p>Uma <strong class="text-accent">plataforma completa para a gestão do seu restaurante</strong>.</p>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-[850px] mx-auto">
             
-            <div class="w-full bg-dark-card py-12 px-8 rounded-[2.5rem] border border-white/5 hover:border-brand-green/30 transition-all duration-500 group flex flex-col items-center h-full hover:shadow-2xl hover:shadow-brand-green/5">
-              <h3 class="text-brand-green text-2xl lg:text-3xl font-bold mb-6 group-hover:scale-105 transition-transform">
+            <div class="w-full bg-white py-12 px-8 rounded border border-[#E0E0E0] hover:border-accent/40 transition-all duration-500 group flex flex-col items-center h-full hover:shadow-2xl hover:shadow-primary/5">
+              <h3 class="text-accent text-2xl lg:text-3xl font-bold mb-6 group-hover:scale-105 transition-transform">
                 Reduza erros e otimize o tempo
               </h3>
-              <p class="text-gray-300 text-base lg:text-lg leading-relaxed flex-grow mb-8">
-                Os pedidos feitos nos <strong class="text-white">totens, tablets ou no caixa</strong> são enviados diretamente e sem erros para a cozinha, eliminando a confusão de comandas de papel.
+              <p class="text-[#757575] text-base lg:text-lg leading-relaxed flex-grow mb-8">
+                Os pedidos feitos nos <strong class="text-[#212121]">totens, tablets ou no caixa</strong> são enviados diretamente e sem erros para a cozinha, eliminando a confusão de comandas de papel.
               </p>
-              <div class="p-4 bg-white/5 rounded-full group-hover:bg-brand-green/10 transition-colors mt-auto shadow-inner">
-                 <Check class="w-8 h-8 text-brand-green" stroke-width="3" />
+              <div class="p-4 bg-gray-50 rounded group-hover:bg-primary-dark/10 transition-colors mt-auto shadow-inner">
+                 <Check class="w-8 h-8 text-accent" stroke-width="3" />
               </div>
             </div>
 
-            <div class="w-full bg-dark-card py-12 px-8 rounded-[2.5rem] border border-white/5 hover:border-brand-green/30 transition-all duration-500 group flex flex-col items-center h-full hover:shadow-2xl hover:shadow-brand-green/5">
-              <h3 class="text-brand-green text-2xl lg:text-3xl font-bold mb-6 group-hover:scale-105 transition-transform">
+            <div class="w-full bg-white py-12 px-8 rounded border border-[#E0E0E0] hover:border-accent/40 transition-all duration-500 group flex flex-col items-center h-full hover:shadow-2xl hover:shadow-primary/5">
+              <h3 class="text-accent text-2xl lg:text-3xl font-bold mb-6 group-hover:scale-105 transition-transform">
                 Tenha total controle
               </h3>
-              <p class="text-gray-300 text-base lg:text-lg leading-relaxed flex-grow mb-8">
-                Altere preços, adicione ou remova produtos e personalize o cardápio em tempo real, de forma <strong class="text-white">simples e rápida</strong>, direto do painel administrativo.
+              <p class="text-[#757575] text-base lg:text-lg leading-relaxed flex-grow mb-8">
+                Altere preços, adicione ou remova produtos e personalize o cardápio em tempo real, de forma <strong class="text-[#212121]">simples e rápida</strong>, direto do painel administrativo.
               </p>
-              <div class="p-4 bg-white/5 rounded-full group-hover:bg-brand-green/10 transition-colors mt-auto shadow-inner">
-                 <Check class="w-8 h-8 text-brand-green" stroke-width="3" />
+              <div class="p-4 bg-gray-50 rounded group-hover:bg-primary-dark/10 transition-colors mt-auto shadow-inner">
+                 <Check class="w-8 h-8 text-accent" stroke-width="3" />
               </div>
             </div>
 
@@ -175,14 +172,14 @@ const scrollToSection = (sectionId) => {
         <section class="w-full max-w-[1200px] px-5 lg:px-0 py-20">
           <div class="flex flex-col lg:flex-row gap-16 items-center">
             <div class="flex-1 group w-full">
-               <h3 class="text-white text-2xl lg:text-[32px] font-bold mb-8 text-center group-hover:text-brand-green transition-colors tracking-tight">Soluções Rápidas</h3>
-               <div class="w-full flex items-center justify-center rounded-3xl bg-white/[0.02] border border-white/5 p-4 md:p-8 overflow-hidden shadow-2xl">
+               <h3 class="text-[#212121] text-2xl lg:text-[32px] font-bold mb-8 text-center group-hover:text-accent transition-colors tracking-tight">Soluções Rápidas</h3>
+               <div class="w-full flex items-center justify-center rounded bg-white border border-[#E0E0E0] p-4 md:p-8 overflow-hidden shadow-2xl">
                  <img :src="imgInterface" class="w-full h-auto object-contain hover:scale-105 transition-transform duration-500 max-h-[400px]" />
                </div>
             </div>
             <div class="flex-1 group w-full">
-               <h3 class="text-white text-2xl lg:text-[32px] font-bold mb-8 text-center group-hover:text-brand-green transition-colors tracking-tight">Relatórios de Desempenho</h3>
-               <div class="w-full flex items-center justify-center rounded-3xl bg-white/[0.02] border border-white/5 p-4 md:p-8 overflow-hidden shadow-2xl">
+               <h3 class="text-[#212121] text-2xl lg:text-[32px] font-bold mb-8 text-center group-hover:text-accent transition-colors tracking-tight">Relatórios de Desempenho</h3>
+               <div class="w-full flex items-center justify-center rounded bg-white border border-[#E0E0E0] p-4 md:p-8 overflow-hidden shadow-2xl">
                  <img :src="imgGraficos" class="w-full h-auto object-contain hover:scale-105 transition-transform duration-500 max-h-[400px]" />
                </div>
             </div>
@@ -190,49 +187,54 @@ const scrollToSection = (sectionId) => {
         </section>
 
         <section id="planos" class="w-full max-w-[1000px] px-5 lg:px-0 py-24 text-center">
-           <h2 class="text-white text-3xl lg:text-[42px] font-bold mb-16 tracking-tight">Escolha seu plano</h2>
+           <h2 class="text-[#212121] text-3xl lg:text-[42px] font-bold mb-16 tracking-tight">Escolha seu plano</h2>
            
            <div class="flex flex-col lg:flex-row gap-8 justify-center items-stretch">
               
-              <div class="flex-1 bg-dark-card px-8 py-12 rounded-[2.5rem] border border-white/5 flex flex-col items-center hover:border-brand-green/20 transition-all max-w-md mx-auto w-full h-full hover:shadow-2xl">
-                 <h3 class="text-brand-green text-3xl font-black mb-4">Mensal</h3>
-                 <div class="text-white text-5xl lg:text-6xl font-black mb-2 tracking-tighter">R${{ planPrices.monthly.toFixed(2).replace('.',',') }}<span class="text-xl font-normal text-gray-500 tracking-normal">/mês</span></div>
-                 
-                 <div class="w-full h-px bg-white/5 my-8"></div>
+              <div class="flex-1 bg-white px-8 py-12 rounded border border-[#E0E0E0] flex flex-col items-center hover:border-primary/30 transition-all max-w-md mx-auto w-full h-full hover:shadow-md">
+                 <h3 class="text-[#212121] text-3xl font-black mb-4">Mensal</h3>
+                 <div class="text-[#212121] text-5xl lg:text-6xl font-black mb-1 tracking-tighter">R${{ planPrices.monthly.toFixed(2).replace('.',',') }}<span class="text-xl font-normal text-[#757575] tracking-normal">/mês</span></div>
+                 <p class="text-xs text-[#757575] mb-2">cobrado mensalmente</p>
+
+                 <div class="w-full h-px bg-[#E0E0E0] my-8"></div>
 
                  <div class="flex flex-col gap-5 mb-10 w-full px-2 text-left">
-                    <div class="flex items-center gap-4 text-gray-300 font-medium"><Check class="text-brand-green w-6 h-6 flex-shrink-0" stroke-width="3" /> Suporte ao Usuário</div>
-                    <div class="flex items-center gap-4 text-gray-300 font-medium"><Check class="text-brand-green w-6 h-6 flex-shrink-0" stroke-width="3" /> Relatórios de Desempenho</div>
-                    <div class="flex items-center gap-4 text-gray-300 font-medium"><Check class="text-brand-green w-6 h-6 flex-shrink-0" stroke-width="3" /> Automação do Sistema</div>
-                    
+                    <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Suporte ao Usuário</div>
+                    <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Relatórios de Desempenho</div>
+                    <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Automação do Sistema</div>
                     <div class="flex items-center gap-4 text-transparent opacity-0 select-none">
-                      <Check class="w-6 h-6 flex-shrink-0" /> Maior Estabilidade
+                      <Check class="w-5 h-5 flex-shrink-0" /> Maior Estabilidade
                     </div>
                  </div>
 
-                 <button @click="navigateToRegister" class="bg-white text-black font-black py-5 px-12 rounded-2xl w-full hover:bg-gray-100 transition-colors mt-auto text-lg active:scale-95">
-                    Confirmar
+                 <button @click="navigateToRegister" class="bg-primary text-white font-black py-4 px-12 rounded w-full hover:bg-primary-dark transition-colors mt-auto text-base active:scale-95">
+                    Contratar Mensal
                  </button>
               </div>
 
-              <div class="flex-1 bg-dark-card px-8 py-12 rounded-[2.5rem] border-2 border-brand-green/30 flex flex-col items-center hover:border-brand-green transition-all max-w-md mx-auto w-full h-full hover:shadow-2xl hover:shadow-brand-green/10 relative">
-                 
-                 <div class="absolute top-0 right-0 bg-brand-green text-black font-black text-[10px] px-5 py-2.5 rounded-bl-2xl rounded-tr-[2.5rem] uppercase tracking-wider">RECOMENDADO</div>
+              <div class="flex-1 bg-primary-light px-8 py-12 rounded border-2 border-primary/30 flex flex-col items-center hover:border-primary/60 transition-all max-w-md mx-auto w-full h-full hover:shadow-lg relative">
 
-                 <h3 class="text-brand-green text-3xl font-black mb-4">Anual</h3>
-                 <div class="text-white text-5xl lg:text-6xl font-black mb-2 tracking-tighter">R${{ planPrices.annual.toFixed(2).replace('.',',') }}<span class="text-xl font-normal text-gray-500 tracking-normal">/mês</span></div>
-                 
-                 <div class="w-full h-px bg-white/5 my-8"></div>
+                 <div class="absolute top-0 right-0 bg-primary text-white font-black text-[10px] px-4 py-2 rounded uppercase tracking-wider">RECOMENDADO</div>
+
+                 <h3 class="text-primary text-3xl font-black mb-4">Anual</h3>
+                 <div class="text-[#212121] text-5xl lg:text-6xl font-black mb-1 tracking-tighter">R${{ planPrices.annual.toFixed(2).replace('.',',') }}<span class="text-xl font-normal text-[#757575] tracking-normal">/mês</span></div>
+                 <div class="flex items-center gap-2 mb-1">
+                   <span class="text-xs line-through text-[#757575]">R${{ (planPrices.monthly * 12).toFixed(2).replace('.',',') }}/ano</span>
+                   <span class="text-[10px] font-black text-white bg-accent px-2 py-0.5 rounded uppercase tracking-wide">Promoção</span>
+                 </div>
+                 <p class="text-xs text-primary font-bold mb-2">Total anual: R${{ (planPrices.annual * 12).toFixed(2).replace('.',',') }}</p>
+
+                 <div class="w-full h-px bg-primary/20 my-8"></div>
 
                  <div class="flex flex-col gap-5 mb-10 w-full px-2 text-left">
-                    <div class="flex items-center gap-4 text-gray-300 font-medium"><Check class="text-brand-green w-6 h-6 flex-shrink-0" stroke-width="3" /> Suporte ao Usuário</div>
-                    <div class="flex items-center gap-4 text-gray-300 font-medium"><Check class="text-brand-green w-6 h-6 flex-shrink-0" stroke-width="3" /> Relatórios de Desempenho</div>
-                    <div class="flex items-center gap-4 text-gray-300 font-medium"><Check class="text-brand-green w-6 h-6 flex-shrink-0" stroke-width="3" /> Automação do Sistema</div>
-                    <div class="flex items-center gap-4 text-white font-bold"><Check class="text-brand-green w-6 h-6 flex-shrink-0" stroke-width="3" /> Maior Estabilidade</div>
+                    <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Suporte ao Usuário</div>
+                    <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Relatórios de Desempenho</div>
+                    <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Automação do Sistema</div>
+                    <div class="flex items-center gap-4 text-[#212121] font-bold"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Maior Estabilidade</div>
                  </div>
 
-                 <button @click="navigateToRegister" class="bg-white text-black font-black py-5 px-12 rounded-2xl w-full hover:bg-brand-green-hover transition-colors mt-auto text-lg shadow-lg shadow-brand-green/20 active:scale-95">
-                    Confirmar
+                 <button @click="navigateToRegister" class="bg-primary text-white font-black py-4 px-12 rounded w-full hover:bg-primary-dark transition-colors mt-auto text-base shadow-md shadow-primary/20 active:scale-95">
+                    Contratar Anual
                  </button>
               </div>
 
@@ -240,22 +242,22 @@ const scrollToSection = (sectionId) => {
         </section>
         
         <section id="contato" class="w-full max-w-[700px] px-5 lg:px-0 mt-20 mb-32 text-center">
-          <h2 class="text-white text-3xl lg:text-[42px] font-bold mb-12 tracking-tight">Fale Conosco</h2>
+          <h2 class="text-[#212121] text-3xl lg:text-[42px] font-bold mb-12 tracking-tight">Fale Conosco</h2>
           
-          <div class="bg-dark-card rounded-[3rem] p-8 lg:p-14 shadow-2xl border border-white/5">
+          <div class="bg-white rounded p-8 lg:p-14 shadow-2xl border border-[#E0E0E0]">
               <form class="flex flex-col text-left" @submit.prevent>
-                  <h3 class="text-brand-green text-xs font-black mb-10 text-center uppercase tracking-[0.2em]">Envie uma mensagem</h3>
+                  <h3 class="text-accent text-xs font-black mb-10 text-center uppercase tracking-[0.2em]">Envie uma mensagem</h3>
                   
-                  <label class="text-gray-500 text-[10px] font-black ml-2 mb-2 uppercase tracking-widest">Seu Nome</label>
-                  <input type="text" required maxlength="100" placeholder="Ex: João Silva" class="bg-white/5 border border-white/10 rounded-2xl p-5 text-white placeholder-gray-600 mb-6 focus:outline-none focus:border-brand-green/50 focus:ring-1 focus:ring-brand-green/50 transition-all font-medium" />
+                  <label class="text-[#757575] text-[10px] font-black ml-2 mb-2 uppercase tracking-widest">Seu Nome</label>
+                  <input type="text" required maxlength="100" placeholder="Ex: João Silva" class="bg-gray-50 border border-[#E0E0E0] rounded p-5 text-[#212121] placeholder-gray-600 mb-6 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30/50 transition-all font-medium" />
 
-                  <label class="text-gray-500 text-[10px] font-black ml-2 mb-2 uppercase tracking-widest">Seu Email</label>
-                  <input type="email" required maxlength="255" placeholder="Ex: contato@email.com" class="bg-white/5 border border-white/10 rounded-2xl p-5 text-white placeholder-gray-600 mb-6 focus:outline-none focus:border-brand-green/50 focus:ring-1 focus:ring-brand-green/50 transition-all font-medium" />
+                  <label class="text-[#757575] text-[10px] font-black ml-2 mb-2 uppercase tracking-widest">Seu Email</label>
+                  <input type="email" required maxlength="255" placeholder="Ex: contato@email.com" class="bg-gray-50 border border-[#E0E0E0] rounded p-5 text-[#212121] placeholder-gray-600 mb-6 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30/50 transition-all font-medium" />
 
-                  <label class="text-gray-500 text-[10px] font-black ml-2 mb-2 uppercase tracking-widest">Mensagem</label>
-                  <textarea rows="4" required maxlength="1000" placeholder="Como podemos ajudar?" class="bg-white/5 border border-white/10 rounded-2xl p-5 text-white placeholder-gray-600 mb-10 focus:outline-none focus:border-brand-green/50 focus:ring-1 focus:ring-brand-green/50 resize-none transition-all font-medium"></textarea>
+                  <label class="text-[#757575] text-[10px] font-black ml-2 mb-2 uppercase tracking-widest">Mensagem</label>
+                  <textarea rows="4" required maxlength="1000" placeholder="Como podemos ajudar?" class="bg-gray-50 border border-[#E0E0E0] rounded p-5 text-[#212121] placeholder-gray-600 mb-10 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30/50 resize-none transition-all font-medium"></textarea>
 
-                  <button type="submit" class="bg-brand-green text-black font-black text-xl py-5 rounded-2xl hover:bg-brand-green-hover transition-all shadow-xl shadow-brand-green/20 active:scale-95">
+                  <button type="submit" class="bg-primary text-white font-black text-xl py-5 rounded hover:bg-primary-dark transition-all shadow-xl shadow-primary/20 active:scale-95">
                       Enviar Mensagem
                   </button>
               </form>

@@ -101,12 +101,12 @@ const togglePermission = (id) => {
     
     <header class="flex items-center justify-between mb-10">
       <div class="flex items-center gap-4">
-        <button @click="router.push('/app/dashboard')" class="p-3 bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-white transition-colors">
+        <button @click="router.push('/app/dashboard')" class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] transition-colors">
           <ArrowLeft :size="20" />
         </button>
         <div>
-          <h1 class="text-3xl font-black text-white">Cargos e Permissões</h1>
-          <p class="text-gray-400 text-sm">Gerenciando acessos do estabelecimento</p>
+          <h1 class="text-3xl font-black text-[#212121]">Cargos e Permissões</h1>
+          <p class="text-[#757575] text-sm">Gerenciando acessos do estabelecimento</p>
         </div>
       </div>
       <BaseButton @click="openModal()" :icon="Plus">
@@ -114,7 +114,7 @@ const togglePermission = (id) => {
       </BaseButton>
     </header>
 
-    <div v-if="roles.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-600">
+    <div v-if="roles.length === 0" class="flex flex-col items-center justify-center py-20 text-[#757575]">
       <ShieldCheck :size="48" class="mb-4 opacity-20" />
       <p class="font-black uppercase tracking-widest text-sm opacity-40">Nenhum cargo cadastrado</p>
     </div>
@@ -123,32 +123,32 @@ const togglePermission = (id) => {
       <div
         v-for="role in roles"
         :key="role.id"
-        class="bg-dark-card border border-white/10 rounded-[2rem] p-8 group transition-all hover:border-brand-green/30 cursor-pointer"
+        class="bg-white border border-[#E0E0E0] rounded p-8 group transition-all hover:border-accent/40 cursor-pointer"
         @click="openModal(role)"
       >
         <div class="flex justify-between items-start mb-6">
-          <ShieldCheck class="text-brand-green" :size="24" />
+          <ShieldCheck class="text-accent" :size="24" />
           <button
             @click.stop="confirmDeleteRole = role"
-            class="p-1.5 text-gray-600 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+            class="p-1.5 text-[#757575] hover:text-red-500 hover:bg-danger-light rounded transition-all"
             title="Excluir cargo"
           >
             <Trash2 :size="16" />
           </button>
         </div>
-        <h3 class="text-xl font-bold text-white">{{ role.name }}</h3>
-        <p class="text-[10px] font-black uppercase tracking-widest text-gray-500 mt-2">
+        <h3 class="text-xl font-bold text-[#212121]">{{ role.name }}</h3>
+        <p class="text-[10px] font-black uppercase tracking-widest text-[#757575] mt-2">
           {{ role.permissions.length }} Permissões Ativas
         </p>
         <div class="flex flex-wrap gap-1 mt-4">
           <span
             v-for="permId in role.permissions.slice(0, 3)"
             :key="permId"
-            class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 bg-brand-green/10 text-brand-green rounded-full border border-brand-green/20"
+            class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 bg-accent-light text-accent rounded border border-accent/30"
           >
             {{ AVAILABLE_PERMISSIONS.find(p => p.id === permId)?.label || permId }}
           </span>
-          <span v-if="role.permissions.length > 3" class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 bg-white/5 text-gray-400 rounded-full">
+          <span v-if="role.permissions.length > 3" class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 bg-gray-50 text-[#757575] rounded">
             +{{ role.permissions.length - 3 }}
           </span>
         </div>
@@ -158,20 +158,20 @@ const togglePermission = (id) => {
     <!-- Confirmação de exclusão -->
     <Teleport to="body">
       <Transition name="fade">
-        <div v-if="confirmDeleteRole" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[110] flex items-center justify-center p-4">
-          <div class="bg-dark-card border border-white/10 w-full max-w-sm rounded-[2rem] p-8 shadow-2xl">
+        <div v-if="confirmDeleteRole" class="fixed inset-0 bg-black/50  z-[110] flex items-center justify-center p-4">
+          <div class="bg-white border border-[#E0E0E0] w-full max-w-sm rounded p-8 shadow-2xl">
             <div class="flex items-start gap-4 mb-6">
-              <div class="p-3 bg-red-500/10 rounded-2xl border border-red-500/20 shrink-0">
-                <Trash2 :size="20" class="text-red-400" />
+              <div class="p-3 bg-danger-light rounded border border-danger shrink-0">
+                <Trash2 :size="20" class="text-danger" />
               </div>
               <div>
-                <p class="text-white font-black text-base">Excluir cargo?</p>
-                <p class="text-gray-400 text-sm mt-1">O cargo <span class="text-white font-bold">"{{ confirmDeleteRole.name }}"</span> será removido permanentemente. Usuários com este cargo perderão as permissões.</p>
+                <p class="text-[#212121] font-black text-base">Excluir cargo?</p>
+                <p class="text-[#757575] text-sm mt-1">O cargo <span class="text-[#212121] font-bold">"{{ confirmDeleteRole.name }}"</span> será removido permanentemente. Usuários com este cargo perderão as permissões.</p>
               </div>
             </div>
             <div class="flex gap-3">
-              <button @click="confirmDeleteRole = null" class="flex-1 py-3 rounded-2xl text-gray-400 font-bold hover:bg-white/5 transition-colors border border-white/10">Cancelar</button>
-              <button @click="deleteRole" class="flex-1 py-3 rounded-2xl bg-red-500 text-white font-black hover:bg-red-400 transition-colors">Excluir</button>
+              <button @click="confirmDeleteRole = null" class="flex-1 py-3 rounded text-[#757575] font-bold hover:bg-gray-50 transition-colors border border-[#E0E0E0]">Cancelar</button>
+              <button @click="deleteRole" class="flex-1 py-3 rounded bg-danger text-white font-black hover:bg-red-400 transition-colors">Excluir</button>
             </div>
           </div>
         </div>
@@ -180,15 +180,15 @@ const togglePermission = (id) => {
 
     <Teleport to="body">
       <Transition name="fade">
-        <div v-if="isModalOpen" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div class="bg-dark-card border border-white/10 w-full max-w-2xl rounded-[2.5rem] flex flex-col max-h-[90vh] shadow-2xl">
+        <div v-if="isModalOpen" class="fixed inset-0 bg-black/50  z-[100] flex items-center justify-center p-4">
+          <div class="bg-white border border-[#E0E0E0] w-full max-w-2xl rounded flex flex-col max-h-[90vh] shadow-2xl">
             
-            <header class="p-8 border-b border-white/5 flex justify-between items-center bg-black/20">
-              <h2 class="text-2xl font-black text-white flex items-center gap-3">
-                <Lock :size="24" class="text-brand-green" />
+            <header class="p-8 border-b border-[#E0E0E0] flex justify-between items-center bg-gray-100">
+              <h2 class="text-2xl font-black text-[#212121] flex items-center gap-3">
+                <Lock :size="24" class="text-accent" />
                 {{ isEditing ? 'Editar Cargo' : 'Novo Cargo' }}
               </h2>
-              <button @click="isModalOpen = false" class="p-2 text-gray-400 hover:text-white">
+              <button @click="isModalOpen = false" class="p-2 text-[#757575] hover:text-[#212121]">
                 <X :size="24" />
               </button>
             </header>
@@ -203,28 +203,28 @@ const togglePermission = (id) => {
               />
 
               <div class="space-y-4">
-                <label class="text-xs font-black uppercase tracking-widest text-gray-500 ml-2">Permissões de Acesso</label>
+                <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-2">Permissões de Acesso</label>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div
                     v-for="perm in AVAILABLE_PERMISSIONS"
                     :key="perm.id"
                     @click="togglePermission(perm.id)"
-                    :class="currentRole.permissions.includes(perm.id) ? 'border-brand-green bg-brand-green/5' : 'border-white/5 bg-white/5'"
-                    class="p-4 rounded-2xl border cursor-pointer transition-all flex items-start gap-4"
+                    :class="currentRole.permissions.includes(perm.id) ? 'border-accent bg-accent-light' : 'border-[#E0E0E0] bg-gray-50'"
+                    class="p-4 rounded border cursor-pointer transition-all flex items-start gap-4"
                   >
                     <div class="mt-1">
                       <div
-                        class="w-5 h-5 rounded border border-white/20 flex items-center justify-center"
-                        :class="currentRole.permissions.includes(perm.id) ? 'bg-brand-green border-brand-green' : ''"
+                        class="w-5 h-5 rounded border border-[#E0E0E0] flex items-center justify-center"
+                        :class="currentRole.permissions.includes(perm.id) ? 'bg-accent border-accent' : ''"
                       >
                         <CheckCircle v-if="currentRole.permissions.includes(perm.id)" :size="14" class="text-black" />
                       </div>
                     </div>
                     <div>
-                      <span class="block font-bold text-sm" :class="currentRole.permissions.includes(perm.id) ? 'text-brand-green' : 'text-white'">
+                      <span class="block font-bold text-sm" :class="currentRole.permissions.includes(perm.id) ? 'text-accent' : 'text-[#212121]'">
                         {{ perm.label }}
                       </span>
-                      <span class="text-[10px] text-gray-500 font-medium">{{ perm.desc }}</span>
+                      <span class="text-[10px] text-[#757575] font-medium">{{ perm.desc }}</span>
                     </div>
                   </div>
                 </div>
@@ -234,8 +234,8 @@ const togglePermission = (id) => {
               </div>
             </div>
 
-            <footer class="p-8 border-t border-white/5 bg-black/20 flex justify-end gap-4">
-              <button @click="isModalOpen = false" class="px-6 py-3 rounded-2xl text-gray-400 font-bold hover:bg-white/5 hover:text-white transition-colors">
+            <footer class="p-8 border-t border-[#E0E0E0] bg-gray-100 flex justify-end gap-4">
+              <button @click="isModalOpen = false" class="px-6 py-3 rounded text-[#757575] font-bold hover:bg-gray-50 hover:text-[#212121] transition-colors">
                 Cancelar
               </button>
               <BaseButton @click="saveRole" :isLoading="isLoading" class="px-12">

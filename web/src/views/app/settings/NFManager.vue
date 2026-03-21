@@ -60,9 +60,9 @@ const metrics = computed(() => ({
 }));
 
 const statusConfig = {
-  autorizada: { label: 'Autorizada', cls: 'bg-brand-green/10 text-brand-green border-brand-green/20' },
-  erro: { label: 'Erro', cls: 'bg-red-500/10 text-red-400 border-red-500/20' },
-  cancelada: { label: 'Cancelada', cls: 'bg-white/10 text-gray-400 border-white/10' },
+  autorizada: { label: 'Autorizada', cls: 'bg-accent-light text-accent border-accent/30' },
+  erro: { label: 'Erro', cls: 'bg-danger-light text-danger border-danger' },
+  cancelada: { label: 'Cancelada', cls: 'bg-gray-100 text-[#757575] border-[#E0E0E0]' },
   pendente: { label: 'Pendente', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
 };
 
@@ -91,20 +91,20 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
 
     <!-- CNPJ guard -->
     <div v-if="!hasCnpj" class="flex items-center justify-center min-h-[60vh]">
-      <div class="bg-dark-card border border-white/10 rounded-[2rem] p-10 max-w-md w-full text-center shadow-2xl">
-        <div class="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-5">
+      <div class="bg-white border border-[#E0E0E0] rounded p-10 max-w-md w-full text-center shadow-2xl">
+        <div class="w-16 h-16 rounded bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-5">
           <AlertTriangle :size="28" class="text-amber-400" />
         </div>
-        <h2 class="text-xl font-black text-white mb-3">Dados fiscais não configurados</h2>
-        <p class="text-sm text-gray-400 mb-2 leading-relaxed">
-          A emissão de Notas Fiscais requer o <span class="text-white font-bold">CNPJ</span> do estabelecimento cadastrado.
+        <h2 class="text-xl font-black text-[#212121] mb-3">Dados fiscais não configurados</h2>
+        <p class="text-sm text-[#757575] mb-2 leading-relaxed">
+          A emissão de Notas Fiscais requer o <span class="text-[#212121] font-bold">CNPJ</span> do estabelecimento cadastrado.
         </p>
-        <p class="text-xs text-gray-500 mb-8 leading-relaxed">
+        <p class="text-xs text-[#757575] mb-8 leading-relaxed">
           Adicione o CNPJ nas configurações do estabelecimento para habilitar este módulo.
         </p>
         <button
           @click="router.push('/app/settings/establishment')"
-          class="w-full py-3.5 rounded-2xl bg-brand-green text-black font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-brand-green-hover transition-colors active:scale-95"
+          class="w-full py-3.5 rounded bg-primary text-white font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary-dark transition-colors active:scale-95"
         >
           <Building2 :size="16" />
           Ir para Meu Estabelecimento
@@ -117,7 +117,7 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
       <template #actions>
         <button
           @click="exportAll"
-          class="flex items-center gap-2 px-5 py-3 bg-white/5 border border-white/10 text-gray-300 text-sm font-black uppercase tracking-widest rounded-2xl hover:bg-white/10 hover:text-white transition-all"
+          class="flex items-center gap-2 px-5 py-3 bg-gray-50 border border-[#E0E0E0] text-[#757575] text-sm font-black uppercase tracking-widest rounded hover:bg-gray-100 hover:text-[#212121] transition-all"
         >
           <Download :size="16" /> Exportar XML
         </button>
@@ -126,52 +126,52 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
 
     <!-- Métricas -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      <div class="bg-dark-card border border-white/10 rounded-[2rem] p-6 flex flex-col gap-2">
+      <div class="bg-white border border-[#E0E0E0] rounded p-6 flex flex-col gap-2">
         <div class="flex items-center gap-3">
-          <div class="p-2.5 bg-brand-green/10 border border-brand-green/20 rounded-2xl">
-            <CheckCircle2 :size="18" class="text-brand-green" />
+          <div class="p-2.5 bg-accent-light border border-accent/30 rounded">
+            <CheckCircle2 :size="18" class="text-accent" />
           </div>
-          <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Emitidas hoje</p>
+          <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest">Emitidas hoje</p>
         </div>
-        <p class="text-3xl font-black text-white">{{ metrics.emitidas }}</p>
+        <p class="text-3xl font-black text-[#212121]">{{ metrics.emitidas }}</p>
       </div>
-      <div class="bg-dark-card border border-white/10 rounded-[2rem] p-6 flex flex-col gap-2">
+      <div class="bg-white border border-[#E0E0E0] rounded p-6 flex flex-col gap-2">
         <div class="flex items-center gap-3">
-          <div class="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-2xl">
+          <div class="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded">
             <FileText :size="18" class="text-blue-400" />
           </div>
-          <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total faturado</p>
+          <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest">Total faturado</p>
         </div>
-        <p class="text-3xl font-black text-brand-green">R$ {{ metrics.faturado.toFixed(2) }}</p>
+        <p class="text-3xl font-black text-accent">R$ {{ metrics.faturado.toFixed(2) }}</p>
       </div>
-      <div class="bg-dark-card border border-white/10 rounded-[2rem] p-6 flex flex-col gap-2">
+      <div class="bg-white border border-[#E0E0E0] rounded p-6 flex flex-col gap-2">
         <div class="flex items-center gap-3">
-          <div class="p-2.5 bg-purple-500/10 border border-purple-500/20 rounded-2xl">
+          <div class="p-2.5 bg-primary/10 border border-primary/20 rounded">
             <Search :size="18" class="text-purple-400" />
           </div>
-          <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Com CPF</p>
+          <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest">Com CPF</p>
         </div>
-        <p class="text-3xl font-black text-white">{{ metrics.comCpf }}</p>
+        <p class="text-3xl font-black text-[#212121]">{{ metrics.comCpf }}</p>
       </div>
-      <div class="bg-dark-card border border-white/10 rounded-[2rem] p-6 flex flex-col gap-2">
+      <div class="bg-white border border-[#E0E0E0] rounded p-6 flex flex-col gap-2">
         <div class="flex items-center gap-3">
-          <div class="p-2.5 bg-red-500/10 border border-red-500/20 rounded-2xl">
-            <XCircle :size="18" class="text-red-400" />
+          <div class="p-2.5 bg-danger-light border border-danger rounded">
+            <XCircle :size="18" class="text-danger" />
           </div>
-          <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Com erro</p>
+          <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest">Com erro</p>
         </div>
-        <p class="text-3xl font-black text-white" :class="metrics.comErro > 0 ? 'text-red-400' : ''">{{ metrics.comErro }}</p>
+        <p class="text-3xl font-black text-[#212121]" :class="metrics.comErro > 0 ? 'text-danger' : ''">{{ metrics.comErro }}</p>
       </div>
     </div>
 
     <!-- Tabs -->
-    <div class="flex gap-1 bg-white/5 border border-white/10 rounded-2xl p-1 w-fit mb-6">
+    <div class="flex gap-1 bg-gray-50 border border-[#E0E0E0] rounded p-1 w-fit mb-6">
       <button
         v-for="tab in tabs"
         :key="tab.key"
         @click="activeTab = tab.key; currentPage = 1"
-        class="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap"
-        :class="activeTab === tab.key ? 'bg-brand-green text-black' : 'text-gray-400 hover:text-white'"
+        class="px-4 py-2 rounded text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap"
+        :class="activeTab === tab.key ? 'bg-primary text-white' : 'text-[#757575] hover:text-[#212121]'"
       >
         {{ tab.label }}
       </button>
@@ -180,34 +180,34 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
     <!-- Filtros -->
     <div class="flex gap-3 mb-6 flex-wrap">
       <div class="relative flex-1 min-w-[200px]">
-        <Search :size="15" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+        <Search :size="15" class="absolute left-3 top-1/2 -translate-y-1/2 text-[#757575] pointer-events-none" />
         <input
           v-model="searchQuery"
           placeholder="Buscar por número ou CPF..."
-          class="w-full py-3 pl-9 pr-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white placeholder:text-gray-600 outline-none focus:border-brand-green/40 transition-all"
+          class="w-full py-3 pl-9 pr-4 bg-gray-50 border border-[#E0E0E0] rounded text-sm text-[#212121] placeholder:text-[#757575] outline-none focus:border-primary/40 transition-all"
         />
       </div>
       <input
         v-model="dateFrom"
         type="date"
-        class="py-3 px-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-gray-300 outline-none focus:border-brand-green/40 transition-all"
+        class="py-3 px-4 bg-gray-50 border border-[#E0E0E0] rounded text-sm text-[#757575] outline-none focus:border-primary/40 transition-all"
       />
       <input
         v-model="dateTo"
         type="date"
-        class="py-3 px-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-gray-300 outline-none focus:border-brand-green/40 transition-all"
+        class="py-3 px-4 bg-gray-50 border border-[#E0E0E0] rounded text-sm text-[#757575] outline-none focus:border-primary/40 transition-all"
       />
     </div>
 
     <!-- Tabela -->
-    <div class="bg-dark-card border border-white/10 rounded-[2rem] overflow-hidden mb-6">
-      <div v-if="pagedNFs.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-600">
+    <div class="bg-white border border-[#E0E0E0] rounded overflow-hidden mb-6">
+      <div v-if="pagedNFs.length === 0" class="flex flex-col items-center justify-center py-20 text-[#757575]">
         <FileText :size="48" class="mb-4 opacity-20" />
         <p class="font-black uppercase tracking-widest text-sm opacity-40">Nenhuma nota encontrada</p>
       </div>
       <div v-else class="overflow-x-auto">
         <table class="w-full text-left border-collapse min-w-[800px]">
-          <thead class="bg-black/20 text-gray-500 uppercase text-[10px] font-black tracking-widest border-b border-white/5">
+          <thead class="bg-gray-100 text-[#757575] uppercase text-[10px] font-black tracking-widest border-b border-[#E0E0E0]">
             <tr>
               <th class="p-5">Número</th>
               <th class="p-5">Status</th>
@@ -222,50 +222,50 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
             <tr
               v-for="nf in pagedNFs"
               :key="nf.id"
-              class="border-b border-white/5 last:border-0 hover:bg-white/[0.03] transition-colors"
+              class="border-b border-[#E0E0E0] last:border-0 hover:bg-gray-50 transition-colors"
             >
-              <td class="p-5 font-black text-white">{{ nf.numero }}</td>
+              <td class="p-5 font-black text-[#212121]">{{ nf.numero }}</td>
               <td class="p-5">
-                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border" :class="statusConfig[nf.status].cls">
+                <span class="px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest border" :class="statusConfig[nf.status].cls">
                   {{ statusConfig[nf.status].label }}
                 </span>
               </td>
-              <td class="p-5 text-gray-400 text-sm">{{ formatDate(nf.emissao) }}</td>
-              <td class="p-5 font-black text-white">R$ {{ nf.valor.toFixed(2) }}</td>
-              <td class="p-5 text-gray-400 text-sm">{{ nf.cpf || '—' }}</td>
-              <td class="p-5 text-gray-400 text-sm">{{ nf.caixa }}</td>
+              <td class="p-5 text-[#757575] text-sm">{{ formatDate(nf.emissao) }}</td>
+              <td class="p-5 font-black text-[#212121]">R$ {{ nf.valor.toFixed(2) }}</td>
+              <td class="p-5 text-[#757575] text-sm">{{ nf.cpf || '—' }}</td>
+              <td class="p-5 text-[#757575] text-sm">{{ nf.caixa }}</td>
               <td class="p-5">
                 <div class="flex items-center justify-end gap-1">
                   <!-- Autorizada -->
                   <template v-if="nf.status === 'autorizada'">
-                    <button @click="downloadDANFE(nf)" title="DANFE" class="px-3 py-1.5 bg-white/5 border border-white/10 text-gray-300 text-xs font-black rounded-xl hover:bg-white/10 transition-all flex items-center gap-1">
+                    <button @click="downloadDANFE(nf)" title="DANFE" class="px-3 py-1.5 bg-gray-50 border border-[#E0E0E0] text-[#757575] text-xs font-black rounded hover:bg-gray-100 transition-all flex items-center gap-1">
                       <Eye :size="12" /> DANFE
                     </button>
-                    <button @click="downloadXML(nf)" title="XML" class="px-3 py-1.5 bg-white/5 border border-white/10 text-gray-300 text-xs font-black rounded-xl hover:bg-white/10 transition-all flex items-center gap-1">
+                    <button @click="downloadXML(nf)" title="XML" class="px-3 py-1.5 bg-gray-50 border border-[#E0E0E0] text-[#757575] text-xs font-black rounded hover:bg-gray-100 transition-all flex items-center gap-1">
                       <FileDown :size="12" /> XML
                     </button>
-                    <button @click="cancel(nf)" title="Cancelar" class="px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-black rounded-xl hover:bg-red-500/20 transition-all">
+                    <button @click="cancel(nf)" title="Cancelar" class="px-3 py-1.5 bg-danger-light border border-danger text-danger text-xs font-black rounded hover:bg-red-500/20 transition-all">
                       Cancelar
                     </button>
                   </template>
                   <!-- Com erro -->
                   <template v-else-if="nf.status === 'erro'">
-                    <button @click="viewError(nf)" class="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-black rounded-xl hover:bg-amber-500/20 transition-all flex items-center gap-1">
+                    <button @click="viewError(nf)" class="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-black rounded hover:bg-amber-500/20 transition-all flex items-center gap-1">
                       <AlertTriangle :size="12" /> Ver erro
                     </button>
-                    <button @click="reissue(nf)" class="px-3 py-1.5 bg-white/5 border border-white/10 text-gray-300 text-xs font-black rounded-xl hover:bg-white/10 transition-all flex items-center gap-1">
+                    <button @click="reissue(nf)" class="px-3 py-1.5 bg-gray-50 border border-[#E0E0E0] text-[#757575] text-xs font-black rounded hover:bg-gray-100 transition-all flex items-center gap-1">
                       <RefreshCw :size="12" /> Reemitir
                     </button>
                   </template>
                   <!-- Cancelada -->
                   <template v-else-if="nf.status === 'cancelada'">
-                    <button @click="downloadXML(nf)" class="px-3 py-1.5 bg-white/5 border border-white/10 text-gray-300 text-xs font-black rounded-xl hover:bg-white/10 transition-all flex items-center gap-1">
+                    <button @click="downloadXML(nf)" class="px-3 py-1.5 bg-gray-50 border border-[#E0E0E0] text-[#757575] text-xs font-black rounded hover:bg-gray-100 transition-all flex items-center gap-1">
                       <FileDown :size="12" /> XML
                     </button>
                   </template>
                   <!-- Pendente -->
                   <template v-else-if="nf.status === 'pendente'">
-                    <button @click="reissue(nf)" class="px-3 py-1.5 bg-white/5 border border-white/10 text-gray-300 text-xs font-black rounded-xl hover:bg-white/10 transition-all flex items-center gap-1">
+                    <button @click="reissue(nf)" class="px-3 py-1.5 bg-gray-50 border border-[#E0E0E0] text-[#757575] text-xs font-black rounded hover:bg-gray-100 transition-all flex items-center gap-1">
                       <RefreshCw :size="12" /> Reemitir
                     </button>
                   </template>
@@ -279,12 +279,12 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
 
     <!-- Paginação -->
     <div class="flex items-center justify-between">
-      <p class="text-xs text-gray-500 font-bold">{{ filteredNFs.length }} nota(s) encontrada(s)</p>
+      <p class="text-xs text-[#757575] font-bold">{{ filteredNFs.length }} nota(s) encontrada(s)</p>
       <div v-if="totalPages > 1" class="flex gap-2">
         <button
           @click="currentPage = Math.max(1, currentPage - 1)"
           :disabled="currentPage === 1"
-          class="px-4 py-2 bg-white/5 border border-white/10 text-gray-400 text-xs font-black rounded-xl hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          class="px-4 py-2 bg-gray-50 border border-[#E0E0E0] text-[#757575] text-xs font-black rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
         >
           ← Anterior
         </button>
@@ -292,17 +292,17 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
           v-for="p in totalPages"
           :key="p"
           @click="currentPage = p"
-          class="px-4 py-2 text-xs font-black rounded-xl transition-all border"
+          class="px-4 py-2 text-xs font-black rounded transition-all border"
           :class="currentPage === p
-            ? 'bg-brand-green text-black border-brand-green'
-            : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'"
+            ? 'bg-primary text-[#212121] border-accent'
+            : 'bg-gray-50 text-[#757575] border-[#E0E0E0] hover:bg-gray-100'"
         >
           {{ p }}
         </button>
         <button
           @click="currentPage = Math.min(totalPages, currentPage + 1)"
           :disabled="currentPage === totalPages"
-          class="px-4 py-2 bg-white/5 border border-white/10 text-gray-400 text-xs font-black rounded-xl hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          class="px-4 py-2 bg-gray-50 border border-[#E0E0E0] text-[#757575] text-xs font-black rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
         >
           Próxima →
         </button>

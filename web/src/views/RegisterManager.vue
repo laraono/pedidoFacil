@@ -85,18 +85,18 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-dark-bg font-inter relative flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen bg-page font-inter relative flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
     <div class="absolute top-0 left-0 w-full h-full z-0 pointer-events-none opacity-40"
          :style="{ backgroundImage: `url(${imgOndas})`, backgroundSize: 'cover', backgroundPosition: 'center' }">
     </div>
 
-    <div class="z-10 w-full max-w-xl bg-dark-card border border-white/10 p-8 sm:p-12 rounded-[2.5rem] shadow-2xl">
+    <div class="z-10 w-full max-w-xl bg-white border border-[#E0E0E0] p-8 sm:p-12 rounded shadow-2xl">
       <div class="mb-10 text-center">
-        <h2 class="text-3xl font-black text-white mb-2">Crie a sua conta</h2>
-        <p class="text-gray-400">Preencha os dados do gestor principal</p>
+        <h2 class="text-3xl font-black text-[#212121] mb-2">Crie a sua conta</h2>
+        <p class="text-[#757575]">Preencha os dados do gestor principal</p>
       </div>
 
-      <div v-if="localError || serverError" class="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-sm">
+      <div v-if="localError || serverError" class="mb-6 p-4 bg-danger-light border border-danger rounded flex items-center gap-3 text-danger text-sm">
         <AlertCircle class="w-5 h-5 shrink-0" />
         <p>{{ localError || serverError }}</p>
       </div>
@@ -109,7 +109,7 @@ async function handleSubmit() {
 
         <BaseInput v-model="senha" :type="showPassword ? 'text' : 'password'" placeholder="Senha (mín. 6 caracteres)" dark required minlength="6">
           <template #suffix>
-            <button type="button" @click="showPassword = !showPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-brand-green">
+            <button type="button" @click="showPassword = !showPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-[#757575] hover:text-accent">
               <component :is="showPassword ? EyeOff : Eye" class="w-5 h-5" />
             </button>
           </template>
@@ -117,7 +117,7 @@ async function handleSubmit() {
 
         <BaseInput v-model="confirmarSenha" :type="showConfirmPassword ? 'text' : 'password'" placeholder="Confirme a senha" dark required minlength="6">
           <template #suffix>
-            <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-brand-green">
+            <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-[#757575] hover:text-accent">
               <component :is="showConfirmPassword ? EyeOff : Eye" class="w-5 h-5" />
             </button>
           </template>
@@ -130,8 +130,8 @@ async function handleSubmit() {
         </div>
       </form>
 
-      <p class="text-center text-gray-400 font-medium text-sm mt-8">
-        Já tem uma conta? <a href="#" @click.prevent="router.push('/login')" class="text-brand-green hover:text-white transition-colors cursor-pointer">Faça login aqui</a>
+      <p class="text-center text-[#757575] font-medium text-sm mt-8">
+        Já tem uma conta? <a href="#" @click.prevent="router.push('/login')" class="text-accent hover:text-[#212121] transition-colors cursor-pointer">Faça login aqui</a>
       </p>
     </div>
   </div>

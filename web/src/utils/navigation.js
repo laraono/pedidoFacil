@@ -1,6 +1,6 @@
 import {
   ChefHat, UtensilsCrossed, Users,
-  DollarSign, HamburgerIcon, Package, Receipt, Settings, StoreIcon,
+  DollarSign, HamburgerIcon, Package, Receipt, Settings, BarChart2,
   CreditCard, ShieldAlert, UserCog, Tag, FileText
 } from 'lucide-vue-next';
 import { PERMISSIONS } from '@/utils/permissions';
@@ -121,7 +121,7 @@ export const allMenuItems = [
   {
     label: 'Relatórios',
     route: '/app/reports',
-    icon: StoreIcon,
+    icon: BarChart2,
     description: 'Gráficos e relatórios.',
     permission: PERMISSIONS.RELATORIOS
   },
@@ -156,7 +156,7 @@ export const adminMenuItems = [
   {
     label: 'Relatórios Admin',
     route: '/app/admin/reports',
-    icon: StoreIcon,
+    icon: BarChart2,
     description: 'Faturamento da plataforma.',
     callToAction: 'Ver Relatórios',
     adminOnly: true

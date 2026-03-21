@@ -6,8 +6,8 @@
           v-for="toast in toasts"
           :key="toast.id"
           :class="[
-            'px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-sm md:text-base text-white transform transition-all duration-300',
-            toast.type === 'error' ? 'bg-red-600' : 'bg-green-600'
+            'px-6 py-4 rounded shadow-2xl flex items-center gap-3 font-bold text-sm md:text-base text-white transform transition-all duration-300',
+            toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'
           ]"
         >
           <component :is="toast.type === 'error' ? AlertCircle : CheckCircle" :size="20" />
