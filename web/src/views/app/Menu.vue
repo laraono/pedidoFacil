@@ -75,6 +75,24 @@ onMounted(async () => {
 
 const backgroundStyle = computed(() => ({ backgroundColor: bgColor.value }));
 
+// Luminância relativa do fundo dos cards (0 = preto, 1 = branco)
+const cardBgLuminance = computed(() => {
+  const hex = cardBg.value.replace('#', '');
+  if (hex.length < 6) return 1;
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+});
+const isCardDark = computed(() => cardBgLuminance.value < 0.5);
+
+// Cores adaptativas para bordas, inputs e botões dentro das modais
+const adaptiveBorder      = computed(() => isCardDark.value ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.13)');
+const adaptiveInputBg     = computed(() => isCardDark.value ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.04)');
+const adaptiveButtonBg    = computed(() => isCardDark.value ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.07)');
+const adaptiveSubtleBg    = computed(() => isCardDark.value ? 'rgba(0,0,0,0.15)'       : 'rgba(0,0,0,0.03)');
+const adaptivePlaceholder = computed(() => isCardDark.value ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.32)');
+
 const productsByCategory = computed(() => {
   const activeProducts = menuStore.activeProducts.filter(p => p.available !== false);
   return menuStore.activeCategories.map(category => ({
@@ -324,14 +342,14 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
         <div v-if="isProductModalOpen" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div class="w-full sm:max-w-md rounded-t sm:rounded overflow-hidden flex flex-col max-h-[90vh] shadow-2xl animate-slideUp sm:animate-none" :style="{ backgroundColor: cardBg, fontFamily, color: textColor }">
             
-            <div class="p-6 flex justify-between items-center border-b border-white/10 shrink-0">
+            <div class="p-6 flex justify-between items-center shrink-0" :style="{ borderBottom: `1px solid ${adaptiveBorder}` }">
               <h3 class="font-black text-2xl truncate pr-4">{{ currentProduct?.name }}</h3>
-              <button @click="closeProductModal" class="p-2 bg-white/10 hover:bg-white/20 rounded transition-colors" :style="{ color: textColor }">
+              <button @click="closeProductModal" class="p-2 rounded transition-colors" :style="{ backgroundColor: adaptiveButtonBg, color: textColor }">
                 <X :size="24" />
               </button>
             </div>
 
-            <div class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6 bg-black/5">
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6" :style="{ backgroundColor: adaptiveSubtleBg }">
               <p class="leading-relaxed text-base opacity-90">{{ currentProduct?.description }}</p>
 
               <div v-if="currentProduct?.sizes?.length > 0" class="space-y-3">
@@ -343,7 +361,7 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
                     class="flex items-center justify-between p-4 border rounded cursor-pointer transition-all"
                     :style="selectedSize?.name === size.name
                       ? { borderColor: buttonColor, backgroundColor: buttonColor + '1A' }
-                      : { borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' }"
+                      : { borderColor: adaptiveBorder, backgroundColor: adaptiveInputBg }"
                   >
                     <div class="flex items-center gap-3">
                       <input type="radio" :value="size" v-model="selectedSize" class="w-5 h-5" :style="{ accentColor: buttonColor }" />
@@ -358,24 +376,30 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
 
               <div v-if="observacoesPermitidas" class="space-y-3">
                 <label class="block text-sm font-bold uppercase tracking-wider opacity-70">Alguma observação?</label>
-                <textarea v-model="currentObservation" placeholder="Ex: Tirar cebola..." rows="2" class="w-full bg-white/5 border border-white/10 rounded p-4 focus:outline-none transition-all resize-none placeholder:opacity-30" :style="{ color: textColor }"></textarea>
+                <textarea
+                  v-model="currentObservation"
+                  placeholder="Ex: Tirar cebola..."
+                  rows="2"
+                  class="w-full border rounded p-4 focus:outline-none transition-all resize-none adaptive-placeholder"
+                  :style="{ color: textColor, backgroundColor: adaptiveInputBg, borderColor: adaptiveBorder, '--ph': adaptivePlaceholder }"
+                ></textarea>
               </div>
 
-              <div class="flex items-center justify-between bg-white/5 p-5 rounded border border-white/10">
+              <div class="flex items-center justify-between p-5 rounded border" :style="{ backgroundColor: adaptiveInputBg, borderColor: adaptiveBorder }">
                 <span class="font-bold text-lg">Quantidade</span>
                 <div class="flex items-center gap-5">
-                  <button @click="currentQuantity > 1 ? currentQuantity-- : null" class="w-12 h-12 rounded flex items-center justify-center transition-all active:scale-95 shadow-sm bg-white/10" :style="{ color: textColor }">
+                  <button @click="currentQuantity > 1 ? currentQuantity-- : null" class="w-12 h-12 rounded flex items-center justify-center transition-all active:scale-95 shadow-sm" :style="{ backgroundColor: adaptiveButtonBg, color: textColor }">
                     <Minus :size="20" />
                   </button>
                   <span class="font-black text-2xl w-8 text-center">{{ currentQuantity }}</span>
-                  <button @click="currentQuantity++" class="w-12 h-12 rounded flex items-center justify-center transition-all active:scale-95 shadow-sm bg-white/10" :style="{ color: textColor }">
+                  <button @click="currentQuantity++" class="w-12 h-12 rounded flex items-center justify-center transition-all active:scale-95 shadow-sm" :style="{ backgroundColor: adaptiveButtonBg, color: textColor }">
                     <Plus :size="20" />
                   </button>
                 </div>
               </div>
             </div>
 
-            <div class="p-6 border-t border-white/10 shrink-0">
+            <div class="p-6 shrink-0" :style="{ borderTop: `1px solid ${adaptiveBorder}` }">
               <button @click="addToCart" :disabled="!selectedSize" :style="{ backgroundColor: buttonColor, color: buttonTextColor }" class="w-full py-5 font-black rounded shadow-xl transition-transform active:scale-95 flex items-center justify-between px-8 text-lg disabled:opacity-50">
                 <span>{{ selectedSize ? 'Adicionar' : 'Selecione um tamanho' }}</span>
                 <span>{{ formatCurrency(currentModalTotal) }}</span>
@@ -389,35 +413,35 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
         <div v-if="isCartModalOpen" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div class="w-full sm:max-w-md rounded-t sm:rounded overflow-hidden flex flex-col max-h-[90vh] shadow-2xl animate-slideUp sm:animate-none" :style="{ backgroundColor: cardBg, fontFamily, color: textColor }">
             
-            <div class="p-6 flex justify-between items-center border-b border-white/10 shrink-0">
+            <div class="p-6 flex justify-between items-center shrink-0" :style="{ borderBottom: `1px solid ${adaptiveBorder}` }">
               <div class="flex items-center gap-3">
                 <ShoppingBag :size="28" :style="{ color: buttonColor }" />
                 <h3 class="font-black text-2xl">Meu Pedido</h3>
               </div>
-              <button @click="isCartModalOpen = false" class="p-2 bg-white/10 hover:bg-white/20 rounded transition-colors" :style="{ color: textColor }">
+              <button @click="isCartModalOpen = false" class="p-2 rounded transition-colors" :style="{ backgroundColor: adaptiveButtonBg, color: textColor }">
                 <X :size="24" />
               </button>
             </div>
 
-            <div class="p-4 overflow-y-auto custom-scrollbar flex-1 bg-black/5">
+            <div class="p-4 overflow-y-auto custom-scrollbar flex-1" :style="{ backgroundColor: adaptiveSubtleBg }">
               <div class="space-y-3">
-                <div v-for="(item, index) in cart" :key="item.id" class="p-5 rounded border border-white/5 flex gap-4 items-center relative overflow-hidden bg-white/5">
-                  <div class="bg-white/10 font-black w-10 h-10 rounded flex items-center justify-center shrink-0">1x</div>
+                <div v-for="(item, index) in cart" :key="item.id" class="p-5 rounded border flex gap-4 items-center relative overflow-hidden" :style="{ backgroundColor: adaptiveInputBg, borderColor: adaptiveBorder }">
+                  <div class="font-black w-10 h-10 rounded flex items-center justify-center shrink-0 text-sm" :style="{ backgroundColor: adaptiveButtonBg, color: textColor }">1x</div>
                   <div class="flex-1">
                     <div class="flex justify-between items-start mb-1">
                       <h4 class="font-bold text-lg leading-tight">{{ item.name }} <span class="text-sm font-medium opacity-60">({{ item.sizeName }})</span></h4>
                       <span class="font-black ml-2">{{ formatCurrency(item.price) }}</span>
                     </div>
-                    <p v-if="item.obs" class="text-sm bg-black/20 inline-block px-3 py-1 rounded-lg mt-2 font-medium border border-white/5">Obs: {{ item.obs }}</p>
+                    <p v-if="item.obs" class="text-sm inline-block px-3 py-1 rounded mt-2 font-medium border" :style="{ backgroundColor: adaptiveButtonBg, borderColor: adaptiveBorder }">Obs: {{ item.obs }}</p>
                   </div>
-                  <button @click="removeFromCart(index)" class="text-red-400 hover:text-white hover:bg-red-500/20 p-2 rounded transition-colors shrink-0">
+                  <button @click="removeFromCart(index)" class="text-red-400 p-2 rounded transition-colors shrink-0" :style="{ backgroundColor: adaptiveButtonBg }">
                     <Trash2 :size="20" />
                   </button>
                 </div>
               </div>
             </div>
 
-            <div class="p-6 border-t border-white/10 shrink-0 space-y-5">
+            <div class="p-6 shrink-0 space-y-5" :style="{ borderTop: `1px solid ${adaptiveBorder}` }">
               <div class="flex justify-between items-center text-lg">
                 <span class="font-bold opacity-60 uppercase tracking-wider text-sm">Total</span>
                 <span class="font-black text-3xl">{{ formatCurrency(cartTotal) }}</span>
@@ -434,14 +458,14 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
         <div v-if="isComandaModalOpen" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div class="w-full sm:max-w-md rounded-t sm:rounded overflow-hidden flex flex-col max-h-[85vh] shadow-2xl animate-slideUp sm:animate-none" :style="{ backgroundColor: cardBg, fontFamily, color: textColor }">
 
-            <div class="p-6 flex justify-between items-center border-b border-white/10 shrink-0">
+            <div class="p-6 flex justify-between items-center shrink-0" :style="{ borderBottom: `1px solid ${adaptiveBorder}` }">
               <h3 class="font-black text-2xl" :style="{ color: textColor }">Vincular Comanda</h3>
-              <button @click="isComandaModalOpen = false" class="p-2 bg-white/10 hover:bg-white/20 rounded transition-colors" :style="{ color: textColor }">
+              <button @click="isComandaModalOpen = false" class="p-2 rounded transition-colors" :style="{ backgroundColor: adaptiveButtonBg, color: textColor }">
                 <X :size="24" />
               </button>
             </div>
 
-            <div class="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-5 bg-black/5">
+            <div class="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-5" :style="{ backgroundColor: adaptiveSubtleBg }">
 
               <!-- Comandas abertas -->
               <div v-if="comandaStore.comandas.length > 0">
@@ -456,7 +480,7 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
                     class="w-full p-4 rounded border-2 text-left transition-all flex justify-between items-center"
                     :style="selectedComandaId === comanda.id
                       ? { borderColor: buttonColor, backgroundColor: buttonColor + '22' }
-                      : { borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(255,255,255,0.05)' }"
+                      : { borderColor: adaptiveBorder, backgroundColor: adaptiveInputBg }"
                   >
                     <span class="font-black text-base" :style="{ color: textColor }">{{ comanda.label }}</span>
                     <span class="text-xs opacity-60 font-bold" :style="{ color: textColor }">{{ comanda.orders.length }} pedido(s)</span>
@@ -473,7 +497,7 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
                   class="rounded border-2 transition-all overflow-hidden"
                   :style="selectedComandaId === 'new'
                     ? { borderColor: buttonColor, backgroundColor: buttonColor + '22' }
-                    : { borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(255,255,255,0.05)' }"
+                    : { borderColor: adaptiveBorder, backgroundColor: adaptiveInputBg }"
                 >
                   <button
                     @click="selectedComandaId = 'new'"
@@ -489,15 +513,15 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
                         v-model="newComandaNumber"
                         type="text"
                         placeholder="Número ou nome..."
-                        class="flex-1 bg-white/10 border border-white/20 rounded px-3 py-2 font-bold text-sm outline-none focus:border-white/40"
-                        :style="{ color: textColor }"
+                        class="flex-1 border rounded px-3 py-2 font-bold text-sm outline-none adaptive-placeholder"
+                        :style="{ color: textColor, backgroundColor: adaptiveInputBg, borderColor: adaptiveBorder, '--ph': adaptivePlaceholder }"
                       />
                     </div>
                     <button
                       type="button"
                       @click="newComandaNumber = String(Math.floor(Math.random() * 900) + 100)"
-                      class="w-full py-2 rounded text-xs font-black uppercase tracking-widest transition-all bg-white/10 hover:bg-white/20 text-center"
-                      :style="{ color: textColor }"
+                      class="w-full py-2 rounded text-xs font-black uppercase tracking-widest transition-all text-center"
+                      :style="{ backgroundColor: adaptiveButtonBg, color: textColor }"
                     >
                       # Número Aleatório
                     </button>
@@ -507,7 +531,7 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
 
             </div>
 
-            <div class="p-5 border-t border-white/10 shrink-0">
+            <div class="p-5 shrink-0" :style="{ borderTop: `1px solid ${adaptiveBorder}` }">
               <button
                 @click="confirmAndSendToKitchen"
                 :disabled="!selectedComandaId || (selectedComandaId === 'new' && !newComandaNumber.trim())"
@@ -625,6 +649,9 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.5); border-radius: 10px; }
+
+/* Placeholder dinâmico via CSS var --ph injetada pelo :style */
+.adaptive-placeholder::placeholder { color: var(--ph, rgba(0,0,0,0.35)); }
 
 @keyframes slideUp {
   from { transform: translateY(100%); opacity: 0; }
