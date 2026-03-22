@@ -8,10 +8,25 @@ export enum OrderStatus {
 
 export enum ComandaStatus {
     ABERTA = 'Aberta',
-    FECHADA = 'Fechada'
+    FECHADA = 'Fechada',
+    CANCELADA = 'Cancelada'
 }
 
 export enum ProductStatus {
-    ACTIVE ='Ativo',
-    INACTIVE = 'Inativo'
+    ATIVA ='Ativo',
+    INATIVA = 'Inativo'
 }
+
+export enum UserStatus {
+    ATIVA ='Ativo',
+    INATIVA = 'Inativo',
+    PENDENTE = 'Pendente'
+}
+
+export enum SubscriptionStatus {
+    PENDENTE = 'Pendente',
+    PAGO = 'Pago',
+    EXPIRADA = 'ExpiradA',
+    CACNELADA = 'Cancelada'
+}
+
