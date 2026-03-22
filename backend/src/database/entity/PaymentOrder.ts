@@ -2,9 +2,10 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany, PrimaryColumn, JoinC
 import { ProductVariation } from "./ProductVariation"
 import { Product } from "./Product"
 import { Order } from "./Order"
+import { Payment } from "./Payment"
 
-@Entity({name: 'ItemPedido'})
-export class ProductOrder {
+@Entity({name: 'PAGAMENTO_PEDIDO'})
+export class PaymentOrder {
 
     @PrimaryColumn({
         name: 'ID_Pedido',
@@ -13,10 +14,10 @@ export class ProductOrder {
     orderId: number
 
     @PrimaryColumn({
-        name: 'ID_Produto',
+        name: 'ID_Pagamento',
         type: 'int'
     })
-    productId: number
+    paymentId: number
 
     @Column({
         type: 'varchar',
@@ -33,7 +34,7 @@ export class ProductOrder {
     quantity: number
 
     @Column({
-        name: 'Preco_Unitario_Momento',
+        name: 'Valor_Pago_Deste_Pedido',
         type: "decimal",
         precision: 10,
         scale: 2,
@@ -41,24 +42,11 @@ export class ProductOrder {
     })
     price: number
 
-    @CreateDateColumn({ 
-        type: "timestamp", 
-        default: () => "CURRENT_TIMESTAMP(6)"
-        })
-    created_at: Date;
+    @ManyToOne(() => Payment, (payment) => payment.paymentOrders)
+    @JoinColumn({name: 'ID_Pagamento'})
+    payment: Payment
 
-    @DeleteDateColumn({
-        name: 'deleted_at',
-        type: 'datetime',
-        nullable: true
-    })
-    deletedAt?: Date
-
-    @ManyToOne(() => Product, (product) => product.productOrders)
-    @JoinColumn({name: 'ID_Produto'})
-    product: Product
-
-    @ManyToOne(() => Order, (category) => category.productOrders)
+    @ManyToOne(() => Order, (order) => order.paymentOrders)
     @JoinColumn({name: 'ID_Pedido'})
     order: Order
 
