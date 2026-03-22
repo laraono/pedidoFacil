@@ -1,1 +1,0 @@
-export {validateCreateCategory} from './categorySchema'

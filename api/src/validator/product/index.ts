@@ -1,1 +1,0 @@
-export {validateCreateProduct} from './productSchema'

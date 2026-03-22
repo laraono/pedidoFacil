@@ -1,1 +1,0 @@
-export {CreateCategory} from './CreateCategoryDTO'
