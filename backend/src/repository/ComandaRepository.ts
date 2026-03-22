@@ -17,6 +17,23 @@ export class ComandaRepository extends Repository<Comanda>{
         return await this.find()
     }
 
+    async listComandasByStatus(status: ComandaStatus) {
+        return await this.find({
+            where: {
+                status
+            }
+        })
+    }
+
+    async getComandaByDesc(description: string) {
+        return await this.find({
+            where: {
+                status: ComandaStatus.ABERTA,
+                description
+            }
+        })
+    }
+
     async getComanda(comandaId: number) {
         return await this.findOne({
             where: {

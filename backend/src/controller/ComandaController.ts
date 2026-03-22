@@ -20,6 +20,14 @@ export class ComandaController {
 
         res.status(200).send(comandas)
     }
+
+    async listComandasByStatus(req, res: Response) {
+        const {status} = req.query
+
+        const comandas = await this.comandaService.listComandasByStatus(status)
+
+        res.status(200).send(comandas)
+    }
     
     async updateComandaStatus(req, res: Response) {
         await this.comandaService.updateComandaStatus(req.params, req.body)
