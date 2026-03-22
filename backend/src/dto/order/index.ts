@@ -1,1 +1,4 @@
-export {CreateOrder, ItensArray, OrderParams, ProductOrderParams} from './CreateOrderDTO'
+export {
+    CreateOrder, ItensArray, OrderParams, ProductOrderParams,
+    ProductVariationOrderParams
+} from './CreateOrderDTO'
