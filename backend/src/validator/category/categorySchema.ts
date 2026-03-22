@@ -17,6 +17,7 @@ export const validateCreateCategory =
             const name = createCategorySchema.parse(req.body)
 
             req.body = name
+            
             next();
         } catch (error) {
             if (error instanceof ZodError) {

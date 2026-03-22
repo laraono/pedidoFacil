@@ -12,6 +12,7 @@ export const createProductSchema = z.object({
         name: z.string().min(1).max(20),
         description: z.string().optional(), 
         isAvailable: z.coerce.boolean(),
+        estocavel: z.coerce.boolean(),
         categoryId: z.coerce.number().int().positive(),
         basePrice: z.coerce.number().positive(),
         status: z.enum(ProductStatus)

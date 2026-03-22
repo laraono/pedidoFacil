@@ -8,9 +8,10 @@ app.use(express.json());
 
 export const createComandaSchema = z.object({
     
-    label: z.string().min(1).max(20),
+    description: z.string().min(1).max(100),
     status: z.string().min(1).max(20), 
-    total: z.coerce.number().int()
+    total: z.coerce.number().int(),
+    discountValue: z.coerce.number().positive().optional()
     
 });
 

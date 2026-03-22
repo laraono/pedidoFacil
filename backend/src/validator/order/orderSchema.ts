@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import express, { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-import { OrderStatus } from '../../enum';
+import { OrderStatus, ServiceType } from '../../enum';
 
 
 const app = express();
@@ -14,6 +14,8 @@ export const createOrderchema = z.object({
     }),
     body: z.object({
         status: z.enum(OrderStatus),
+        serviceType: z.enum(ServiceType),
+        tripPrice: z.coerce.number().positive().optional(),
         itens: z.object({
             productId: z.coerce.number().int().positive(),
             quantity: z.coerce.number().int().positive(),
