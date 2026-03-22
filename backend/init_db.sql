@@ -76,6 +76,16 @@ CREATE TABLE USUARIO (
   FOREIGN KEY (ID_Cargo) REFERENCES CARGO (ID_Cargo)
 ) ENGINE = InnoDB;
 
+CREATE TABLE REFRESH_TOKEN (
+  ID_Token       INT NOT NULL AUTO_INCREMENT,
+  Token_Hash     VARCHAR(255) NOT NULL UNIQUE,
+  ID_Usuario     INT NOT NULL,
+  Expires_At     TIMESTAMP NOT NULL,
+  Revogado       BOOLEAN NOT NULL DEFAULT FALSE,
+  PRIMARY KEY (ID_Token),
+  FOREIGN KEY (ID_Usuario) REFERENCES USUARIO(ID_Usuario) ON DELETE CASCADE
+) ENGINE = InnoDB;
+
 -- Resolução do Loop: Agora que a tabela USUARIO existe, amarramos o Gerente ao Estabelecimento.
 ALTER TABLE ESTABELECIMENTO
 ADD FOREIGN KEY (ID_Gerente_Responsavel) REFERENCES USUARIO (ID_Usuario);

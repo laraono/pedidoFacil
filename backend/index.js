@@ -1,11 +1,12 @@
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser')
 const pool = require('./config/db');
 require('dotenv').config();
 
 // 1. Importando o arquivo de rotas que criamos
 const authRoutes = require('./routes/authRoutes');
-
+app.use(cookieParser())
 const app = express();
 
 app.use(cors());
