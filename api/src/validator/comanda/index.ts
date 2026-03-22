@@ -1,0 +1,1 @@
+export {validateCreateComanda} from './comandaSchema'
