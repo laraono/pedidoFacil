@@ -1,7 +1,7 @@
 import { Order } from "../database";
 import { CreateOrder, ItensArray, ProductOrderParams } from "../dto";
 import { OrderStatus } from "../enum";
-import {  OrderRepository, ProductOrderRepository, ProductVariationRepository } from "../repository";
+import {  OrderRepository, ProductOrderRepository, ProductVariationOrderRepository, ProductVariationRepository } from "../repository";
 import { ComandaService } from "./ComandaService";
 import { ProductService } from "./ProductService";
 
@@ -10,6 +10,7 @@ export class OrderService {
     private orderRepository: OrderRepository
     private productOrderRepository: ProductOrderRepository
     private productVariationRepository: ProductVariationRepository
+    private productVariationOrderRepository: ProductVariationOrderRepository
     private comandaService: ComandaService
     private productService: ProductService
 
@@ -17,12 +18,14 @@ export class OrderService {
         orderRepository: OrderRepository,
         productOrderRepository: ProductOrderRepository,
         productVariationRepository: ProductVariationRepository,
+        productVariationOrderRepository: ProductVariationOrderRepository,
         comandaService: ComandaService,
         productService: ProductService
     ) {
         this.orderRepository = orderRepository
         this.productOrderRepository = productOrderRepository
         this.productVariationRepository = productVariationRepository
+        this.productVariationOrderRepository = productVariationOrderRepository
         this.comandaService = comandaService
         this.productService = productService
     }
@@ -79,7 +82,13 @@ export class OrderService {
 
             total += Number(productOrder.price)
 
-            await this.productOrderRepository.createProductOrder(productOrder)
+            const {orderId, productId} = await this.productOrderRepository.createProductOrder(productOrder)
+            await this.productVariationOrderRepository.createProductVariantOrder({
+                productId,
+                orderId,
+                productVariationid: validatedProduct.productVariation.id,
+                price: value2
+            })
             await this.comandaService.updateComandaTotal(order.comanda, total)
 
         })
