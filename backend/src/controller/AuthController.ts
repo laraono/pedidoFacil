@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { gerarTokens } = require('../src/config/crypto');
+const { hashToken, gerarTokens } = require('../src/config/crypto');
 const rateLimit = require('express-rate-limit')
 
 const loginLimiter = rateLimit({
