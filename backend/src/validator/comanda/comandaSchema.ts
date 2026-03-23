@@ -15,6 +15,16 @@ export const createComandaSchema = z.object({
     
 });
 
+export const cancelComandaSchema = z.object({
+    params: z.object({
+        comandaId: z.coerce.number().int().positive()
+    }),
+    body: z.object({
+        userId: z.coerce.number().int().positive(),
+        reason: z.string().min(1)
+    })
+})
+
 
 export const validateCreateComanda = 
     (req: Request, res: Response, next: NextFunction) => {
@@ -30,4 +40,21 @@ export const validateCreateComanda =
         }
     };
 
+
+export const validateCancelComanda = 
+    (req, res: Response, next: NextFunction) => {
+        try {
+            const validation =  cancelComandaSchema.parse({ params: req.params, body: req.body })
+
+            req.params = validation.params
+            req.body = validation.body
+
+            next();
+        } catch (error) {
+            if (error instanceof ZodError) {
+                return res.status(400).send(error.message);
+            }
+            return res.status(500).send("Internal Server Error");
+        }
+    };
 

@@ -1,1 +1,1 @@
-export {validateCreateComanda} from './comandaSchema'
+export {validateCreateComanda, validateCancelComanda} from './comandaSchema'
