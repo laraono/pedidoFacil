@@ -1,6 +1,6 @@
 import { DataSource, Repository } from "typeorm";
 import { Comanda } from "../database";
-import { CreateComanda } from "../dto";
+import { CancelComandaParams, CreateComanda } from "../dto";
 import { ComandaStatus } from "../enum";
 
 export class ComandaRepository extends Repository<Comanda>{
@@ -48,6 +48,10 @@ export class ComandaRepository extends Repository<Comanda>{
 
     async updateComandaStatus(comandaId: number, status: ComandaStatus) {
         await this.update(comandaId, {status})
+    }
+
+    async cancelComanda(comandaId: number, params: CancelComandaParams) {
+        await this.update(comandaId, params)
     }
     
 }

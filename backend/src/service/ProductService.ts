@@ -1,4 +1,5 @@
 import { CreateProduct } from "../dto";
+import { AppError } from "../middleware";
 import { ProductRepository, ProductVariationRepository } from "../repository";
 import { CategoryService } from "./CategoryService";
 
@@ -24,7 +25,7 @@ export class ProductService {
         const category = await this.categoryService.getCategory(product.categoryId)
 
         if(!category) {
-            return
+            throw new AppError('Categoria não existe', 400)
         }
 
         const createdProduct = await this.productRepository.createProduct(product) 

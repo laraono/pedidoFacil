@@ -34,5 +34,13 @@ export class ComandaController {
         
         res.sendStatus(204)
     }
+
+    async cancelComanda(req, res: Response) {
+        const { comandaId} = req.params
+
+        await this.comandaService.cancelComanda({comandaId, ...req.body})
+        
+        res.sendStatus(204)
+    }
     
 }
