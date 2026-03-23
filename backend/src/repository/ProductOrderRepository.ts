@@ -1,6 +1,6 @@
 import { DataSource, Repository } from "typeorm";
 import { ProductOrder } from "../database";
-import { OrderParams, ProductOrderParams } from "../dto";
+import { ProductOrderParams } from "../dto";
 
 export class ProductOrderRepository extends Repository<ProductOrder>{
 

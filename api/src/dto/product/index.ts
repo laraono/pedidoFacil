@@ -1,1 +1,0 @@
-export {CreateProduct, CreateProductVariation, ProductParams, ProductVariationParams} from './CreateProductDTO'

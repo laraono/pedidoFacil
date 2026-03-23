@@ -1,7 +1,7 @@
 import { ComandaStatus } from "../../enum"
 
 export type CreateComanda = {
-    label: string,
+    description: string,
     status: ComandaStatus,
     total: number
 }

@@ -1,20 +1,21 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, DeleteDateColumn, CreateDateColumn } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, DeleteDateColumn, CreateDateColumn, JoinColumn } from "typeorm"
 import { ProductVariation } from "./ProductVariation"
 import { Category } from "./Category"
 import { ProductOrder } from "./ProductOrder"
 import { ProductStatus } from "../../enum"
+import { Establishment } from "./Establishment"
 
-@Entity({name: 'Produto'})
+@Entity({name: 'PRODUTO'})
 export class Product {
 
     @PrimaryGeneratedColumn({
-        name: 'id'
+        name: 'ID_Produto'
     })
     id: number
 
     @Column({
         type: 'varchar',
-        name: 'name',
+        name: 'Nome',
         nullable: false,
         length: 50
     })
@@ -22,21 +23,35 @@ export class Product {
 
     @Column({
         type: 'varchar',
-        name: 'description',
-        nullable: false,
+        name: 'Descricao',
+        nullable: true,
         default: true
     })
     description?: string
 
     @Column({
+        type: 'varchar',
+        name: 'Imagem',
+        nullable: true,
+    })
+    image?: string
+
+    @Column({
         type: 'boolean',
-        name: 'is_available',
+        name: 'Disponivel',
         nullable: false
     })
     isAvailable: boolean
 
     @Column({
-        name: 'preco_base',
+        type: 'boolean',
+        name: 'Estocavel',
+        nullable: false
+    })
+    estocavel: boolean
+
+    @Column({
+        name: 'Preco_Base',
         type: "decimal",
         precision: 10,
         scale: 2,
@@ -46,7 +61,7 @@ export class Product {
 
     @Column({
         type: 'varchar',
-        name: 'status',
+        name: 'Status',
         nullable: false,
         length: 30
     })
@@ -59,7 +74,7 @@ export class Product {
     created_at: Date;
 
     @DeleteDateColumn({
-        name: 'deleted_at',
+        name: 'Data_Exclusao',
         type: 'datetime',
         nullable: true
     })
@@ -72,6 +87,15 @@ export class Product {
     productVariations: ProductVariation[]
 
     @ManyToOne(() => Category, (category) => category.products)
+    @JoinColumn({
+        name: 'ID_Categoria'
+    })
     category: Category
+
+    @ManyToOne(() => Establishment, (establishment) => establishment.products)
+    @JoinColumn({
+        name: 'ID_Estabelecimento'
+    })
+    establishment: Establishment
 
 }

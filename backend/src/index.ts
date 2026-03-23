@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import cors from 'cors'
 import { categoryRouter, comandaRouter, orderRouter, productRouter } from './router';
 import { AppDataSource } from './database';
+import { errorHandler } from './middleware';
 
 dotenv.config();
 
@@ -16,7 +17,10 @@ AppDataSource.initialize().then(async () => {
     app.use('/api/v1', orderRouter)
     app.use('/api/v1', productRouter)
 
+    app.use(errorHandler)
+
     const PORT = 3000;
+    
     app.listen(PORT, () => {
         console.log(`🚀 Server rodando em http://localhost:${PORT}`);
     });

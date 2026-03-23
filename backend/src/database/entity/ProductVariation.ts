@@ -1,20 +1,20 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, CreateDateColumn, DeleteDateColumn } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, CreateDateColumn, DeleteDateColumn, JoinColumn } from "typeorm"
 import { Product } from "./Product"
 import { ProductOrder } from "./ProductOrder"
 import { ProductStatus } from "../../enum"
 import { ProductVariationOrder } from "./ProductVariationOrder"
 
-@Entity({name: 'Produto_Variacao'})
+@Entity({name: 'PRODUTO_VARIACAO'})
 export class ProductVariation {
 
     @PrimaryGeneratedColumn({
-        name: 'id'
+        name: 'ID_Variacao '
     })
     id: number
 
     @Column({
         type: 'varchar',
-        name: 'name',
+        name: 'Nome',
         nullable: false,
         length: 50
     })
@@ -51,6 +51,9 @@ export class ProductVariation {
     deletedAt?: Date
 
     @ManyToOne(() => Product, (product) => product.productVariations)
+    @JoinColumn({
+        name: 'ID_Produto '
+    })
     product: Product
 
     @OneToMany(() => ProductVariationOrder, (productVariationOrder) => productVariationOrder.productVariation)

@@ -28,4 +28,11 @@ export type ProductOrderParams = {
     productVariation?: ProductVariation,
 }
 
+export type ProductVariationOrderParams = {
+    productId: number,
+    orderId: number,
+    productVariationid: number,
+    price: number
+}
+
 

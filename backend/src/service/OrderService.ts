@@ -1,45 +1,40 @@
-import { Order } from "../database";
+import { DataSource, EntityManager } from "typeorm";
+import { AppDataSource, Order, Product, ProductOrder, ProductVariation, ProductVariationOrder } from "../database";
 import { CreateOrder, ItensArray, ProductOrderParams } from "../dto";
 import { OrderStatus } from "../enum";
-import {  OrderRepository, ProductOrderRepository, ProductVariationRepository } from "../repository";
+import { AppError } from "../middleware";
+import {  OrderRepository, ProductOrderRepository, ProductVariationOrderRepository, ProductVariationRepository } from "../repository";
 import { ComandaService } from "./ComandaService";
 import { ProductService } from "./ProductService";
 
 export class OrderService {
 
+    private dataSource: DataSource
     private orderRepository: OrderRepository
-    private productOrderRepository: ProductOrderRepository
-    private productVariationRepository: ProductVariationRepository
     private comandaService: ComandaService
-    private productService: ProductService
 
     constructor(
+        dataSource: DataSource,
         orderRepository: OrderRepository,
-        productOrderRepository: ProductOrderRepository,
-        productVariationRepository: ProductVariationRepository,
         comandaService: ComandaService,
-        productService: ProductService
     ) {
+        this.dataSource = dataSource
         this.orderRepository = orderRepository
-        this.productOrderRepository = productOrderRepository
-        this.productVariationRepository = productVariationRepository
         this.comandaService = comandaService
-        this.productService = productService
     }
 
-    async createOrder(createOrder: CreateOrder) {
+    async createOrderWithTransaction(createOrder: CreateOrder, comanda: any) {
+        return await this.dataSource.transaction(async (transactionalEntityManager) => {
+            
+            const order = await transactionalEntityManager.save(Order, {
+            status: createOrder.status,
+            comanda
+            });
 
-        const comanda = await this.comandaService.getComanda(createOrder.comandaId)
+            await this.saveItens(createOrder.itens, order, transactionalEntityManager);
 
-        if(!comanda) {
-            return
-        }
-        
-        const order = await this.orderRepository.createOrder({status: createOrder.status, comanda}) 
-
-        await this.saveItens(createOrder.itens, order)
-
-        return order.id
+            return order;
+        });
     }
 
     async listOrders() {
@@ -54,20 +49,23 @@ export class OrderService {
         await this.orderRepository.updateOrderStatus(orderId, status)
     }
 
-    async saveItens(itens: ItensArray[], order: Order) {
+    async saveItens(
+        itens: ItensArray[], 
+        order: Order, 
+        manager: EntityManager 
+    ) {
+        let total = 0;
 
-        let total = 0
+        for (const iten of itens) {
+            const validatedProduct = await this.validateItens(iten, manager);
 
-        itens.forEach(async (iten) => {
-            const validatedProduct = await this.validateItens(iten)
-
-            const value1 = Number(validatedProduct.product.basePrice)
-
+            const value1 = Number(validatedProduct.product.basePrice);
             const value2 = validatedProduct.productVariation 
-                ? Number(validatedProduct.productVariation.addPrice )
-                : 0
+                ? Number(validatedProduct.productVariation.addPrice) 
+                : 0;
 
-            const price = value1 + value2
+            const price = value1 + value2;
+            total += price;
 
             const productOrder: ProductOrderParams = {
                 ...validatedProduct,
@@ -75,31 +73,39 @@ export class OrderService {
                 observation: iten.observation,
                 quantity: iten.quantity,
                 price
-            }
+            };
 
-            total += Number(productOrder.price)
+            const newProductOrder = await manager.save(ProductOrder, productOrder);
 
-            await this.productOrderRepository.createProductOrder(productOrder)
-            await this.comandaService.updateComandaTotal(order.comanda, total)
+            await manager.save(ProductVariationOrder, {
+                productId: newProductOrder.productId,
+                orderId: newProductOrder.orderId,
+                productVariationid: validatedProduct.productVariation.id,
+                price: value2
+            });
+        }
 
-        })
-
+        await this.comandaService.updateComandaTotalTransaction(order.comanda, total, manager);
     }
 
-    async validateItens(itens: ItensArray) {
-        const product = await this.productService.getProduct(itens.productId)
+    async validateItens(itens: ItensArray, manager: EntityManager) {
 
-        if(!product) {
-            return
+        const product = await manager.findOne(Product, { 
+            where: { id: itens.productId } 
+        });
+
+        if (!product) {
+            throw new AppError('Produto não existe', 400);
         }
 
-        const productVariation =  await this.productVariationRepository.getProductVariation(itens.productVariationId)
+        const productVariation = await manager.findOne(ProductVariation, { 
+            where: { id: itens.productVariationId } 
+        });
 
         return {
-            product, productVariation
-        }
-
-
+            product, 
+            productVariation
+        };
     }
 
     

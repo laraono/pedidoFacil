@@ -1,39 +1,26 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, PrimaryColumn, JoinColumn, CreateDateColumn, DeleteDateColumn, ManyToOne } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, PrimaryColumn, JoinColumn, CreateDateColumn, DeleteDateColumn, ManyToOne, OneToOne } from "typeorm"
 import { ProductVariation } from "./ProductVariation"
 import { Product } from "./Product"
 import { Order } from "./Order"
+import { ProductOrder } from "./ProductOrder"
 
 @Entity({name: 'ItemPedidoVariacao'})
 export class ProductVariationOrder {
 
     @PrimaryColumn({
-        name: 'id-pedido',
+        name: 'ID_Item_Pedido',
         type: 'int'
     })
     orderId: number
 
     @PrimaryColumn({
-        name: 'id-produto-variacao',
+        name: 'ID_Variacao',
         type: 'int'
     })
     productVariationId: number
 
     @Column({
-        type: 'varchar',
-        name: 'observation',
-        nullable: true
-    })
-    observation?: string
-
-    @Column({
-        type: 'int',
-        name: 'quantity',
-        nullable: false
-    })
-    quantity: number
-
-    @Column({
-        name: 'preco',
+        name: 'Preco_Adicional_Momento',
         type: "decimal",
         precision: 10,
         scale: 2,
@@ -55,11 +42,11 @@ export class ProductVariationOrder {
     deletedAt?: Date
 
     @ManyToOne(() => ProductVariation, (productVariation) => productVariation.productVariationOrders)
-    @JoinColumn({name: 'id-produto-variacao'})
+    @JoinColumn({name: 'ID_Variacao'})
     productVariation: ProductVariation
 
-    @ManyToOne(() => Order, (category) => category.productOrders)
-    @JoinColumn({name: 'id-pedido'})
-    order: Order
+    @OneToOne(() => ProductOrder)
+    @JoinColumn({name: 'ID_Item_Pedido'})
+    order: ProductOrder
 
 }
