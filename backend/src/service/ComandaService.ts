@@ -1,15 +1,18 @@
+import { EntityManager } from "typeorm";
 import { Comanda } from "../database";
-import { CreateComanda } from "../dto";
+import { CancelComanda, CreateComanda } from "../dto";
 import { ComandaStatus } from "../enum";
 import { AppError } from "../middleware";
-import { ComandaRepository } from "../repository";
+import { ComandaRepository, UserRepository } from "../repository";
 
 export class ComandaService {
 
     private comandaRepository: ComandaRepository
+    private userRepository: UserRepository
 
-    constructor(comandaRepository: ComandaRepository) {
+    constructor(comandaRepository: ComandaRepository, userRepository: UserRepository) {
         this.comandaRepository = comandaRepository
+        this.userRepository = userRepository
     }
 
     async createComanda(comanda: CreateComanda) {
@@ -54,7 +57,34 @@ export class ComandaService {
         await this.comandaRepository.updateComandaTotal(comanda.id, total)
     }
 
+    async updateComandaTotalTransaction(
+        comanda: Comanda, 
+        total: number,
+        manager: EntityManager
+    ) {
+        total += Number(comanda.total)
+        await manager.update(Comanda, comanda.id, { total })
+    }    
+
     async updateComandaStatus(comandaId: number, status: ComandaStatus) {
         await this.comandaRepository.updateComandaStatus(comandaId, status)
+    }
+
+    async cancelComanda(params: CancelComanda) {
+
+        const user = await this.userRepository.getUser(params.userId)
+
+        if(!user) {
+            throw new AppError('Usuário não existe', 409)
+        }
+
+        await this.comandaRepository.cancelComanda(
+            params.comandaId, 
+            {
+                user, 
+                reason: params.reason, 
+                status: ComandaStatus.CANCELADA
+            }
+        )
     }
 }
