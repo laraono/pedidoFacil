@@ -84,6 +84,17 @@ export const getCancellationsMock = (period) => {
   ];
 };
 
+export const getCouponUsageMock = (period) => {
+  const m = (period === '24h') ? 0.1 : (period === '30d') ? 4 : (period === 'all') ? 20 : 1;
+  return [
+    { code: 'BEMVINDO10', uses: Math.ceil(42 * m), discount: 10, type: 'percent' },
+    { code: 'FIDELIDADE', uses: Math.ceil(28 * m), discount: 15, type: 'percent' },
+    { code: 'DESC5REAIS', uses: Math.ceil(19 * m), discount: 5, type: 'fixed' },
+    { code: 'HAPPY20', uses: Math.ceil(11 * m), discount: 20, type: 'percent' },
+    { code: 'PROMO15', uses: Math.ceil(7 * m), discount: 15, type: 'fixed' },
+  ];
+};
+
 export const getTopProductsMock = (period) => {
   const m = (period === '24h') ? 0.15 : (period === '30d') ? 4.5 : (period === 'all') ? 25 : 1;
   

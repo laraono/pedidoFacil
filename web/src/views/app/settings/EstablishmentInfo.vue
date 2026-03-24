@@ -1,194 +1,381 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
-import { useOnboardingStore } from '@/stores/onboarding';
-import { ArrowLeft, CheckCircle, Upload } from 'lucide-vue-next';
-import { maskCNPJ, isValidCNPJ } from '@/utils/validator';
-import { getEstablishmentMock, updateEstablishmentMock } from '@/mock/stablishmentmock';
 import localStorageService from '@/services/localStorageService';
+import { useToast } from '@/composables/useToast';
+import { Save, ArrowLeft, UploadCloud, AlertCircle, Smartphone, Copy, CheckCheck, RefreshCw, Banknote } from 'lucide-vue-next';
 
 const router = useRouter();
-const authStore = useAuthStore();
-const onboardingStore = useOnboardingStore();
+const { showToast } = useToast();
 
-const nomeEstabelecimento = ref('');
-const cnpj = ref('');
-const endereco = ref('');
-const metodosPagamento = ref([]);
-const formasAtendimento = ref([]);
 const isLoading = ref(false);
-const localError = ref(null);
-const fileInput = ref(null);
+const logoPreview = ref(null);
+const errors = ref({});
+const touched = ref({});
 
-const paymentOptions = ['Crédito', 'Débito', 'Dinheiro', 'Pix'];
+// Métodos de pagamento
+const ALL_PAYMENT_METHODS = ['Dinheiro', 'Cartão Débito', 'Cartão Crédito', 'PIX'];
+const paymentMethods = ref([...ALL_PAYMENT_METHODS]);
+const originalPaymentMethods = ref([...ALL_PAYMENT_METHODS]);
 
-const serviceOptions = [
-  'Autoatendimento (totens)',
-  'Atendimento por garçons (tablets)',
-  'Atendimento no caixa'
-];
-
-watch(cnpj, (value) => {
-  if (!value) return;
-  const masked = maskCNPJ(value);
-  if (masked !== value) {
-    cnpj.value = masked;
-  }
-});
-
-onMounted(async () => {
-  const data = await getEstablishmentMock();
-
-  if (data?.info) {
-    nomeEstabelecimento.value = data.info.name || '';
-    cnpj.value = data.info.cnpj || '';
-    endereco.value = data.info.address || '';
-    metodosPagamento.value = data.info.paymentMethods || [];
-    formasAtendimento.value = data.info.serviceMethods || [];
-  }
-
-  const nomeOnboarding = onboardingStore.estabelecimentoData.nome_estabelecimento;
-  if (nomeOnboarding) {
-    nomeEstabelecimento.value = nomeOnboarding;
-  }
-
-  const tiposAtendimentoOnboarding = onboardingStore.estabelecimentoData.tipo_atendimento;
-  if (tiposAtendimentoOnboarding?.length) {
-    formasAtendimento.value = tiposAtendimentoOnboarding
-      .map(tipo => {
-        if (tipo === 'Autoatendimento') return 'Autoatendimento (totens)';
-        if (tipo === 'Garçom') return 'Atendimento por garçons (tablets)';
-        return '';
-      })
-      .filter(Boolean);
-  }
-});
-
-const saveInfo = async () => {
-  localError.value = null;
-  isLoading.value = true;
-
-  if (!isValidCNPJ(cnpj.value)) {
-    localError.value = 'CNPJ inválido.';
-    isLoading.value = false;
-    return;
-  }
-
-  await updateEstablishmentMock({
-    name: nomeEstabelecimento.value,
-    cnpj: cnpj.value,
-    address: endereco.value,
-    paymentMethods: metodosPagamento.value,
-    serviceMethods: formasAtendimento.value
-  });
-
-  authStore.setConfigStepComplete('info');
-
-  isLoading.value = false;
-  router.push('/app/dashboard');
+const togglePaymentMethod = (method) => {
+  const idx = paymentMethods.value.indexOf(method);
+  if (idx === -1) paymentMethods.value.push(method);
+  else if (paymentMethods.value.length > 1) paymentMethods.value.splice(idx, 1);
 };
 
-const triggerFileInput = () => {
-  fileInput.value.click()
-}
+// Autoatendimento
+const selfService = ref(false);
+const selfServiceCode = ref('');
+const codeCopied = ref(false);
 
-const uploadImage = (event) => {  
-  const file = event.target.files[0];
-  if (file && file.type.startsWith('image/')) {
-    const reader = new FileReader();
+const generateCode = () => {
+  selfServiceCode.value = Math.floor(100000 + Math.random() * 900000).toString();
+  localStorage.setItem('selfServiceCode', selfServiceCode.value);
+};
 
-    reader.onload = (e) => {
-      const base64String = e.target.result;
-      localStorageService.saveImage(base64String);
-      fileInput.value = base64String;
+const copyCode = () => {
+  navigator.clipboard.writeText(selfServiceCode.value);
+  codeCopied.value = true;
+  setTimeout(() => { codeCopied.value = false; }, 2000);
+};
+
+const form = ref({ name: '', cnpj: '', phone: '', description: '' });
+const originalForm = ref(null);
+const originalLogo = ref(null);
+
+const isDirty = computed(() =>
+  originalForm.value !== null && (
+    JSON.stringify(form.value) !== JSON.stringify(originalForm.value) ||
+    logoPreview.value !== originalLogo.value ||
+    JSON.stringify([...paymentMethods.value].sort()) !== JSON.stringify([...originalPaymentMethods.value].sort())
+  )
+);
+
+const maskCNPJ = (v) => {
+  const d = v.replace(/\D/g, '').slice(0, 14);
+  return d
+    .replace(/^(\d{2})(\d)/, '$1.$2')
+    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1/$2')
+    .replace(/(\d{4})(\d)/, '$1-$2');
+};
+
+const maskPhone = (v) => {
+  const d = v.replace(/\D/g, '').slice(0, 11);
+  if (d.length <= 10) return d.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{4})(\d)/, '$1-$2');
+  return d.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2');
+};
+
+onMounted(() => {
+  const data = localStorageService.getOnboarding();
+  if (data) {
+    form.value = {
+      name: data.nome_estabelecimento || '',
+      cnpj: data.cnpj || '',
+      phone: data.telefone || '',
+      description: data.descricao || '',
     };
-
-    reader.readAsDataURL(file);
   }
-}
+  originalForm.value = { ...form.value };
+  originalLogo.value = logoPreview.value;
+  logoPreview.value = localStorageService.getImage();
+  const savedMethods = localStorage.getItem('paymentMethods');
+  if (savedMethods) {
+    paymentMethods.value = JSON.parse(savedMethods);
+    originalPaymentMethods.value = [...paymentMethods.value];
+  }
+  selfService.value = localStorage.getItem('selfServiceEnabled') === 'true';
+  const savedCode = localStorage.getItem('selfServiceCode');
+  if (savedCode) {
+    selfServiceCode.value = savedCode;
+  } else {
+    generateCode();
+  }
+});
+
+const validateAll = () => {
+  errors.value = {};
+  touched.value = { name: true, cnpj: true, phone: true };
+
+  if (!form.value.name.trim()) errors.value.name = 'O nome fantasia é obrigatório.';
+  if (form.value.cnpj.trim() && form.value.cnpj.replace(/\D/g, '').length < 14) errors.value.cnpj = 'CNPJ incompleto.';
+  if (form.value.phone.trim() && form.value.phone.replace(/\D/g, '').length < 10) errors.value.phone = 'Telefone incompleto.';
+
+  return Object.keys(errors.value).length === 0;
+};
+
+const handleLogoUpload = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => { logoPreview.value = e.target.result; };
+  reader.readAsDataURL(file);
+};
+
+const saveSettings = async () => {
+  if (!validateAll()) {
+    showToast('Corrija os erros antes de salvar.', 'error');
+    return;
+  }
+  isLoading.value = true;
+  try {
+    localStorageService.saveOnboarding({
+      nome_estabelecimento: form.value.name,
+      cnpj: form.value.cnpj,
+      telefone: form.value.phone,
+      descricao: form.value.description,
+    });
+    if (logoPreview.value) localStorageService.saveImage(logoPreview.value);
+    localStorage.setItem('paymentMethods', JSON.stringify(paymentMethods.value));
+    originalForm.value = { ...form.value };
+    originalLogo.value = logoPreview.value;
+    originalPaymentMethods.value = [...paymentMethods.value];
+    showToast('Dados atualizados com sucesso!', 'success');
+  } catch {
+    showToast('Erro ao salvar os dados.', 'error');
+  } finally {
+    isLoading.value = false;
+  }
+};
 </script>
 
 <template>
-  <main class="max-w-4xl mx-auto py-12 px-4 font-inter">
-    
-    <div class="flex items-center mb-8">
-        <button @click="router.back()" class="p-2 text-gray-500 hover:text-gray-800 transition-colors mr-4">
-            <ArrowLeft :size="30" />
+  <main class="max-w-6xl mx-auto py-12 px-6 font-inter animate-fadeIn">
+
+    <header class="flex items-center justify-between mb-10">
+      <div class="flex items-center gap-4">
+        <button @click="router.push('/app/dashboard')"
+          class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] hover:bg-gray-100 transition-all">
+          <ArrowLeft :size="20" />
         </button>
-        <h1 class="text-3xl font-bold text-gray-800 flex items-center tracking-tight">
-          Informações do Estabelecimento
-          <CheckCircle v-if="authStore.configStatus.info" :size="24" class="text-green-500 ml-4" />
-        </h1>
+        <div>
+          <h1 class="text-3xl font-black text-[#212121] tracking-tight">Meu Estabelecimento</h1>
+          <p class="text-[#757575] mt-1 text-sm">Dados fiscais e de contato</p>
+        </div>
+      </div>
+
+      <button @click="saveSettings" :disabled="!isDirty || isLoading"
+        class="hidden sm:flex items-center gap-2 bg-primary text-white font-black px-8 py-4 rounded hover:bg-primary-dark transition-all active:scale-95 shadow-lg shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100">
+        <Save :size="20" />
+        {{ isLoading ? 'Gravando...' : 'Salvar Dados' }}
+      </button>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <section class="lg:col-span-1">
+        <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl flex flex-col items-center">
+          <h3 class="text-base font-black text-[#212121] mb-6 w-full text-left uppercase tracking-widest text-[11px]">Logo
+            da Marca</h3>
+          <div class="relative group cursor-pointer w-48 h-48 mb-6">
+            <div
+              class="relative w-full h-full bg-gray-50 border-2 border-dashed border-[#E0E0E0] rounded overflow-hidden flex flex-col items-center justify-center group-hover:border-accent/50 transition-all">
+              <img v-if="logoPreview" :src="logoPreview" class="w-full h-full object-contain p-4" />
+              <div v-else class="flex flex-col items-center text-[#757575]">
+                <UploadCloud :size="40" class="mb-2" />
+                <span class="text-xs font-bold uppercase tracking-widest">Subir Logo</span>
+              </div>
+              <input type="file" @change="handleLogoUpload" accept="image/*"
+                class="absolute inset-0 opacity-0 cursor-pointer" />
+            </div>
+          </div>
+          <p class="text-[10px] text-[#757575] uppercase font-black tracking-widest">Clique para alterar</p>
+        </div>
+      </section>
+
+      <section class="lg:col-span-2">
+        <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <div class="space-y-1.5">
+              <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1">Nome do Negócio</label>
+              <input v-model="form.name" maxlength="80" type="text" placeholder="Ex: Hamburgueria 2000"
+                class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all"
+                :class="errors.name ? '!border-red-500 !bg-red-500/5' : ''" />
+              <p v-if="errors.name" class="text-danger text-[11px] font-bold ml-1 flex items-center gap-1">
+                <AlertCircle :size="11" /> {{ errors.name }}
+              </p>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1">CNPJ</label>
+              <input :value="form.cnpj"
+                @input="(e) => { form.cnpj = maskCNPJ(e.target.value); e.target.value = form.cnpj; }" maxlength="18"
+                type="text" placeholder="00.000.000/0001-00"
+                class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all"
+                :class="errors.cnpj ? '!border-red-500 !bg-red-500/5' : ''" />
+              <p v-if="errors.cnpj" class="text-danger text-[11px] font-bold ml-1 flex items-center gap-1">
+                <AlertCircle :size="11" /> {{ errors.cnpj }}
+              </p>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1">
+                WhatsApp / Contato
+              </label>
+              <input :value="form.phone" @input="(e) => {
+                const cleanValue = e.target.value.replace(/\D/g, '');
+                form.phone = maskPhone(cleanValue);
+                e.target.value = form.phone;
+              }" maxlength="15" type="tel" inputmode="numeric" placeholder="(00) 00000-0000"
+                class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all"
+                :class="errors.phone ? '!border-red-500 !bg-red-500/5' : ''" />
+              <p v-if="errors.phone" class="text-danger text-[11px] font-bold ml-1 flex items-center gap-1">
+                <AlertCircle :size="11" /> {{ errors.phone }}
+              </p>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="flex justify-between items-center ml-1 mr-1">
+                <label class="text-xs font-black uppercase tracking-widest text-[#757575]">Sobre o
+                  Estabelecimento</label>
+                <span class="text-[10px] text-[#757575] font-mono">{{ form.description.length }}/300</span>
+              </div>
+              <textarea v-model="form.description" maxlength="300" rows="4"
+                placeholder="Conte um pouco sobre a história ou especialidades do seu negócio..."
+                class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all resize-none" />
+            </div>
+
+          </div>
+        </div>
+      </section>
     </div>
 
-    <form @submit.prevent="saveInfo" class="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <div>
-          <h2 class="text-2xl font-bold text-gray-800 mb-4">Informações gerais</h2>
-          
-          <div class="mb-6">
-            <label for="nome" class="block text-gray-600 font-semibold mb-2">Nome do Estabelecimento:</label>
-            <input type="text" id="nome" v-model="nomeEstabelecimento" placeholder="Digite o nome" required
-                   minlength="3" maxlength="100"
-                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 transition-all outline-none" />
+    <!-- Métodos de Pagamento -->
+    <div class="mt-8">
+      <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 bg-accent-light border border-accent/30 rounded flex items-center justify-center">
+            <Banknote :size="20" class="text-accent" />
           </div>
-
-          <div class="mb-6">
-            <label for="cnpj" class="block text-gray-600 font-semibold mb-2">CNPJ:</label>
-            <input type="text" id="cnpj" v-model="cnpj" placeholder="00.000.000/0000-00" required
-                   maxlength="18"
-                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 transition-all outline-none" />
-            <p v-if="localError" class="text-red-500 text-sm mt-2 font-medium flex items-center gap-1">
-              <CheckCircle :size="14" class="rotate-180" /> {{ localError }}
-            </p>
-          </div>
-
-          <div class="mb-6">
-            <label for="endereco" class="block text-gray-600 font-semibold mb-2">Endereço:</label>
-            <input type="text" id="endereco" v-model="endereco" placeholder="Rua, Número, Bairro, Cidade - UF"
-                   maxlength="255"
-                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green text-gray-900 placeholder-gray-400 transition-all outline-none" />
-          </div>
-
-          <div class="mb-6">
-            <label class="block text-gray-600 font-semibold mb-2">Logo da Marca:</label>
-            <div class="p-3 border border-gray-300 rounded-lg bg-gray-50 flex justify-between items-center text-gray-900 cursor-pointer hover:bg-gray-100 transition-colors border-dashed border-2">
-              <span class="text-gray-500 text-sm">Fazer upload (PNG ou JPG)</span>
-              <Upload :size="20" class="text-gray-400" />
-            </div>
+          <div>
+            <h3 class="text-base font-black text-[#212121]">Métodos de Pagamento</h3>
+            <p class="text-sm text-[#757575] mt-0.5">Selecione os métodos aceitos no seu estabelecimento.</p>
           </div>
         </div>
-
-        <div>
-          <h2 class="text-2xl font-bold text-gray-800 mb-4">Configurações de Operação</h2>
-
-          <div class="mb-8">
-            <p class="block text-gray-600 font-semibold mb-3">Métodos de pagamento:</p>
-            <div v-for="option in paymentOptions" :key="option" class="flex items-center mb-2 group">
-              <input type="checkbox" :id="option" :value="option" v-model="metodosPagamento"
-                     class="h-5 w-5 text-brand-green border-gray-300 rounded focus:ring-brand-green transition-colors cursor-pointer" />
-              <label :for="option" class="ml-3 text-gray-700 cursor-pointer group-hover:text-gray-900 transition-colors font-medium">{{ option }}</label>
+        <div class="flex flex-wrap gap-3">
+          <button
+            v-for="method in ALL_PAYMENT_METHODS"
+            :key="method"
+            type="button"
+            @click="togglePaymentMethod(method)"
+            class="flex items-center gap-2 px-5 py-3 rounded border-2 font-bold text-sm transition-all"
+            :class="paymentMethods.includes(method)
+              ? 'bg-accent-light border-accent/40 text-accent'
+              : 'bg-gray-50 border-[#E0E0E0] text-[#757575] hover:border-[#E0E0E0]'"
+          >
+            <div class="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
+              :class="paymentMethods.includes(method) ? 'bg-accent border-accent' : 'border-[#E0E0E0]'">
+              <svg v-if="paymentMethods.includes(method)" viewBox="0 0 10 10" class="w-2.5 h-2.5 text-white fill-none stroke-current stroke-2"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg>
             </div>
-          </div>
-
-          <div class="mb-6">
-            <p class="block text-gray-600 font-semibold mb-3">Formas de Atendimento:</p>
-            <div v-for="option in serviceOptions" :key="option" class="flex items-center mb-2 group">
-              <input type="checkbox" :id="option" :value="option" v-model="formasAtendimento"
-                     class="h-5 w-5 text-brand-green border-gray-300 rounded focus:ring-brand-green transition-colors cursor-pointer" />
-              <label :for="option" class="ml-3 text-gray-700 cursor-pointer group-hover:text-gray-900 transition-colors font-medium">{{ option }}</label>
-            </div>
-          </div>
+            {{ method }}
+          </button>
         </div>
+        <p v-if="paymentMethods.length === 0" class="text-danger text-xs font-bold mt-3">Selecione ao menos um método.</p>
       </div>
+    </div>
 
-      <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end">
-        <button type="submit" :disabled="isLoading"
-                class="py-3 px-10 bg-brand-green text-black font-bold rounded-xl hover:bg-brand-green-hover transition-all active:scale-95 disabled:bg-gray-300 shadow-lg shadow-brand-green/20">
-          {{ isLoading ? 'Salvando...' : 'Salvar Informações' }}
-        </button>
+    <!-- Autoatendimento -->
+    <div class="mt-8">
+      <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h3 class="text-base font-black text-[#212121]">Autoatendimento</h3>
+            <p class="text-sm text-[#757575] mt-1">Permite que clientes façam pedidos pelo aplicativo móvel.</p>
+          </div>
+          <button
+            @click="() => { selfService = !selfService; localStorage.setItem('selfServiceEnabled', selfService); }"
+            class="relative w-14 h-7 rounded transition-colors duration-300 flex items-center"
+            :class="selfService ? 'bg-accent' : 'bg-gray-100'"
+          >
+            <span class="absolute w-5 h-5 bg-white rounded shadow transition-all duration-300"
+              :class="selfService ? 'left-8' : 'left-1'" />
+          </button>
+        </div>
+
+        <Transition name="slide-down">
+          <div v-if="selfService" class="mt-6 border-t border-[#E0E0E0] pt-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Download app -->
+              <div class="bg-gray-50 border border-[#E0E0E0] rounded p-6 flex flex-col gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 bg-accent-light border border-accent/30 rounded flex items-center justify-center">
+                    <Smartphone :size="22" class="text-accent" />
+                  </div>
+                  <div>
+                    <p class="font-black text-[#212121] text-sm">Aplicativo Mobile</p>
+                    <p class="text-xs text-[#757575]">Para iOS e Android</p>
+                  </div>
+                </div>
+                <p class="text-xs text-[#757575] leading-relaxed">
+                  Os clientes baixam o app PedidoFácil e inserem o código do seu estabelecimento para acessar o cardápio.
+                </p>
+                <div class="flex gap-2">
+                  <a href="#" class="flex-1 text-center py-2.5 px-4 bg-gray-50 border border-[#E0E0E0] rounded text-xs font-black text-[#212121] hover:bg-gray-100 transition-colors">
+                    App Store
+                  </a>
+                  <a href="#" class="flex-1 text-center py-2.5 px-4 bg-gray-50 border border-[#E0E0E0] rounded text-xs font-black text-[#212121] hover:bg-gray-100 transition-colors">
+                    Google Play
+                  </a>
+                </div>
+              </div>
+
+              <!-- Access code -->
+              <div class="bg-gray-50 border border-[#E0E0E0] rounded p-6 flex flex-col gap-4">
+                <div>
+                  <p class="font-black text-[#212121] text-sm mb-1">Código de Acesso</p>
+                  <p class="text-xs text-[#757575]">Compartilhe este código com seus clientes</p>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="flex-1 bg-gray-100 border border-accent/30 rounded px-6 py-4 text-center">
+                    <span class="text-4xl font-black text-accent tracking-[0.3em]">{{ selfServiceCode }}</span>
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <button @click="copyCode"
+                    class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-accent-light border border-accent/30 rounded text-xs font-black transition-all"
+                    :class="codeCopied ? 'text-accent' : 'text-accent hover:bg-primary-dark/20'"
+                  >
+                    <component :is="codeCopied ? CheckCheck : Copy" :size="14" />
+                    {{ codeCopied ? 'Copiado!' : 'Copiar código' }}
+                  </button>
+                  <button @click="generateCode"
+                    class="p-2.5 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] hover:bg-gray-100 transition-all"
+                    title="Gerar novo código"
+                  >
+                    <RefreshCw :size="14" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Transition>
       </div>
-    </form>
+    </div>
+
+    <div class="mt-8 sm:hidden">
+      <button @click="saveSettings" :disabled="!isDirty || isLoading"
+        class="w-full bg-primary text-white font-black py-5 rounded shadow-xl active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+        {{ isLoading ? 'Gravando...' : 'Salvar Alterações' }}
+      </button>
+    </div>
+
   </main>
 </template>
+
+<style scoped>
+.slide-down-enter-active, .slide-down-leave-active {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+.slide-down-enter-from, .slide-down-leave-to {
+  opacity: 0;
+  max-height: 0;
+  transform: translateY(-8px);
+}
+.slide-down-enter-to, .slide-down-leave-from {
+  opacity: 1;
+  max-height: 600px;
+}
+</style>
