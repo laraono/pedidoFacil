@@ -1,12 +1,12 @@
-const express = require('express');
-const router = express.Router();
-const authController = require('../controller/AAuthController');
-const authenticate = require('../middleware/authenticate');
+import express, { Request, Response } from 'express'
+import { authController, loginLimiter } from '../controller'
+import { catchAsync } from '../middleware'
+const authenticate = require('../middleware/authenticate')
 
-export const authRouter = express.Router();
+export const authRouter = express.Router()
 
-authRouter.post('/register', authController.register);
-authRouter.post('/login', authController.loginLimiter, authController.login);
-authRouter.post('/logout', authenticate, authController.logout);
-authRouter.post('/refresh', authController.refresh);
-authRouter.get('/me', authenticate, authController.perfil)
+authRouter.post('/register', catchAsync((req: Request, res: Response) => authController.register(req, res)))
+authRouter.post('/login', loginLimiter, catchAsync((req: Request, res: Response) => authController.login(req, res)))
+authRouter.post('/logout', authenticate, catchAsync((req: Request, res: Response) => authController.logout(req, res)))
+authRouter.post('/refresh', catchAsync((req: Request, res: Response) => authController.refresh(req, res)))
+authRouter.get('/me', authenticate, catchAsync((req: Request, res: Response) => authController.perfil(req, res)))
