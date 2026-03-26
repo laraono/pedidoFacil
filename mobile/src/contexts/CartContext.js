@@ -4,6 +4,7 @@ export const CartContext = createContext({});
 
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
+
   const clearCart = () => {
     setCartItems([]);
   };
@@ -19,10 +20,13 @@ export function CartProvider({ children }) {
     );
   };
 
-  const addToCart = (product, size, quantity) => {
+  const addToCart = (product, size, quantity, obs = "") => {
     setCartItems((prev) => {
       const existingItemIndex = prev.findIndex(
-        (item) => item.id === product.id && item.size.name === size.name,
+        (item) =>
+          item.id === product.id &&
+          item.size.name === size.name &&
+          item.observation === obs,
       );
 
       if (existingItemIndex >= 0) {
@@ -30,7 +34,7 @@ export function CartProvider({ children }) {
         newItems[existingItemIndex].quantity += quantity;
         return newItems;
       } else {
-        return [...prev, { ...product, size, quantity }];
+        return [...prev, { ...product, size, quantity, observation: obs }];
       }
     });
   };
@@ -62,4 +66,5 @@ export function CartProvider({ children }) {
     </CartContext.Provider>
   );
 }
+
 export const useCart = () => useContext(CartContext);

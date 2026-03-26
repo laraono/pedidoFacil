@@ -236,95 +236,6 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
 </script>
 
 <template>
-<<<<<<< HEAD
-    <div class="h-screen flex flex-col font-inter overflow-hidden">
-        
-        <header 
-            class="relative h-16 md:h-20 flex-shrink-0 overflow-hidden border-b border-white/10"
-            :style="backgroundStyle"
-        >
-            <div class="absolute inset-0 bg-black/60 z-0"></div>
-            <div class="relative z-10 flex items-center justify-between w-full h-full px-4 md:px-8">
-                <div class="flex items-center gap-3 md:gap-4">
-                    <div class="bg-blue-600 p-1.5 md:p-2 rounded-xl text-white shadow-lg">
-                        <Utensils :size="20" />
-                    </div>
-                    <h1 class="text-white font-bold text-lg md:text-2xl tracking-tight">
-                        {{ establishmentName }}
-                    </h1>
-                </div>
-                <div class="text-white/70 text-sm font-medium hidden sm:block">
-                    Cardápio Digital
-                </div>
-            </div>
-        </header>
-
-        <main class="flex-grow flex flex-col md:flex-row p-3 md:p-6 gap-4 overflow-hidden bg-gray-50">
-            
-            <aside 
-                class="w-full md:w-32 lg:w-48 flex flex-col rounded-2xl md:rounded-[2rem] border border-gray-200/60 overflow-hidden shrink-0 shadow-sm"
-                :style="{ background: localStorageService.getCategoryColors() }"
-            >
-                <header class="hidden md:flex p-4 items-center justify-center border-b border-gray-200/20">
-                    <h2 class="font-extrabold text-gray-500 text-xs uppercase tracking-widest">Categorias</h2>
-                </header>
-
-                <div class="flex flex-row md:flex-col p-2 md:p-3 overflow-x-auto md:overflow-y-auto custom-scrollbar gap-2 md:space-y-3">
-                    <button 
-                        v-for="category in menuStore.categories" 
-                        :key="category.id"
-                        @click="selectCategory(category.id)" 
-                        class="relative flex flex-row md:flex-col items-center flex-shrink-0 min-w-[110px] md:min-w-0 p-2 md:p-4 rounded-xl md:rounded-2xl transition-all duration-200 bg-white/20 hover:bg-white/40"
-                    >
-                        <div class="w-8 h-8 md:w-12 md:h-12 mr-2 md:mr-0 md:mb-2 rounded-full flex items-center justify-center overflow-hidden bg-white/50">
-                            <img :src="category.image" class="w-3/4 h-3/4 object-contain" />
-                        </div>
-                        <span class="text-[10px] md:text-xs font-bold uppercase text-center leading-tight truncate text-gray-700">
-                            {{ category.name }}
-                        </span>
-                    </button>
-                </div>
-            </aside>
-
-            <section 
-                class="flex-1 flex flex-col rounded-2xl md:rounded-[2rem] border border-gray-200/60 overflow-hidden shadow-sm"
-                :style="{ background: localStorageService.getBackgroundColors()}"
-            >
-                <header class="p-3 md:p-5 flex justify-between items-center z-10 border-b border-gray-200/50" :style="{ background: localStorageService.getButtonColors()}">
-                    <div class="flex items-center gap-2 md:gap-3">
-                        <div class="w-1.5 md:w-3 h-5 md:h-8 rounded-full bg-white/50"></div>
-                        <h2 class="font-extrabold text-gray-700 text-sm md:text-lg uppercase">Produtos</h2>
-                    </div>
-                    <span class="bg-white/80 text-gray-600 font-bold px-2 py-0.5 rounded-full text-[10px] md:text-sm">
-                        {{ products.length }} itens
-                    </span>
-                </header>
-
-                <div class="flex-grow p-3 md:p-6 overflow-y-auto custom-scrollbar">
-                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-6">
-                        <div v-for="product in products" :key="product.id" class="h-full">
-                            <button
-                                @click="isOpen = true; selectedProduct = product"
-                                class="bg-white rounded-xl md:rounded-2xl border border-gray-200/60 flex flex-col h-full w-full overflow-hidden text-left hover:shadow-md transition-shadow group"
-                            >
-                                <div class="h-28 md:h-40 overflow-hidden relative bg-gray-100">
-                                    <img :src="product.image" class="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                                </div>
-                                
-                                <div class="p-2 md:p-4 flex flex-col flex-grow">
-                                    <h3 class="text-gray-800 font-bold text-xs md:text-base line-clamp-1">{{ product.name }}</h3>
-                                    <p class="hidden md:block text-gray-500 text-xs line-clamp-2 mt-1">{{ product.description }}</p>
-                                    <div class="mt-auto pt-2 font-bold text-blue-600 text-sm md:text-base">
-                                        R$ {{ product.sizes[0].price }}
-                                    </div>
-                                </div>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
-=======
   <SubscriptionGuard featureName="O Cardápio">
   <div
     class="min-h-screen flex flex-col font-inter relative"
@@ -652,7 +563,6 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
             </button>
           </div>
         </div>
->>>>>>> feature-90
 
         <div class="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
           <div class="bg-primary-light border border-primary/20 p-4 rounded text-primary text-sm leading-relaxed">
@@ -740,84 +650,6 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.5); border-radius: 10px; }
 
-<<<<<<< HEAD
-        <Teleport to="body">
-            <div v-if="orderEnded" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-                <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="orderEnded = false"></div>
-                
-                <div class="relative bg-gray-50 rounded-[2rem] shadow-2xl max-w-4xl w-full h-[85vh] flex flex-col overflow-hidden">
-                    
-                    <header class="p-6 bg-white border-b border-gray-200 flex items-center justify-between">
-                        <div>
-                            <h2 class="text-2xl font-black text-gray-800 tracking-tight">Comandas Abertas</h2>
-                            <p class="text-sm text-gray-500 font-medium">Selecione uma comanda para adicionar os itens</p>
-                        </div>
-                        <button @click="orderEnded = false" class="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400">
-                            <X :size="24" />
-                        </button>
-                    </header>
-
-                    <div class="flex-grow p-6 overflow-y-auto custom-scrollbar">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            
-                            <div 
-                                v-for="comanda in comandaStore.comandas" 
-                                :key="comanda.id"
-                                class="group relative bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all overflow-hidden"
-                            >
-                                <button @click="updateComanda(comanda.id, items)" class="w-full text-left flex flex-col h-full">
-                                    <div class="p-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
-                                        <span class="text-xs font-black uppercase tracking-widest text-blue-600">Mesa / ID</span>
-                                        <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold">#{{ comanda.id }}</span>
-                                    </div>
-
-                                    <div class="p-4 flex-grow space-y-2">
-                                        <div v-for="order in comanda.orders" :key="order.id" class="space-y-1">
-                                            <div v-for="item in order.items" :key="item.name" class="flex justify-between text-sm">
-                                                <span class="text-gray-500 font-medium">{{ item.amount }}x</span>
-                                                <span class="flex-grow ml-2 text-gray-700 truncate">{{ item.name }}</span>
-                                            </div>
-                                        </div>
-                                        <div v-if="comanda.orders.length === 0" class="text-gray-300 italic text-xs py-4 text-center">
-                                            Comanda vazia
-                                        </div>
-                                    </div>
-
-                                    <div class="p-4 mt-auto bg-blue-50/50 flex justify-between items-center group-hover:bg-blue-600 transition-colors">
-                                        <span class="text-xs font-bold text-blue-400 group-hover:text-blue-100 uppercase">Total</span>
-                                        <span class="text-lg font-black text-blue-700 group-hover:text-white">
-                                            R$ {{ comanda.total }}
-                                        </span>
-                                    </div>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <footer class="p-6 bg-white border-t border-gray-200 flex flex-col sm:flex-row gap-3">
-                        <button 
-                            @click="addComanda(items)"
-                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-green-100 transition-all flex items-center justify-center gap-2"
-                        >
-                            <PlusCircle :size="20" />
-                            Criar Nova Comanda
-                        </button>
-
-                        <button 
-                            @click="orderEnded = false" 
-                            class="sm:w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-4 rounded-2xl transition-all"
-                        >
-                            Voltar ao Cardápio
-                        </button>
-                    </footer>
-                </div>
-            </div>
-        </Teleport>
-    
-    </div>
-    
-</template>
-=======
 /* Placeholder dinâmico via CSS var --ph injetada pelo :style */
 .adaptive-placeholder::placeholder { color: var(--ph, rgba(0,0,0,0.35)); }
 
@@ -833,4 +665,3 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
 }
 .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
 </style>
->>>>>>> feature-90

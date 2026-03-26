@@ -7,6 +7,7 @@ import {
   Modal,
   ActivityIndicator,
   ScrollView,
+  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -14,62 +15,74 @@ import {
   MaterialCommunityIcons,
   FontAwesome5,
 } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 import { useCart } from "../contexts/CartContext";
 import { useTheme } from "../contexts/ThemeContext";
+import { useIdleTimer } from "../hooks/useIdleTimer";
 import BrandHeader from "../components/ui/BrandHeader";
 
-const PAYMENT_METHODS = [
-  { id: "credito", label: "Crédito", icon: "credit-card", color: "#E85D5D" },
-  { id: "debito", label: "Débito", icon: "credit-card-outline", color: "#4A90E2" },
-  { id: "pix", label: "Pix", icon: "qrcode", color: "#48B8A6" },
-  { id: "dinheiro", label: "Dinheiro", icon: "cash", color: "#4CAF50" },
-  { id: "misto", label: "Misto", icon: "swap-horizontal", color: "#829356" },
-  { id: "cancelar", label: "Cancelar", icon: "close-circle", color: "#D0021B" },
-];
+import { PAYMENT_METHODS } from "../mocks";
+
+const { width } = Dimensions.get("window");
 
 export default function PaymentScreen() {
   const navigation = useNavigation();
-  const { clearCart } = useCart();
+  const route = useRoute();
+  const { cartTotal, clearCart } = useCart();
   const { theme } = useTheme();
+
+  const panHandlers = useIdleTimer(120);
+
+  const desconto = route.params?.descontoAplicado || 0;
+  const totalComDesconto = Math.max(0, cartTotal - desconto);
 
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState("Processando...");
+  const [paymentStatus, setPaymentStatus] = useState("");
   const [isApproved, setIsApproved] = useState(false);
 
-  const styles = useMemo(() => getStyles(theme), [theme]);
+  const styles = useMemo(() => getStyles(theme, width), [theme, width]);
 
   const handleConfirm = () => {
     if (!selectedMethod) return;
-    if (selectedMethod === "cancelar") {
-      clearCart();
-      navigation.navigate("Menu");
-      return;
-    }
 
     setIsProcessing(true);
-    setPaymentStatus(
-      selectedMethod === "pix"
-        ? "Aguardando pagamento Pix..."
-        : "Autorizando pagamento..."
-    );
-    setIsApproved(false);
 
-    setTimeout(() => {
-      setPaymentStatus("Pagamento Aprovado!");
+    if (selectedMethod === "dinheiro" || selectedMethod === "misto") {
+      setPaymentStatus("Imprimindo ficha para pagamento no caixa...");
       setIsApproved(true);
       setTimeout(() => {
         setIsProcessing(false);
         clearCart();
-        navigation.navigate("Menu");
-      }, 1500);
-    }, 3000);
+        navigation.navigate("Welcome");
+      }, 3500);
+    } else {
+      setPaymentStatus(
+        selectedMethod === "pix"
+          ? "Gerando QR Code Pix..."
+          : "Comunicando com a operadora...",
+      );
+
+      setTimeout(() => {
+        setPaymentStatus("Pagamento Aprovado!");
+        setIsApproved(true);
+        setTimeout(() => {
+          setIsProcessing(false);
+          clearCart();
+          navigation.navigate("Welcome");
+        }, 2000);
+      }, 3000);
+    }
+  };
+
+  const handleCancelOrder = () => {
+    clearCart();
+    navigation.navigate("Welcome");
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} {...panHandlers}>
       <BrandHeader title="Pagamento" showBack={true} />
 
       <ScrollView
@@ -77,13 +90,7 @@ export default function PaymentScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.centerWrapper}>
-          <Text
-            style={styles.mainTitle}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-          >
-            Selecione a forma de pagamento
-          </Text>
+          <Text style={styles.mainTitle}>Como deseja pagar?</Text>
 
           <View style={styles.gridContainer}>
             {PAYMENT_METHODS.map((method) => {
@@ -96,7 +103,7 @@ export default function PaymentScreen() {
                     isSelected && styles.methodCardSelected,
                   ]}
                   onPress={() => setSelectedMethod(method.id)}
-                  activeOpacity={0.7}
+                  activeOpacity={0.8}
                 >
                   <View
                     style={[
@@ -106,7 +113,7 @@ export default function PaymentScreen() {
                   >
                     <MaterialCommunityIcons
                       name={method.icon}
-                      size={48}
+                      size={42}
                       color={isSelected ? theme.textoBotoes : method.color}
                     />
                   </View>
@@ -115,8 +122,6 @@ export default function PaymentScreen() {
                       styles.methodLabel,
                       isSelected && styles.methodLabelSelected,
                     ]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
                   >
                     {method.label}
                   </Text>
@@ -125,76 +130,78 @@ export default function PaymentScreen() {
             })}
           </View>
 
+          {(selectedMethod === "dinheiro" || selectedMethod === "misto") && (
+            <View style={styles.cashWarning}>
+              <Feather name="info" size={20} color={theme.corCategorias} />
+              <Text style={styles.cashWarningText}>
+                Este pagamento deve ser finalizado no balcão. Gere sua ficha e
+                apresente ao atendente.
+              </Text>
+            </View>
+          )}
+
           <View style={styles.brandsContainer}>
-            <Text style={styles.brandsTitle}>Aceitamos</Text>
+            <Text style={styles.brandsTitle}>
+              Aceitamos as principais bandeiras
+            </Text>
             <View style={styles.brandsWrapper}>
-              <FontAwesome5 name="cc-visa" size={32} color="#1A1F71" />
-              <FontAwesome5 name="cc-mastercard" size={32} color="#EB001B" />
-              <FontAwesome5 name="cc-amex" size={32} color="#2E77BC" />
-              <FontAwesome5 name="cc-paypal" size={32} color="#003087" />
+              <FontAwesome5 name="cc-visa" size={28} color="#1A1F71" />
+              <FontAwesome5 name="cc-mastercard" size={28} color="#EB001B" />
+              <FontAwesome5 name="cc-amex" size={28} color="#2E77BC" />
+              <MaterialCommunityIcons
+                name="qrcode-scan"
+                size={28}
+                color="#48B8A6"
+              />
             </View>
           </View>
         </View>
       </ScrollView>
 
-      <View style={styles.fixedFooter}>
+      <View style={styles.footer}>
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>Total a Pagar</Text>
+          <Text style={styles.totalValue}>
+            R$ {totalComDesconto.toFixed(2).replace(".", ",")}
+          </Text>
+        </View>
+
         <TouchableOpacity
-          style={[
-            styles.btnConfirm,
-            !selectedMethod && styles.btnConfirmDisabled,
-          ]}
+          style={[styles.btnConfirm, !selectedMethod && styles.btnDisabled]}
           disabled={!selectedMethod}
           onPress={handleConfirm}
-          activeOpacity={0.8}
         >
-          <Text
-            style={[
-              styles.btnConfirmText,
-              !selectedMethod && styles.btnConfirmTextDisabled,
-            ]}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-          >
-            Confirmar Pagamento
+          <Text style={styles.btnConfirmText}>
+            {selectedMethod === "dinheiro" || selectedMethod === "misto"
+              ? "Gerar Ficha"
+              : "Finalizar Pedido"}
           </Text>
-          <Feather
-            name="check-circle"
-            size={20}
-            color={!selectedMethod ? theme.textoSecundario : theme.textoBotoes}
-            style={styles.btnIcon}
-          />
+          <Feather name="arrow-right" size={20} color={theme.textoBotoes} />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.btnCancel} onPress={handleCancelOrder}>
+          <Text style={styles.btnCancelText}>Cancelar e Sair</Text>
         </TouchableOpacity>
       </View>
 
       <Modal visible={isProcessing} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {selectedMethod === "pix" && !isApproved ? (
-              <MaterialCommunityIcons
-                name="qrcode-scan"
-                size={120}
-                color={theme.corBotoes}
-                style={styles.modalIcon}
-              />
-            ) : null}
-
             {isApproved ? (
               <Feather
                 name="check-circle"
-                size={100}
-                color={theme.corBotoes}
+                size={80}
+                color={theme.corCategorias}
                 style={styles.modalIcon}
               />
-            ) : selectedMethod !== "pix" ? (
+            ) : (
               <ActivityIndicator
-                size={100}
+                size={80}
                 color={theme.corBotoes}
                 style={styles.modalIcon}
               />
-            ) : null}
-            <Text style={styles.modalStatusText} numberOfLines={2} adjustsFontSizeToFit>
-              {paymentStatus}
-            </Text>
+            )}
+            <Text style={styles.modalStatusText}>{paymentStatus}</Text>
           </View>
         </View>
       </Modal>
@@ -202,166 +209,168 @@ export default function PaymentScreen() {
   );
 }
 
-const getStyles = (theme) => StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.fundoGeral,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 120,
-  },
-  centerWrapper: {
-    flex: 1,
-    alignSelf: "center",
-    width: "100%",
-    maxWidth: 900,
-    paddingHorizontal: 20,
-  },
-  mainTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: theme.corTextoPrincipal,
-    textAlign: "center",
-    marginTop: 40,
-    marginBottom: 40,
-    letterSpacing: -0.5,
-  },
-  gridContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 20,
-  },
-  methodCard: {
-    width: "45%",
-    maxWidth: 220,
-    aspectRatio: 1.2,
-    backgroundColor: theme.fundoProdutos,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: theme.borda,
-    padding: 15,
-  },
-  methodCardSelected: {
-    borderColor: theme.corBotoes,
-    backgroundColor: theme.corBotoes,
-    transform: [{ scale: 1.02 }],
-  },
-  iconWrapper: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: theme.fundoGeral,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  iconWrapperSelected: {
-    backgroundColor: "rgba(0,0,0,0.1)",
-  },
-  methodLabel: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: theme.corTextoPrincipal,
-    textAlign: "center",
-    width: "100%",
-  },
-  methodLabelSelected: {
-    color: theme.textoBotoes,
-  },
-  brandsContainer: {
-    alignItems: "center",
-    marginTop: 60,
-    paddingBottom: 20,
-  },
-  brandsTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: theme.textoSecundario,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-    marginBottom: 20,
-  },
-  brandsWrapper: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 24,
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 20,
-  },
-  fixedFooter: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: theme.fundoGeral,
-    paddingHorizontal: 30,
-    paddingVertical: 24,
-    borderTopWidth: 1,
-    borderTopColor: theme.borda,
-    alignItems: "center",
-  },
-  btnConfirm: {
-    flexDirection: "row",
-    backgroundColor: theme.corBotoes,
-    width: "100%",
-    maxWidth: 600,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  btnConfirmDisabled: {
-    backgroundColor: theme.fundoProdutos,
-    borderWidth: 1,
-    borderColor: theme.borda,
-  },
-  btnConfirmText: {
-    color: theme.textoBotoes,
-    fontSize: 16,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  btnConfirmTextDisabled: {
-    color: theme.textoSecundario,
-  },
-  btnIcon: {
-    marginLeft: 12,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.9)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-  modalContent: {
-    width: "100%",
-    maxWidth: 400,
-    backgroundColor: theme.fundoProdutos,
-    borderRadius: 32,
-    padding: 40,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: theme.borda,
-  },
-  modalIcon: {
-    marginBottom: 32,
-  },
-  modalStatusText: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: theme.corTextoPrincipal,
-    textAlign: "center",
-    lineHeight: 32,
-  },
-});
+const getStyles = (theme, width) =>
+  StyleSheet.create({
+    safeArea: { flex: 1, backgroundColor: theme.fundoGeral },
+    scrollContent: { flexGrow: 1, paddingBottom: 220 },
+    centerWrapper: {
+      alignSelf: "center",
+      width: "100%",
+      maxWidth: 800,
+      paddingHorizontal: 24,
+      paddingTop: 40,
+    },
+    mainTitle: {
+      fontSize: 26,
+      fontWeight: "900",
+      color: theme.corTextoPrincipal,
+      textAlign: "center",
+      marginBottom: 32,
+    },
+    gridContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "center",
+      gap: 16,
+    },
+    methodCard: {
+      width: (width - 48 - 16) / 2,
+      maxWidth: 220,
+      backgroundColor: theme.fundoProdutos,
+      borderRadius: 24,
+      justifyContent: "center",
+      alignItems: "center",
+      borderWidth: 2,
+      borderColor: theme.borda,
+      paddingVertical: 24,
+      paddingHorizontal: 12,
+      minHeight: 140,
+    },
+    methodCardSelected: {
+      borderColor: theme.corBotoes,
+      backgroundColor: theme.corBotoes,
+    },
+    iconWrapper: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: theme.fundoGeral,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 16,
+    },
+    iconWrapperSelected: { backgroundColor: "rgba(255,255,255,0.2)" },
+    methodLabel: {
+      fontSize: 18,
+      fontWeight: "900",
+      color: theme.corTextoPrincipal,
+      textAlign: "center",
+    },
+    methodLabelSelected: { color: theme.textoBotoes },
+    cashWarning: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#FFF9EB",
+      padding: 16,
+      borderRadius: 12,
+      marginTop: 32,
+      gap: 12,
+      borderWidth: 1,
+      borderColor: "#FFE5A1",
+    },
+    cashWarningText: {
+      flex: 1,
+      color: "#856404",
+      fontSize: 13,
+      fontWeight: "700",
+      lineHeight: 18,
+    },
+    brandsContainer: { alignItems: "center", marginTop: 48 },
+    brandsTitle: {
+      fontSize: 11,
+      fontWeight: "900",
+      color: theme.textoSecundario,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+      marginBottom: 16,
+    },
+    brandsWrapper: { flexDirection: "row", gap: 20, opacity: 0.6 },
+    footer: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: theme.fundoProdutos,
+      paddingHorizontal: 30,
+      paddingTop: 20,
+      paddingBottom: 30,
+      borderTopWidth: 1,
+      borderTopColor: theme.borda,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: -4 },
+      shadowOpacity: 0.05,
+      shadowRadius: 10,
+      elevation: 20,
+    },
+    totalRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 20,
+    },
+    totalLabel: {
+      fontSize: 14,
+      fontWeight: "900",
+      color: theme.textoSecundario,
+      textTransform: "uppercase",
+    },
+    totalValue: {
+      fontSize: 32,
+      fontWeight: "900",
+      color: theme.corTextoPrincipal,
+    },
+    btnConfirm: {
+      flexDirection: "row",
+      backgroundColor: theme.corBotoes,
+      height: 64,
+      borderRadius: 32,
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 12,
+    },
+    btnDisabled: { opacity: 0.4 },
+    btnConfirmText: {
+      color: theme.textoBotoes,
+      fontSize: 18,
+      fontWeight: "900",
+      textTransform: "uppercase",
+    },
+    btnCancel: { alignSelf: "center", marginTop: 16 },
+    btnCancelText: {
+      color: "#E53935",
+      fontSize: 14,
+      fontWeight: "900",
+      textTransform: "uppercase",
+      textDecorationLine: "underline",
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.85)",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    modalContent: {
+      width: "80%",
+      backgroundColor: theme.fundoProdutos,
+      borderRadius: 32,
+      padding: 40,
+      alignItems: "center",
+    },
+    modalIcon: { marginBottom: 24 },
+    modalStatusText: {
+      fontSize: 20,
+      fontWeight: "900",
+      color: theme.corTextoPrincipal,
+      textAlign: "center",
+    },
+  });
