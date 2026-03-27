@@ -7,12 +7,35 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Exemplo: adicione cores personalizadas para o seu app
+        purple: {
+          500: '#1A55E3',
+          600: '#1548C2',
+          300: '#5E6EED',
+          400: '#4F5FD1',
+        },
+        pink: {
+          500: '#FF0854',
+          600: '#E0074A',
+        },
+        green: {
+          500: '#00D284',
+          600: '#00B873',
+        },
+        blue: {
+          500: '#0DCAF0',
+          600: '#0BB5D6',
+        },
         brand: {
-          light: '#6ee7b7',
-          DEFAULT: '#10b981',
-          dark: '#047857',
+          green: '#00FF85',
+          'green-hover': '#00E676',
+        },
+        dark: {
+          bg: '#0B0E11',
+          card: '#1A1E24',
         }
+      },
+      fontFamily: {
+        'inter': ['Inter', 'sans-serif'],
       }
     },
   },
