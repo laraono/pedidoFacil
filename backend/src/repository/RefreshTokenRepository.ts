@@ -1,6 +1,7 @@
 import { DataSource, Repository } from "typeorm"
 import { RefreshToken } from "../database"
 import { User } from "../database"
+import { Admin } from "../database/entity/Admin"
 
 export class RefreshTokenRepository extends Repository<RefreshToken> {
 
@@ -11,12 +12,17 @@ export class RefreshTokenRepository extends Repository<RefreshToken> {
     async findByHash(tokenHash: string) {
         return await this.findOne({
             where: { tokenHash, revoked: false },
-            relations: { user: true }
+            relations: { user: true, admin: true }
         })
     }
 
     async createToken(user: User, tokenHash: string, expiresAt: Date) {
-        const token = this.create({ user, tokenHash, expiresAt })
+        const token = this.create({ user, admin: null, tokenHash, expiresAt })
+        return await this.save(token)
+    }
+
+    async createAdminToken(admin: Admin, tokenHash: string, expiresAt: Date) {
+        const token = this.create({ user: null, admin, tokenHash, expiresAt })
         return await this.save(token)
     }
 

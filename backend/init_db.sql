@@ -79,11 +79,13 @@ CREATE TABLE USUARIO (
 CREATE TABLE REFRESH_TOKEN (
   ID_Token       INT NOT NULL AUTO_INCREMENT,
   Token_Hash     VARCHAR(255) NOT NULL UNIQUE,
-  ID_Usuario     INT NOT NULL,
+  ID_Usuario     INT NULL,
+  ID_Admin       INT NULL,
   Expires_At     TIMESTAMP NOT NULL,
   Revogado       BOOLEAN NOT NULL DEFAULT FALSE,
   PRIMARY KEY (ID_Token),
-  FOREIGN KEY (ID_Usuario) REFERENCES USUARIO(ID_Usuario) ON DELETE CASCADE
+  FOREIGN KEY (ID_Usuario) REFERENCES USUARIO(ID_Usuario) ON DELETE CASCADE,
+  FOREIGN KEY (ID_Admin) REFERENCES ADMIN(ID_Admin) ON DELETE NO ACTION
 ) ENGINE = InnoDB;
 
 -- Resolução do Loop: Agora que a tabela USUARIO existe, amarramos o Gerente ao Estabelecimento.

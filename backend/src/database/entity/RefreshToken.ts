@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm"
 import { User } from "./User"
+import { Admin } from "./Admin"
 
 @Entity({name: 'REFRESH_TOKEN'})
 export class RefreshToken {
@@ -31,9 +32,15 @@ export class RefreshToken {
     })
     expiresAt: Date
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, { nullable: true })
     @JoinColumn({
         name: 'ID_Usuario'
     })
-    user: User
+    user: User | null
+
+    @ManyToOne(() => Admin, { nullable: true })
+    @JoinColumn({
+        name: 'ID_Admin'
+    })
+    admin: Admin | null
 }

@@ -26,11 +26,20 @@ export async function gerarTokens(usuario: User, refreshTokenRepository: Refresh
     return { accessToken, refreshToken }
 }
 
-export function gerarTokenAdmin(admin: Admin) {
+export async function gerarTokenAdmin(admin: Admin, refreshTokenRepository: RefreshTokenRepository) {
     const accessToken = jwt.sign(
         { id: admin.id, isAdmin: true },
         process.env.JWT_SECRET!,
-        { expiresIn: '1d' }
+        { expiresIn: '15m' }
     )
-    return { accessToken }
+
+    const refreshToken = crypto.randomBytes(64).toString('hex')
+    const hash = hashToken(refreshToken)
+
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + parseInt(process.env.JWT_REFRESH_EXPIRES_IN!))
+
+    await refreshTokenRepository.createAdminToken(admin, hash, expiresAt)
+
+    return { accessToken, refreshToken }
 }

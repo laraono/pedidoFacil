@@ -62,7 +62,6 @@ export class AuthController {
     async logout(req: Request, res: Response) {
         const token = req.cookies.refreshToken
 
-        // Admin não usa refresh token — basta limpar o cookie se existir
         if (!token) {
             return res.status(204).send()
         }

@@ -8,6 +8,9 @@ import { AppError } from '../middleware'
 import { RefreshTokenRepository, UserRepository } from '../repository'
 import { hashToken, gerarTokens, gerarTokenAdmin } from '../config/crypto'
 
+// Hash dummy para manter tempo constante quando e-mail não existe (evita timing attack)
+const DUMMY_HASH = '$2b$12$eImiTXuWVxfM37uY4JANjQev3nHN.SBuNFa5UPSmKUVgwjBiCXhHu'
+
 function validarCNPJ(cnpj: string): boolean {
     const c = cnpj.replace(/[^\d]/g, '')
     if (c.length !== 14 || /^(\d)\1{13}$/.test(c)) return false
@@ -58,14 +61,14 @@ export class AuthService {
         const cnpjExiste = await this.dataSource.getRepository(Establishment).findOne({ where: { cnpj: data.cnpj } })
         if (cnpjExiste) throw new AppError('Este CNPJ já está cadastrado.', 409)
 
-        const savedUser = await this.dataSource.transaction(async (manager) => {
-            const establishment = manager.create(Establishment, {
+        const savedUser = await this.dataSource.transaction(async (tx) => {
+            const establishment = tx.create(Establishment, {
                 name: data.nome_estabelecimento,
                 cnpj: data.cnpj
             })
-            const savedEstablishment = await manager.save(Establishment, establishment)
+            const savedEstablishment = await tx.save(Establishment, establishment)
 
-            const managerRole = manager.create(Role, {
+            const managerRole = tx.create(Role, {
                 establishment: savedEstablishment,
                 name: 'Gerente',
                 permissions: JSON.stringify([
@@ -74,24 +77,24 @@ export class AuthService {
                     'COMANDAS_FINALIZADAS', 'CUPONS', 'NOTA_FISCAL'
                 ])
             })
-            const savedRole = await manager.save(Role, managerRole)
+            const savedRole = await tx.save(Role, managerRole)
 
             // Cargos extras escolhidos no onboarding
             if (data.cargos?.length) {
                 for (const cargo of data.cargos) {
-                    const extraRole = manager.create(Role, {
+                    const extraRole = tx.create(Role, {
                         establishment: savedEstablishment,
                         name: cargo.nome,
                         permissions: JSON.stringify(cargo.permissoes)
                     })
-                    await manager.save(Role, extraRole)
+                    await tx.save(Role, extraRole)
                 }
             }
 
             const salt = await bcrypt.genSalt(12)
             const passwordHash = await bcrypt.hash(data.senha, salt)
 
-            const user = manager.create(User, {
+            const user = tx.create(User, {
                 establishment: savedEstablishment,
                 role: savedRole,
                 name: data.nome_usuario,
@@ -99,9 +102,9 @@ export class AuthService {
                 password: passwordHash,
                 status: UserStatus.ATIVA
             })
-            const savedUser = await manager.save(User, user)
+            const savedUser = await tx.save(User, user)
 
-            await manager.update(Establishment, savedEstablishment.id, { manager: savedUser })
+            await tx.update(Establishment, savedEstablishment.id, { manager: savedUser })
 
             return savedUser
         })
@@ -127,13 +130,16 @@ export class AuthService {
 
         // Fallback: verifica tabela de admins
         const admin = await this.dataSource.getRepository(Admin).findOne({ where: { email: data.email } })
-        if (!admin) throw new AppError('Credenciais inválidas ou usuário inativo.', 401)
+        if (!admin) {
+            await bcrypt.compare(data.senha, DUMMY_HASH)
+            throw new AppError('Credenciais inválidas ou usuário inativo.', 401)
+        }
 
         const senhaAdminValida = await bcrypt.compare(data.senha, admin.password)
         if (!senhaAdminValida) throw new AppError('Credenciais inválidas.', 401)
 
-        const { accessToken } = gerarTokenAdmin(admin)
-        return { accessToken, refreshToken: null, usuario: { id: admin.id, nome: admin.name, email: admin.email } }
+        const { accessToken, refreshToken } = await gerarTokenAdmin(admin, this.refreshTokenRepository)
+        return { accessToken, refreshToken, usuario: { id: admin.id, nome: admin.name, email: admin.email } }
     }
 
     async refresh(tokenStr: string) {
@@ -146,8 +152,16 @@ export class AuthService {
 
         await this.refreshTokenRepository.revokeByHash(hash)
 
+        if (tokenEntity.admin) {
+            const admin = await this.dataSource.getRepository(Admin).findOne({ where: { id: tokenEntity.admin.id } })
+            if (!admin) throw new AppError('Admin inválido.', 403)
+
+            const { accessToken, refreshToken } = await gerarTokenAdmin(admin, this.refreshTokenRepository)
+            return { accessToken, refreshToken, usuario: { id: admin.id, nome: admin.name, email: admin.email } }
+        }
+
         const user = await this.userRepository.findOne({
-            where: { id: tokenEntity.user.id },
+            where: { id: tokenEntity.user!.id },
             relations: { establishment: true, role: true }
         })
 

@@ -9,8 +9,6 @@ const entityMap = {
 function verifyTenancy(tabela, paramId) {
   return async (req, res, next) => {
     try {
-      if (req.usuario.isAdmin) return next()
-
       const establishmentId = req.usuario.estabelecimento;
       const recursoId = req.params[paramId];
 
