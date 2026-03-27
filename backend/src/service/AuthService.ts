@@ -106,9 +106,9 @@ export class AuthService {
             return savedUser
         })
 
-        const { accessToken } = await gerarTokens(savedUser, this.refreshTokenRepository)
+        const { accessToken, refreshToken } = await gerarTokens(savedUser, this.refreshTokenRepository)
 
-        return { accessToken, usuario: { id: savedUser.id, nome: savedUser.name, email: savedUser.email } }
+        return { accessToken, refreshToken, usuario: { id: savedUser.id, nome: savedUser.name, email: savedUser.email } }
     }
 
     async login(data: LoginDTO) {
