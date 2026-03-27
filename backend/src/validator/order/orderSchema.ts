@@ -35,7 +35,6 @@ export const validateCreateOrder =
             req.params = params
             req.body = body
 
-            next();
         } catch (error) {
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);

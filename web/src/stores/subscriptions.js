@@ -59,6 +59,14 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     }
   }
 
+  function setPendingPlan(plan) {
+    if (subscription.value) {
+      subscription.value.pendingPlan = plan || undefined;
+      if (!plan) delete subscription.value.pendingPlan;
+      localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(subscription.value));
+    }
+  }
+
   function recordPayment(method) {
     if (!subscription.value) return;
     const today = new Date().toISOString().split('T')[0];
@@ -112,6 +120,7 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     updateStatus,
     updatePaymentMethod,
     updatePlan,
+    setPendingPlan,
     updatePlanPrices,
     recordPayment
   };

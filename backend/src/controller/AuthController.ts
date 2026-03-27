@@ -29,12 +29,14 @@ export class AuthController {
     async login(req: Request, res: Response) {
         const { accessToken, refreshToken, usuario } = await this.authService.login(req.body)
 
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'strict',
-            maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN!) * 24 * 60 * 60 * 1000
-        })
+        if (refreshToken) {
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+                maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN!) * 24 * 60 * 60 * 1000
+            })
+        }
 
         res.json({ accessToken, usuario })
     }
@@ -49,8 +51,8 @@ export class AuthController {
 
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
-            secure: true,
-            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
             maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN!) * 24 * 60 * 60 * 1000
         })
 
@@ -59,8 +61,10 @@ export class AuthController {
 
     async logout(req: Request, res: Response) {
         const token = req.cookies.refreshToken
+
+        // Admin não usa refresh token — basta limpar o cookie se existir
         if (!token) {
-            return res.status(401).json({ error: 'Token não fornecido.' })
+            return res.status(204).send()
         }
 
         await this.authService.logout(token)
@@ -70,7 +74,8 @@ export class AuthController {
     }
 
     async perfil(req: Request, res: Response) {
-        const result = await this.authService.perfil((req as any).usuario.id)
+        const { id, isAdmin } = (req as any).usuario
+        const result = await this.authService.perfil(id, isAdmin === true)
         res.json(result)
     }
 }

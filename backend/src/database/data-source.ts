@@ -13,7 +13,7 @@ export const AppDataSource = new DataSource({
     port: 3306,
     username: "root",
     password: "root",
-    database: "pedido_facil",
+    database: "foodsystem_db",
     synchronize: false,
     logging: false,
     entities: [

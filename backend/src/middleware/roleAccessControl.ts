@@ -3,6 +3,8 @@ import { roleRepository } from '../repository'
 
 export function checkPermission(...permissoes: string[]) {
     return async (req: Request, res: Response, next: NextFunction) => {
+        if ((req as any).usuario.isAdmin) return next()
+
         const cargoId = (req as any).usuario.cargo
 
         const role = await roleRepository.getRoleById(cargoId)

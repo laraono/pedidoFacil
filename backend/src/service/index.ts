@@ -8,9 +8,9 @@ import { ProductService } from './ProductService'
 
 const authService: AuthService = new AuthService(AppDataSource, userRepository, refreshTokenRepository)
 const categoryService: CategoryService = new CategoryService(categoryRepository)
-const comandaService: ComandaService = new ComandaService(comandaRepository)
+const comandaService: ComandaService = new ComandaService(comandaRepository, userRepository)
 const productService: ProductService = new ProductService(categoryService, productRepository, productVariationRepository)
-const orderService: OrderService = new OrderService(orderRepository, productOrderRepository, productVariationRepository, comandaService, productService)
+const orderService: OrderService = new OrderService(AppDataSource, orderRepository, comandaService)
 
 export {
     authService,

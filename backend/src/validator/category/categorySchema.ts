@@ -18,7 +18,6 @@ export const validateCreateCategory =
 
             req.body = name
             
-            next();
         } catch (error) {
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);

@@ -4,9 +4,9 @@ import { useRouter } from 'vue-router';
 import { useOnboardingStore } from '@/stores/onboarding';
 import { useAuthStore } from '@/stores/auth';
 import { Check, ArrowRight, Loader2, ChefHat, CreditCard, Users, ChevronDown, Tablet } from 'lucide-vue-next';
-import { getRolesMock, initMockRoles } from '@/mock/authmock';
 import { PERMISSIONS } from '@/utils/permissions';
-import localStorageService from '@/services/localStorageService';
+import { authApi } from '@/services/authApi';
+import LandingHeader from '@/components/LandingHeader.vue';
 
 import imgOndas from '@/assets/ondas.png';
 
@@ -112,83 +112,61 @@ const finalizeRegistration = async () => {
   }
   if (!isSelectionValid.value) return;
 
-  // Check username uniqueness
-  if (pessoalData.username) {
-    const existingUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    if (existingUsers.some(u => u.username === pessoalData.username)) {
-      serverError.value = `O nome de usuário "${pessoalData.username}" já está em uso. Volte e escolha outro.`;
-      return;
-    }
-  }
-
   isLoading.value = true;
 
-  setTimeout(() => {
-    try {
-      initMockRoles();
-      const roles = getRolesMock();
+  try {
+    const cargos = staffRoles.value
+      .filter(r => r.selected)
+      .map(r => ({
+        nome: r.label,
+        permissoes: r.allPerms.filter(p => p.checked).map(p => p.id),
+      }));
 
-      const gerenteRole = roles.find(
-        r => r.role === 'GERENTE' || r.name.toLowerCase().includes('gerente')
-      );
-      if (!gerenteRole) throw new Error('Cargo gerente não encontrado.');
+    const { accessToken } = await authApi.register({
+      nome_usuario: pessoalData.nome,
+      email: pessoalData.email,
+      senha: pessoalData.senha,
+      nome_estabelecimento: nomeEstabelecimento.value,
+      cnpj: pessoalData.cnpj,
+      cargos: cargos.length ? cargos : undefined,
+    });
 
-      const selectedStaff = staffRoles.value.filter(r => r.selected);
+    localStorage.setItem('accessToken', accessToken);
 
-      let tipoAtendimento = 'Mesa';
-      if (totens.value && selectedStaff.length > 0) tipoAtendimento = 'Híbrido';
-      else if (totens.value) tipoAtendimento = 'Autoatendimento';
-      else tipoAtendimento = 'Garçom';
+    const perfil = await authApi.me();
+    const permissoes = typeof perfil.cargo.permissoes === 'string'
+      ? JSON.parse(perfil.cargo.permissoes)
+      : perfil.cargo.permissoes;
 
-      // If totens selected, enable self-service
-      if (totens.value) {
-        localStorage.setItem('selfServiceEnabled', 'true');
-      }
+    const user = {
+      id: perfil.usuario.id,
+      name: perfil.usuario.nome,
+      email: perfil.usuario.email,
+      cargo: { id: perfil.cargo.id, name: perfil.cargo.nome, permissoes },
+    };
 
-      const mockUser = {
-        id: Date.now(),
-        name: pessoalData.nome,
-        email: pessoalData.email,
-        password: pessoalData.password,
-        roleId: gerenteRole.id,
-        permissions: gerenteRole.permissions,
-        estabelecimento: {
-          nome: nomeEstabelecimento.value,
-          tipoAtendimento,
-          usa_totens: totens.value,
-          usa_garcons: selectedStaff.length > 0,
-          staffRoles: selectedStaff.map(r => ({
-            name: r.label,
-            permissions: r.allPerms.filter(p => p.checked).map(p => p.id),
-          })),
-        }
-      };
+    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.removeItem('onboarding_personal');
+    onboardingStore.clearOnboarding();
 
-      localStorageService.saveOnboarding({ nome_estabelecimento: nomeEstabelecimento.value });
-      localStorage.removeItem('onboarding_personal');
-      onboardingStore.clearOnboarding();
+    authStore.user = user;
+    authStore.isAuthenticated = true;
 
-      const userWithRole = { ...mockUser, role: gerenteRole };
-      localStorage.setItem('user', JSON.stringify(userWithRole));
-      localStorage.setItem('userToken', 'mock-token');
-
-      authStore.user = userWithRole;
-      authStore.roles = roles;
-      authStore.isAuthenticated = true;
-
-      router.push('/app/dashboard');
-    } catch (err) {
-      console.error(err);
-      serverError.value = 'Erro ao finalizar cadastro.';
-    } finally {
-      isLoading.value = false;
-    }
-  }, 1000);
+    router.push('/app/dashboard');
+  } catch (err) {
+    console.error(err);
+    serverError.value = err.message || 'Erro ao finalizar cadastro.';
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
 
 <template>
-  <div class="min-h-screen bg-page font-inter relative flex flex-col items-center justify-center p-4 md:p-12 overflow-hidden">
+  <div class="min-h-screen bg-page font-inter flex flex-col overflow-hidden">
+    <LandingHeader />
+
+    <div class="flex-1 relative flex flex-col items-center justify-center p-4 md:p-12">
 
     <div
       class="absolute top-1/2 left-0 w-full -translate-y-1/2 z-0 pointer-events-none opacity-40"
@@ -327,6 +305,7 @@ const finalizeRegistration = async () => {
         Pular por agora
       </button>
 
+    </div>
     </div>
   </div>
 </template>

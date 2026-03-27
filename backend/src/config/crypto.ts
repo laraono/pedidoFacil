@@ -1,6 +1,7 @@
 import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
 import { User } from '../database'
+import { Admin } from '../database/entity/Admin'
 import { RefreshTokenRepository } from '../repository/RefreshTokenRepository'
 
 export function hashToken(token: string): string {
@@ -23,4 +24,13 @@ export async function gerarTokens(usuario: User, refreshTokenRepository: Refresh
     await refreshTokenRepository.createToken(usuario, hash, expiresAt)
 
     return { accessToken, refreshToken }
+}
+
+export function gerarTokenAdmin(admin: Admin) {
+    const accessToken = jwt.sign(
+        { id: admin.id, isAdmin: true },
+        process.env.JWT_SECRET!,
+        { expiresIn: '1d' }
+    )
+    return { accessToken }
 }

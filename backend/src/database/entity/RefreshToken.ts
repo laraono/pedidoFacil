@@ -5,7 +5,7 @@ import { User } from "./User"
 export class RefreshToken {
 
     @PrimaryGeneratedColumn({
-        name: 'ID_RefreshToken'
+        name: 'ID_Token'
     })
     id: number
 

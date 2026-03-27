@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, De
 import { ComandaStatus, DiscountType } from "../../enum"
 import { Establishment } from "./Establishment"
 
-@Unique(['ID_Cupom', 'Codigo'])
+@Unique(['id', 'code'])
 @Entity({name: 'CUPOM_DESCONTO'})
 export class Coupon {
 
