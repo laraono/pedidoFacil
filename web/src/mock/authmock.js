@@ -12,7 +12,7 @@ export function initMockRoles() {
     {
       id: 1,
       name: 'Admin',
-      role: 'ADMIN', 
+      role: 'ADMIN',
       permissions: [
         PERMISSIONS.RELATORIOS,
         PERMISSIONS.COZINHA,
@@ -22,7 +22,7 @@ export function initMockRoles() {
         PERMISSIONS.CONFIGURACAO,
         PERMISSIONS.ASSINATURA,
         PERMISSIONS.CRIAR_PEDIDO,
-        PERMISSIONS.NOTIFICACOES 
+        PERMISSIONS.NOTIFICACOES
       ]
     },
     {
@@ -38,13 +38,15 @@ export function initMockRoles() {
         PERMISSIONS.CONFIGURACAO,
         PERMISSIONS.ASSINATURA,
         PERMISSIONS.CRIAR_PEDIDO,
-        PERMISSIONS.NOTIFICACOES 
+        PERMISSIONS.NOTIFICACOES,
+        PERMISSIONS.CAIXA,
+        PERMISSIONS.COMANDAS_FINALIZADAS,
       ]
     },
     {
       id: 4,
       name: 'Garçom',
-      role: 'GARCOM', 
+      role: 'GARCOM',
       permissions: [
         PERMISSIONS.CRIAR_PEDIDO,
         PERMISSIONS.NOTIFICACOES
@@ -53,12 +55,24 @@ export function initMockRoles() {
     {
       id: 5,
       name: 'Cozinheiro',
-      role: 'COZINHA', 
+      role: 'COZINHA',
       permissions: [
-        PERMISSIONS.COZINHA, 
+        PERMISSIONS.COZINHA,
         PERMISSIONS.ESTOQUE
       ]
-    }
+    },
+    {
+      id: 6,
+      name: 'Caixa',
+      role: 'CAIXA',
+      permissions: [
+        PERMISSIONS.CRIAR_PEDIDO,
+        PERMISSIONS.COZINHA,
+        PERMISSIONS.CAIXA,
+        PERMISSIONS.ESTOQUE,
+        PERMISSIONS.COMANDAS_FINALIZADAS,
+      ]
+    },
   ];
 
   localStorage.setItem(ROLES_KEY, JSON.stringify(roles));
@@ -70,6 +84,7 @@ export function initMockUsers() {
     {
       id: 1,
       name: "Admin",
+      username: "admin",
       email: "admin@email.com",
       password: "123456",
       roleId: 1,
@@ -78,6 +93,7 @@ export function initMockUsers() {
     {
       id: 2,
       name: "Gerente da Loja",
+      username: "gerente",
       email: "gerente@email.com",
       password: "123456",
       roleId: 2,
@@ -86,6 +102,7 @@ export function initMockUsers() {
     {
       id: 4,
       name: "Pedro Garçom",
+      username: "garcom",
       email: "garcom@email.com",
       password: "123456",
       roleId: 4,
@@ -94,9 +111,19 @@ export function initMockUsers() {
     {
       id: 5,
       name: "João Cozinha",
+      username: "cozinha",
       email: "cozinha@email.com",
       password: "123456",
       roleId: 5,
+      status: "ATIVO"
+    },
+    {
+      id: 6,
+      name: "Roberta Caixa",
+      username: "caixa",
+      email: "caixa@email.com",
+      password: "123456",
+      roleId: 6,
       status: "ATIVO"
     }
   ];
@@ -104,14 +131,17 @@ export function initMockUsers() {
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
 }
 
-export async function loginMock(email, password) {
+export async function loginMock(username, password) {
   initMockRoles();
   initMockUsers();
 
   const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
   const roles = JSON.parse(localStorage.getItem(ROLES_KEY)) || [];
 
-  const user = users.find(u => u.email === email && u.password === password);
+  // Support both username and legacy email login
+  const user = users.find(u =>
+    (u.username === username || u.email === username) && u.password === password
+  );
 
   if (!user) {
     throw new Error("Credenciais inválidas");
@@ -121,7 +151,7 @@ export async function loginMock(email, password) {
     throw new Error("Usuário inativo. Entre em contato com o administrador.");
   }
 
-  const userRole = roles.find(r => r.id === user.roleId);
+  const userRole = roles.find(r => Number(r.id) === Number(user.roleId));
 
   if (!userRole) {
     console.error(`Cargo ID ${user.roleId} não encontrado para o usuário ${user.name}`);

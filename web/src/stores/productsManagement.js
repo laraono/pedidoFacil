@@ -1,12 +1,14 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import imgFood from '@/assets/food.jpg';
+import imgHamburguer from '@/assets/hamburguer.png'
 
 export const useMenuStore = defineStore('menu', () => {
 
   const categories = ref([
-    { id: 1, name: 'Lanches', image: null, deletedAt: null },
-    { id: 2, name: 'Bebidas', image: null, deletedAt: null },
-    { id: 3, name: 'Sobremesas', image: null, deletedAt: null }
+    { id: 1, name: 'Lanches', image: imgFood, deletedAt: null },
+    { id: 2, name: 'Bebidas', image: imgFood, deletedAt: null },
+    { id: 3, name: 'Sobremesas', image: imgFood, deletedAt: null }
   ]);
 
   const products = ref([
@@ -19,7 +21,8 @@ export const useMenuStore = defineStore('menu', () => {
       isAvailable: true,
       deletedAt: null,
       sizes: [
-        { name: 'Padrão', price: 25.00 }
+        { name: 'Padrão', price: 25.00 },
+        { name: 'Grande', price: 30.00 }
       ],
       addons: [
         { name: 'Bacon Extra', price: 5.00 }

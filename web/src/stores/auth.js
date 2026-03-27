@@ -14,10 +14,14 @@ export const useAuthStore = defineStore('auth', {
     }
   }),
 
+  getters: {
+    isAdmin: (state) => state.user?.role?.role === 'ADMIN',
+  },
+
   actions: {
-    async login({ email, senha }) {
+    async login({ username, senha }) {
       try {
-        const user = await loginMock(email, senha);
+        const user = await loginMock(username, senha);
         this.user = user;
         this.isAuthenticated = true;
         this.roles = await getRolesMock();
@@ -43,7 +47,7 @@ export const useAuthStore = defineStore('auth', {
     hasPermission(permission) {
       if (!this.user || !this.user.roleId) return false;
 
-      const role = this.roles.find(r => r.id === this.user.roleId);
+      const role = this.roles.find(r => Number(r.id) === Number(this.user.roleId));
       if (!role) return false;
 
       return role.permissions.includes(permission);

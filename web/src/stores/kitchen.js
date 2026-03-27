@@ -5,33 +5,31 @@ export const useKitchenStore = defineStore('kitchen', () => {
   const orders = ref([
     {
       id: 101,
-      mesa: 'Mesa 04',
-      garcom: 'Carlos',
-      status: 'pending', // Estados: pending, preparing, ready
-      createdAt: new Date(Date.now() - 1000 * 60 * 15), // 15 min atrás
+      comanda: 'Mesa 04',
+      waiter: 'Carlos',
+      status: 'pending',
+      createdAt: new Date(Date.now() - 1000 * 60 * 15),
       items: [
-        { name: 'X-Bacon', qtd: 2, obs: 'Sem cebola' },
-        { name: 'Coca-Cola Zero', qtd: 2, obs: '' }
+        { name: 'X-Bacon', amount: 2, obs: 'Sem cebola' },
+        { name: 'Coca-Cola Zero', amount: 2, obs: '' }
       ]
     },
     {
       id: 102,
-      mesa: 'Balcão',
-      garcom: 'Ana',
+      comanda: 'Balcão',
+      waiter: 'Ana',
       status: 'preparing',
-      createdAt: new Date(Date.now() - 1000 * 60 * 5), // 5 min atrás
+      createdAt: new Date(Date.now() - 1000 * 60 * 5),
       items: [
-        { name: 'Isca de Peixe', qtd: 1, obs: 'Molho extra' }
+        { name: 'Isca de Peixe', amount: 1, obs: 'Molho extra' }
       ]
     }
   ]);
 
-  // Getters para separar as colunas do Kanban
   const pendingOrders = computed(() => orders.value.filter(o => o.status === 'pending'));
   const preparingOrders = computed(() => orders.value.filter(o => o.status === 'preparing'));
   const readyOrders = computed(() => orders.value.filter(o => o.status === 'ready'));
 
-  // Actions
   function moveOrder(id, newStatus) {
     const order = orders.value.find(o => o.id === id);
     if (order) {
@@ -39,8 +37,11 @@ export const useKitchenStore = defineStore('kitchen', () => {
     }
   }
 
+  function addOrder(order) {
+    orders.value.push({...order, id: orders.value.length + 1})
+  }
+
   function finishOrder(id) {
-    // Remove da tela (arquiva)
     orders.value = orders.value.filter(o => o.id !== id);
   }
 
@@ -50,17 +51,17 @@ export const useKitchenStore = defineStore('kitchen', () => {
     const newId = Math.floor(Math.random() * 1000) + 200;
     const newOrder = {
       id: newId,
-      mesa: `Mesa ${Math.floor(Math.random() * 20) + 1}`,
-      garcom: 'Sistema',
+      comanda: `Mesa ${Math.floor(Math.random() * 20) + 1}`,
+      waiter: 'Sistema',
       status: 'pending',
       createdAt: new Date(),
       items: [
-        { name: 'Hambúrguer Artesanal', qtd: 1, obs: 'Ao ponto' },
-        { name: 'Batata Frita', qtd: 1, obs: '' }
+        { name: 'Hambúrguer Artesanal', amount: 1, obs: 'Ao ponto' },
+        { name: 'Batata Frita', amount: 1, obs: '' }
       ]
     };
     orders.value.push(newOrder);
-    return true; // Retorna true para avisar que chegou um novo pedido
+    return true; 
   }
 
   return { 
@@ -70,6 +71,7 @@ export const useKitchenStore = defineStore('kitchen', () => {
     readyOrders, 
     moveOrder, 
     finishOrder,
-    incomingOrderMock 
+    incomingOrderMock,
+    addOrder
   };
 });
