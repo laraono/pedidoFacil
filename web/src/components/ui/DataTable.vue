@@ -36,16 +36,16 @@ const handleSort = (key) => {
 </script>
 
 <template>
-  <div class="bg-dark-card border border-white/10 rounded-2xl overflow-x-auto shadow-2xl font-inter">
+  <div class="bg-white border border-[#E0E0E0] rounded overflow-x-auto shadow-2xl font-inter">
     <table class="w-full text-left border-collapse min-w-[740px]">
-      <thead class="bg-black/20 text-gray-500 uppercase text-[10px] font-black tracking-widest border-b border-white/5">
+      <thead class="bg-gray-50 text-[#757575] uppercase text-[10px] font-black tracking-widest border-b border-[#E0E0E0]">
         <tr>
           <th v-for="col in columns" :key="col.key" class="p-4 sm:p-6 whitespace-nowrap">
             <div class="flex items-center gap-2" 
-                 :class="{ 'cursor-pointer select-none hover:text-white transition-colors': col.sortable }" 
+                 :class="{ 'cursor-pointer select-none hover:text-[#212121] transition-colors': col.sortable }" 
                  @click="handleSort(col.key)">
               {{ col.label }}
-              <span v-if="col.sortable && sortKey === col.key" class="text-brand-green">
+              <span v-if="col.sortable && sortKey === col.key" class="text-accent">
                 {{ sortOrder === 'asc' ? '↑' : '↓' }}
               </span>
             </div>
@@ -55,8 +55,8 @@ const handleSort = (key) => {
       </thead>
       <tbody>
         <tr v-for="(item, idx) in sortedData" :key="item.id" 
-            class="hover:bg-white/5 border-b border-white/5 last:border-0 transition-colors">
-          <td v-for="col in columns" :key="col.key" class="p-4 sm:p-6 text-sm text-white font-medium">
+            class="hover:bg-gray-50 border-b border-[#E0E0E0] last:border-0 transition-colors">
+          <td v-for="col in columns" :key="col.key" class="p-4 sm:p-6 text-sm text-[#212121] font-medium">
             <slot :name="`cell-${col.key}`" :item="item" :value="item[col.key]">
               {{ item[col.key] }}
             </slot>
@@ -67,8 +67,8 @@ const handleSort = (key) => {
                 <button
                   v-if="!act.condition || act.condition(item)"
                   @click="act.handler(item)"
-                  class="p-2 rounded-xl transition-all"
-                  :class="act.class || 'text-gray-400 hover:text-white hover:bg-white/5'"
+                  class="p-2 rounded transition-all"
+                  :class="act.class || 'text-[#757575] hover:text-[#212121] hover:bg-gray-50'"
                   :title="act.tooltip"
                 >
                   <component :is="act.icon" :size="18" />

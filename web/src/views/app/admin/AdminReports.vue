@@ -67,26 +67,26 @@ const handleExport = () => window.print();
     <!-- Header -->
     <header class="flex items-center justify-between gap-4 mb-10">
       <div class="flex items-center gap-4">
-        <button @click="router.push('/app/dashboard')" class="p-3 bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-white transition-colors">
+        <button @click="router.push('/app/dashboard')" class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] transition-colors">
           <ArrowLeft :size="20" />
         </button>
         <div>
           <div class="flex items-center gap-2 mb-1">
-            <ShieldAlert :size="16" class="text-brand-green" />
-            <span class="text-xs font-black text-brand-green uppercase tracking-widest">Painel Admin</span>
+            <ShieldAlert :size="16" class="text-accent" />
+            <span class="text-xs font-black text-accent uppercase tracking-widest">Painel Admin</span>
           </div>
-          <h1 class="text-3xl font-black text-white">Relatórios de Assinaturas</h1>
-          <p class="text-gray-400 text-sm">Faturamento e métricas da plataforma</p>
+          <h1 class="text-3xl font-black text-[#212121]">Relatórios de Assinaturas</h1>
+          <p class="text-[#757575] text-sm">Faturamento e métricas da plataforma</p>
         </div>
       </div>
 
       <div class="flex items-center gap-3">
-        <div class="flex bg-dark-card border border-white/10 rounded-2xl overflow-hidden">
+        <div class="flex bg-white border border-[#E0E0E0] rounded overflow-hidden">
           <button
             v-for="opt in [{ v: '3m', l: '3M' }, { v: '6m', l: '6M' }, { v: '12m', l: '12M' }]"
             :key="opt.v"
             @click="dateFilter = opt.v"
-            :class="dateFilter === opt.v ? 'bg-brand-green text-black' : 'text-zinc-400 hover:text-white'"
+            :class="dateFilter === opt.v ? 'bg-primary text-white' : 'text-[#757575] hover:text-[#212121]'"
             class="px-4 py-2 text-xs font-black uppercase transition-all"
           >
             {{ opt.l }}
@@ -94,7 +94,7 @@ const handleExport = () => window.print();
         </div>
         <button
           @click="handleExport"
-          class="flex items-center gap-2 px-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-zinc-400 hover:text-white text-sm font-bold transition-colors"
+          class="flex items-center gap-2 px-4 py-2.5 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] text-sm font-bold transition-colors"
         >
           <Download :size="15" /> Exportar
         </button>
@@ -103,50 +103,50 @@ const handleExport = () => window.print();
 
     <!-- KPI cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      <div class="bg-dark-card border border-white/10 rounded-[1.5rem] p-6">
-        <div class="flex items-center gap-2 text-zinc-500 text-xs font-black uppercase tracking-widest mb-3">
+      <div class="bg-white border border-[#E0E0E0] rounded p-6">
+        <div class="flex items-center gap-2 text-[#757575] text-xs font-black uppercase tracking-widest mb-3">
           <DollarSign :size="14" /> MRR
         </div>
-        <p class="text-3xl font-black text-white">
+        <p class="text-3xl font-black text-[#212121]">
           {{ totalMRR.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
         </p>
-        <p class="text-xs text-zinc-500 mt-1">receita mensal recorrente</p>
+        <p class="text-xs text-[#757575] mt-1">receita mensal recorrente</p>
       </div>
 
-      <div class="bg-dark-card border border-white/10 rounded-[1.5rem] p-6">
-        <div class="flex items-center gap-2 text-zinc-500 text-xs font-black uppercase tracking-widest mb-3">
+      <div class="bg-white border border-[#E0E0E0] rounded p-6">
+        <div class="flex items-center gap-2 text-[#757575] text-xs font-black uppercase tracking-widest mb-3">
           <Users :size="14" /> Assinantes Ativos
         </div>
-        <p class="text-3xl font-black text-brand-green">{{ totalActive }}</p>
-        <p class="text-xs text-zinc-500 mt-1">de {{ allSubs.length }} cadastrados</p>
+        <p class="text-3xl font-black text-accent">{{ totalActive }}</p>
+        <p class="text-xs text-[#757575] mt-1">de {{ allSubs.length }} cadastrados</p>
       </div>
 
-      <div class="bg-dark-card border border-white/10 rounded-[1.5rem] p-6">
-        <div class="flex items-center gap-2 text-zinc-500 text-xs font-black uppercase tracking-widest mb-3">
+      <div class="bg-white border border-[#E0E0E0] rounded p-6">
+        <div class="flex items-center gap-2 text-[#757575] text-xs font-black uppercase tracking-widest mb-3">
           <TrendingUp :size="14" /> ARR Estimado
         </div>
-        <p class="text-3xl font-black text-white">
+        <p class="text-3xl font-black text-[#212121]">
           {{ (totalMRR * 12).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
         </p>
-        <p class="text-xs text-zinc-500 mt-1">receita anual recorrente</p>
+        <p class="text-xs text-[#757575] mt-1">receita anual recorrente</p>
       </div>
 
-      <div class="bg-dark-card border border-white/10 rounded-[1.5rem] p-6">
-        <div class="flex items-center gap-2 text-zinc-500 text-xs font-black uppercase tracking-widest mb-3">
+      <div class="bg-white border border-[#E0E0E0] rounded p-6">
+        <div class="flex items-center gap-2 text-[#757575] text-xs font-black uppercase tracking-widest mb-3">
           <Users :size="14" /> Média de Usuários
         </div>
-        <p class="text-3xl font-black text-white">{{ avgUsers }}</p>
-        <p class="text-xs text-zinc-500 mt-1">por estabelecimento ativo</p>
+        <p class="text-3xl font-black text-[#212121]">{{ avgUsers }}</p>
+        <p class="text-xs text-[#757575] mt-1">por estabelecimento ativo</p>
       </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
 
       <!-- Revenue chart -->
-      <div class="lg:col-span-2 bg-dark-card border border-white/10 rounded-[2rem] p-8">
+      <div class="lg:col-span-2 bg-white border border-[#E0E0E0] rounded p-8">
         <div class="flex items-center gap-2 mb-6">
-          <BarChart3 :size="18" class="text-brand-green" />
-          <h2 class="font-black text-white">Faturamento Mensal (MRR)</h2>
+          <BarChart3 :size="18" class="text-accent" />
+          <h2 class="font-black text-[#212121]">Faturamento Mensal (MRR)</h2>
         </div>
 
         <div class="flex items-end gap-3 h-48">
@@ -155,40 +155,40 @@ const handleExport = () => window.print();
             :key="i"
             class="flex-1 flex flex-col items-center gap-2"
           >
-            <span class="text-[10px] font-black text-zinc-500">
+            <span class="text-[10px] font-black text-[#757575]">
               {{ item.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }) }}
             </span>
             <div class="w-full rounded-t-lg relative overflow-hidden" style="height: 120px;">
               <div
                 class="absolute bottom-0 left-0 right-0 rounded-t-lg transition-all duration-700"
-                :class="i === monthlyRevenue.length - 1 ? 'bg-brand-green' : 'bg-brand-green/30'"
+                :class="i === monthlyRevenue.length - 1 ? 'bg-accent' : 'bg-accent/30'"
                 :style="{ height: revenueHeight(item.value) }"
               />
             </div>
-            <span class="text-[10px] font-black text-zinc-400">{{ item.month }}</span>
+            <span class="text-[10px] font-black text-[#757575]">{{ item.month }}</span>
           </div>
         </div>
       </div>
 
       <!-- Plan distribution -->
-      <div class="bg-dark-card border border-white/10 rounded-[2rem] p-8">
+      <div class="bg-white border border-[#E0E0E0] rounded p-8">
         <div class="flex items-center gap-2 mb-6">
-          <Calendar :size="18" class="text-brand-green" />
-          <h2 class="font-black text-white">Distribuição de Planos</h2>
+          <Calendar :size="18" class="text-accent" />
+          <h2 class="font-black text-[#212121]">Distribuição de Planos</h2>
         </div>
 
         <div class="space-y-5">
           <div>
             <div class="flex justify-between items-center mb-2">
               <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-purple-500 inline-block" />
-                <span class="text-sm font-bold text-white">Anual</span>
+                <span class="w-3 h-3 rounded bg-primary inline-block" />
+                <span class="text-sm font-bold text-[#212121]">Anual</span>
               </div>
-              <span class="text-sm font-black text-white">{{ totalAnnual }} <span class="text-zinc-500 font-medium">({{ planShare.anual }}%)</span></span>
+              <span class="text-sm font-black text-[#212121]">{{ totalAnnual }} <span class="text-[#757575] font-medium">({{ planShare.anual }}%)</span></span>
             </div>
-            <div class="h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+            <div class="h-2.5 bg-gray-50 rounded overflow-hidden">
               <div
-                class="h-full bg-purple-500 rounded-full transition-all duration-700"
+                class="h-full bg-primary rounded transition-all duration-700"
                 :style="{ width: isLoaded ? planShare.anual + '%' : '0%' }"
               />
             </div>
@@ -197,27 +197,27 @@ const handleExport = () => window.print();
           <div>
             <div class="flex justify-between items-center mb-2">
               <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-blue-500 inline-block" />
-                <span class="text-sm font-bold text-white">Mensal</span>
+                <span class="w-3 h-3 rounded bg-blue-500 inline-block" />
+                <span class="text-sm font-bold text-[#212121]">Mensal</span>
               </div>
-              <span class="text-sm font-black text-white">{{ totalMonthly }} <span class="text-zinc-500 font-medium">({{ planShare.mensal }}%)</span></span>
+              <span class="text-sm font-black text-[#212121]">{{ totalMonthly }} <span class="text-[#757575] font-medium">({{ planShare.mensal }}%)</span></span>
             </div>
-            <div class="h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+            <div class="h-2.5 bg-gray-50 rounded overflow-hidden">
               <div
-                class="h-full bg-blue-500 rounded-full transition-all duration-700"
+                class="h-full bg-blue-500 rounded transition-all duration-700"
                 :style="{ width: isLoaded ? planShare.mensal + '%' : '0%' }"
               />
             </div>
           </div>
 
-          <div class="pt-4 border-t border-white/5 space-y-2">
+          <div class="pt-4 border-t border-[#E0E0E0] space-y-2">
             <div class="flex justify-between text-sm">
-              <span class="text-zinc-400">Ticket médio anual</span>
-              <span class="font-black text-white">R$ 598,80</span>
+              <span class="text-[#757575]">Ticket médio anual</span>
+              <span class="font-black text-[#212121]">R$ 598,80</span>
             </div>
             <div class="flex justify-between text-sm">
-              <span class="text-zinc-400">Ticket médio mensal</span>
-              <span class="font-black text-white">R$ 79,90</span>
+              <span class="text-[#757575]">Ticket médio mensal</span>
+              <span class="font-black text-[#212121]">R$ 79,90</span>
             </div>
           </div>
         </div>
@@ -225,35 +225,35 @@ const handleExport = () => window.print();
     </div>
 
     <!-- Per-establishment table -->
-    <div class="bg-dark-card border border-white/10 rounded-[2rem] overflow-hidden">
-      <div class="p-6 border-b border-white/5 flex items-center gap-3">
-        <Users :size="18" class="text-brand-green" />
-        <h2 class="font-black text-white">Usuários por Estabelecimento</h2>
-        <span class="ml-auto text-xs text-zinc-500 font-bold">apenas ativos</span>
+    <div class="bg-white border border-[#E0E0E0] rounded overflow-hidden">
+      <div class="p-6 border-b border-[#E0E0E0] flex items-center gap-3">
+        <Users :size="18" class="text-accent" />
+        <h2 class="font-black text-[#212121]">Usuários por Estabelecimento</h2>
+        <span class="ml-auto text-xs text-[#757575] font-bold">apenas ativos</span>
       </div>
 
       <div class="divide-y divide-white/5">
         <div v-for="est in establishmentData" :key="est.id" class="px-6 py-4 flex items-center gap-4">
           <div class="w-40 shrink-0">
-            <p class="text-sm font-bold text-white truncate">{{ est.establishment }}</p>
-            <p class="text-[11px] text-zinc-500">{{ est.manager }}</p>
+            <p class="text-sm font-bold text-[#212121] truncate">{{ est.establishment }}</p>
+            <p class="text-[11px] text-[#757575]">{{ est.manager }}</p>
           </div>
           <div class="flex-1">
-            <div class="h-2 bg-zinc-800 rounded-full overflow-hidden">
+            <div class="h-2 bg-gray-50 rounded overflow-hidden">
               <div
-                class="h-full bg-brand-green rounded-full transition-all duration-700"
+                class="h-full bg-accent rounded transition-all duration-700"
                 :style="{ width: isLoaded ? (est.users / maxUsers * 100) + '%' : '0%' }"
               />
             </div>
           </div>
           <div class="shrink-0 w-20 text-right">
-            <span class="text-sm font-black text-white">{{ est.users }}</span>
-            <span class="text-xs text-zinc-500"> usuários</span>
+            <span class="text-sm font-black text-[#212121]">{{ est.users }}</span>
+            <span class="text-xs text-[#757575]"> usuários</span>
           </div>
           <span
-            class="shrink-0 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border"
+            class="shrink-0 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border"
             :class="est.plan === 'anual'
-              ? 'text-purple-400 bg-purple-500/10 border-purple-500/20'
+              ? 'text-purple-400 bg-primary/10 border-primary/20'
               : 'text-blue-400 bg-blue-500/10 border-blue-500/20'"
           >
             {{ est.plan }}

@@ -14,7 +14,14 @@ const props = defineProps({
   totalCancellationsCount: Number,
   financialImpact: String,
   topProducts: Array,
+  couponUsage: Array,
+  maxCouponUses: Function,
 });
+
+const maxCoupon = () => {
+  if (typeof props.maxCouponUses === 'function') return props.maxCouponUses();
+  return Math.max(...(props.couponUsage || []).map(c => c.uses), 1);
+};
 
 const getMetricLabel = (key) => ({
   faturamento: 'Faturamento',
@@ -328,6 +335,49 @@ const maxRev = () => {
       <p style="font-size:8px; color:#9ca3af; margin-top:12px; text-align:center; font-style:italic;">
         * A margem de lucro é uma estimativa calculada com base no CMV.
       </p>
+    </div>
+
+    <!-- ════════════════════ CUPONS ════════════════════ -->
+    <div style="break-before:page; padding-top:16px; padding-bottom:20px;">
+      <div style="border-bottom:2px solid #111; padding-bottom:8px; margin-bottom:14px;">
+        <p style="font-size:13px; font-weight:900; color:#111; text-transform:uppercase; letter-spacing:0.08em; margin:0;">
+          Uso de Cupons de Desconto
+        </p>
+        <p style="font-size:8px; color:#6b7280; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin:3px 0 0;">
+          Número de compras realizadas com cada cupom no período
+        </p>
+      </div>
+
+      <div v-if="!couponUsage || couponUsage.length === 0"
+        style="text-align:center; color:#9ca3af; font-weight:700; font-size:11px; margin-top:30px;">
+        Nenhum cupom utilizado neste período.
+      </div>
+
+      <div v-else style="border:1px solid #e5e7eb; border-radius:12px; padding:16px; background:#fff;">
+        <div v-for="coupon in couponUsage" :key="coupon.code" style="margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:10px; font-weight:900; color:#111; font-family:monospace; letter-spacing:0.1em;">
+                {{ coupon.code }}
+              </span>
+              <span style="font-size:8px; font-weight:700; color:#9ca3af;">
+                {{ coupon.type === 'percent' ? coupon.discount + '%' : 'R$ ' + coupon.discount }} off
+              </span>
+            </div>
+            <span style="font-size:10px; font-weight:900; color:#059669; white-space:nowrap;">
+              {{ coupon.uses }} usos
+            </span>
+          </div>
+          <div style="width:100%; background:#e5e7eb; height:10px; border-radius:9999px; overflow:hidden;">
+            <div :style="{
+              width: `${(coupon.uses / maxCoupon()) * 100}%`,
+              height: '100%',
+              background: '#10b981',
+              borderRadius: '9999px'
+            }"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>

@@ -62,22 +62,22 @@ const handleReset = () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-dark-bg font-inter relative flex flex-col items-center justify-center p-4">
+  <div class="min-h-screen bg-page font-inter relative flex flex-col items-center justify-center p-4">
     <div class="absolute top-0 left-0 w-full h-full z-0 pointer-events-none opacity-40"
          :style="{ backgroundImage: `url(${imgOndas})`, backgroundSize: 'cover', backgroundPosition: 'center' }">
     </div>
 
-    <div class="z-10 w-full max-w-md bg-dark-card/90 backdrop-blur-md border border-white/10 p-8 sm:p-12 rounded-[2.5rem] shadow-2xl">
+    <div class="z-10 w-full max-w-md bg-white/90  border border-[#E0E0E0] p-8 sm:p-12 rounded shadow-2xl">
 
       <!-- Success state -->
       <div v-if="done" class="text-center">
-        <div class="w-16 h-16 bg-brand-green/10 border border-brand-green/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-          <CheckCircle2 :size="32" class="text-brand-green" />
+        <div class="w-16 h-16 bg-accent-light border border-accent/30 rounded flex items-center justify-center mx-auto mb-6">
+          <CheckCircle2 :size="32" class="text-accent" />
         </div>
-        <h2 class="text-2xl font-black text-white mb-3">Senha redefinida!</h2>
-        <p class="text-gray-400 text-sm mb-8">Sua senha foi alterada com sucesso. Faça login com a nova senha.</p>
+        <h2 class="text-2xl font-black text-[#212121] mb-3">Senha redefinida!</h2>
+        <p class="text-[#757575] text-sm mb-8">Sua senha foi alterada com sucesso. Faça login com a nova senha.</p>
         <button @click="router.push('/login')"
-          class="w-full py-3.5 rounded-2xl bg-brand-green text-black font-black hover:bg-brand-green/90 transition-all">
+          class="w-full py-3.5 rounded bg-primary text-white font-black hover:bg-primary-dark transition-all">
           Ir para o login
         </button>
       </div>
@@ -85,58 +85,58 @@ const handleReset = () => {
       <!-- Form state -->
       <div v-else>
         <div class="mb-10">
-          <button @click="router.push('/login')" class="flex items-center gap-2 text-gray-500 hover:text-white transition-colors mb-6 text-sm font-bold">
+          <button @click="router.push('/login')" class="flex items-center gap-2 text-[#757575] hover:text-[#212121] transition-colors mb-6 text-sm font-bold">
             <ArrowLeft :size="16" /> Voltar ao login
           </button>
-          <h2 class="text-3xl font-black text-white mb-2">Redefinir senha</h2>
-          <p class="text-gray-400 text-sm">Digite e confirme sua nova senha.</p>
+          <h2 class="text-3xl font-black text-[#212121] mb-2">Redefinir senha</h2>
+          <p class="text-[#757575] text-sm">Digite e confirme sua nova senha.</p>
         </div>
 
         <form @submit.prevent="handleReset" class="space-y-5">
           <!-- Nova senha -->
           <div>
-            <label class="text-xs font-black uppercase tracking-widest text-zinc-500 ml-2 mb-2 block">Nova Senha</label>
+            <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-2 mb-2 block">Nova Senha</label>
             <div class="relative">
-              <Lock :size="16" class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
+              <Lock :size="16" class="absolute left-4 top-1/2 -translate-y-1/2 text-[#757575]" />
               <input
                 v-model="newPassword"
                 :type="showNew ? 'text' : 'password'"
                 placeholder="Mínimo 6 caracteres"
-                class="w-full bg-white/5 border rounded-2xl pl-10 pr-12 py-3.5 text-sm text-white outline-none placeholder:text-zinc-600 transition-colors"
-                :class="errors.newPassword ? 'border-red-500/50' : 'border-white/10 focus:border-brand-green/40'"
+                class="w-full bg-gray-50 border rounded pl-10 pr-12 py-3.5 text-sm text-[#212121] outline-none placeholder:text-[#757575] transition-colors"
+                :class="errors.newPassword ? 'border-danger' : 'border-[#E0E0E0] focus:border-primary/40'"
                 @input="delete errors.newPassword"
               />
               <button type="button" @click="showNew = !showNew"
-                class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors">
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-[#757575] hover:text-[#757575] transition-colors">
                 <Eye v-if="!showNew" :size="16" />
                 <EyeOff v-else :size="16" />
               </button>
             </div>
-            <p v-if="errors.newPassword" class="text-red-400 text-xs font-bold mt-1 ml-2 flex items-center gap-1">
+            <p v-if="errors.newPassword" class="text-danger text-xs font-bold mt-1 ml-2 flex items-center gap-1">
               <AlertCircle :size="11" /> {{ errors.newPassword }}
             </p>
           </div>
 
           <!-- Confirmar senha -->
           <div>
-            <label class="text-xs font-black uppercase tracking-widest text-zinc-500 ml-2 mb-2 block">Confirmar Nova Senha</label>
+            <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-2 mb-2 block">Confirmar Nova Senha</label>
             <div class="relative">
-              <Lock :size="16" class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
+              <Lock :size="16" class="absolute left-4 top-1/2 -translate-y-1/2 text-[#757575]" />
               <input
                 v-model="confirmPassword"
                 :type="showConfirm ? 'text' : 'password'"
                 placeholder="Repita a senha"
-                class="w-full bg-white/5 border rounded-2xl pl-10 pr-12 py-3.5 text-sm text-white outline-none placeholder:text-zinc-600 transition-colors"
-                :class="errors.confirmPassword ? 'border-red-500/50' : 'border-white/10 focus:border-brand-green/40'"
+                class="w-full bg-gray-50 border rounded pl-10 pr-12 py-3.5 text-sm text-[#212121] outline-none placeholder:text-[#757575] transition-colors"
+                :class="errors.confirmPassword ? 'border-danger' : 'border-[#E0E0E0] focus:border-primary/40'"
                 @input="delete errors.confirmPassword"
               />
               <button type="button" @click="showConfirm = !showConfirm"
-                class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors">
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-[#757575] hover:text-[#757575] transition-colors">
                 <Eye v-if="!showConfirm" :size="16" />
                 <EyeOff v-else :size="16" />
               </button>
             </div>
-            <p v-if="errors.confirmPassword" class="text-red-400 text-xs font-bold mt-1 ml-2 flex items-center gap-1">
+            <p v-if="errors.confirmPassword" class="text-danger text-xs font-bold mt-1 ml-2 flex items-center gap-1">
               <AlertCircle :size="11" /> {{ errors.confirmPassword }}
             </p>
           </div>

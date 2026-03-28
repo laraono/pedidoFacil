@@ -83,11 +83,11 @@ const handleSave = () => {
 
 <template>
   <div v-if="show" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-4 overflow-hidden flex flex-col max-h-[95vh]">
+    <div class="bg-white rounded shadow-2xl w-full max-w-4xl my-4 overflow-hidden flex flex-col max-h-[95vh]">
       
       <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-        <h2 class="text-xl font-bold text-gray-800">{{ isEditing ? 'Editar Produto' : 'Novo Produto' }}</h2>
-        <button @click="emit('close')" class="text-gray-400 hover:text-gray-600 transition-colors"><X :size="24" /></button>
+        <h2 class="text-xl font-bold text-[#212121]">{{ isEditing ? 'Editar Produto' : 'Novo Produto' }}</h2>
+        <button @click="emit('close')" class="text-[#757575] hover:text-[#757575] transition-colors"><X :size="24" /></button>
       </div>
       
       <div class="p-6 sm:p-10 overflow-y-auto custom-scrollbar">
@@ -95,10 +95,10 @@ const handleSave = () => {
           
           <div class="md:col-span-1 space-y-6">
             <div>
-              <label class="block text-sm font-bold text-gray-700 mb-3 ml-1">Imagem do Produto</label>
-              <div class="relative w-full aspect-square bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 hover:border-brand-green/50 transition-all overflow-hidden group cursor-pointer">
+              <label class="block text-sm font-bold text-[#757575] mb-3 ml-1">Imagem do Produto</label>
+              <div class="relative w-full aspect-square bg-gray-50 rounded border-2 border-dashed border-gray-200 hover:border-accent/50 transition-all overflow-hidden group cursor-pointer">
                 <img v-if="form.imagePreview" :src="form.imagePreview" class="w-full h-full object-cover" />
-                <div v-else class="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                <div v-else class="w-full h-full flex flex-col items-center justify-center text-[#757575]">
                   <ImageIcon :size="40" />
                   <span class="text-xs mt-2 font-medium">Fazer Upload</span>
                 </div>
@@ -106,7 +106,7 @@ const handleSave = () => {
               </div>
             </div>
 
-            <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+            <div class="bg-gray-50 p-4 rounded border border-gray-100">
               <BaseToggle 
                 label="Disponibilidade" 
                 v-model="form.isAvailable" 
@@ -139,19 +139,19 @@ const handleSave = () => {
               :rows="4"
             />
 
-            <div class="bg-blue-50/50 p-5 rounded-2xl border border-blue-100">
+            <div class="bg-blue-50/50 p-5 rounded border border-blue-100">
               <div class="flex justify-between items-center mb-4">
                 <h3 class="text-blue-900 font-bold text-sm uppercase tracking-wider">Tamanhos e Preços</h3>
-                <BaseButton variant="ghost" @click="addSize" class="text-sm py-2 px-3 text-gray-500">
+                <BaseButton variant="ghost" @click="addSize" class="text-sm py-2 px-3 text-[#757575]">
                   <Plus :size="16" /> Adicionar
                 </BaseButton>
               </div>
               <div v-for="(size, index) in form.sizes" :key="index" class="flex gap-3 mb-3 items-center">
-                <input v-model="size.name" placeholder="Ex: Grande" class="text-gray-500 flex-1 p-3 bg-white border border-gray-200 rounded-xl text-sm" />
+                <input v-model="size.name" placeholder="Ex: Grande" class="text-[#757575] flex-1 p-3 bg-white border border-gray-200 rounded text-sm" />
                 <div class="relative w-36">
-                  <input :value="currencyFormatter.format(size.price)" @input="updatePrice(index, $event, 'sizes')" class="text-gray-500 w-full pl-9 p-3 bg-white border border-gray-200 rounded-xl text-sm text-right font-mono" />
+                  <input :value="currencyFormatter.format(size.price)" @input="updatePrice(index, $event, 'sizes')" class="text-[#757575] w-full pl-9 p-3 bg-white border border-gray-200 rounded text-sm text-right font-mono" />
                 </div>
-                <button @click="removeSize(index)" class="text-red-400 hover:text-red-600 p-2"><Trash2 :size="20" /></button>
+                <button @click="removeSize(index)" class="text-danger hover:text-red-600 p-2"><Trash2 :size="20" /></button>
               </div>
             </div>
           </div>

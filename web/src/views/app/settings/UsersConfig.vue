@@ -22,6 +22,7 @@ const isLoading = ref(false);
 const showForm = ref(false);
 const editingUser = ref(null);
 const errors = ref({});
+const confirmDeleteUser = ref(null);
 
 const currentUser = computed(() => authStore.user);
 
@@ -79,7 +80,7 @@ function validateForm() {
     errors.value.name = 'Nome deve ter ao menos 5 caracteres.';
   if (!form.value.username || form.value.username.trim().length < 3)
     errors.value.username = 'Nome de usuário deve ter ao menos 3 caracteres.';
-  if (!isValidCPF(form.value.cpf))
+  if (form.value.cpf && !isValidCPF(form.value.cpf))
     errors.value.cpf = 'O CPF inserido é inválido.';
   if (!editingUser.value && !form.value.password)
     errors.value.password = 'Senha é obrigatória.';
@@ -126,13 +127,14 @@ function saveUser() {
   isLoading.value = false;
 }
 
-function deleteUser(user) {
-  if (user.id === currentUser.value?.id) return;
+function confirmAndDeleteUser() {
+  const user = confirmDeleteUser.value;
+  if (!user || user.id === currentUser.value?.id) return;
   const list = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
-  const filtered = list.filter(u => u.id !== user.id);
-  localStorage.setItem(USERS_KEY, JSON.stringify(filtered));
+  localStorage.setItem(USERS_KEY, JSON.stringify(list.filter(u => u.id !== user.id)));
   loadUsers();
   showToast('Usuário removido.', 'success');
+  confirmDeleteUser.value = null;
 }
 
 // Aplica máscara de CPF reativamente — bloqueia letras sem travar o campo
@@ -155,12 +157,12 @@ function isActive(status) {
     
     <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-10 gap-6">
       <div class="flex items-center gap-4">
-        <button @click="router.back()" class="p-3 bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-white transition-colors">
+        <button @click="router.back()" class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] transition-colors">
           <ArrowLeft :size="20" />
         </button>
         <div>
-          <h1 class="text-3xl font-black text-white">Usuários</h1>
-          <p class="text-gray-400 text-sm">Gerencie o acesso da sua equipe</p>
+          <h1 class="text-3xl font-black text-[#212121]">Usuários</h1>
+          <p class="text-[#757575] text-sm">Gerencie o acesso da sua equipe</p>
         </div>
       </div>
 
@@ -170,15 +172,15 @@ function isActive(status) {
     </header>
 
     <Transition name="fade">
-      <div v-if="showForm" class="bg-dark-card border border-white/10 p-8 rounded-[2.5rem] shadow-2xl mb-10 relative overflow-hidden">
+      <div v-if="showForm" class="bg-white border border-[#E0E0E0] p-8 rounded shadow-2xl mb-10 relative overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-green to-transparent opacity-50"></div>
         
         <div class="flex justify-between items-center mb-8">
-          <h2 class="text-2xl font-black text-white flex items-center gap-3">
-            <component :is="editingUser ? Pencil : PlusCircle" :size="24" class="text-brand-green" />
+          <h2 class="text-2xl font-black text-[#212121] flex items-center gap-3">
+            <component :is="editingUser ? Pencil : PlusCircle" :size="24" class="text-accent" />
             {{ editingUser ? 'Editar Usuário' : 'Cadastrar Usuário' }}
           </h2>
-          <button @click="closeForm" class="p-2 text-gray-400 hover:text-white transition-colors">
+          <button @click="closeForm" class="p-2 text-[#757575] hover:text-[#212121] transition-colors">
             <X :size="24" />
           </button>
         </div>
@@ -220,8 +222,8 @@ function isActive(status) {
             />
           </div>
 
-          <div class="md:col-span-2 flex justify-end gap-4 mt-4 pt-8 border-t border-white/5">
-            <button type="button" @click="closeForm" class="px-8 py-4 rounded-2xl text-gray-400 font-bold hover:bg-white/5 hover:text-white transition-colors">
+          <div class="md:col-span-2 flex justify-end gap-4 mt-4 pt-8 border-t border-[#E0E0E0]">
+            <button type="button" @click="closeForm" class="px-8 py-4 rounded text-[#757575] font-bold hover:bg-gray-50 hover:text-[#212121] transition-colors">
               Cancelar
             </button>
             <BaseButton @click="saveUser" :isLoading="isLoading" class="px-8 py-4">
@@ -232,9 +234,9 @@ function isActive(status) {
       </div>
     </Transition>
 
-    <div class="hidden md:block bg-dark-card border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+    <div class="hidden md:block bg-white border border-[#E0E0E0] rounded overflow-hidden shadow-2xl">
       <table class="w-full text-left border-collapse">
-        <thead class="bg-black/20 text-gray-500 uppercase text-[10px] font-black tracking-widest border-b border-white/5">
+        <thead class="bg-gray-100 text-[#757575] uppercase text-[10px] font-black tracking-widest border-b border-[#E0E0E0]">
           <tr>
             <th class="p-6">Nome</th>
             <th class="p-6">Usuário</th>
@@ -244,29 +246,29 @@ function isActive(status) {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="user in users" :key="user.id" class="hover:bg-white/5 border-b border-white/5 last:border-0 transition-colors">
-            <td class="p-6 font-bold text-white">{{ user.name }}</td>
-            <td class="p-6 text-gray-400 text-sm">{{ user.username || user.email }}</td>
+          <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50 border-b border-[#E0E0E0] last:border-0 transition-colors">
+            <td class="p-6 font-bold text-[#212121]">{{ user.name }}</td>
+            <td class="p-6 text-[#757575] text-sm">{{ user.username || user.email }}</td>
             <td class="p-6 text-center">
               <span
-                :class="isActive(user.status) ? 'bg-brand-green/10 text-brand-green border-brand-green/20' : 'bg-red-500/10 text-red-500 border-red-500/20'"
-                class="px-3 py-1 border rounded-full text-[10px] font-black uppercase tracking-widest"
+                :class="isActive(user.status) ? 'bg-accent-light text-accent border-accent/30' : 'bg-danger-light text-red-500 border-danger'"
+                class="px-3 py-1 border rounded text-[10px] font-black uppercase tracking-widest"
               >
                 {{ user.status || 'ATIVO' }}
               </span>
             </td>
-            <td class="p-6 text-center font-bold text-gray-400 text-sm">
+            <td class="p-6 text-center font-bold text-[#757575] text-sm">
               {{ roles.find(r => r.id === user.roleId)?.name || '-' }}
             </td>
             <td class="p-6 text-right">
               <div class="flex justify-end gap-2">
-                <button @click="openForm(user)" class="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                <button @click="openForm(user)" class="p-2 text-[#757575] hover:text-[#212121] hover:bg-gray-50 rounded transition-all">
                   <Pencil :size="18" />
                 </button>
                 <button
                   v-if="user.id !== currentUser?.id"
-                  @click="deleteUser(user)"
-                  class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                  @click="confirmDeleteUser = user"
+                  class="p-2 text-[#757575] hover:text-red-500 hover:bg-danger-light rounded transition-all"
                 >
                   <Trash :size="18" />
                 </button>
@@ -274,36 +276,36 @@ function isActive(status) {
             </td>
           </tr>
           <tr v-if="users.length === 0">
-            <td colspan="5" class="p-12 text-center text-gray-600 text-sm font-bold">Nenhum usuário cadastrado.</td>
+            <td colspan="5" class="p-12 text-center text-[#757575] text-sm font-bold">Nenhum usuário cadastrado.</td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <div class="md:hidden space-y-4">
-      <div v-for="user in users" :key="user.id" class="bg-dark-card border border-white/10 p-6 rounded-2xl shadow-xl">
+      <div v-for="user in users" :key="user.id" class="bg-white border border-[#E0E0E0] p-6 rounded shadow-xl">
         <div class="flex justify-between items-start mb-4">
           <div>
-            <p class="font-bold text-white text-lg">{{ user.name }}</p>
-            <p class="text-sm text-gray-400 mt-1">@{{ user.username || user.email }}</p>
+            <p class="font-bold text-[#212121] text-lg">{{ user.name }}</p>
+            <p class="text-sm text-[#757575] mt-1">@{{ user.username || user.email }}</p>
           </div>
           <span
-            :class="isActive(user.status) ? 'bg-brand-green/10 text-brand-green border-brand-green/20' : 'bg-red-500/10 text-red-500 border-red-500/20'"
-            class="px-2 py-1 border rounded-full text-[9px] font-black uppercase tracking-widest"
+            :class="isActive(user.status) ? 'bg-accent-light text-accent border-accent/30' : 'bg-danger-light text-red-500 border-danger'"
+            class="px-2 py-1 border rounded text-[9px] font-black uppercase tracking-widest"
           >
             {{ user.status || 'ATIVO' }}
           </span>
         </div>
 
-        <div class="flex justify-between items-center mt-6 pt-4 border-t border-white/5">
-          <span class="text-[10px] font-black uppercase tracking-widest text-gray-500 bg-white/5 px-3 py-1 rounded-lg border border-white/10">
+        <div class="flex justify-between items-center mt-6 pt-4 border-t border-[#E0E0E0]">
+          <span class="text-[10px] font-black uppercase tracking-widest text-[#757575] bg-gray-50 px-3 py-1 rounded border border-[#E0E0E0]">
             {{ roles.find(r => r.id === user.roleId)?.name || '-' }}
           </span>
           <div class="flex gap-2">
-            <button @click="openForm(user)" class="p-2 text-gray-400 hover:text-white bg-white/5 rounded-xl">
+            <button @click="openForm(user)" class="p-2 text-[#757575] hover:text-[#212121] bg-gray-50 rounded">
               <Pencil :size="18" />
             </button>
-            <button v-if="user.id !== currentUser?.id" @click="deleteUser(user)" class="p-2 text-red-500 bg-red-500/10 rounded-xl">
+            <button v-if="user.id !== currentUser?.id" @click="confirmDeleteUser = user" class="p-2 text-red-500 bg-danger-light rounded">
               <Trash :size="18" />
             </button>
           </div>
@@ -311,6 +313,28 @@ function isActive(status) {
       </div>
     </div>
   </main>
+
+  <Teleport to="body">
+    <Transition name="fade">
+      <div v-if="confirmDeleteUser" class="fixed inset-0 bg-black/50  z-[110] flex items-center justify-center p-4">
+        <div class="bg-white border border-[#E0E0E0] w-full max-w-sm rounded p-8 shadow-2xl">
+          <div class="flex items-start gap-4 mb-6">
+            <div class="p-3 bg-danger-light rounded border border-danger shrink-0">
+              <Trash :size="20" class="text-danger" />
+            </div>
+            <div>
+              <p class="text-[#212121] font-black text-base">Excluir usuário?</p>
+              <p class="text-[#757575] text-sm mt-1"><span class="text-[#212121] font-bold">{{ confirmDeleteUser.name }}</span> será removido permanentemente.</p>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <button @click="confirmDeleteUser = null" class="flex-1 py-3 rounded text-[#757575] font-bold hover:bg-gray-50 transition-colors border border-[#E0E0E0]">Cancelar</button>
+            <button @click="confirmAndDeleteUser" class="flex-1 py-3 rounded bg-danger text-white font-black hover:bg-red-400 transition-colors">Excluir</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>

@@ -24,13 +24,13 @@ const sizeClasses = {
 <template>
   <Teleport to="body">
     <Transition name="fade">
-      <div v-if="show" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-        <div class="bg-dark-card border border-white/10 w-full rounded-[2.5rem] flex flex-col shadow-2xl overflow-hidden"
+      <div v-if="show" class="fixed inset-0 bg-black/50  z-[100] flex items-center justify-center p-4">
+        <div class="bg-white border border-[#E0E0E0] w-full rounded flex flex-col shadow-2xl overflow-hidden"
           :class="sizeClasses[size]">
 
-          <header class="p-8 border-b border-white/5 flex justify-between items-center bg-black/20">
-            <h2 class="text-2xl font-black text-white">{{ title }}</h2>
-            <button @click="$emit('close')" class="p-2 text-gray-400 hover:text-white transition-colors rounded-xl hover:bg-white/10">
+          <header class="p-8 border-b border-[#E0E0E0] flex justify-between items-center bg-gray-50">
+            <h2 class="text-2xl font-black text-[#212121]">{{ title }}</h2>
+            <button @click="$emit('close')" class="p-2 text-[#757575] hover:text-[#212121] transition-colors rounded hover:bg-gray-100">
               <X :size="24" />
             </button>
           </header>
@@ -39,15 +39,15 @@ const sizeClasses = {
             <slot></slot>
           </div>
 
-          <footer class="p-8 border-t border-white/5 bg-black/20 flex justify-end gap-4">
+          <footer class="p-8 border-t border-[#E0E0E0] bg-gray-50 flex justify-end gap-4">
             <slot name="footer-actions" />
             <button type="button" @click="$emit('close')"
-              class="px-6 py-3 rounded-2xl text-gray-400 font-bold hover:bg-white/5 hover:text-white transition-colors">
+              class="px-6 py-3 rounded text-[#757575] font-bold hover:bg-gray-50 hover:text-[#212121] transition-colors">
               Cancelar
             </button>
             <button v-if="!hideSave" type="button" @click="$emit('save')"
               :disabled="isLoading || saveDisabled"
-              class="flex items-center gap-2 px-8 py-3 bg-brand-green text-black font-black rounded-2xl hover:bg-green-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+              class="flex items-center gap-2 px-8 py-3 bg-primary text-white font-black rounded hover:bg-primary-dark transition-all disabled:opacity-40 disabled:cursor-not-allowed">
               <Loader2 v-if="isLoading" class="w-4 h-4 animate-spin" />
               {{ isLoading ? 'Salvando...' : saveLabel }}
             </button>
@@ -63,5 +63,5 @@ const sizeClasses = {
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #E0E0E0; border-radius: 10px; }
 </style>

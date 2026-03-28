@@ -124,20 +124,20 @@ const handlePermanentDelete = (category) => {
     
     <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-10 gap-6">
       <div class="flex items-center gap-4">
-        <button @click="router.back()" class="p-3 bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-white transition-colors">
+        <button @click="router.back()" class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] transition-colors">
           <ArrowLeft :size="20" />
         </button>
         <div>
-          <h1 class="text-3xl font-black text-white">Gerenciar Categorias</h1>
-          <p class="text-gray-400 text-sm">Controle de categorias de produtos do cardápio</p>
+          <h1 class="text-3xl font-black text-[#212121]">Gerenciar Categorias</h1>
+          <p class="text-[#757575] text-sm">Controle de categorias de produtos do cardápio</p>
         </div>
       </div>
 
       <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
         <button
           @click="showDeleted = !showDeleted"
-          class="px-5 py-3 rounded-2xl flex items-center justify-center gap-2 transition-all font-bold text-sm border w-full sm:w-auto"
-          :class="showDeleted ? 'bg-white/10 text-white border-white/20' : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white'"
+          class="px-5 py-3 rounded flex items-center justify-center gap-2 transition-all font-bold text-sm border w-full sm:w-auto"
+          :class="showDeleted ? 'bg-gray-100 text-[#212121] border-[#E0E0E0]' : 'bg-gray-50 text-[#757575] border-[#E0E0E0] hover:bg-gray-100 hover:text-[#212121]'"
         >
           <Archive :size="18" />
           {{ showDeleted ? 'Ver Ativas' : 'Ver Arquivadas' }}
@@ -149,7 +149,7 @@ const handlePermanentDelete = (category) => {
       </div>
     </header>
 
-    <div v-if="showDeleted" class="mb-8 p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl flex items-center justify-between">
+    <div v-if="showDeleted" class="mb-8 p-4 bg-orange-500/10 border border-orange-500/20 rounded flex items-center justify-between">
       <p class="text-orange-400 text-sm font-bold flex items-center gap-2">
         <Archive :size="18" /> Visualizando categorias arquivadas.
       </p>
@@ -158,56 +158,56 @@ const handlePermanentDelete = (category) => {
       </button>
     </div>
 
-    <div class="bg-dark-card border border-white/10 rounded-2xl overflow-x-auto shadow-2xl">
+    <div class="bg-white border border-[#E0E0E0] rounded overflow-x-auto shadow-2xl">
       <table class="w-full text-left border-collapse">
-        <thead class="bg-black/20 text-gray-500 uppercase text-[10px] font-black tracking-widest">
+        <thead class="bg-gray-100 text-[#757575] uppercase text-[10px] font-black tracking-widest">
           <tr>
-            <th class="p-4 sm:p-6 border-b border-white/5 w-20">Ícone</th>
-            <th class="p-4 sm:p-6 border-b border-white/5">Nome</th>
-            <th class="p-4 sm:p-6 border-b border-white/5 whitespace-nowrap">Status</th>
-            <th class="p-4 sm:p-6 border-b border-white/5 text-right whitespace-nowrap">Ações</th>
+            <th class="p-4 sm:p-6 border-b border-[#E0E0E0] w-20">Ícone</th>
+            <th class="p-4 sm:p-6 border-b border-[#E0E0E0]">Nome</th>
+            <th class="p-4 sm:p-6 border-b border-[#E0E0E0] whitespace-nowrap">Status</th>
+            <th class="p-4 sm:p-6 border-b border-[#E0E0E0] text-right whitespace-nowrap">Ações</th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="displayedCategories.length === 0">
-            <td colspan="4" class="p-12 text-center text-gray-600 text-sm font-bold">Nenhuma categoria encontrada.</td>
+            <td colspan="4" class="p-12 text-center text-[#757575] text-sm font-bold">Nenhuma categoria encontrada.</td>
           </tr>
           <tr
             v-for="cat in displayedCategories"
             :key="cat.id"
-            class="hover:bg-white/5 border-b border-white/5 last:border-0 transition-colors"
+            class="hover:bg-gray-50 border-b border-[#E0E0E0] last:border-0 transition-colors"
             :class="{ 'opacity-50 grayscale': cat.deletedAt }"
           >
             <td class="p-4 sm:p-6 w-20">
-              <div class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center overflow-hidden border border-white/10">
+              <div class="w-12 h-12 bg-gray-50 rounded flex items-center justify-center overflow-hidden border border-[#E0E0E0]">
                 <img v-if="cat.image" :src="cat.image" class="w-full h-full object-cover" />
-                <ImageIcon v-else class="text-gray-500" :size="20" />
+                <ImageIcon v-else class="text-[#757575]" :size="20" />
               </div>
             </td>
-            <td class="p-4 sm:p-6 font-bold text-white text-sm sm:text-base truncate max-w-[150px] sm:max-w-none">{{ cat.name }}</td>
+            <td class="p-4 sm:p-6 font-bold text-[#212121] text-sm sm:text-base truncate max-w-[150px] sm:max-w-none">{{ cat.name }}</td>
             <td class="p-4 sm:p-6 whitespace-nowrap">
-              <span v-if="cat.deletedAt" class="px-3 py-1 bg-white/10 text-gray-400 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest">
+              <span v-if="cat.deletedAt" class="px-3 py-1 bg-gray-100 text-[#757575] border border-[#E0E0E0] rounded text-[10px] font-black uppercase tracking-widest">
                 {{ new Date(cat.deletedAt).toLocaleDateString() }}
               </span>
-              <span v-else class="px-3 py-1 bg-brand-green/10 text-brand-green border border-brand-green/20 rounded-full text-[10px] font-black uppercase tracking-widest">
+              <span v-else class="px-3 py-1 bg-accent-light text-accent border border-accent/30 rounded text-[10px] font-black uppercase tracking-widest">
                 Ativa
               </span>
             </td>
             <td class="p-4 sm:p-6 text-right whitespace-nowrap">
               <div class="flex justify-end gap-2">
                 <template v-if="!cat.deletedAt">
-                  <button @click="openEditModal(cat)" class="p-2 text-gray-400 hover:text-white transition-colors" title="Editar">
+                  <button @click="openEditModal(cat)" class="p-2 text-[#757575] hover:text-[#212121] transition-colors" title="Editar">
                     <Edit :size="18" />
                   </button>
-                  <button @click="handleDelete(cat)" class="p-2 text-gray-400 hover:text-orange-400 transition-colors" title="Arquivar">
+                  <button @click="handleDelete(cat)" class="p-2 text-[#757575] hover:text-orange-400 transition-colors" title="Arquivar">
                     <Archive :size="18" />
                   </button>
                 </template>
                 <template v-else>
-                  <button @click="handleRestore(cat)" class="p-2 text-gray-400 hover:text-brand-green transition-colors" title="Restaurar">
+                  <button @click="handleRestore(cat)" class="p-2 text-[#757575] hover:text-accent transition-colors" title="Restaurar">
                     <RotateCcw :size="18" />
                   </button>
-                  <button @click="handlePermanentDelete(cat)" class="p-2 text-gray-400 hover:text-red-500 transition-colors" title="Deletar permanentemente">
+                  <button @click="handlePermanentDelete(cat)" class="p-2 text-[#757575] hover:text-red-500 transition-colors" title="Deletar permanentemente">
                     <Trash2 :size="18" />
                   </button>
                 </template>
@@ -220,28 +220,28 @@ const handlePermanentDelete = (category) => {
 
     <Teleport to="body">
       <Transition name="fade">
-        <div v-if="showModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div class="bg-dark-card border border-white/10 w-full max-w-md rounded-[2.5rem] flex flex-col shadow-2xl overflow-hidden">
+        <div v-if="showModal" class="fixed inset-0 bg-black/50  z-[100] flex items-center justify-center p-4">
+          <div class="bg-white border border-[#E0E0E0] w-full max-w-md rounded flex flex-col shadow-2xl overflow-hidden">
             
-            <header class="p-8 border-b border-white/5 flex justify-between items-center bg-black/20">
-              <h2 class="text-2xl font-black text-white flex items-center gap-3">
-                <Edit :size="24" class="text-brand-green" />
+            <header class="p-8 border-b border-[#E0E0E0] flex justify-between items-center bg-gray-100">
+              <h2 class="text-2xl font-black text-[#212121] flex items-center gap-3">
+                <Edit :size="24" class="text-accent" />
                 {{ isEditing ? 'Editar Categoria' : 'Nova Categoria' }}
               </h2>
-              <button @click="showModal = false" class="p-2 text-gray-400 hover:text-white transition-colors">
+              <button @click="showModal = false" class="p-2 text-[#757575] hover:text-[#212121] transition-colors">
                 <X :size="24" />
               </button>
             </header>
 
             <div class="p-8 space-y-6">
               <div class="flex justify-center">
-                <label class="cursor-pointer group relative w-32 h-32 bg-white/5 rounded-full flex items-center justify-center overflow-hidden border-2 border-dashed border-white/20 hover:border-brand-green/50 transition-all">
+                <label class="cursor-pointer group relative w-32 h-32 bg-gray-50 rounded flex items-center justify-center overflow-hidden border-2 border-dashed border-[#E0E0E0] hover:border-accent/50 transition-all">
                   <img v-if="form.imagePreview" :src="form.imagePreview" class="w-full h-full object-cover" />
-                  <div v-else class="flex flex-col items-center text-gray-500">
+                  <div v-else class="flex flex-col items-center text-[#757575]">
                     <ImageIcon :size="32" />
                     <span class="text-[10px] font-black uppercase tracking-widest mt-2">Ícone</span>
                   </div>
-                  <div class="absolute inset-0 bg-black/60 transition-all flex items-center justify-center text-white opacity-0 group-hover:opacity-100 font-bold text-xs uppercase tracking-wider backdrop-blur-sm">
+                  <div class="absolute inset-0 bg-gray-100 transition-all flex items-center justify-center text-[#212121] opacity-0 group-hover:opacity-100 font-bold text-xs uppercase tracking-wider ">
                     Alterar
                   </div>
                   <input type="file" class="hidden" accept="image/*" @change="handleImageUpload" />
@@ -258,8 +258,8 @@ const handlePermanentDelete = (category) => {
               />
             </div>
 
-            <footer class="p-8 border-t border-white/5 bg-black/20 flex justify-end gap-4">
-              <button @click="showModal = false" class="px-6 py-3 rounded-2xl text-gray-400 font-bold hover:bg-white/5 hover:text-white transition-colors">
+            <footer class="p-8 border-t border-[#E0E0E0] bg-gray-100 flex justify-end gap-4">
+              <button @click="showModal = false" class="px-6 py-3 rounded text-[#757575] font-bold hover:bg-gray-50 hover:text-[#212121] transition-colors">
                 Cancelar
               </button>
               <BaseButton @click="saveCategory" :isLoading="isLoading" class="px-8">

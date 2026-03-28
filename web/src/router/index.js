@@ -43,13 +43,14 @@ const routes = [
       { path: 'settings/categories', component: MenuCategories, meta: { permission: PERMISSIONS.CONFIGURACAO } },
       { path: 'settings/products', component: MenuProducts, meta: { permission: PERMISSIONS.CONFIGURACAO } },
       { path: 'settings/users', name: 'users-settings', component: CreateUsers, meta: { permission: PERMISSIONS.CONFIGURACAO } },
+      { path: 'settings/coupons', name: 'coupons-settings', component: () => import('@/views/app/settings/CouponsManagement.vue'), meta: { permission: PERMISSIONS.CUPONS } },
+      { path: 'settings/nf', name: 'nf-manager', component: () => import('@/views/app/settings/NFManager.vue'), meta: { permission: PERMISSIONS.NOTA_FISCAL } },
       { path: '/app/kitchen', name: 'kitchen', component: KitchenTerminal, meta: { requiresAuth: true, permission: PERMISSIONS.COZINHA } },
       { path: 'menu', name: 'Menu', component: Menu, meta: { requiresAuth: true, permission: PERMISSIONS.CRIAR_PEDIDO } },
       { path: 'cashier', name: 'cashier', component: () => import('@/views/app/cashier/Cashier.vue'), meta: { requiresAuth: true, permission: PERMISSIONS.CAIXA } },
       { path: 'closed', name: 'closed', component: () => import('@/views/app/cashier/ClosedComandas.vue'), meta: { requiresAuth: true, permission: PERMISSIONS.COMANDAS_FINALIZADAS } },
       { path: 'reports', name: 'reports', component: ManagerReports, meta: { permission: PERMISSIONS.RELATORIOS } },
 
-      // Subscription (managers with ASSINATURA permission)
       {
         path: 'subscription',
         name: 'subscription',
@@ -57,7 +58,6 @@ const routes = [
         meta: { requiresAuth: true, permission: PERMISSIONS.ASSINATURA }
       },
 
-      // Admin-only routes
       {
         path: 'admin/subscriptions',
         name: 'admin-subscriptions',

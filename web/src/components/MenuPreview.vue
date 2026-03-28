@@ -1,13 +1,13 @@
 <!-- components/MenuPreview.vue -->
 <template>
-  <div class="preview-wrapper rounded-2xl border-2 border-gray-200 overflow-hidden shadow-xl" :style="{ fontFamily }">
+  <div class="preview-wrapper rounded border-2 border-gray-200 overflow-hidden shadow-xl" :style="{ fontFamily }">
     <!-- Header -->
     <header class="h-16 flex items-center px-4" :style="{ backgroundColor: buttonColor }">
       <div class="flex items-center gap-2">
-        <div class="bg-white/20 p-2 rounded-lg text-white">
+        <div class="bg-gray-100 p-2 rounded text-[#212121]">
           <Utensils :size="20" />
         </div>
-        <h2 class="text-white font-bold">Restaurante Exemplo</h2>
+        <h2 class="text-[#212121] font-bold">Restaurante Exemplo</h2>
       </div>
     </header>
 
@@ -15,7 +15,7 @@
       <!-- Categorias (sidebar) -->
       <aside class="w-24 p-2" :style="{ backgroundColor: categoryColor }">
         <div v-for="cat in mockCategories" :key="cat.id" 
-          class="p-2 mb-2 rounded-lg bg-white/80 text-xs font-bold text-center cursor-default">
+          class="p-2 mb-2 rounded bg-white/80 text-xs font-bold text-center cursor-default">
           {{ cat.name }}
         </div>
       </aside>
@@ -24,7 +24,7 @@
       <section class="flex-1 p-3 overflow-y-auto" :style="{ backgroundColor: bgColor }">
         <div class="grid grid-cols-2 gap-2">
           <div v-for="prod in mockProducts" :key="prod.id" 
-            class="rounded-lg p-2 shadow-sm" 
+            class="rounded p-2 shadow-sm" 
             :style="{ backgroundColor: cardBg, color: textColor }">
             <div class="h-16 bg-gray-200 rounded mb-2"></div>
             <p class="font-bold text-sm truncate">{{ prod.name }}</p>

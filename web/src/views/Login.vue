@@ -48,18 +48,18 @@ const goToPlans = () => router.push({ path: '/', hash: '#planos' });
 </script>
 
 <template>
-  <div class="min-h-screen bg-dark-bg font-inter relative flex flex-col items-center justify-center p-4">
+  <div class="min-h-screen bg-page font-inter relative flex flex-col items-center justify-center p-4">
     <div class="absolute top-0 left-0 w-full h-full z-0 pointer-events-none opacity-40"
          :style="{ backgroundImage: `url(${imgOndas})`, backgroundSize: 'cover', backgroundPosition: 'center' }">
     </div>
 
-    <div class="z-10 w-full max-w-md bg-dark-card/90 backdrop-blur-md border border-white/10 p-8 sm:p-12 rounded-[2.5rem] shadow-2xl">
+    <div class="z-10 w-full max-w-md bg-white/90  border border-[#E0E0E0] p-8 sm:p-12 rounded shadow-2xl">
       <div class="mb-10 text-center">
-        <h2 class="text-3xl font-black text-white mb-2">Bem-vindo de volta</h2>
-        <p class="text-gray-400">Entre para gerir o seu restaurante</p>
+        <h2 class="text-3xl font-black text-[#212121] mb-2">Bem-vindo de volta</h2>
+        <p class="text-[#757575]">Entre para gerir o seu restaurante</p>
       </div>
 
-      <div v-if="serverError" class="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-sm">
+      <div v-if="serverError" class="mb-6 p-4 bg-danger-light border border-danger rounded flex items-center gap-3 text-danger text-sm">
         <AlertCircle class="w-5 h-5 shrink-0" />
         <p>{{ serverError }}</p>
       </div>
@@ -85,7 +85,7 @@ const goToPlans = () => router.push({ path: '/', hash: '#planos' });
 
         <div class="flex justify-end">
           <a @click.prevent="router.push('/forgot-password')" href="/forgot-password"
-            class="text-xs text-gray-500 hover:text-brand-green transition-colors cursor-pointer">
+            class="text-xs text-[#757575] hover:text-accent transition-colors cursor-pointer">
             Esqueci minha senha
           </a>
         </div>
@@ -104,9 +104,9 @@ const goToPlans = () => router.push({ path: '/', hash: '#planos' });
         </div>
       </form>
 
-      <div class="mt-10 pt-6 border-t border-white/5 text-center">
-        <p class="text-gray-400 text-sm mb-3">Ainda não é cliente?</p>
-        <a @click.prevent="goToPlans" href="/#planos" class="inline-flex items-center gap-2 text-brand-green font-bold hover:text-white transition-colors cursor-pointer group">
+      <div class="mt-10 pt-6 border-t border-[#E0E0E0] text-center">
+        <p class="text-[#757575] text-sm mb-3">Ainda não é cliente?</p>
+        <a @click.prevent="goToPlans" href="/#planos" class="inline-flex items-center gap-2 text-accent font-bold hover:text-[#212121] transition-colors cursor-pointer group">
           Conheça os nossos planos
           <ArrowRight class="w-4 h-4 group-hover:translate-x-1 transition-transform" />
         </a>
