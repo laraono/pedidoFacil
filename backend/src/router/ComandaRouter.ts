@@ -1,6 +1,6 @@
 import express from 'express'
 import { comandaController } from '../controller';
-import { validateCancelComanda, validateCreateComanda } from '../validator';
+import { validateCancelComanda, validateCreateComanda, validateListComandas, validateListComandasByStatus } from '../validator';
 import { catchAsync } from '../middleware';
 const authenticate = require('../middleware/authenticate');
 const tenant = require('../middleware/tenant');
@@ -9,11 +9,11 @@ const roleAccessControl = require('../middleware/roleAccessControl');
 
 export const comandaRouter = express.Router();
 
-comandaRouter.get('/commands', authenticate,  roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'), catchAsync((req, res) => comandaController.listComandas(req, res)))
+comandaRouter.get('/commands', authenticate,  roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'), validateListComandas, catchAsync((req, res) => comandaController.listComandas(req, res)))
 
-comandaRouter.get('/commands/open', authenticate,  roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'), catchAsync((req, res) => comandaController.listComandasByStatus(req, res)))
+comandaRouter.get('/commands/open', authenticate,  roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'), validateListComandasByStatus, catchAsync((req, res) => comandaController.listComandasByStatus(req, res)))
 
-comandaRouter.get('/commands/closed', authenticate, roleAccessControl.checkPermission('COMANDAS_FINALIZADAS'), catchAsync((req, res) => comandaController.listComandasByStatus(req, res)))
+comandaRouter.get('/commands/closed', authenticate, roleAccessControl.checkPermission('COMANDAS_FINALIZADAS'), validateListComandasByStatus, catchAsync((req, res) => comandaController.listComandasByStatus(req, res)))
 
 comandaRouter.post('/commands', authenticate, roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO'), validateCreateComanda, catchAsync((req, res) => comandaController.createComanda(req, res)))
 

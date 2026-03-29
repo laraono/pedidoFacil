@@ -1,6 +1,6 @@
 import express from 'express'
 import { orderController, OrderController } from '../controller';
-import { validateCreateOrder } from '../validator';
+import { validateCreateOrder, validateListOrders } from '../validator';
 import { catchAsync } from '../middleware';
 const authenticate = require('../middleware/authenticate');
 const tenant = require('../middleware/tenant');
@@ -14,4 +14,4 @@ orderRouter.get('/commands/:comandaId/orders', authenticate, tenant.verifyTenanc
 
 orderRouter.put('/commands/:comandaId/orders/:orderId', authenticate, tenant.verifyTenancy('COMANDA', 'comandaId'), tenant.verifyTenancy('PEDIDO', 'orderId'), roleAccessControl.checkPermission('COZINHA'), catchAsync((req, res) => orderController.updateOrderStatus(req, res)))
 
-orderRouter.get('/orders', authenticate, roleAccessControl.checkPermission('COZINHA'), catchAsync((req, res) => orderController.listOrders(req, res)))
+orderRouter.get('/orders', authenticate, roleAccessControl.checkPermission('COZINHA'), validateListOrders, catchAsync((req, res) => orderController.listOrders(req, res)))
