@@ -1,20 +1,23 @@
 import { CreateProduct } from "../dto";
 import { AppError } from "../middleware";
-import { ProductRepository, ProductVariationRepository } from "../repository";
+import { EstablishmentRepository, ProductRepository, ProductVariationRepository } from "../repository";
 import { CategoryService } from "./CategoryService";
 
 export class ProductService {
 
     private categoryService: CategoryService
+    private establishmentRepository: EstablishmentRepository
     private productRepository: ProductRepository
     private productVariationRepository: ProductVariationRepository
 
     constructor(
         categoryService: CategoryService, 
+        establishmentRepository: EstablishmentRepository,
         productRepository: ProductRepository, 
         productVariationRepository: ProductVariationRepository
     ) {
         this.categoryService = categoryService
+        this.establishmentRepository = establishmentRepository
         this.productRepository = productRepository
         this.productVariationRepository = productVariationRepository
     }
@@ -28,7 +31,13 @@ export class ProductService {
             throw new AppError('Categoria não existe', 400)
         }
 
-        const createdProduct = await this.productRepository.createProduct(product) 
+        const establishment = await this.establishmentRepository.getEstablishment(product.establishmentId)
+
+        if(!establishment) {
+            throw new AppError('Estabelecimento não encontrado', 400)
+        }
+
+        const createdProduct = await this.productRepository.createProduct({...product, establishment}) 
 
         if(createdProduct) { 
             productVariations.forEach(async (productVariation) => {
@@ -39,12 +48,12 @@ export class ProductService {
         return createdProduct.id
     }
 
-    async listProducts() {
-        return await this.productRepository.listProducts()
+    async listProducts(establishmentId: number) {
+        return await this.productRepository.listProducts(establishmentId)
     }
 
-    async listProductsByCategory(categoryId: number) {
-        return await this.productRepository.listProductsByCategory(categoryId)
+    async listProductsByCategory(categoryId: number, establishmentId: number) {
+        return await this.productRepository.listProductsByCategory(categoryId, establishmentId)
     }
  
     async getProduct(productId: number) {

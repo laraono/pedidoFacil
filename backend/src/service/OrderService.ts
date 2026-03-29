@@ -1,35 +1,34 @@
 import { DataSource, EntityManager } from "typeorm";
-import { AppDataSource, Order, Product, ProductOrder, ProductVariation, ProductVariationOrder } from "../database";
-import { CreateOrder, ItensArray, ProductOrderParams } from "../dto";
+import { Order, Product, ProductOrder, ProductVariation, ProductVariationOrder } from "../database";
+import { CancelOrder, CreateOrder, ItensArray, ProductOrderParams } from "../dto";
 import { OrderStatus } from "../enum";
 import { AppError } from "../middleware";
-import {  OrderRepository, ProductOrderRepository, ProductVariationOrderRepository, ProductVariationRepository } from "../repository";
+import {  EstablishmentRepository, OrderRepository, UserRepository} from "../repository";
 import { ComandaService } from "./ComandaService";
-import { ProductService } from "./ProductService";
 
 export class OrderService {
 
     private dataSource: DataSource
+    private establishmentRepository: EstablishmentRepository
     private orderRepository: OrderRepository
+    private userRepository: UserRepository
     private comandaService: ComandaService
 
     constructor(
         dataSource: DataSource,
+        establishmentRepository: EstablishmentRepository,
         orderRepository: OrderRepository,
+        userRepository: UserRepository,
         comandaService: ComandaService,
     ) {
         this.dataSource = dataSource
+        this.establishmentRepository = establishmentRepository
         this.orderRepository = orderRepository
+        this.userRepository = userRepository
         this.comandaService = comandaService
     }
 
-    async createOrder(data: CreateOrder & { comandaId: number }) {
-        const comanda = await this.comandaService.getComanda(data.comandaId)
-        if (!comanda) throw new AppError('Comanda não encontrada', 404)
-        return await this.createOrderWithTransaction(data, comanda)
-    }
-
-    async createOrderWithTransaction(createOrder: CreateOrder, comanda: any) {
+    async createOrder(createOrder: CreateOrder) {
         return await this.dataSource.transaction(async (transactionalEntityManager) => {
             
             const comanda = await this.comandaService.getComanda(createOrder.comandaId)
@@ -38,9 +37,16 @@ export class OrderService {
                 throw new AppError('Comanda não existe', 400)
             }
 
+            const establishment = await this.establishmentRepository.getEstablishment(createOrder.establishmentId)
+
+            if(!establishment) {
+                throw new AppError('Estabelecimento não encontrado', 400)
+            }
+
             const order = await transactionalEntityManager.save(Order, {
                 status: createOrder.status,
-                comanda
+                comanda,
+                establishment
             });
 
             await this.saveItens(createOrder.itens, order, transactionalEntityManager);
@@ -49,8 +55,8 @@ export class OrderService {
         });
     }
 
-    async listOrders() {
-        return await this.orderRepository.listOrders()
+    async listOrders(establishmentId: number) {
+        return await this.orderRepository.listOrders(establishmentId)
     }
 
     async listOrdersByComanda(comandaId: number) {
@@ -119,6 +125,32 @@ export class OrderService {
             productVariation
         };
     }
+
+    async cancelComanda(params: CancelOrder) {
+    
+        const user = await this.userRepository.getUser(params.userId)
+
+        if(!user) {
+            throw new AppError('Usuário não existe', 409)
+        }
+
+        const establishment = await this.establishmentRepository.getEstablishment(params.establishmentId)
+
+        if(!establishment) {
+            throw new AppError("Estabelecimento não encontrado", 400)
+        }
+
+        await this.orderRepository.cancelOrder(
+            params.comandaId, 
+            {
+                user, 
+                establishment,
+                cancellationDescription: params.cancellationDescription, 
+                status: OrderStatus.CANCELADO
+            }
+        )
+    }
+
 
     
 } 

@@ -3,15 +3,21 @@ import { Comanda } from "../database";
 import { CancelComanda, CreateComanda } from "../dto";
 import { ComandaStatus } from "../enum";
 import { AppError } from "../middleware";
-import { ComandaRepository, UserRepository } from "../repository";
+import { ComandaRepository, EstablishmentRepository, UserRepository } from "../repository";
 
 export class ComandaService {
 
     private comandaRepository: ComandaRepository
+    private establishmentRepository: EstablishmentRepository
     private userRepository: UserRepository
 
-    constructor(comandaRepository: ComandaRepository, userRepository: UserRepository) {
+    constructor(
+        comandaRepository: ComandaRepository, 
+        establishmentRepository: EstablishmentRepository,
+        userRepository: UserRepository
+    ) {
         this.comandaRepository = comandaRepository
+        this.establishmentRepository = establishmentRepository
         this.userRepository = userRepository
     }
 
@@ -20,7 +26,15 @@ export class ComandaService {
         const checkDescription = await this.checkComandaDescription(comanda.description)
 
         if(!checkDescription) {
-            const {id} = await this.comandaRepository.createComanda(comanda) 
+            const establishment = await this.establishmentRepository.getEstablishment(comanda.establishmentId)
+
+            if(!establishment) {
+                throw new AppError("Estabelecimento não encontrado", 400)
+            }
+
+            const comandaParams = { ...comanda, establishment}
+
+            const {id} = await this.comandaRepository.createComanda(comandaParams) 
 
             return id
         } else {
@@ -29,12 +43,12 @@ export class ComandaService {
         
     }
 
-    async listComandas() {
-        return await this.comandaRepository.listComandas()
+    async listComandas(establishmentId: number) {
+        return await this.comandaRepository.listComandas(establishmentId)
     }
 
-    async listComandasByStatus(status: ComandaStatus) {
-        return await this.comandaRepository.listComandasByStatus(status)
+    async listComandasByStatus({status, establishmentId}: {status: ComandaStatus, establishmentId: number}) {
+        return await this.comandaRepository.listComandasByStatus(status, establishmentId)
     }
 
     async getComanda(comandaId: number) {
@@ -78,10 +92,17 @@ export class ComandaService {
             throw new AppError('Usuário não existe', 409)
         }
 
+        const establishment = await this.establishmentRepository.getEstablishment(params.establishmentId)
+
+        if(!establishment) {
+            throw new AppError("Estabelecimento não encontrado", 400)
+        }
+
         await this.comandaRepository.cancelComanda(
             params.comandaId, 
             {
                 user, 
+                establishment,
                 reason: params.reason, 
                 status: ComandaStatus.CANCELADA
             }
