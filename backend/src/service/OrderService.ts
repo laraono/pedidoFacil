@@ -90,8 +90,8 @@ export class OrderService {
             const newProductOrder = await manager.save(ProductOrder, productOrder);
 
             await manager.save(ProductVariationOrder, {
-                productId: newProductOrder.productId,
-                orderId: newProductOrder.orderId,
+                productId: newProductOrder.product.id,
+                orderId: newProductOrder.order.id,
                 productVariationid: validatedProduct.productVariation.id,
                 price: value2
             });
