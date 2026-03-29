@@ -3,20 +3,13 @@ import { ProductVariation } from "./ProductVariation"
 import { Product } from "./Product"
 import { Order } from "./Order"
 
-@Entity({name: 'ItemPedido'})
+@Entity({name: 'ITEM_PEDIDO'})
 export class ProductOrder {
 
-    @PrimaryColumn({
-        name: 'ID_Pedido',
-        type: 'int'
+    @PrimaryGeneratedColumn({
+        name: "ID_Item_Pedido"
     })
-    orderId: number
-
-    @PrimaryColumn({
-        name: 'ID_Produto',
-        type: 'int'
-    })
-    productId: number
+    id: number
 
     @Column({
         type: 'varchar',

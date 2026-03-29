@@ -1,10 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, PrimaryColumn, JoinColumn, CreateDateColumn, DeleteDateColumn, ManyToOne, OneToOne } from "typeorm"
 import { ProductVariation } from "./ProductVariation"
-import { Product } from "./Product"
-import { Order } from "./Order"
 import { ProductOrder } from "./ProductOrder"
 
-@Entity({name: 'ItemPedidoVariacao'})
+@Entity({name: 'ITEM_PEDIDO_VARIACAO'})
 export class ProductVariationOrder {
 
     @PrimaryColumn({

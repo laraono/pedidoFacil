@@ -8,7 +8,7 @@ import { ProductVariationOrder } from "./ProductVariationOrder"
 export class ProductVariation {
 
     @PrimaryGeneratedColumn({
-        name: 'ID_Variacao '
+        name: 'ID_Variacao'
     })
     id: number
 
@@ -52,7 +52,7 @@ export class ProductVariation {
 
     @ManyToOne(() => Product, (product) => product.productVariations)
     @JoinColumn({
-        name: 'ID_Produto '
+        name: 'ID_Produto'
     })
     product: Product
 
