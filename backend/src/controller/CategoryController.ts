@@ -15,8 +15,8 @@ export class CategoryController {
         res.status(201).send(categoryId)
     }
 
-    async listCategories(req: Request, res: Response) {
-        const categorys = await this.categoryService.listCategories()
+    async listCategories(req, res: Response) {
+        const categorys = await this.categoryService.listCategories(req.query)
 
         res.status(200).send(categorys)
     }

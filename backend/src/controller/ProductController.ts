@@ -16,13 +16,13 @@ export class ProductController {
     }
 
     async listProducts(req: Request, res: Response) {
-        const products = await this.productService.listProducts()
+        const products = await this.productService.listProducts(req.body)
 
         res.status(200).send(products)
     }
 
     async listProductsByCategory(req, res: Response) {
-        const products = await this.productService.listProductsByCategory(req.params)
+        const products = await this.productService.listProductsByCategory(req.params, req.query)
 
         res.status(200).send(products)
     }

@@ -27,7 +27,7 @@ export class OrderController {
     }
 
     async listOrders(req, res) {
-        const orders = await this.orderService.listOrders()
+        const orders = await this.orderService.listOrders(req.query)
 
         res.status(200).send(orders)
     }
