@@ -10,22 +10,6 @@ export function initMockRoles() {
 
   const roles = [
     {
-      id: 1,
-      name: 'Admin',
-      role: 'ADMIN',
-      permissions: [
-        PERMISSIONS.RELATORIOS,
-        PERMISSIONS.COZINHA,
-        PERMISSIONS.ESTOQUE,
-        PERMISSIONS.CARDAPIO,
-        PERMISSIONS.FUNCIONARIOS,
-        PERMISSIONS.CONFIGURACAO,
-        PERMISSIONS.ASSINATURA,
-        PERMISSIONS.CRIAR_PEDIDO,
-        PERMISSIONS.NOTIFICACOES
-      ]
-    },
-    {
       id: 2,
       name: 'Gerente',
       role: 'GERENTE',
@@ -43,36 +27,6 @@ export function initMockRoles() {
         PERMISSIONS.COMANDAS_FINALIZADAS,
       ]
     },
-    {
-      id: 4,
-      name: 'Garçom',
-      role: 'GARCOM',
-      permissions: [
-        PERMISSIONS.CRIAR_PEDIDO,
-        PERMISSIONS.NOTIFICACOES
-      ]
-    },
-    {
-      id: 5,
-      name: 'Cozinheiro',
-      role: 'COZINHA',
-      permissions: [
-        PERMISSIONS.COZINHA,
-        PERMISSIONS.ESTOQUE
-      ]
-    },
-    {
-      id: 6,
-      name: 'Caixa',
-      role: 'CAIXA',
-      permissions: [
-        PERMISSIONS.CRIAR_PEDIDO,
-        PERMISSIONS.COZINHA,
-        PERMISSIONS.CAIXA,
-        PERMISSIONS.ESTOQUE,
-        PERMISSIONS.COMANDAS_FINALIZADAS,
-      ]
-    },
   ];
 
   localStorage.setItem(ROLES_KEY, JSON.stringify(roles));
@@ -82,15 +36,6 @@ export function initMockUsers() {
   if (localStorage.getItem(USERS_KEY)) return;
   const users = [
     {
-      id: 1,
-      name: "Admin",
-      username: "admin",
-      email: "admin@email.com",
-      password: "123456",
-      roleId: 1,
-      status: "ATIVO"
-    },
-    {
       id: 2,
       name: "Gerente da Loja",
       username: "gerente",
@@ -99,33 +44,6 @@ export function initMockUsers() {
       roleId: 2,
       status: "ATIVO"
     },
-    {
-      id: 4,
-      name: "Pedro Garçom",
-      username: "garcom",
-      email: "garcom@email.com",
-      password: "123456",
-      roleId: 4,
-      status: "ATIVO"
-    },
-    {
-      id: 5,
-      name: "João Cozinha",
-      username: "cozinha",
-      email: "cozinha@email.com",
-      password: "123456",
-      roleId: 5,
-      status: "ATIVO"
-    },
-    {
-      id: 6,
-      name: "Roberta Caixa",
-      username: "caixa",
-      email: "caixa@email.com",
-      password: "123456",
-      roleId: 6,
-      status: "ATIVO"
-    }
   ];
 
   localStorage.setItem(USERS_KEY, JSON.stringify(users));

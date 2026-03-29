@@ -20,5 +20,11 @@
   "homepage": "https://github.com/laraono/pedidoFacil#readme",
   "devDependencies": {
     "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "express-rate-limit": "^8.3.1",
+    "jsonwebtoken": "^9.0.3"
   }
 }

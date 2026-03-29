@@ -66,7 +66,10 @@ const scrollToSection = (sectionId) => {
           </nav>
         </div>
         
-        <div class="flex-1 flex justify-end hidden lg:flex">
+        <div class="flex-1 flex justify-end hidden lg:flex items-center gap-4">
+          <a @click.prevent="navigateToRegister" class="px-4 py-2 bg-primary text-white font-bold rounded text-sm hover:bg-primary-dark transition-colors cursor-pointer">
+            Cadastrar
+          </a>
           <a @click.prevent="navigateToLogin" class="flex items-center space-x-2 text-[#212121] font-semibold text-lg cursor-pointer hover:text-accent group">
             <span>Login</span>
             <User class="text-[#212121] group-hover:text-accent transition-colors" :size="24" />
@@ -78,8 +81,11 @@ const scrollToSection = (sectionId) => {
         <a href="#sobre" @click.prevent="scrollToSection('sobre')" class="block py-4 border-b border-[#E0E0E0] text-[#212121] text-base font-bold text-center">Sobre nós</a>
         <a href="#planos" @click.prevent="scrollToSection('planos')" class="block py-4 border-b border-[#E0E0E0] text-[#212121] text-base font-bold text-center">Planos</a>
         <a href="#contato" @click.prevent="scrollToSection('contato')" class="block py-4 border-b border-[#E0E0E0] text-[#212121] text-base font-bold text-center">Contato</a>
-         <a @click="navigateToLogin" class="block py-4 text-accent text-base font-bold text-center flex justify-center items-center gap-2 cursor-pointer hover:bg-primary-dark/10 rounded mt-2 transition-all">
-            <User :size="18" /> Login
+        <a @click="navigateToRegister" class="block py-4 border-b border-[#E0E0E0] text-primary text-base font-bold text-center cursor-pointer">
+          Cadastrar
+        </a>
+        <a @click="navigateToLogin" class="block py-4 text-accent text-base font-bold text-center flex justify-center items-center gap-2 cursor-pointer hover:bg-primary-dark/10 rounded mt-2 transition-all">
+          <User :size="18" /> Login
         </a>
       </div>
 

@@ -1,8 +1,8 @@
 import express from 'express';
-import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 import cors from 'cors'
-import { categoryRouter, comandaRouter, orderRouter, productRouter } from './router';
+import cookieParser from 'cookie-parser'
+import { categoryRouter, comandaRouter, orderRouter, productRouter, authRouter } from './router';
 import { AppDataSource } from './database';
 import { errorHandler } from './middleware';
 
@@ -10,8 +10,14 @@ dotenv.config();
 
 const app = express();
 app.use(express.json());
-app.use(cors())
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    credentials: true
+}));
+app.use(cookieParser());
+
 AppDataSource.initialize().then(async () => {
+    app.use('/api/v1', authRouter)
     app.use('/api/v1', categoryRouter)
     app.use('/api/v1', comandaRouter)
     app.use('/api/v1', orderRouter)

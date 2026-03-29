@@ -1,3 +1,4 @@
+export {RegisterDTO, LoginDTO} from './auth'
 export {CreateCategory} from './category'
 export {CreateComanda, CancelComanda, CancelComandaParams} from './comanda'
 export {CreateOrder, ItensArray, OrderParams, ProductOrderParams, ProductVariationOrderParams} from './order'

@@ -23,7 +23,13 @@ export class OrderService {
         this.comandaService = comandaService
     }
 
-    async createOrder(createOrder: CreateOrder) {
+    async createOrder(data: CreateOrder & { comandaId: number }) {
+        const comanda = await this.comandaService.getComanda(data.comandaId)
+        if (!comanda) throw new AppError('Comanda não encontrada', 404)
+        return await this.createOrderWithTransaction(data, comanda)
+    }
+
+    async createOrderWithTransaction(createOrder: CreateOrder, comanda: any) {
         return await this.dataSource.transaction(async (transactionalEntityManager) => {
             
             const comanda = await this.comandaService.getComanda(createOrder.comandaId)

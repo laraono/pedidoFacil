@@ -37,7 +37,7 @@ export class Establishment {
     @Column({
         type: 'varchar',
         name: 'Codigo_Autoatendimento',
-        nullable: false,
+        nullable: true,
         length: 10,
         unique: true
     })

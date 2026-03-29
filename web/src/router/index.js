@@ -88,8 +88,23 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  scrollBehavior(to, _from, savedPosition) {
+    if (savedPosition) return savedPosition;
+    if (to.hash) {
+      return new Promise(resolve => {
+        setTimeout(() => resolve({ el: to.hash, behavior: 'smooth' }), 300);
+      });
+    }
+    return { top: 0, behavior: 'instant' };
+  }
 });
+
+// Rotas de estabelecimento — admin não deve acessá-las
+const ESTABLISHMENT_PREFIXES = [
+  '/app/settings', '/app/kitchen', '/app/menu',
+  '/app/cashier', '/app/closed', '/app/reports', '/app/subscription'
+];
 
 router.beforeEach(async (to, _from, next) => {
   const auth = useAuthStore();
@@ -97,6 +112,11 @@ router.beforeEach(async (to, _from, next) => {
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return next('/login');
+  }
+
+  // Admin só acessa rotas /app/admin/*
+  if (auth.isAdmin && ESTABLISHMENT_PREFIXES.some(p => to.path.startsWith(p))) {
+    return next({ name: 'admin-subscriptions' });
   }
 
   if (to.meta.requiresAdmin && !auth.isAdmin) {
