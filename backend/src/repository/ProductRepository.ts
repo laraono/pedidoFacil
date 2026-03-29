@@ -1,6 +1,6 @@
 import { DataSource, Repository } from "typeorm";
 import { Product } from "../database";
-import { ProductParams } from "../dto";
+import { CreateProductParams } from "../dto";
 
 export class ProductRepository extends Repository<Product>{
 
@@ -8,19 +8,28 @@ export class ProductRepository extends Repository<Product>{
         super(Product, dataSource.createEntityManager());
     }
 
-    async createProduct(product: ProductParams) {
+    async createProduct(product: CreateProductParams) {
         return await this.save(product)
     }
 
-    async listProducts() {
-        return await this.find()
+    async listProducts(establishmentId: number) {
+        return await this.find({
+            where: {
+                establishment: {
+                    id: establishmentId
+                }
+            }
+        })
     }
 
-    async listProductsByCategory(categoryId: number) {
+    async listProductsByCategory(categoryId: number, establishmentId: number) {
         return await this.find({
             where: {
                 category: {
                     id: categoryId
+                },
+                establishment: {
+                    id: establishmentId
                 }
             }
         })

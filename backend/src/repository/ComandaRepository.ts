@@ -1,6 +1,6 @@
 import { DataSource, Repository } from "typeorm";
 import { Comanda } from "../database";
-import { CancelComandaParams, CreateComanda } from "../dto";
+import { CancelComandaParams, CreateComandaParams } from "../dto";
 import { ComandaStatus } from "../enum";
 
 export class ComandaRepository extends Repository<Comanda>{
@@ -9,18 +9,27 @@ export class ComandaRepository extends Repository<Comanda>{
         super(Comanda, dataSource.createEntityManager());
     }
 
-    async createComanda(comanda: CreateComanda) {
+    async createComanda(comanda: CreateComandaParams) {
         return await this.save(comanda)
     }
 
-    async listComandas() {
-        return await this.find()
-    }
-
-    async listComandasByStatus(status: ComandaStatus) {
+    async listComandas(establishmentId: number) {
         return await this.find({
             where: {
-                status
+                establishment: {
+                    id: establishmentId
+                }
+            }
+        })
+    }
+
+    async listComandasByStatus(status: ComandaStatus, establishmentId: number) {
+        return await this.find({
+            where: {
+                status,
+                establishment: {
+                    id: establishmentId
+                }
             }
         })
     }

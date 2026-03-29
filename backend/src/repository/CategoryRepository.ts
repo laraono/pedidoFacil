@@ -1,5 +1,5 @@
 import { DataSource, Repository } from "typeorm";
-import { CreateCategory } from "../dto";
+import { CreateCategoryParams } from "../dto";
 import { Category } from "../database";
 
 export class CategoryRepository extends Repository<Category>{
@@ -8,12 +8,18 @@ export class CategoryRepository extends Repository<Category>{
         super(Category, dataSource.createEntityManager());
     }
 
-    async createCategory(category: CreateCategory) {
+    async createCategory(category: CreateCategoryParams) {
         return await this.save(category)
     }
 
-    async listCategories() {
-        return await this.find()
+    async listCategories(establishmentId: number) {
+        return await this.find({
+            where: {
+                establishment: {
+                    id: establishmentId
+                }
+            }
+        })
     }
 
     async getCategory(categoryId: number) {

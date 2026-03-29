@@ -1,6 +1,6 @@
 import { DataSource, Repository } from "typeorm";
 import { Order } from "../database";
-import { OrderParams } from "../dto";
+import { CancelOrderParams } from "../dto";
 import { OrderStatus } from "../enum";
 
 export class OrderRepository extends Repository<Order>{
@@ -9,12 +9,14 @@ export class OrderRepository extends Repository<Order>{
         super(Order, dataSource.createEntityManager());
     }
 
-    async createOrder(order: OrderParams) {
-        return await this.save(order)
-    }
-
-    async listOrders() {
-        return await this.find()
+    async listOrders(establishmentId: number) {
+        return await this.find({
+            where: {
+                establishment: {
+                    id: establishmentId
+                }
+            }
+        })
     }
 
     async listOrdersByComanda(comandaId: number) {
@@ -29,6 +31,10 @@ export class OrderRepository extends Repository<Order>{
 
     async updateOrderStatus(id: number, status: OrderStatus) {
         await this.update(id, {status})
+    }
+    
+    async cancelOrder(orderId: number, params: CancelOrderParams) {
+        await this.update(orderId, params)
     }
     
 }

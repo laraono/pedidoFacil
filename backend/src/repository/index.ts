@@ -1,6 +1,7 @@
 import { AppDataSource } from '../database'
 import { CategoryRepository } from './CategoryRepository'
 import { ComandaRepository } from './ComandaRepository'
+import { EstablishmentRepository } from './EstablishmentRepository'
 import { OrderRepository } from './OrderRepository'
 import { ProductOrderRepository } from './ProductOrderRepository'
 import { ProductRepository } from './ProductRepository'
@@ -12,6 +13,7 @@ import { UserRepository } from './UserRepository'
 
 const categoryRepository: CategoryRepository = new CategoryRepository(AppDataSource)
 const comandaRepository: ComandaRepository = new ComandaRepository(AppDataSource)
+const establishemtnRepository: EstablishmentRepository = new EstablishmentRepository(AppDataSource)
 const orderRepository: OrderRepository = new OrderRepository(AppDataSource)
 const productRepository: ProductRepository = new ProductRepository(AppDataSource)
 const productOrderRepository: ProductOrderRepository = new ProductOrderRepository(AppDataSource)
@@ -24,6 +26,7 @@ const userRepository: UserRepository = new UserRepository(AppDataSource)
 export {
     categoryRepository,
     comandaRepository,
+    establishemtnRepository,
     orderRepository,
     productRepository,
     productOrderRepository,
@@ -35,6 +38,6 @@ export {
 }
 
 export {
-    CategoryRepository, ComandaRepository, OrderRepository, ProductRepository, ProductOrderRepository, ProductVariationRepository,
+    CategoryRepository, ComandaRepository, EstablishmentRepository, OrderRepository, ProductRepository, ProductOrderRepository, ProductVariationRepository,
     ProductVariationOrderRepository, RefreshTokenRepository, RoleRepository, UserRepository
 }
