@@ -1,1 +1,1 @@
-export {validateCreateOrder} from './orderSchema'
+export {validateCreateOrder, validateListOrders} from './orderSchema'

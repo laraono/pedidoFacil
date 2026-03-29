@@ -1,4 +1,4 @@
-export {validateCreateCategory} from './category'
-export {validateCreateComanda, validateCancelComanda} from './comanda'
-export {validateCreateOrder} from './order'
-export {validateCreateProduct} from './product'
+export {validateCreateCategory, validateListCategories} from './category'
+export {validateCreateComanda, validateCancelComanda, validateListComandas, validateListComandasByStatus} from './comanda'
+export {validateCreateOrder, validateListOrders, } from './order'
+export {validateCreateProduct, validateListProducts, validateListProductsByCategories} from './product'

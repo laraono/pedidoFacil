@@ -1,1 +1,1 @@
-export {validateCreateCategory} from './categorySchema'
+export {validateCreateCategory, validateListCategories} from './categorySchema'
