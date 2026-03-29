@@ -1,17 +1,17 @@
 import { Establishment } from "../../database"
 import { User } from "../../database/entity/User"
-import { ComandaStatus } from "../../enum"
+import { OrderStatus } from "../../enum"
 
-export type CancelComanda = {
+export type CancelOrder = {
     comandaId: number,
     userId: number,
     establishmentId: number,
-    reason: string
+    cancellationDescription?: string
 }
 
-export type CancelComandaParams = {
+export type CancelOrderParams = {
     user: User,
     establishment: Establishment,
-    reason: string,
-    status: ComandaStatus.CANCELADA
+    cancellationDescription?: string,
+    status: OrderStatus.CANCELADO
 }

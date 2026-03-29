@@ -1,1 +1,1 @@
-export {CreateProduct, CreateProductVariation, ProductParams, ProductVariationParams} from './CreateProductDTO'
+export {CreateProduct, CreateProductParams, CreateProductVariation, ProductParams, ProductVariationParams} from './CreateProductDTO'

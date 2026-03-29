@@ -1,9 +1,10 @@
-import { Comanda, Order, Product, ProductVariation } from "../../database"
+import { Comanda, Establishment, Order, Product, ProductVariation } from "../../database"
 import { OrderStatus } from "../../enum"
 
 export type CreateOrder = {
     status: OrderStatus,
     comandaId: number,
+    establishmentId: number,
     itens: Array<ItensArray>
 }
 
@@ -12,11 +13,6 @@ export type ItensArray = {
     quantity: number,
     productVariationId?: number,
     observation?: string
-}
-
-export type OrderParams = {
-    status: OrderStatus,
-    comanda: Comanda
 }
 
 export type ProductOrderParams = {
