@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useMenuStore } from "@/stores/productsManagement.js";
 import { useToast } from "@/composables/useToast";
 import { useConfirm } from "@/composables/useConfirm";
@@ -11,6 +11,8 @@ import ConfirmModal from "@/components/ui/ConfirmModal.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import ToastMessage from "@/components/ui/ToastMessage.vue";
 import { PlusCircle, Edit, Archive, RotateCcw, Trash2, Image as ImageIcon, Layers, CheckSquare, Square, TrendingUp, TrendingDown, ToggleLeft, FolderInput, X } from "lucide-vue-next";
+import { categoryApi } from "@/services/categoryApi";
+import { productApi } from "@/services/productApi";
 
 const menuStore = useMenuStore();
 const { showToast } = useToast();
@@ -25,17 +27,24 @@ const form = ref({ id: null, name: "", description: "", price: "", categoryId: "
 
 const displayedProducts = computed(() => showDeleted.value ? menuStore.deletedProducts : menuStore.activeProducts);
 const sortedProducts = computed(() => {
-  const list = [...displayedProducts.value];
-  if (sortMode.value === 'alpha') return list.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
-  if (sortMode.value === 'category-alpha') return list.sort((a, b) => {
-    const ca = menuStore.getCategoryName(a.categoryId);
-    const cb = menuStore.getCategoryName(b.categoryId);
-    if (ca !== cb) return ca.localeCompare(cb, 'pt-BR');
-    return a.name.localeCompare(b.name, 'pt-BR');
-  });
-  return list;
+    const list = [...displayedProducts.value];
+    if (sortMode.value === 'alpha') return list.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    if (sortMode.value === 'category-alpha') return list.sort((a, b) => {
+        const ca = menuStore.getCategoryName(a.categoryId);
+        const cb = menuStore.getCategoryName(b.categoryId);
+        if (ca !== cb) return ca.localeCompare(cb, 'pt-BR');
+        return a.name.localeCompare(b.name, 'pt-BR');
+    });
+    return list;
 });
-const categoryOptions = computed(() => menuStore.activeCategories.map(c => ({ label: c.name, value: c.id })));
+
+const categoryOptions = ref([])
+const products = ref([])
+
+onMounted(async () => {
+    categoryOptions.value = await categoryApi.list()
+    products.value = await productApi.list()
+})
 
 // ── Bulk edition ──────────────────────────────────────────────────────────────
 const bulkMode = ref(false);
@@ -50,103 +59,103 @@ const showBulkConfirm = ref(false);
 const bulkConfirmMessage = ref('');
 
 const allSelected = computed(() =>
-  displayedProducts.value.length > 0 && displayedProducts.value.every(p => selectedIds.value.includes(p.id))
+    displayedProducts.value.length > 0 && displayedProducts.value.every(p => selectedIds.value.includes(p.id))
 );
 
 const toggleBulkMode = () => {
-  bulkMode.value = !bulkMode.value;
-  selectedIds.value = [];
-  bulkAction.value = '';
-  bulkPriceValue.value = '';
+    bulkMode.value = !bulkMode.value;
+    selectedIds.value = [];
+    bulkAction.value = '';
+    bulkPriceValue.value = '';
 };
 
 const toggleSelect = (id) => {
-  const idx = selectedIds.value.indexOf(id);
-  if (idx === -1) selectedIds.value.push(id);
-  else selectedIds.value.splice(idx, 1);
+    const idx = selectedIds.value.indexOf(id);
+    if (idx === -1) selectedIds.value.push(id);
+    else selectedIds.value.splice(idx, 1);
 };
 
 const toggleSelectAll = () => {
-  if (allSelected.value) selectedIds.value = [];
-  else selectedIds.value = displayedProducts.value.map(p => p.id);
+    if (allSelected.value) selectedIds.value = [];
+    else selectedIds.value = displayedProducts.value.map(p => p.id);
 };
 
 const isSelected = (id) => selectedIds.value.includes(id);
 
 const applyBulkPriceMask = (raw) => {
-  let val = String(raw).replace(/[^\d,]/g, '');
-  const commaIdx = val.indexOf(',');
-  if (commaIdx !== -1) {
-    val = val.slice(0, commaIdx + 1) + val.slice(commaIdx + 1).replace(/,/g, '');
-    val = val.slice(0, commaIdx + 3);
-  }
-  const parts = val.split(',');
-  parts[0] = parts[0].replace(/^0+(\d)/, '$1');
-  return parts.join(',');
+    let val = String(raw).replace(/[^\d,]/g, '');
+    const commaIdx = val.indexOf(',');
+    if (commaIdx !== -1) {
+        val = val.slice(0, commaIdx + 1) + val.slice(commaIdx + 1).replace(/,/g, '');
+        val = val.slice(0, commaIdx + 3);
+    }
+    const parts = val.split(',');
+    parts[0] = parts[0].replace(/^0+(\d)/, '$1');
+    return parts.join(',');
 };
 const onBulkPriceInput = (e) => { bulkPriceValue.value = applyBulkPriceMask(e.target.value); };
 
 const applyBulk = () => {
-  if (selectedIds.value.length === 0) { showToast('Selecione ao menos um produto.', 'error'); return; }
-  if (!bulkAction.value) { showToast('Selecione uma ação.', 'error'); return; }
-  const count = selectedIds.value.length;
-  if (bulkAction.value === 'price_increase' || bulkAction.value === 'price_decrease') {
-    const val = parseFloat(String(bulkPriceValue.value).replace(',', '.'));
-    if (!bulkPriceValue.value || isNaN(val) || val <= 0) { showToast('Informe um valor válido para o ajuste de preço.', 'error'); return; }
-    const dir = bulkAction.value === 'price_increase' ? 'Aumentar' : 'Reduzir';
-    bulkConfirmMessage.value = `${dir} o preço de ${count} produto(s) em ${bulkPriceValue.value}${bulkPriceType.value === 'percent' ? '%' : ' R$'}?`;
-  } else if (bulkAction.value === 'availability') {
-    bulkConfirmMessage.value = `Marcar ${count} produto(s) como ${bulkAvailability.value ? 'disponíveis' : 'indisponíveis'}?`;
-  } else if (bulkAction.value === 'category') {
-    if (!bulkCategoryId.value) { showToast('Selecione uma categoria.', 'error'); return; }
-    const cat = categoryOptions.value.find(c => c.value === bulkCategoryId.value);
-    bulkConfirmMessage.value = `Mover ${count} produto(s) para a categoria "${cat?.label}"?`;
-  } else if (bulkAction.value === 'delete') {
-    bulkConfirmMessage.value = `Arquivar ${count} produto(s) selecionado(s)? Eles poderão ser restaurados.`;
-  }
-  showBulkConfirm.value = true;
+    if (selectedIds.value.length === 0) { showToast('Selecione ao menos um produto.', 'error'); return; }
+    if (!bulkAction.value) { showToast('Selecione uma ação.', 'error'); return; }
+    const count = selectedIds.value.length;
+    if (bulkAction.value === 'price_increase' || bulkAction.value === 'price_decrease') {
+        const val = parseFloat(String(bulkPriceValue.value).replace(',', '.'));
+        if (!bulkPriceValue.value || isNaN(val) || val <= 0) { showToast('Informe um valor válido para o ajuste de preço.', 'error'); return; }
+        const dir = bulkAction.value === 'price_increase' ? 'Aumentar' : 'Reduzir';
+        bulkConfirmMessage.value = `${dir} o preço de ${count} produto(s) em ${bulkPriceValue.value}${bulkPriceType.value === 'percent' ? '%' : ' R$'}?`;
+    } else if (bulkAction.value === 'availability') {
+        bulkConfirmMessage.value = `Marcar ${count} produto(s) como ${bulkAvailability.value ? 'disponíveis' : 'indisponíveis'}?`;
+    } else if (bulkAction.value === 'category') {
+        if (!bulkCategoryId.value) { showToast('Selecione uma categoria.', 'error'); return; }
+        const cat = categoryOptions.value.find(c => c.value === bulkCategoryId.value);
+        bulkConfirmMessage.value = `Mover ${count} produto(s) para a categoria "${cat?.label}"?`;
+    } else if (bulkAction.value === 'delete') {
+        bulkConfirmMessage.value = `Arquivar ${count} produto(s) selecionado(s)? Eles poderão ser restaurados.`;
+    }
+    showBulkConfirm.value = true;
 };
 
 const executeBulk = () => {
-  const ids = [...selectedIds.value];
-  const prods = displayedProducts.value.filter(p => ids.includes(p.id));
-  for (const p of prods) {
-    if (bulkAction.value === 'price_increase' || bulkAction.value === 'price_decrease') {
-      const val = parseFloat(String(bulkPriceValue.value).replace(',', '.')) || 0;
-      const basePrice = p.price ?? (p.sizes?.[0]?.price ?? 0);
-      let newPrice;
-      if (bulkPriceType.value === 'percent') {
-        newPrice = bulkAction.value === 'price_increase' ? basePrice * (1 + val / 100) : basePrice * (1 - val / 100);
-      } else {
-        newPrice = bulkAction.value === 'price_increase' ? basePrice + val : basePrice - val;
-      }
-      newPrice = Math.max(0, parseFloat(newPrice.toFixed(2)));
-      menuStore.updateProduct({ ...p, price: newPrice });
-    } else if (bulkAction.value === 'availability') {
-      menuStore.updateProduct({ ...p, available: bulkAvailability.value });
-    } else if (bulkAction.value === 'category') {
-      menuStore.updateProduct({ ...p, categoryId: bulkCategoryId.value });
-    } else if (bulkAction.value === 'delete') {
-      menuStore.softDeleteProduct(p.id);
+    const ids = [...selectedIds.value];
+    const prods = displayedProducts.value.filter(p => ids.includes(p.id));
+    for (const p of prods) {
+        if (bulkAction.value === 'price_increase' || bulkAction.value === 'price_decrease') {
+        const val = parseFloat(String(bulkPriceValue.value).replace(',', '.')) || 0;
+        const basePrice = p.price ?? (p.sizes?.[0]?.price ?? 0);
+        let newPrice;
+        if (bulkPriceType.value === 'percent') {
+            newPrice = bulkAction.value === 'price_increase' ? basePrice * (1 + val / 100) : basePrice * (1 - val / 100);
+        } else {
+            newPrice = bulkAction.value === 'price_increase' ? basePrice + val : basePrice - val;
+        }
+        newPrice = Math.max(0, parseFloat(newPrice.toFixed(2)));
+        menuStore.updateProduct({ ...p, price: newPrice });
+        } else if (bulkAction.value === 'availability') {
+            menuStore.updateProduct({ ...p, available: bulkAvailability.value });
+        } else if (bulkAction.value === 'category') {
+            menuStore.updateProduct({ ...p, categoryId: bulkCategoryId.value });
+        } else if (bulkAction.value === 'delete') {
+            menuStore.softDeleteProduct(p.id);
+        }
     }
-  }
-  showToast(`${ids.length} produto(s) atualizado(s) com sucesso!`, 'success');
-  showBulkConfirm.value = false;
-  selectedIds.value = [];
-  bulkMode.value = false;
+    showToast(`${ids.length} produto(s) atualizado(s) com sucesso!`, 'success');
+    showBulkConfirm.value = false;
+    selectedIds.value = [];
+    bulkMode.value = false;
 };
 
 // ── Individual actions ────────────────────────────────────────────────────────
 const validate = () => {
-  const e = {};
-  if (!form.value.name?.trim()) e.name = "Nome do produto é obrigatório.";
-  const price = parseFloat(String(form.value.price).replace(",", "."));
-  if (form.value.sizes.length === 0 && (!form.value.price || isNaN(price) || price <= 0)) e.price = "Preço inválido.";
-  if (!form.value.categoryId) e.categoryId = "Selecione uma categoria.";
-  const badSize = form.value.sizes.some(s => s.name.trim() && (isNaN(parseFloat(String(s.price).replace(',', '.'))) || parseFloat(String(s.price).replace(',', '.')) <= 0));
-  if (badSize) e.sizes = "Informe um preço válido para cada tamanho.";
-  errors.value = e;
-  return Object.keys(e).length === 0;
+    const e = {};
+    if (!form.value.name?.trim()) e.name = "Nome do produto é obrigatório.";
+    const price = parseFloat(String(form.value.price).replace(",", "."));
+    if (form.value.sizes.length === 0 && (!form.value.price || isNaN(price) || price <= 0)) e.price = "Preço inválido.";
+    if (!form.value.categoryId) e.categoryId = "Selecione uma categoria.";
+    const badSize = form.value.sizes.some(s => s.name.trim() && (isNaN(parseFloat(String(s.price).replace(',', '.'))) || parseFloat(String(s.price).replace(',', '.')) <= 0));
+    if (badSize) e.sizes = "Informe um preço válido para cada tamanho.";
+    errors.value = e;
+    return Object.keys(e).length === 0;
 };
 
 const openAdd = () => { isEditing.value = false; form.value = { id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true, sizes: [] }; errors.value = {}; showModal.value = true; };
@@ -157,32 +166,44 @@ const removeSize = (i) => form.value.sizes.splice(i, 1);
 const handleImageUpload = (e) => { const file = e.target.files[0]; if (!file) return; const url = URL.createObjectURL(file); form.value.imagePreview = url; form.value.image = url; };
 
 const applyPriceMask = (raw) => {
-  let val = String(raw).replace(/[^\d,]/g, '');
-  const commaIdx = val.indexOf(',');
-  if (commaIdx !== -1) {
-    val = val.slice(0, commaIdx + 1) + val.slice(commaIdx + 1).replace(/,/g, '');
-    val = val.slice(0, commaIdx + 3);
-  }
-  const parts = val.split(',');
-  parts[0] = parts[0].replace(/^0+(\d)/, '$1');
-  return parts.join(',');
+    let val = String(raw).replace(/[^\d,]/g, '');
+    const commaIdx = val.indexOf(',');
+    if (commaIdx !== -1) {
+        val = val.slice(0, commaIdx + 1) + val.slice(commaIdx + 1).replace(/,/g, '');
+        val = val.slice(0, commaIdx + 3);
+    }
+    const parts = val.split(',');
+    parts[0] = parts[0].replace(/^0+(\d)/, '$1');
+    return parts.join(',');
 };
 
 const onPriceInput = (e) => { form.value.price = applyPriceMask(e.target.value); };
 const onSizePriceInput = (e, i) => { form.value.sizes[i].price = applyPriceMask(e.target.value); };
 
-const save = () => {
-  if (!validate()) { showToast("Corrija os erros no formulário.", "error"); return; }
-  isLoading.value = true;
-  try {
-    const parsedSizes = form.value.sizes
-      .filter(s => s.name.trim())
-      .map(s => ({ name: s.name.trim(), price: parseFloat(String(s.price).replace(',', '.')) || 0 }));
-    const payload = { id: form.value.id, name: form.value.name, description: form.value.description, price: parseFloat(String(form.value.price).replace(",", ".")), categoryId: form.value.categoryId, image: form.value.image, available: form.value.available, sizes: parsedSizes };
-    if (isEditing.value) menuStore.updateProduct(payload); else menuStore.addProduct(payload);
-    showToast(isEditing.value ? "Produto atualizado!" : "Produto criado!", "success");
-    showModal.value = false;
-  } catch { showToast("Erro ao salvar produto.", "error"); } finally { isLoading.value = false; }
+const save = async () => {
+    if (!validate()) { showToast("Corrija os erros no formulário.", "error"); return; }
+    isLoading.value = true;
+    try {
+        const parsedSizes = form.value.sizes
+        .filter(s => s.name.trim())
+        .map(s => ({ name: s.name.trim(), price: parseFloat(String(s.price).replace(',', '.')) || 0 }));
+        const payload = { id: form.value.id, name: form.value.name, description: form.value.description, price: parseFloat(String(form.value.price).replace(",", ".")), categoryId: form.value.categoryId, image: form.value.image, available: form.value.available, sizes: parsedSizes };
+        
+        if (isEditing.value) menuStore.updateProduct(payload); 
+        else {
+            await productApi.post({
+                name: payload.name,
+                description: payload.description, 
+                isAvailable: payload.available,
+                categoryId: payload.categoryId,
+                basePrice: payload.price,
+                status: payload.available ? 'Ativo' : 'Inativo'
+            })
+        }
+
+        showToast(isEditing.value ? "Produto atualizado!" : "Produto criado!", "success");
+        showModal.value = false;
+    } catch { showToast("Erro ao salvar produto.", "error"); } finally { isLoading.value = false; }
 };
 
 const handleDelete = (p) => showConfirm({ title: "Arquivar Produto", message: "Arquivar " + p.name + "?", onConfirm: () => { menuStore.softDeleteProduct(p.id); showToast(p.name + " arquivado.", "success"); } });
@@ -393,7 +414,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
           <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-2">Categoria</label>
           <select v-model="form.categoryId" class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] focus:outline-none focus:border-primary/50 transition-all appearance-none" :class="errors.categoryId ? '!border-red-500' : ''">
             <option value="" disabled class="bg-white">Selecione uma categoria</option>
-            <option v-for="opt in categoryOptions" :key="opt.value" :value="opt.value" class="bg-white">{{ opt.label }}</option>
+            <option v-for="opt in categoryOptions" :key="opt.id" :value="opt.id" class="bg-white">{{ opt.name }}</option>
           </select>
           <p v-if="errors.categoryId" class="text-danger text-[11px] font-bold mt-0.5 ml-2">{{ errors.categoryId }}</p>
         </div>
