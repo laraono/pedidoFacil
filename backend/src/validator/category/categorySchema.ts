@@ -4,17 +4,17 @@ import { ZodError } from 'zod';
 
 const createCategorySchema = z.object({
     name: z.string().min(1).max(20),
-    establsihmentId: z.coerce.number().int().positive()
+    establishmentId: z.coerce.number().int().positive()
 });
 
 const listCategoriesSchema = z.object({
-    establsihmentId: z.coerce.number().int().positive()
+    establishmentId: z.coerce.number().int().positive()
 })
 
 export const validateCreateCategory = 
-    (req: Request, res: Response, next: NextFunction) => {
+    (req, res: Response, next: NextFunction) => {
         try {
-            const name = createCategorySchema.parse(req.body)
+            const name = createCategorySchema.parse({...req.body, establishmentId: req.usuario.estabelecimento})
 
             req.body = name
 
@@ -30,9 +30,9 @@ export const validateCreateCategory =
 export const validateListCategories = 
     (req, res: Response, next: NextFunction) => {
         try {
-            const establsihmentId = listCategoriesSchema.parse(req.usuario.estabelecimento)
+            const establishmentId = listCategoriesSchema.parse({establishmentId: req.usuario.estabelecimento})
 
-            req.query = establsihmentId
+            req.body = establishmentId
             
             next()
         } catch (error) {

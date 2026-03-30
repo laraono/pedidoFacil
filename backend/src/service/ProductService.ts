@@ -37,9 +37,9 @@ export class ProductService {
             throw new AppError('Estabelecimento não encontrado', 400)
         }
 
-        const createdProduct = await this.productRepository.createProduct({...product, establishment}) 
+        const createdProduct = await this.productRepository.createProduct({...product, establishment, category}) 
 
-        if(createdProduct) { 
+        if(createdProduct && productVariations) { 
             productVariations.forEach(async (productVariation) => {
                 await this.productVariationRepository.createProductVariation({...productVariation, product: createdProduct})
             })
@@ -48,7 +48,7 @@ export class ProductService {
         return createdProduct.id
     }
 
-    async listProducts(establishmentId: number) {
+    async listProducts({establishmentId}:{establishmentId: number}) {
         return await this.productRepository.listProducts(establishmentId)
     }
 

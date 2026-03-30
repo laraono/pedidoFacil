@@ -18,6 +18,21 @@ export class ProductRepository extends Repository<Product>{
                 establishment: {
                     id: establishmentId
                 }
+            },
+            select: {
+                category: {
+                    name: true,
+                    id: true
+                },
+                basePrice: true,
+                deletedAt: true,
+                description: true,
+                id: true,
+                isAvailable: true,
+                name: true
+            },
+            relations: {
+                category: true
             }
         })
     }

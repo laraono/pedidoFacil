@@ -1,4 +1,4 @@
-import { Establishment, Product } from "../../database"
+import { Category, Establishment, Product } from "../../database"
 import { ProductStatus } from "../../enum"
 
 export type ProductParams = {
@@ -16,7 +16,7 @@ export type CreateProductParams = {
     description?: string, 
     establishment: Establishment,
     isAvailable: boolean,
-    categoryId: number,
+    category: Category,
     basePrice: number,
     status: ProductStatus
 }
