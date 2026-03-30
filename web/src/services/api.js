@@ -1,36 +1,53 @@
-import storage from "./localStorageService";
+import FormData from 'form-data';
 
-export default {
-  async login(data) {
-    const user = storage.findUser(data.email, data.password);
+const BASE_URL = 'http://localhost:3000/api/v1';
 
-    if (!user) {
-      throw new Error("Usuário ou senha inválidos");
+export function getToken() {
+    return localStorage.getItem('accessToken');
+}
+
+export async function request(path, options = {}) {
+    const headers = { 'Content-Type': 'application/json', ...options.headers };
+    const token = getToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${BASE_URL}${path}`, {
+        ...options,
+        headers,
+        credentials: 'include',
+    });
+
+    if (res.status === 204) return null;
+
+    const data = await res.json().catch(() => ({}));
+
+    if (res.status === 401 && path !== '/refresh' && path !== '/login') {
+        // Tenta renovar o token e repetir
+        try {
+            const refreshed = await request('/refresh', { method: 'POST' });
+            localStorage.setItem('accessToken', refreshed.accessToken);
+            headers['Authorization'] = `Bearer ${refreshed.accessToken}`;
+            const retry = await fetch(`${BASE_URL}${path}`, {
+                ...options,
+                headers,
+                credentials: 'include',
+            });
+            if (!retry.ok) {
+                const retryData = await retry.json().catch(() => ({}));
+                throw new Error(retryData.error || `Erro ${retry.status}`);
+            }
+            return retry.status === 204 ? null : retry.json();
+        } catch {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+            throw new Error('Sessão expirada.');
+        }
     }
 
-    storage.setSession(user);
-    return { data: user };
-  },
+    if (!res.ok) {
+        throw new Error(data.error || `Erro ${res.status}`);
+    }
 
-  async register(data) {
-    storage.saveUser(data);
-    return { data };
-  },
-
-  async logout() {
-    storage.clearSession();
-  },
-
-  async saveOnboarding(data) {
-    storage.saveOnboarding(data);
-    return { data };
-  },
-
-  async getOnboarding() {
-    return { data: storage.getOnboarding() };
-  },
-
-  async getSession() {
-    return { data: storage.getSession() };
-  }
-};
+    return data;
+}
