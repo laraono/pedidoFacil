@@ -1,8 +1,8 @@
 import { request } from "./api";
 
 export const comandaApi = {
-    post: (description, status, total) =>
-        request('/commands', { method: 'POST', body: JSON.stringify({ description, status, total}) }),
+    post: (description, status) =>
+        request('/commands', { method: 'POST', body: JSON.stringify({ description, status}) }),
 
     list: () =>
         request('/commands', { method: 'GET'}),

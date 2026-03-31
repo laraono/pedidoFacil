@@ -26,17 +26,6 @@ const errors = ref({});
 const form = ref({ id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true, sizes: [] });
 
 const displayedProducts = computed(() => showDeleted.value ? menuStore.deletedProducts : menuStore.activeProducts);
-const sortedProducts = computed(() => {
-    const list = [...displayedProducts.value];
-    if (sortMode.value === 'alpha') return list.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
-    if (sortMode.value === 'category-alpha') return list.sort((a, b) => {
-        const ca = menuStore.getCategoryName(a.categoryId);
-        const cb = menuStore.getCategoryName(b.categoryId);
-        if (ca !== cb) return ca.localeCompare(cb, 'pt-BR');
-        return a.name.localeCompare(b.name, 'pt-BR');
-    });
-    return list;
-});
 
 const categoryOptions = ref([])
 const products = ref([])
@@ -356,14 +345,14 @@ const tableActions = computed(() => bulkMode.value ? [] : [
       >{{ opt.l }}</button>
     </div>
 
-    <DataTable :columns="tableColumns" :data="sortedProducts" :actions="tableActions" emptyMessage="Nenhum produto encontrado.">
+    <DataTable :columns="tableColumns" :data="products" :actions="tableActions" emptyMessage="Nenhum produto encontrado.">
       <template #cell-select="{ item }">
         <button @click="toggleSelect(item.id)" class="flex items-center justify-center w-8 h-8 rounded transition-colors hover:bg-gray-50">
           <component :is="isSelected(item.id) ? CheckSquare : Square" :size="18" :class="isSelected(item.id) ? 'text-accent' : 'text-[#757575]'" />
         </button>
       </template>
       <template #cell-category="{ item }">
-        <span class="text-[#757575] text-xs font-bold">{{ menuStore.getCategoryName(item.categoryId) }}</span>
+        <span class="text-[#757575] text-xs font-bold">{{ item.category.name }}</span>
       </template>
       <template #cell-image="{ item }">
         <div class="w-12 h-12 bg-gray-50 rounded flex items-center justify-center overflow-hidden border border-[#E0E0E0]">

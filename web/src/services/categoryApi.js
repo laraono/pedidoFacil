@@ -7,4 +7,7 @@ export const categoryApi = {
     list: () =>
         request('/categories', { method: 'GET'}),
 
+    listActive: () => 
+        request('/categories/active', { method: 'GET'})
+
 };

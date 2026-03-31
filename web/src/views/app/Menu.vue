@@ -14,6 +14,10 @@ import {
   Trash2, ChefHat, CheckCircle2, Palette, ArrowLeft,
 } from 'lucide-vue-next';
 import { useRoute, useRouter } from 'vue-router';
+import { comandaApi } from "@/services/comandaApi";
+import { productApi } from "@/services/productApi";
+import { orderApi } from "@/services/orderApi";
+import { categoryApi } from '@/services/categoryApi';
 
 const route = useRoute();
 const router = useRouter();
@@ -51,7 +55,13 @@ const currentQuantity = ref(1);
 const currentObservation = ref('');
 const selectedSize = ref(null);
 
+const products = ref([])
+const categories = ref([])
+
 onMounted(async () => {
+  categories.value = await categoryApi.listActive()
+  products.value = await productApi.listActiveByCategory(categories.value[0].id)
+
   bgColor.value = localStorageService.getBackgroundColors() || '#F5F6FA';
   buttonColor.value = localStorageService.getButtonColors() || '#1E7BC4';
   buttonTextColor.value = localStorageService.getButtonTextColor() || '#FFFFFF';
@@ -111,6 +121,11 @@ const currentModalTotal = computed(() => {
   return basePrice * currentQuantity.value;
 });
 
+const getProducts = async(categoryId) => {
+  activeCategoryId.value = categoryId
+  products.value = await productApi.listActiveByCategory(categoryId)
+}
+
 const openProductModal = (product) => {
   currentProduct.value = product;
   currentQuantity.value = 1;
@@ -156,7 +171,7 @@ const openComandaModal = () => {
   isComandaModalOpen.value = true;
 };
 
-const confirmAndSendToKitchen = () => {
+const confirmAndSendToKitchen = async () => {
   if (!selectedComandaId.value) return;
   if (selectedComandaId.value === 'new' && !newComandaNumber.value.trim()) return;
 
@@ -168,22 +183,23 @@ const confirmAndSendToKitchen = () => {
       showToast(`Já existe uma comanda com o nome "${label}". Use outro número.`, 'error');
       return;
     }
-    targetComanda = comandaStore.createComanda(label);
+    targetComanda = await comandaApi.post(label, 'Ativa');
   } else {
     targetComanda = comandaStore.comandas.find(c => c.id === selectedComandaId.value);
   }
   if (!targetComanda) return;
 
   const finalOrder = {
-    id: Date.now(),
-    price: cartTotal.value,
-    items: cart.value.map(item => ({
-      name: `${item.name} (${item.sizeName})`,
-      amount: 1,
+    status: 'Aguardando_Preparo',
+    comandaId: targetComanda.id,
+    itens: cart.value.map(item => ({
+      productId: item.id,
+      quantity: 1,
       obs: item.obs,
-      price: item.price,
     })),
   };
+
+  await orderApi.post(targetComanda.id, 'Aguardando_Preparo', finalOrder.itens)
 
   const kitchenOrder = {
     id: Date.now(),
@@ -259,9 +275,9 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
       <div class="flex flex-1 overflow-hidden relative">
         <aside class="w-1/3 sm:w-64 overflow-y-auto custom-scrollbar p-3 sm:p-4 border-r border-white/5 shrink-0">
           <button
-            v-for="category in productsByCategory"
+            v-for="category in categories"
             :key="category.id"
-            @click="activeCategoryId = category.id"
+            @click="getProducts(category.id)"
             class="relative w-full text-left rounded mb-3 transition-all shadow-sm flex overflow-hidden group"
             :class="[
               activeCategoryId === category.id ? 'shadow-lg scale-[1.02] z-10' : 'hover:scale-[1.02] hover:bg-white/5',
@@ -289,7 +305,7 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
 
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
               <div
-                v-for="product in selectedCategory.products"
+                v-for="product in products"
                 :key="product.id"
                 @click="openProductModal(product)"
                 class="rounded p-5 shadow-xl cursor-pointer hover:-translate-y-1 transition-all duration-300 flex flex-col h-full border border-white/5 group relative overflow-hidden"
