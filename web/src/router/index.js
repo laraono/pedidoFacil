@@ -6,8 +6,8 @@ import LandingPage from '@/views/LandingPage.vue';
 import Login from '@/views/Login.vue';
 import RegisterManager from '@/views/RegisterManager.vue';
 
-import EstabelecimentoName from '@/views/onboarding/EstabelecimentoName.vue';
-import AtendimentoType from '@/views/onboarding/AtendimentoType.vue';
+import EstablishmentName from '@/views/onboarding/EstablishmentName.vue';
+import ServiceType from '@/views/onboarding/ServiceType.vue';
 
 import Header from '@/views/app/Header.vue';
 
@@ -28,8 +28,8 @@ const routes = [
   { path: '/forgot-password', name: 'forgot-password', component: () => import('@/views/ForgotPassword.vue') },
   { path: '/reset-password', name: 'reset-password', component: () => import('@/views/ResetPassword.vue') },
   { path: '/register', name: 'register', component: RegisterManager },
-  { path: '/onboarding/name', name: 'OnboardingName', component: EstabelecimentoName },
-  { path: '/onboarding/type', name: 'OnboardingType', component: AtendimentoType },
+  { path: '/onboarding/name', name: 'OnboardingName', component: EstablishmentName },
+  { path: '/onboarding/type', name: 'OnboardingType', component: ServiceType },
 
   {
     path: '/app',

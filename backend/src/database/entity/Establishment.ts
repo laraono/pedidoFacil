@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, OneToMany } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, OneToMany, DeleteDateColumn } from "typeorm"
 import { User } from "./User"
 import { Role } from "./Role"
 import { Subscription } from "./Subscription"
@@ -82,4 +82,5 @@ export class Establishment {
 
     @OneToMany(() => Payment, (payment) => payment.establishment)
     payments: Payment[]
+
 }

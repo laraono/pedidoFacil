@@ -1,45 +1,43 @@
-import crypto from 'crypto'
-import jwt from 'jsonwebtoken'
-import { User } from '../database'
-import { Admin } from '../database/entity/Admin'
-import { RefreshTokenRepository } from '../repository/RefreshTokenRepository'
+import jwt from 'jsonwebtoken';
+import { User } from '../database';
+import { Admin } from '../database/entity/Admin';
 
-export function hashToken(token: string): string {
-    return crypto.createHash('sha256').update(token).digest('hex')
-}
+export async function gerarTokens(usuario: User) {
+    const payload = { 
+        id: usuario.id, 
+        estabelecimento: usuario.establishment?.id || null, 
+        cargo: usuario.role?.id || null 
+    };
 
-export async function gerarTokens(usuario: User, refreshTokenRepository: RefreshTokenRepository) {
+    // Access Token curto (ex: 15m)
     const accessToken = jwt.sign(
-        { id: usuario.id, estabelecimento: usuario.establishment.id, cargo: usuario.role.id },
+        payload,
         process.env.JWT_SECRET!,
-        { expiresIn: process.env.JWT_EXPIRES_IN }
-    )
+        { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+    );
 
-    const refreshToken = crypto.randomBytes(64).toString('hex')
-    const hash = hashToken(refreshToken)
+    // Refresh Token longo (Stateless)
+    const refreshToken = jwt.sign(
+        { id: usuario.id, isRefresh: true },
+        process.env.JWT_SECRET!,
+        { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+    );
 
-    const expiresAt = new Date()
-    expiresAt.setDate(expiresAt.getDate() + parseInt(process.env.JWT_REFRESH_EXPIRES_IN!))
-
-    await refreshTokenRepository.createToken(usuario, hash, expiresAt)
-
-    return { accessToken, refreshToken }
+    return { accessToken, refreshToken };
 }
 
-export async function gerarTokenAdmin(admin: Admin, refreshTokenRepository: RefreshTokenRepository) {
+export async function gerarTokenAdmin(admin: Admin) {
     const accessToken = jwt.sign(
         { id: admin.id, isAdmin: true },
         process.env.JWT_SECRET!,
         { expiresIn: '15m' }
-    )
+    );
 
-    const refreshToken = crypto.randomBytes(64).toString('hex')
-    const hash = hashToken(refreshToken)
+    const refreshToken = jwt.sign(
+        { id: admin.id, isAdmin: true, isRefresh: true },
+        process.env.JWT_SECRET!,
+        { expiresIn: '7d' }
+    );
 
-    const expiresAt = new Date()
-    expiresAt.setDate(expiresAt.getDate() + parseInt(process.env.JWT_REFRESH_EXPIRES_IN!))
-
-    await refreshTokenRepository.createAdminToken(admin, hash, expiresAt)
-
-    return { accessToken, refreshToken }
+    return { accessToken, refreshToken };
 }

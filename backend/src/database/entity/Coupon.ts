@@ -63,4 +63,5 @@ export class Coupon {
         name: 'ID_Estabelecimento'
     })
     establishment: Establishment
+
 }

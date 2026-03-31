@@ -1,8 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, DeleteDateColumn, CreateDateColumn } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, OneToOne, JoinColumn, ManyToOne, DeleteDateColumn, CreateDateColumn } from "typeorm"
 import { ProductVariation } from "./ProductVariation"
 import { Category } from "./Category"
 import { ProductOrder } from "./ProductOrder"
 import { ProductStatus } from "../../enum"
+import { Payment } from "./Payment"
 
 @Entity({name: 'NOTA_FISCAL'})
 export class Receipt {
@@ -33,6 +34,12 @@ export class Receipt {
         default: () => "CURRENT_TIMESTAMP(6)",
         name: 'Data_Emissao'
      })
-    created_at: Date;
+    created_at: Date
+
+    @OneToOne(() => Payment)
+    @JoinColumn({
+        name: 'ID_Pagamento'
+    })
+    payment: Payment;
 
 }

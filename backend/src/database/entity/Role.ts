@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, ManyToOne, JoinColumn, OneToMany } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, ManyToOne, JoinColumn, OneToMany, DeleteDateColumn } from "typeorm"
 import { Establishment } from "./Establishment"
 import { User } from "./User"
 
@@ -33,4 +33,5 @@ export class Role {
 
     @OneToMany(() => User, (user) => user.establishment)
     users: User[]
+
 }

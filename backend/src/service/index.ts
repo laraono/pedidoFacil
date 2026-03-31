@@ -6,7 +6,7 @@ import { ComandaService } from './ComandaService'
 import { OrderService } from './OrderService'
 import { ProductService } from './ProductService'
 
-const authService: AuthService = new AuthService(AppDataSource, userRepository, refreshTokenRepository)
+const authService: AuthService = new AuthService(AppDataSource, userRepository)
 const categoryService: CategoryService = new CategoryService(categoryRepository)
 const comandaService: ComandaService = new ComandaService(comandaRepository, userRepository)
 const productService: ProductService = new ProductService(categoryService, productRepository, productVariationRepository)
