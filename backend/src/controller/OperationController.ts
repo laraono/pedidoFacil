@@ -7,7 +7,6 @@ const configurationService = new ConfigurationService()
 
 export class OperationController {
     
-    // --- CUPONS ---
     async createCoupon(req: Request, res: Response, next: NextFunction) {
         try {
             const establishmentId = (req as any).usuario.estabelecimento
@@ -24,7 +23,6 @@ export class OperationController {
         } catch (error) { next(error) }
     }
 
-    // Rota pública para o Totem validar (pode passar o ID do estabelecimento no body ou params)
     async validateCouponForTotem(req: Request, res: Response, next: NextFunction) {
         try {
             const { code, establishmentId } = req.body
@@ -42,10 +40,8 @@ export class OperationController {
         } catch (error) { next(error) }
     }
 
-    // --- CONFIGURAÇÕES DO TOTEM ---
     async getMenuConfig(req: Request, res: Response, next: NextFunction) {
         try {
-            // Pode ser acessado tanto pelo gerente logado quanto pelo totem via ID
             const establishmentId = (req as any).usuario?.estabelecimento || req.params.establishmentId
             const config = await configurationService.getOrCreateConfiguration(establishmentId)
             return res.status(200).json(config)

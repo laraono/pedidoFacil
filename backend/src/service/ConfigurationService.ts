@@ -7,10 +7,9 @@ export class ConfigurationService {
 
     async getOrCreateConfiguration(establishmentId: number) {
         let config = await this.configRepository.findOne({
-            where: { id: establishmentId } // Busca usando a PrimaryColumn direta
+            where: { id: establishmentId } 
         })
 
-        // Se o restaurante não tem config, cria a padrão
         if (!config) {
             config = this.configRepository.create({
                 id: establishmentId, 

@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, OneToMany, DeleteDateColumn } from "typeorm"
+import { 
+    Entity, 
+    PrimaryGeneratedColumn, 
+    Column, 
+    OneToOne, 
+    JoinColumn, 
+    OneToMany, 
+    DeleteDateColumn 
+} from "typeorm"
 import { User } from "./User"
 import { Role } from "./Role"
 import { Subscription } from "./Subscription"
@@ -8,8 +16,9 @@ import { Coupon } from "./Coupon"
 import { Comanda } from "./Comanda"
 import { Order } from "./Order"
 import { Payment } from "./Payment"
+import { Configuration } from "./Configuration" 
 
-@Entity({name: 'ESTABELECIMENTO'})
+@Entity({ name: 'ESTABELECIMENTO' })
 export class Establishment {
 
     @PrimaryGeneratedColumn({
@@ -36,6 +45,30 @@ export class Establishment {
 
     @Column({
         type: 'varchar',
+        name: 'Telefone',
+        nullable: true,
+        length: 20
+    })
+    phone?: string
+
+    @Column({
+        type: 'varchar',
+        name: 'Endereco',
+        nullable: true,
+        length: 255
+    })
+    address?: string
+
+    @Column({
+        type: 'enum',
+        enum: ['Ativo', 'Suspenso'],
+        default: 'Ativo',
+        name: 'Status'
+    })
+    status: string
+
+    @Column({
+        type: 'varchar',
         name: 'Codigo_Autoatendimento',
         nullable: true,
         length: 10,
@@ -50,11 +83,20 @@ export class Establishment {
     })
     serviceTypes?: string
 
+    @DeleteDateColumn({
+        name: 'Data_Exclusao',
+        nullable: true
+    })
+    deletedAt?: Date
+
     @OneToOne(() => User)
     @JoinColumn({
         name: 'ID_Gerente_Responsavel'
     })
     manager: User
+
+    @OneToOne(() => Configuration, (config) => config.establishment)
+    configurations: Configuration
 
     @OneToMany(() => Role, (role) => role.establishment)
     roles: Role[]
@@ -82,5 +124,4 @@ export class Establishment {
 
     @OneToMany(() => Payment, (payment) => payment.establishment)
     payments: Payment[]
-
 }

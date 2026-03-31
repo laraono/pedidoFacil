@@ -6,21 +6,18 @@ import { checkPermission } from '../middleware/roleAccessControl';
 const establishmentRouter = Router();
 const establishmentController = new EstablishmentController();
 
-// STEP 2: Basic Data (Manager is logged in but doesn't have a role yet)
 establishmentRouter.post(
   '/onboarding',
   authenticate,
   establishmentController.onboarding,
 );
 
-// STEP 3: Roles and final configs (Finalizes the process)
 establishmentRouter.post(
   '/finalize',
   authenticate,
   establishmentController.finalize,
 );
 
-// Post-onboarding management (Requires RBAC)
 establishmentRouter.get(
   '/profile',
   authenticate,

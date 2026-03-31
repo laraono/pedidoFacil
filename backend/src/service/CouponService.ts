@@ -1,7 +1,7 @@
 import { AppDataSource } from '../database/data-source'
 import { Coupon } from '../database/entity/Coupon'
 import { AppError } from '../middleware/error/AppError'
-import { ComandaStatus } from '../enum' // Certifique-se do caminho correto
+import { ComandaStatus } from '../enum' 
 
 export class CouponService {
     private couponRepository = AppDataSource.getRepository(Coupon)
@@ -30,7 +30,6 @@ export class CouponService {
         })
     }
 
-    // Validação adaptada para a sua Entidade
     async validateCoupon(code: string, establishmentId: number) {
         const coupon = await this.couponRepository.findOne({
             where: { code: code.toUpperCase(), establishment: { id: establishmentId } }
@@ -38,7 +37,6 @@ export class CouponService {
 
         if (!coupon) throw new AppError('Cupom inválido ou não encontrado', 404)
         
-        // Adapte "ATIVO" para o status correto que você usa no seu enum
         if (coupon.status !== ComandaStatus.ABERTA) {
             throw new AppError('Este cupom não está ativo', 400)
         }
@@ -47,7 +45,6 @@ export class CouponService {
             throw new AppError('Este cupom já expirou', 400)
         }
 
-        // Valida se ainda tem quantidade disponível (caso seja um cupom limitado)
         if (coupon.quantity !== null && coupon.quantity !== undefined && coupon.quantity <= 0) {
             throw new AppError('Este cupom esgotou', 400)
         }
@@ -55,7 +52,6 @@ export class CouponService {
         return coupon
     }
 
-    // Método para abater o uso após pagamento (agora decrementa a quantidade)
     async decrementCouponQuantity(couponId: number) {
         const coupon = await this.couponRepository.findOne({ where: { id: couponId } })
         if (coupon && coupon.quantity !== null && coupon.quantity > 0) {

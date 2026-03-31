@@ -9,14 +9,12 @@ export async function gerarTokens(usuario: User) {
         cargo: usuario.role?.id || null 
     };
 
-    // Access Token curto (ex: 15m)
     const accessToken = jwt.sign(
         payload,
         process.env.JWT_SECRET!,
         { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
     );
 
-    // Refresh Token longo (Stateless)
     const refreshToken = jwt.sign(
         { id: usuario.id, isRefresh: true },
         process.env.JWT_SECRET!,

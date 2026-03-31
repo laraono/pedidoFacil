@@ -13,7 +13,6 @@ export class EstablishmentService {
   private configRepository = AppDataSource.getRepository(Configuration);
   private roleRepository = AppDataSource.getRepository(Role);
 
-  // Helper para limpar permissões
   private parsePermissions(permissions: any): string[] {
     if (Array.isArray(permissions)) return permissions;
     if (typeof permissions !== 'string' || !permissions) return [];
@@ -25,14 +24,12 @@ export class EstablishmentService {
     }
   }
 
-  // Helper para limpar Tipos de Serviço (Onde deu o erro agora)
   private parseServiceTypes(types: any): string[] {
     if (Array.isArray(types)) return types;
     if (typeof types !== 'string' || !types) return [];
     try {
       return JSON.parse(types);
     } catch {
-      // Se for "Autoatendimento" vira ["Autoatendimento"]
       return [types];
     }
   }
@@ -91,7 +88,6 @@ export class EstablishmentService {
     const establishmentId = user.establishment.id;
     const establishment = await this.getEstablishmentProfile(establishmentId);
 
-    // 1. Cargo Master
     const managerRole = this.roleRepository.create({
       name: 'Gerente',
       permissions: JSON.stringify(['ALL']),
@@ -103,7 +99,6 @@ export class EstablishmentService {
       role: { id: savedManagerRole.id },
     });
 
-    // 2. Cargos Staff
     if (rolesToCreate && rolesToCreate.length > 0) {
       const roles = rolesToCreate.map((r) => ({
         name: r.label,
@@ -113,7 +108,6 @@ export class EstablishmentService {
       await this.roleRepository.save(roles);
     }
 
-    // 3. Configura Totem (Usando o parser seguro)
     if (hasTotem) {
       const currentTypes = this.parseServiceTypes(establishment.serviceTypes);
       
@@ -124,7 +118,6 @@ export class EstablishmentService {
       }
     }
 
-    // 4. Gera Tokens e Perfil Atualizado
     const updatedUser = await this.userRepository.findOne({
       where: { id: userId },
       relations: ['establishment', 'role'],
@@ -151,33 +144,56 @@ export class EstablishmentService {
   async getEstablishmentProfile(establishmentId: number) {
     const establishment = await this.establishmentRepository.findOne({
       where: { id: establishmentId },
-      relations: ['manager'],
+      relations: ['manager', 'configurations'],
     });
     if (!establishment) throw new AppError('Establishment not found.', 404);
     return establishment;
   }
 
-  async updateEstablishment(establishmentId: number, updateData: Partial<Establishment>) {
+  async updateEstablishment(establishmentId: number, updateData: any) {
     const establishment = await this.getEstablishmentProfile(establishmentId);
-    this.establishmentRepository.merge(establishment, updateData);
-    return await this.establishmentRepository.save(establishment);
+    
+    this.establishmentRepository.merge(establishment, {
+      name: updateData.name,
+      phone: updateData.phone,
+      address: updateData.address,
+    });
+    await this.establishmentRepository.save(establishment);
+
+    if (updateData.config || updateData.logo) {
+        const config = await this.configRepository.findOne({ where: { establishment: { id: establishmentId } } });
+        if (config) {
+            this.configRepository.merge(config, {
+                logo: updateData.logo ?? config.logo,
+                backgroundColor: updateData.config?.backgroundColor ?? config.backgroundColor,
+                cardsColor: updateData.config?.cardsColor ?? config.cardsColor,
+                buttonsColor: updateData.config?.buttonsColor ?? config.buttonsColor,
+                comandaLabel: updateData.config?.comandaLabel ?? config.comandaLabel
+            });
+            await this.configRepository.save(config);
+        }
+    }
+
+    return await this.getEstablishmentProfile(establishmentId);
   }
 
   async softDeleteEstablishment(establishmentId: number) {
-    await this.establishmentRepository.update(establishmentId, { status: 'INATIVO' } as any);
-    return { message: 'Establishment deactivated.' };
+    const establishment = await this.establishmentRepository.findOne({ where: { id: establishmentId } });
+    if (!establishment) throw new AppError('Establishment not found.', 404);
+
+    await this.establishmentRepository.softRemove(establishment);
+    
+    return { message: 'Establishment deativado com sucesso (Soft Delete).' };
   }
 
   private async ensureDefaultConfiguration(establishmentId: number) {
-    const configExists = await this.configRepository.findOne({ where: { id: establishmentId } });
+    const configExists = await this.configRepository.findOne({ where: { establishment: { id: establishmentId } } });
     if (!configExists) {
       const defaultConfig = this.configRepository.create({
-        id: establishmentId,
         establishment: { id: establishmentId },
         backgroundColor: '#F4F4F9',
         cardsColor: '#FFFFFF',
         buttonsColor: '#E85D5D',
-        allowObservations: true,
         comandaLabel: 'Comanda',
       });
       await this.configRepository.save(defaultConfig);

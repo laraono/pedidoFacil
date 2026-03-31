@@ -22,7 +22,6 @@ export class AuthService {
   constructor(
     private dataSource: DataSource,
     private userRepository: UserRepository
-    // Removemos o RefreshTokenRepository daqui!
   ) {}
 
   async registerManager(data: { nome_usuario: string; email: string; senha: string; }) {
@@ -94,11 +93,9 @@ export class AuthService {
     };
   }
 
-  // --- O NOVO REFRESH STATELESS ---
   async refresh(tokenStr: string) {
     let decoded: any;
     try {
-      // Verifica a validade e a assinatura do JWT de refresh
       decoded = jwt.verify(tokenStr, process.env.JWT_SECRET!);
     } catch (error) {
       throw new AppError('Refresh token inválido ou expirado.', 403);
@@ -141,8 +138,6 @@ export class AuthService {
   }
 
   async logout() {
-    // No modelo Stateless, o backend não tem onde "deletar" o token. 
-    // O logout é feito no front-end apagando o token do localStorage.
     return { message: 'Logout realizado com sucesso.' };
   }
 

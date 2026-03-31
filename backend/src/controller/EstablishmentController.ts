@@ -20,10 +20,8 @@ export class EstablishmentController {
   async finalize(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = (req as any).usuario.id;
-      // Removido: const establishmentId = (req as any).usuario.estabelecimento;
       const { roles, hasTotem } = req.body;
 
-      // Passamos apenas o userId. O Service vai buscar o estabelecimento correto no banco.
       const result = await establishmentService.finalizeOnboarding(
         userId,
         roles,

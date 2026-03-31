@@ -24,12 +24,11 @@ export class EmployeeService {
 
         const employee = this.userRepository.create({
             ...data,
-            status: UserStatus.ATIVA, // Ou PENDENTE, dependendo do seu fluxo
+            status: UserStatus.ATIVA, 
             role: role,
             establishment: { id: establishmentId }
         })
 
-        // NOTA: Em produção, o ideal é fazer o hash da senha (bcrypt) antes de salvar
         return await this.userRepository.save(employee)
     }
 
@@ -37,7 +36,7 @@ export class EmployeeService {
         return await this.userRepository.find({
             where: { establishment: { id: establishmentId } },
             relations: ['role'],
-            select: ['id', 'name', 'email', 'status', 'role'] // Oculta a senha no retorno
+            select: ['id', 'name', 'email', 'status', 'role']
         })
     }
 

@@ -5,9 +5,8 @@ import { AppDataSource } from '../database/data-source';
 import { UserRepository } from '../repository/UserRepository';
 import authenticate from '../middleware/authenticate';
 
-// Retiramos a inicialização do RefreshTokenRepository!
 const userRepository = new UserRepository(AppDataSource);
-const authService = new AuthService(AppDataSource, userRepository); // <-- Só tem 2 argumentos agora
+const authService = new AuthService(AppDataSource, userRepository);
 const authController = new AuthController(authService);
 
 const authRouter = Router();
