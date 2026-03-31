@@ -1,5 +1,4 @@
-// src/services/api.js
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1"; // Adicionado /api/v1
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
 
 export function getToken() {
   return localStorage.getItem("accessToken");
@@ -21,7 +20,6 @@ export async function request(path, options = {}) {
 
   const data = await res.json().catch(() => ({}));
 
-  // Ajustado o path do refresh para bater com a sua API
   if (res.status === 401 && path !== "/refresh" && path !== "/login") {
     try {
       const refreshedRes = await fetch(`${BASE_URL}/refresh`, {

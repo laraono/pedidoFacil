@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { establishmentApi } from "@/services/establishmentApi"; // <-- API Real
+import { establishmentApi } from "@/services/establishmentApi";
 import { useToast } from "@/composables/useToast";
 import {
   Save,
@@ -61,21 +61,17 @@ const maskPhone = (v) => {
 
 onMounted(async () => {
   try {
-    // Busca dados reais do banco de dados
     const profile = await establishmentApi.getProfile();
 
     form.value = {
       name: profile.name || "",
       cnpj: profile.cnpj || "",
-      // Observação: Phone e Description ainda não existem na entidade do banco,
-      // você pode adicioná-los depois lá no User.ts/Establishment.ts
       phone: "",
       description: "",
     };
 
     originalForm.value = { ...form.value };
 
-    // Lê o array JSON de tipos de serviço para ver se tem autoatendimento
     const serviceTypes = profile.serviceTypes
       ? JSON.parse(profile.serviceTypes)
       : [];
@@ -107,10 +103,8 @@ const saveSettings = async () => {
 
   isLoading.value = true;
   try {
-    // Manda a atualização para a API
     await establishmentApi.updateProfile({
       name: form.value.name,
-      // Não enviamos o CNPJ porque a regra de negócio do back bloqueia alteração
       selfServiceCode: selfServiceCode.value,
     });
 
@@ -127,7 +121,7 @@ const generateCode = () => {
   selfServiceCode.value = Math.floor(
     100000 + Math.random() * 900000,
   ).toString();
-  isDirty.value = true; // Força habilitar o botão de salvar
+  isDirty.value = true;
 };
 
 const copyCode = () => {

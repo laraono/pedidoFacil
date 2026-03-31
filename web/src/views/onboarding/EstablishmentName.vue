@@ -3,7 +3,7 @@ import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { Store, ArrowRight, Building2, Loader2 } from "lucide-vue-next";
 import { isValidCNPJ, maskCNPJ } from "@/utils/validator";
-import { establishmentApi } from "@/services/establishmentApi"; // Importamos a API
+import { establishmentApi } from "@/services/establishmentApi";
 import LandingHeader from "@/components/LandingHeader.vue";
 import imgOndas from "@/assets/ondas.png";
 
@@ -13,16 +13,13 @@ const nomeEstabelecimento = ref("");
 const cnpj = ref("");
 const cnpjError = ref("");
 
-// Novos controles de estado para a API
 const isLoading = ref(false);
 const serverError = ref(null);
 
 onMounted(() => {
-  // Rola para o topo ao carregar
   window.scrollTo(0, 0);
 });
 
-// Máscara reativa para o CNPJ
 watch(cnpj, (value) => {
   if (!value) return;
   const masked = maskCNPJ(value);
@@ -48,18 +45,14 @@ const handleSubmit = async () => {
   isLoading.value = true;
 
   try {
-    // 1. Envia os dados para o Backend
-    // O Axios automaticamente manda o Token JWT que foi salvo na Tela 1
     await establishmentApi.saveOnboardingStep({
       name: nomeEstabelecimento.value.trim(),
       cnpj: cnpj.value,
     });
 
-    // 2. Sucesso! Vai para a Tela 3 (Cargos e Finalização)
     router.push("/onboarding/type");
   } catch (error) {
     console.error(error);
-    // Exibe o erro do banco (ex: "Este CNPJ já está cadastrado")
     serverError.value =
       error.message || "Erro ao registrar o estabelecimento. Tente novamente.";
   } finally {

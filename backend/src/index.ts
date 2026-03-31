@@ -2,10 +2,9 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
-import { categoryRouter, comandaRouter, orderRouter, productRouter, authRouter, establishmentRouter, metricsRouter, receiptRouter} from './router';
+import { categoryRouter, comandaRouter, orderRouter, productRouter, authRouter, establishmentRouter, metricsRouter, receiptRouter, roleRouter } from './router';
 import { AppDataSource } from './database';
 import { errorHandler } from './middleware';
-
 
 dotenv.config();
 
@@ -26,6 +25,8 @@ AppDataSource.initialize().then(async () => {
     app.use('/api/v1/estabelecimento', establishmentRouter)
     app.use('/api/v1/metricas', metricsRouter)
     app.use('/api/v1/receipts', receiptRouter)
+    
+    app.use('/api/v1/roles', roleRouter)
 
     app.use(errorHandler)
 
@@ -35,5 +36,3 @@ AppDataSource.initialize().then(async () => {
         console.log(`🚀 Server rodando em http://localhost:${PORT}`);
     });
 })
-
-

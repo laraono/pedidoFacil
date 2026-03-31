@@ -30,19 +30,16 @@ onMounted(() => window.scrollTo(0, 0));
 function validate() {
   errors.value = {};
 
-  // Validação de Nome
   if (!nome.value.trim().includes(" ")) {
     errors.value.nome = "Por favor, insira seu nome e sobrenome.";
   }
 
-  // Validação de E-mail
   if (!email.value.trim()) {
     errors.value.email = "O e-mail é obrigatório.";
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
     errors.value.email = "Insira um e-mail válido.";
   }
 
-  // Validação Acumulativa de Senha
   const passErrors = [];
   if (senha.value.length < 8) passErrors.push("8 caracteres");
   if (!/[A-Z]/.test(senha.value)) passErrors.push("uma letra maiúscula");
@@ -51,11 +48,9 @@ function validate() {
     passErrors.push("um caractere especial");
 
   if (passErrors.length > 0) {
-    // Exibe todos os critérios faltantes de uma vez, separados por vírgula
     errors.value.senha = `Falta: ${passErrors.join(", ")}.`;
   }
 
-  // Validação de Confirmação
   if (senha.value !== confirmarSenha.value) {
     errors.value.confirmarSenha = "As senhas não coincidem.";
   }
@@ -81,7 +76,6 @@ async function handleSubmit() {
 
     authStore.user = response.usuario;
 
-    // Vai para a Tela 2 do Onboarding
     router.push("/onboarding/name");
   } catch (error) {
     console.error(error);

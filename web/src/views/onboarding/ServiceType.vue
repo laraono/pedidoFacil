@@ -114,17 +114,14 @@ const finalizeRegistration = async () => {
         permissions: r.allPerms.filter((p) => p.checked).map((p) => p.id),
       }));
 
-    // 1. Chama o backend (que agora retorna o NOVO token e o perfil completo)
     const response = await establishmentApi.finalizeOnboarding({
       roles: rolesToCreate,
       hasTotem: totens.value,
     });
 
-    // 2. ATUALIZA OS TOKENS NO LOCALSTORAGE (Adeus Token de Admin!)
     localStorage.setItem("accessToken", response.accessToken);
     localStorage.setItem("refreshToken", response.refreshToken);
 
-    // 3. Monta o objeto do usuário final
     const finalUser = {
       id: response.usuario.id,
       name: response.usuario.nome,
@@ -133,12 +130,10 @@ const finalizeRegistration = async () => {
       estabelecimentoId: response.estabelecimentoId,
     };
 
-    // 4. Salva no Storage e no Store Global
     localStorage.setItem("user", JSON.stringify(finalUser));
     authStore.user = finalUser;
     authStore.isAuthenticated = true;
 
-    // 5. Redireciona para o Dashboard correto do Gerente
     router.push("/app/dashboard");
   } catch (err) {
     console.error(err);

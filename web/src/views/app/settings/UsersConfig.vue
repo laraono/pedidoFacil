@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useRouter } from "vue-router";
-import { request } from "@/services/api"; // <-- Motor do Axios
+import { request } from "@/services/api";
 import { useAuthStore } from "@/stores/auth";
 import { isValidCPF, maskCPF } from "@/utils/validator";
 import { useToast } from "@/composables/useToast";
@@ -36,14 +36,12 @@ const form = ref({
 const HIDDEN_ROLE_NAMES = ["Admin"];
 const PROTECTED_ROLE_NAMES = ["Gerente"];
 
-// Roles available in dropdowns: exclude Admin
 const roleOptions = computed(() =>
   roles.value
     .filter((r) => !HIDDEN_ROLE_NAMES.includes(r.name))
     .map((r) => ({ label: r.name, value: r.id })),
 );
 
-// Visible users: exclude users with Admin role
 const visibleUsers = computed(() => {
   const adminRoleIds = roles.value
     .filter((r) => HIDDEN_ROLE_NAMES.includes(r.name))
@@ -165,9 +163,9 @@ const saveUser = async () => {
     }
 
     closeForm();
-    await fetchUsers(); // Recarrega a lista do banco
+    await fetchUsers();
   } catch (error) {
-    errors.value.email = error.message; // Exibe o erro do backend (ex: e-mail já em uso)
+    errors.value.email = error.message;
     showToast(error.message || "Erro ao salvar usuário.", "error");
   } finally {
     isLoading.value = false;

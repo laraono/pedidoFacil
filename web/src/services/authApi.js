@@ -1,4 +1,3 @@
-// src/services/authApi.js
 import { request } from "./api";
 
 export const authApi = {
@@ -18,6 +17,5 @@ export const authApi = {
 
   refresh: () => request("/refresh", { method: "POST" }),
 
-  // O seu controller de Auth tem o método perfil()
   me: () => request("/perfil", { method: "GET" }),
 };
