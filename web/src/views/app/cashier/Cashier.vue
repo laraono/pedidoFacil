@@ -406,7 +406,7 @@
 
 <script setup>
 import SubscriptionGuard from '@/components/SubscriptionGuard.vue';
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useComandaStore } from '@/stores/comandaManagement';
 import { useClosedComandaStore } from '@/stores/closedComandas';
 import { useKitchenStore } from '@/stores/kitchen';
@@ -414,6 +414,7 @@ import { useCouponStore } from '@/stores/coupons';
 import { useToast } from '@/composables/useToast';
 import { useUtils } from '@/composables/useUtils.js';
 import { Monitor, Receipt, AlertTriangle, FileText, CheckCircle, X, AlertCircle, Tag, XCircle } from 'lucide-vue-next';
+import { initCashierSocket, destroyCashierSocket } from '@/stores/cashierSocket';
 
 const comandaStore = useComandaStore();
 const closedComandaStore = useClosedComandaStore();
@@ -421,6 +422,44 @@ const kitchenStore = useKitchenStore();
 const couponStore = useCouponStore();
 const utils = useUtils();
 const { showToast } = useToast();
+
+const BACKEND_TO_LOCAL_STATUS = {
+    'Aguardando_Preparo': 'pending',
+    'Em_Preparo': 'preparing',
+    'Pronto': 'ready',
+    'Finalizado': 'finished',
+    'Cancelado': 'cancelled',
+};
+
+onMounted(() => {
+    initCashierSocket((data) => {
+        // data = { orderId, comandaId, status } — vindo da cozinha via socket
+
+        const localStatus = BACKEND_TO_LOCAL_STATUS[data.status] || data.status;
+
+        // Atualiza o pedido no kitchenStore para que ordersWithStatus
+        // reflita o novo status imediatamente no modal de detalhes da comanda
+        const order = kitchenStore.orders.find(o => o.id === data.orderId);
+        if (order) {
+            order.status = localStatus;
+        } else {
+            // Pedido ainda não está no store local (caixa não abriu a cozinha)
+            // Adiciona como entrada mínima para que ordersWithStatus funcione
+            kitchenStore.addOrder({ id: data.orderId, comandaId: data.comandaId, status: localStatus });
+        }
+
+        // Notificação visual para o operador do caixa
+        if (data.status === 'Pronto') {
+            showToast(`Pedido #${data.orderId} está PRONTO para retirada!`, 'success');
+        } else if (data.status === 'Cancelado') {
+            showToast(`Pedido #${data.orderId} foi cancelado pela cozinha.`, 'error');
+        }
+    });
+});
+
+onUnmounted(() => {
+    destroyCashierSocket();
+});
 
 const ALL_PAYMENT_METHODS = ['Dinheiro', 'Cartão Débito', 'Cartão Crédito', 'PIX'];
 const enabledPaymentMethods = computed(() => {

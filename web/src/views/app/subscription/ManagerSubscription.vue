@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router';
 import { useSubscriptionStore } from '@/stores/subscriptions';
 import {
   ArrowLeft, CreditCard, Calendar, CheckCircle2, AlertTriangle,
-  Clock, History, Banknote, RefreshCw, X, ChevronRight
+  Clock, History, Banknote, RefreshCw, X, ChevronRight, ArrowLeftRight, Info
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -48,6 +48,28 @@ const confirmPayment = () => {
   subscriptionStore.recordPayment(selectedMethod.value);
   isPaymentModalOpen.value = false;
   selectedMethod.value = '';
+};
+
+// Plan switching
+const isPlanModalOpen = ref(false);
+const selectedNewPlan = ref('');
+
+const openPlanModal = () => {
+  selectedNewPlan.value = sub.value?.pendingPlan || sub.value?.plan || 'mensal';
+  isPlanModalOpen.value = true;
+};
+
+const confirmPlanChange = () => {
+  if (!selectedNewPlan.value || selectedNewPlan.value === sub.value?.plan) {
+    isPlanModalOpen.value = false;
+    return;
+  }
+  subscriptionStore.setPendingPlan(selectedNewPlan.value);
+  isPlanModalOpen.value = false;
+};
+
+const cancelPendingPlan = () => {
+  subscriptionStore.setPendingPlan(null);
 };
 </script>
 
@@ -94,6 +116,41 @@ const confirmPayment = () => {
         >
           <CreditCard :size="16" />
           {{ isActive ? 'Realizar Pagamento' : 'Reativar Assinatura' }}
+        </button>
+      </div>
+
+      <!-- Troca de plano pendente -->
+      <div v-if="sub.pendingPlan" class="bg-amber-50 border border-amber-400/50 rounded p-5 flex items-start gap-4">
+        <Info :size="18" class="text-amber-500 shrink-0 mt-0.5" />
+        <div class="flex-1">
+          <p class="text-sm font-bold text-[#212121]">Alteração de plano agendada</p>
+          <p class="text-xs text-[#757575] mt-1">
+            Seu plano será alterado para
+            <span class="font-black text-[#212121]">{{ sub.pendingPlan === 'anual' ? 'Anual' : 'Mensal' }}</span>
+            a partir da próxima renovação em {{ formattedDueDate }}.
+          </p>
+        </div>
+        <button @click="cancelPendingPlan" class="text-[#757575] hover:text-red-500 transition-colors shrink-0">
+          <X :size="16" />
+        </button>
+      </div>
+
+      <!-- Alternar plano -->
+      <div class="bg-white border border-[#E0E0E0] rounded p-6 flex items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#757575] mb-1">
+            <ArrowLeftRight :size="14" />
+            Plano Atual
+          </div>
+          <p class="text-lg font-black text-[#212121]">{{ planLabel }}</p>
+          <p class="text-xs text-[#757575] mt-0.5">{{ planPrice }}</p>
+        </div>
+        <button
+          @click="openPlanModal"
+          class="flex items-center gap-2 px-4 py-2.5 rounded border border-[#E0E0E0] text-[#757575] font-bold text-sm hover:border-accent hover:text-accent transition-all"
+        >
+          <ArrowLeftRight :size="14" />
+          Alterar Plano
         </button>
       </div>
 
@@ -171,6 +228,80 @@ const confirmPayment = () => {
       </div>
 
     </div>
+
+    <!-- Modal de alteração de plano -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="isPlanModalOpen" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+          <div class="bg-white border border-[#E0E0E0] w-full max-w-md rounded shadow-2xl">
+            <div class="p-8 border-b border-[#E0E0E0] flex justify-between items-center">
+              <h2 class="text-xl font-black text-[#212121] flex items-center gap-3">
+                <ArrowLeftRight :size="20" class="text-accent" />
+                Alterar Plano
+              </h2>
+              <button @click="isPlanModalOpen = false" class="p-2 text-[#757575] hover:text-[#212121]">
+                <X :size="20" />
+              </button>
+            </div>
+
+            <div class="p-8 space-y-4">
+              <div
+                v-for="plan in ['mensal', 'anual']"
+                :key="plan"
+                @click="selectedNewPlan = plan"
+                :class="selectedNewPlan === plan
+                  ? 'border-accent bg-accent-light'
+                  : 'border-[#E0E0E0] bg-gray-50 hover:border-[#E0E0E0]'"
+                class="flex items-center justify-between p-4 rounded border cursor-pointer transition-all"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="w-5 h-5 rounded border-2 flex items-center justify-center"
+                    :class="selectedNewPlan === plan ? 'border-accent' : 'border-zinc-400'">
+                    <div v-if="selectedNewPlan === plan" class="w-2.5 h-2.5 rounded bg-accent" />
+                  </div>
+                  <div>
+                    <p class="font-bold text-sm" :class="selectedNewPlan === plan ? 'text-accent' : 'text-[#212121]'">
+                      {{ plan === 'anual' ? 'Anual' : 'Mensal' }}
+                    </p>
+                    <p class="text-xs text-[#757575]">
+                      R$ {{ plan === 'anual'
+                        ? subscriptionStore.planPrices.annual.toFixed(2).replace('.', ',')
+                        : subscriptionStore.planPrices.monthly.toFixed(2).replace('.', ',') }}/mês
+                    </p>
+                  </div>
+                </div>
+                <span v-if="plan === sub?.plan" class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-accent-light text-accent rounded border border-accent/30">Atual</span>
+                <span v-else-if="plan === 'anual'" class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-gray-50 text-[#757575] rounded border border-[#E0E0E0]">Economize</span>
+              </div>
+
+              <div class="p-4 bg-amber-50 border border-amber-400/40 rounded flex items-start gap-3">
+                <Info :size="15" class="text-amber-500 shrink-0 mt-0.5" />
+                <p class="text-xs text-[#757575] leading-relaxed">
+                  A alteração de plano <strong class="text-[#212121]">só entrará em vigor na próxima renovação</strong>,
+                  após o vencimento do plano atual em {{ formattedDueDate }}.
+                </p>
+              </div>
+            </div>
+
+            <div class="p-8 pt-0 flex gap-3">
+              <button @click="isPlanModalOpen = false" class="flex-1 py-3 rounded text-[#757575] font-bold hover:bg-gray-50 transition-colors">
+                Cancelar
+              </button>
+              <button
+                @click="confirmPlanChange"
+                :disabled="selectedNewPlan === sub?.plan && !sub?.pendingPlan"
+                class="flex-1 py-3 rounded font-black text-sm uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-2"
+                :class="(selectedNewPlan !== sub?.plan)
+                  ? 'bg-primary text-white hover:bg-primary-dark'
+                  : 'bg-gray-200 text-[#757575] cursor-not-allowed'"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
     <!-- Modal de pagamento -->
     <Teleport to="body">

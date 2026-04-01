@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -22,19 +22,32 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useIdleTimer } from "../hooks/useIdleTimer";
 import BrandHeader from "../components/ui/BrandHeader";
 
+import { submitOrder } from "../services/orderService";
+import {
+  connectMobileSocket,
+  listenOrderStatus,
+  stopListeningOrderStatus,
+} from "../services/socketService";
+
 import { PAYMENT_METHODS } from "../mocks";
 
 const { width } = Dimensions.get("window");
 
+const DEFAULT_COMANDA_ID = 1;
+const DEFAULT_COMANDA_LABEL = "Totem";
+
 export default function PaymentScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { cartTotal, clearCart } = useCart();
+  const { cartItems, cartTotal, clearCart } = useCart();
   const { theme } = useTheme();
 
   const panHandlers = useIdleTimer(120);
 
   const desconto = route.params?.descontoAplicado || 0;
+  const comandaId = route.params?.comandaId || DEFAULT_COMANDA_ID;
+  const comandaLabel = route.params?.comandaLabel || DEFAULT_COMANDA_LABEL;
+
   const totalComDesconto = Math.max(0, cartTotal - desconto);
 
   const [selectedMethod, setSelectedMethod] = useState(null);
@@ -42,37 +55,77 @@ export default function PaymentScreen() {
   const [paymentStatus, setPaymentStatus] = useState("");
   const [isApproved, setIsApproved] = useState(false);
 
+  const [orderId, setOrderId] = useState(null);
+  const [orderTrackingStatus, setOrderTrackingStatus] = useState(null);
+
+  const STATUS_LABELS = {
+    Aguardando_Preparo: "Pedido recebido! Aguardando a cozinha...",
+    Em_Preparo: "Sua comida está sendo preparada!",
+    Pronto: "Pedido pronto! Retire no balcão.",
+    Finalizado: "Pedido finalizado. Obrigado!",
+    Cancelado: "Pedido cancelado. Fale com o atendente.",
+  };
+
+  useEffect(() => {
+    if (!orderId) return;
+
+    connectMobileSocket();
+
+    listenOrderStatus(orderId, (data) => {
+      setOrderTrackingStatus(data.status);
+    });
+
+    return () => {
+      stopListeningOrderStatus();
+    };
+  }, [orderId]);
+
   const styles = useMemo(() => getStyles(theme, width), [theme, width]);
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!selectedMethod) return;
 
     setIsProcessing(true);
+    setPaymentStatus("Enviando pedido para a cozinha...");
 
-    if (selectedMethod === "dinheiro" || selectedMethod === "misto") {
-      setPaymentStatus("Imprimindo ficha para pagamento no caixa...");
-      setIsApproved(true);
-      setTimeout(() => {
-        setIsProcessing(false);
-        clearCart();
-        navigation.navigate("Welcome");
-      }, 3500);
-    } else {
-      setPaymentStatus(
-        selectedMethod === "pix"
-          ? "Gerando QR Code Pix..."
-          : "Comunicando com a operadora...",
-      );
+    try {
+      const order = await submitOrder({
+        comandaId,
+        comandaLabel,
+        cartItems,
+        authToken: null,
+      });
 
-      setTimeout(() => {
-        setPaymentStatus("Pagamento Aprovado!");
+      setOrderId(order.id);
+      if (selectedMethod === "dinheiro" || selectedMethod === "misto") {
+        setPaymentStatus("Pedido enviado! Pague no caixa ao retirar.");
         setIsApproved(true);
         setTimeout(() => {
           setIsProcessing(false);
           clearCart();
           navigation.navigate("Welcome");
-        }, 2000);
-      }, 3000);
+        }, 4000);
+      } else {
+        setPaymentStatus(
+          selectedMethod === "pix"
+            ? "Gerando QR Code Pix..."
+            : "Comunicando com a operadora..."
+        );
+        setTimeout(() => {
+          setPaymentStatus("Pagamento Aprovado! Pedido na fila da cozinha.");
+          setIsApproved(true);
+          setTimeout(() => {
+            setIsProcessing(false);
+            clearCart();
+            navigation.navigate("Welcome");
+          }, 3000);
+        }, 3000);
+      }
+    } catch (error) {
+      console.error("[PaymentScreen] Erro ao enviar pedido:", error);
+      setPaymentStatus("Erro ao enviar o pedido. Tente novamente.");
+      setIsProcessing(false);
+      setIsApproved(false);
     }
   };
 

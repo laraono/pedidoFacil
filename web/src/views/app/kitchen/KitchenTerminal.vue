@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useKitchenStore } from '@/stores/kitchen';
@@ -27,12 +27,6 @@ const saveAlertMinutes = () => {
   showTimerSettings.value = false;
 };
 
-onMounted(() => {
-  if (!authStore.hasPermission(PERMISSIONS.COZINHA)) {
-    router.push('/app/dashboard');
-  }
-});
-
 const toggleAudio = () => {
   audioEnabled.value = !audioEnabled.value;
   if (audioEnabled.value) audioPlayer.play().catch(() => {});
@@ -45,12 +39,25 @@ const playAlert = () => {
   }
 };
 
-const simulateSocketEvent = () => {
-  const hasNew = kitchenStore.incomingOrderMock();
-  if (hasNew) playAlert();
+onMounted(() => {
+  if (!authStore.hasPermission(PERMISSIONS.COZINHA)) {
+    router.push('/app/dashboard');
+    return;
+  }
+
+  kitchenStore.initKitchenSocket(playAlert);
+});
+
+onUnmounted(() => {
+  kitchenStore.destroyKitchenSocket();
+});
+
+const handleMove = (id, status) => {
+  const order = kitchenStore.orders.find(o => o.id === id);
+  if (!order) return;
+  kitchenStore.moveOrder(id, status, order.comandaId, authStore.token);
 };
 
-const handleMove = (id, status) => kitchenStore.moveOrder(id, status);
 const handleFinish = (id) => kitchenStore.finishOrder(id);
 
 const cancelTargetId = ref(null);
@@ -111,12 +118,6 @@ const indicatorColor = (color) => {
       </div>
 
       <div class="flex items-center gap-3">
-        <button
-          @click="simulateSocketEvent"
-          class="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-[#757575] rounded text-xs font-black uppercase tracking-widest transition-all border border-[#E0E0E0] flex items-center gap-2"
-        >
-          <Bell :size="14" /> <span class="hidden md:inline">Simular Entrada</span>
-        </button>
 
         <!-- Timer settings -->
         <div class="relative">

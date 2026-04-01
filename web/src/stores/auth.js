@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia';
-import { loginMock, logoutMock } from '@/mock/authmock';
-import { getRolesMock } from '@/mock/authmock';
+import { authApi } from '@/services/authApi';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
+    // user: { id, name, email, cargo: { id, name, permissoes: string[] } }
     user: null,
-    roles: [],
+    roles: [],   // mantido para compatibilidade com telas de gestão de cargos
     isAuthenticated: false,
     configStatus: {
       info: false,
@@ -15,27 +15,42 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   getters: {
-    isAdmin: (state) => state.user?.role?.role === 'ADMIN',
+    isAdmin: (state) => state.user?.cargo?.permissoes?.includes('ALL') ?? false,
   },
 
   actions: {
     async login({ username, senha }) {
-      try {
-        const user = await loginMock(username, senha);
-        this.user = user;
-        this.isAuthenticated = true;
-        this.roles = await getRolesMock();
-      } catch (err) {
-        throw err;
-      }
+      const { accessToken } = await authApi.login(username, senha);
+      localStorage.setItem('accessToken', accessToken);
+
+      const perfil = await authApi.me();
+      const permissoes = typeof perfil.cargo.permissoes === 'string'
+        ? JSON.parse(perfil.cargo.permissoes)
+        : perfil.cargo.permissoes;
+
+      const user = {
+        id: perfil.usuario.id,
+        name: perfil.usuario.nome,
+        email: perfil.usuario.email,
+        estabelecimentoId: perfil.estabelecimentoId ?? null,
+        cargo: {
+          id: perfil.cargo.id,
+          name: perfil.cargo.nome,
+          permissoes,
+        }
+      };
+
+      this.user = user;
+      this.isAuthenticated = true;
+      localStorage.setItem('user', JSON.stringify(user));
     },
 
     loadSession() {
+      const token = localStorage.getItem('accessToken');
       const user = JSON.parse(localStorage.getItem('user'));
-      if (!user) return;
+      if (!token || !user) return;
 
       this.user = user;
-      this.roles = JSON.parse(localStorage.getItem('roles')) || [];
       this.isAuthenticated = true;
 
       const savedConfigStatus = JSON.parse(localStorage.getItem('configStatus'));
@@ -45,30 +60,28 @@ export const useAuthStore = defineStore('auth', {
     },
 
     hasPermission(permission) {
-      if (!this.user || !this.user.roleId) return false;
-
-      const role = this.roles.find(r => Number(r.id) === Number(this.user.roleId));
-      if (!role) return false;
-
-      return role.permissions.includes(permission);
+      const permissoes = this.user?.cargo?.permissoes;
+      if (!permissoes) return false;
+      return permissoes.includes('ALL') || permissoes.includes(permission);
     },
 
-    logout() {
-      logoutMock();
+    async logout() {
+      try {
+        await authApi.logout();
+      } catch {
+        // ignora erros de rede no logout
+      }
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
       this.user = null;
       this.roles = [];
       this.isAuthenticated = false;
-      this.configStatus = {
-        info: false,
-        roles: false,
-        menu: false
-      };
+      this.configStatus = { info: false, roles: false, menu: false };
     },
 
     setConfigStepComplete(step) {
-      if (this.configStatus.hasOwnProperty(step)) {
+      if (Object.prototype.hasOwnProperty.call(this.configStatus, step)) {
         this.configStatus[step] = true;
-
         localStorage.setItem('configStatus', JSON.stringify(this.configStatus));
       }
     }

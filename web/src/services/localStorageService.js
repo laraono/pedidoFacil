@@ -1,10 +1,12 @@
+import { useAuthStore } from '@/stores/auth';
+
 const STORAGE_KEYS = {
   USERS: "users",
   SESSION: "session",
   ONBOARDING: "onboarding",
   IMAGE: "logo",
   BUTTONS: "buttons",
-  BUTTON_TEXT_COLOR: "buttonTextColor", // NOVO
+  BUTTON_TEXT_COLOR: "buttonTextColor",
   CATEGORY: "category",
   BACKGROUND: 'backgroundColors',
   FONT: 'fontFamily',
@@ -13,13 +15,48 @@ const STORAGE_KEYS = {
   COMANDA_UNIT_LABEL: 'comandaUnitLabel',
 };
 
+// Chaves que devem ser isoladas por estabelecimento
+const ESTABLISHMENT_KEYS = new Set([
+  'onboarding', 'logo', 'buttons', 'buttonTextColor',
+  'backgroundColors', 'category', 'fontFamily', 'textColor',
+  'productCardBg', 'comandaUnitLabel',
+]);
+
+function getScopedKey(key) {
+  if (!ESTABLISHMENT_KEYS.has(key)) return key;
+  try {
+    const auth = useAuthStore();
+    const estId = auth.user?.estabelecimentoId;
+    if (!estId) return null; // admin ou não autenticado: sem dados de estabelecimento
+    return `est_${estId}_${key}`;
+  } catch {
+    return null;
+  }
+}
+
 function getItem(key, defaultValue = null) {
-  const data = localStorage.getItem(key);
+  const fullKey = getScopedKey(key);
+  if (fullKey === null) return defaultValue;
+  const data = localStorage.getItem(fullKey);
   return data ? JSON.parse(data) : defaultValue;
 }
 
 function setItem(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  const fullKey = getScopedKey(key);
+  if (fullKey === null) return;
+  localStorage.setItem(fullKey, JSON.stringify(value));
+}
+
+function getRaw(key, defaultValue) {
+  const fullKey = getScopedKey(key);
+  if (fullKey === null) return defaultValue;
+  return localStorage.getItem(fullKey) ?? defaultValue;
+}
+
+function setRaw(key, value) {
+  const fullKey = getScopedKey(key);
+  if (fullKey === null) return;
+  localStorage.setItem(fullKey, value);
 }
 
 export default {
@@ -39,31 +76,30 @@ export default {
   saveOnboarding(data) { setItem(STORAGE_KEYS.ONBOARDING, data); },
   getOnboarding() { return getItem(STORAGE_KEYS.ONBOARDING, {}); },
 
-  saveImage(base64String) { setItem(STORAGE_KEYS.IMAGE, base64String) },
-  getImage() { return getItem(STORAGE_KEYS.IMAGE) },
+  saveImage(base64String) { setItem(STORAGE_KEYS.IMAGE, base64String); },
+  getImage() { return getItem(STORAGE_KEYS.IMAGE); },
 
-  saveButtonColors(value) { setItem(STORAGE_KEYS.BUTTONS, value) },
-  getButtonColors() { return getItem(STORAGE_KEYS.BUTTONS) || '#00FF85' },
+  saveButtonColors(value) { setItem(STORAGE_KEYS.BUTTONS, value); },
+  getButtonColors() { return getItem(STORAGE_KEYS.BUTTONS) || '#00FF85'; },
 
-  saveButtonTextColor(value) { setItem(STORAGE_KEYS.BUTTON_TEXT_COLOR, value) },
-  getButtonTextColor() { return getItem(STORAGE_KEYS.BUTTON_TEXT_COLOR) || '#000000' },
+  saveButtonTextColor(value) { setItem(STORAGE_KEYS.BUTTON_TEXT_COLOR, value); },
+  getButtonTextColor() { return getItem(STORAGE_KEYS.BUTTON_TEXT_COLOR) || '#000000'; },
 
-  saveBackgroundColors(value) { setItem(STORAGE_KEYS.BACKGROUND, value) },
-  getBackgroundColors() { return getItem(STORAGE_KEYS.BACKGROUND) || '#0B0E11' },
+  saveBackgroundColors(value) { setItem(STORAGE_KEYS.BACKGROUND, value); },
+  getBackgroundColors() { return getItem(STORAGE_KEYS.BACKGROUND) || '#0B0E11'; },
 
-  saveCategoryColors(value) { setItem(STORAGE_KEYS.CATEGORY, value) },
-  getCategoryColors() { return getItem(STORAGE_KEYS.CATEGORY) || '#009DFF' },
+  saveCategoryColors(value) { setItem(STORAGE_KEYS.CATEGORY, value); },
+  getCategoryColors() { return getItem(STORAGE_KEYS.CATEGORY) || '#009DFF'; },
 
-  getFontFamily() { return localStorage.getItem(STORAGE_KEYS.FONT) || 'Inter, sans-serif'; },
-  saveFontFamily(value) { localStorage.setItem(STORAGE_KEYS.FONT, value); },
+  getFontFamily() { return getRaw(STORAGE_KEYS.FONT, 'Inter, sans-serif'); },
+  saveFontFamily(value) { setRaw(STORAGE_KEYS.FONT, value); },
 
-  getTextColor() { return localStorage.getItem(STORAGE_KEYS.TEXT_COLOR) || '#FFFFFF'; },
-  saveTextColor(value) { localStorage.setItem(STORAGE_KEYS.TEXT_COLOR, value); },
+  getTextColor() { return getRaw(STORAGE_KEYS.TEXT_COLOR, '#FFFFFF'); },
+  saveTextColor(value) { setRaw(STORAGE_KEYS.TEXT_COLOR, value); },
 
-  getProductCardBg() { return localStorage.getItem(STORAGE_KEYS.CARD_BG) || '#1A1E24'; },
-  saveProductCardBg(value) { localStorage.setItem(STORAGE_KEYS.CARD_BG, value); },
+  getProductCardBg() { return getRaw(STORAGE_KEYS.CARD_BG, '#1A1E24'); },
+  saveProductCardBg(value) { setRaw(STORAGE_KEYS.CARD_BG, value); },
 
-  getComandaUnitLabel() { return localStorage.getItem(STORAGE_KEYS.COMANDA_UNIT_LABEL) || 'Comanda'; },
-  saveComandaUnitLabel(value) { localStorage.setItem(STORAGE_KEYS.COMANDA_UNIT_LABEL, value); },
-
+  getComandaUnitLabel() { return getRaw(STORAGE_KEYS.COMANDA_UNIT_LABEL, 'Comanda'); },
+  saveComandaUnitLabel(value) { setRaw(STORAGE_KEYS.COMANDA_UNIT_LABEL, value); },
 };

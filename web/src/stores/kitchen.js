@@ -1,77 +1,109 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { connectSocket, disconnectSocket, getSocket } from '../services/socket';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+const STATUS_MAP = {
+    pending:   'Aguardando_Preparo',
+    preparing: 'Em_Preparo',
+    ready:     'Pronto',
+    finished:  'Finalizado',
+    cancelled: 'Cancelado',
+};
 
 export const useKitchenStore = defineStore('kitchen', () => {
-  const orders = ref([
-    {
-      id: 101,
-      comanda: 'Mesa 04',
-      waiter: 'Carlos',
-      status: 'pending',
-      createdAt: new Date(Date.now() - 1000 * 60 * 15),
-      items: [
-        { name: 'X-Bacon', amount: 2, obs: 'Sem cebola' },
-        { name: 'Coca-Cola Zero', amount: 2, obs: '' }
-      ]
-    },
-    {
-      id: 102,
-      comanda: 'Balcão',
-      waiter: 'Ana',
-      status: 'preparing',
-      createdAt: new Date(Date.now() - 1000 * 60 * 5),
-      items: [
-        { name: 'Isca de Peixe', amount: 1, obs: 'Molho extra' }
-      ]
+
+    const orders = ref([]);
+
+    const pendingOrders   = computed(() => orders.value.filter(o => o.status === 'pending'));
+    const preparingOrders = computed(() => orders.value.filter(o => o.status === 'preparing'));
+    const readyOrders     = computed(() => orders.value.filter(o => o.status === 'ready'));
+
+    function addOrder(order) {
+        const already = orders.value.find(o => o.id === order.id);
+        if (!already) {
+            orders.value.push({ ...order, status: order.status || 'pending' });
+        }
     }
-  ]);
 
-  const pendingOrders = computed(() => orders.value.filter(o => o.status === 'pending'));
-  const preparingOrders = computed(() => orders.value.filter(o => o.status === 'preparing'));
-  const readyOrders = computed(() => orders.value.filter(o => o.status === 'ready'));
-
-  function moveOrder(id, newStatus) {
-    const order = orders.value.find(o => o.id === id);
-    if (order) {
-      order.status = newStatus;
+    function finishOrder(id) {
+        orders.value = orders.value.filter(o => o.id !== id);
     }
-  }
 
-  function addOrder(order) {
-    orders.value.push({...order, id: orders.value.length + 1})
-  }
+    async function moveOrder(id, newLocalStatus, comandaId, authToken) {
+        const order = orders.value.find(o => o.id === id);
+        if (!order) return;
 
-  function finishOrder(id) {
-    orders.value = orders.value.filter(o => o.id !== id);
-  }
+        const previousStatus = order.status;
+        order.status = newLocalStatus;
 
-  // --- SIMULAÇÃO DE WEBSOCKET ---
-  // Em produção, isso seria substituído por: socket.on('new_order', (data) => orders.value.push(data))
-  function incomingOrderMock() {
-    const newId = Math.floor(Math.random() * 1000) + 200;
-    const newOrder = {
-      id: newId,
-      comanda: `Mesa ${Math.floor(Math.random() * 20) + 1}`,
-      waiter: 'Sistema',
-      status: 'pending',
-      createdAt: new Date(),
-      items: [
-        { name: 'Hambúrguer Artesanal', amount: 1, obs: 'Ao ponto' },
-        { name: 'Batata Frita', amount: 1, obs: '' }
-      ]
+        try {
+            const backendStatus = STATUS_MAP[newLocalStatus];
+            if (!backendStatus) throw new Error(`Status inválido: ${newLocalStatus}`);
+
+            await axios.put(
+                `${API_URL}/api/v1/commands/${comandaId}/orders/${id}`,
+                { status: backendStatus },
+                {
+                    headers: { Authorization: `Bearer ${authToken}` },
+                    withCredentials: true,
+                }
+            );
+
+            if (newLocalStatus === 'finished' || newLocalStatus === 'cancelled') {
+                finishOrder(id);
+            }
+
+        } catch (err) {
+            console.error('[Kitchen] Erro ao atualizar status:', err);
+            order.status = previousStatus;
+        }
+    }
+
+    function initKitchenSocket(onNewOrder) {
+        connectSocket('kitchen');
+        const socket = getSocket();
+
+        socket.on('new_order', (data) => {
+            console.log('[Kitchen Socket] Novo pedido recebido:', data);
+
+            const newOrder = {
+                id: data.orderId,
+                comandaId: data.comandaId,
+                comanda: data.comandaLabel,
+                waiter: data.source === 'mobile' ? 'Totem' : 'Garçom',
+                status: 'pending',
+                createdAt: new Date(data.createdAt),
+                items: (data.items || []).map(i => ({
+                    name: i.productName || `Produto #${i.productId}`,
+                    amount: i.quantity,
+                    obs: i.observation || '',
+                })),
+            };
+
+            addOrder(newOrder);
+
+            if (typeof onNewOrder === 'function') onNewOrder(newOrder);
+        });
+    }
+
+    function destroyKitchenSocket() {
+        const socket = getSocket();
+        if (socket) socket.off('new_order');
+        disconnectSocket();
+    }
+
+    return {
+        orders,
+        pendingOrders,
+        preparingOrders,
+        readyOrders,
+        addOrder,
+        finishOrder,
+        moveOrder,
+        initKitchenSocket,
+        destroyKitchenSocket,
     };
-    orders.value.push(newOrder);
-    return true; 
-  }
-
-  return { 
-    orders, 
-    pendingOrders, 
-    preparingOrders, 
-    readyOrders, 
-    moveOrder, 
-    finishOrder,
-    incomingOrderMock,
-    addOrder
-  };
 });
