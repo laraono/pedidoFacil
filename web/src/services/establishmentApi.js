@@ -13,12 +13,10 @@ export const establishmentApi = {
       body: JSON.stringify(data),
     }),
 
-  // 👇 Faz o tratamento dos dados JSON que vêm do banco com segurança
   getProfile: async () => {
     const data = await request("/estabelecimento/profile", { method: "GET" });
     return {
       ...data,
-      // Se o TypeORM já converteu para Array, usamos direto. Se vier String, fazemos o parse.
       paymentMethods:
         typeof data.paymentMethods === "string"
           ? JSON.parse(data.paymentMethods)
@@ -33,7 +31,6 @@ export const establishmentApi = {
     };
   },
 
-  // 👇 Empacota os dados perfeitamente para o TypeORM salvar tudo de uma vez
   updateProfile: (data) => {
     const payload = {
       name: data.name,

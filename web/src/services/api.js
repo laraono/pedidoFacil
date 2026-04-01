@@ -53,7 +53,7 @@ export async function request(path, options = {}) {
     }
   }
 
-  if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
-
+  if (!res.ok)
+    throw new Error(data.message || data.error || `Erro ${res.status}`);
   return data;
 }

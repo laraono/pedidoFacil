@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { establishmentApi } from '@/services/establishmentApi'; // <-- API conectada
+import { establishmentApi } from '@/services/establishmentApi'; 
 import { useToast } from '@/composables/useToast';
 import { Save, ArrowLeft, UploadCloud, AlertCircle, Smartphone, Copy, CheckCheck, RefreshCw, Banknote } from 'lucide-vue-next';
 
@@ -9,12 +9,11 @@ const router = useRouter();
 const { showToast } = useToast();
 
 const isLoading = ref(false);
-const isFetching = ref(true); // Para o loading inicial
+const isFetching = ref(true); 
 const logoPreview = ref(null);
 const errors = ref({});
 const touched = ref({});
 
-// Métodos de pagamento
 const ALL_PAYMENT_METHODS = ['Dinheiro', 'Cartão Débito', 'Cartão Crédito', 'PIX'];
 const paymentMethods = ref([]);
 const originalPaymentMethods = ref([]);
@@ -25,7 +24,6 @@ const togglePaymentMethod = (method) => {
   else if (paymentMethods.value.length > 1) paymentMethods.value.splice(idx, 1);
 };
 
-// Autoatendimento
 const selfService = ref(false);
 const originalSelfService = ref(false);
 
@@ -77,7 +75,6 @@ onMounted(async () => {
   try {
     const data = await establishmentApi.getProfile();
     
-    // Povoando os dados que vieram do Backend
     form.value = {
       name: data.name || '',
       cnpj: data.cnpj || '',
@@ -89,13 +86,12 @@ onMounted(async () => {
     if (data.paymentMethods && data.paymentMethods.length > 0) {
       paymentMethods.value = [...data.paymentMethods];
     } else {
-      paymentMethods.value = [...ALL_PAYMENT_METHODS]; // Fallback
+      paymentMethods.value = [...ALL_PAYMENT_METHODS]; 
     }
 
     selfService.value = !!data.selfServiceEnabled;
     selfServiceCode.value = data.selfServiceCode || Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Guardando estado original para o isDirty funcionar perfeitamente
     originalForm.value = { ...form.value };
     originalLogo.value = logoPreview.value;
     originalPaymentMethods.value = [...paymentMethods.value];
@@ -149,7 +145,6 @@ const saveSettings = async () => {
       logo: logoPreview.value
     });
 
-    // Atualiza os estados originais após salvar
     originalForm.value = { ...form.value };
     originalLogo.value = logoPreview.value;
     originalPaymentMethods.value = [...paymentMethods.value];

@@ -153,7 +153,6 @@ export class EstablishmentService {
   async updateEstablishment(establishmentId: number, updateData: any) {
     const establishment = await this.getEstablishmentProfile(establishmentId);
     
-    // 👇 AGORA SIM: Incluímos todas as colunas que vieram do Frontend!
     this.establishmentRepository.merge(establishment, {
       name: updateData.name,
       cnpj: updateData.cnpj,
@@ -166,7 +165,6 @@ export class EstablishmentService {
     
     await this.establishmentRepository.save(establishment);
 
-    // 👇 AJUSTE DE ROTA: O Frontend envia "configurations", e não "config"
     if (updateData.configurations) {
         const config = await this.configRepository.findOne({ where: { establishment: { id: establishmentId } } });
         if (config) {

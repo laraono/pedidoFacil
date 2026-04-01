@@ -27,7 +27,6 @@ export class AccessController {
         try {
             const establishmentId = (req as any).usuario.estabelecimento
             
-            // 👇 Agora mandamos o req.body inteiro, pois o roleId já está lá dentro!
             const employee = await employeeService.createEmployee(establishmentId, req.body)
             return res.status(201).json(employee)
         } catch (error) { next(error) }

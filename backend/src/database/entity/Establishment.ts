@@ -72,7 +72,6 @@ export class Establishment {
         default: false
     })
     selfServiceEnabled?: boolean
-    // 👆 FIM DAS NOVAS COLUNAS 👆
 
     @Column({
         type: 'enum',
@@ -110,7 +109,6 @@ export class Establishment {
     })
     manager: User
 
-    // 👇 CASCADE ATIVADO: Salva o Logo na outra tabela automaticamente 👇
     @OneToOne(() => Configuration, (config) => config.establishment, { cascade: true, eager: true })
     configurations: Configuration
 

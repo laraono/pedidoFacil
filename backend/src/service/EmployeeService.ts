@@ -23,7 +23,7 @@ export class EmployeeService {
       where: { establishment: { id: establishmentId }, status: UserStatus.INATIVA },
       relations: ['role'],
       select: ['id', 'name', 'email', 'cpf', 'status'],
-      order: { id: 'DESC' } // Traz os últimos desativados primeiro (LIFO)
+      order: { id: 'DESC' } 
     });
   }
 

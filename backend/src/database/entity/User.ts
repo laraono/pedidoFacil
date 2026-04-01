@@ -61,6 +61,21 @@ export class User {
   })
   cpf: string;
 
+  @Column({ type: 'varchar', name: 'Telefone', nullable: true, length: 20 })
+  phone: string;
+
+  @Column({ type: 'varchar', name: 'Endereco', nullable: true, length: 255 })
+  address: string;
+
+  @Column({ type: 'varchar', name: 'Cidade', nullable: true, length: 100 })
+  city: string;
+
+  @Column({ type: 'varchar', name: 'Estado', nullable: true, length: 2 })
+  state: string;
+
+  @Column({ type: 'varchar', name: 'CEP', nullable: true, length: 10 })
+  zip: string;
+
   @ManyToOne(() => Establishment, (establishment) => establishment.users)
   @JoinColumn({
     name: 'ID_Estabelecimento',

@@ -6,6 +6,7 @@ import { ComandaService } from './ComandaService'
 import { OrderService } from './OrderService'
 import { ProductService } from './ProductService'
 import { EmployeeService } from './EmployeeService'
+import { ProfileService } from './ProfileService'
 
 
 const authService: AuthService = new AuthService(AppDataSource, userRepository)
@@ -14,6 +15,7 @@ const comandaService: ComandaService = new ComandaService(comandaRepository, use
 const productService: ProductService = new ProductService(categoryService, productRepository, productVariationRepository)
 const orderService: OrderService = new OrderService(AppDataSource, orderRepository, comandaService)
 const employeeService: EmployeeService = new EmployeeService()
+const profileService: ProfileService = new ProfileService()
 
 export {
     authService,
@@ -21,7 +23,8 @@ export {
     comandaService,
     orderService,
     productService,
-    employeeService
+    employeeService,
+    profileService
 }
 
 export {
@@ -30,5 +33,6 @@ export {
     ComandaService,
     OrderService,
     ProductService,
-    EmployeeService
+    EmployeeService,
+    ProfileService
 }
