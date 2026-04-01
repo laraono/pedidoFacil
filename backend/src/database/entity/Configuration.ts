@@ -74,7 +74,7 @@ export class Configuration {
     comandaLabel?: string
 
      @Column({
-        type: 'varchar',
+        type: 'longtext',
         name: 'Logotipo',
         nullable: true,
     })

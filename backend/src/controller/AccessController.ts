@@ -26,9 +26,9 @@ export class AccessController {
     async createEmployee(req: Request, res: Response, next: NextFunction) {
         try {
             const establishmentId = (req as any).usuario.estabelecimento
-            const { roleId, ...employeeData } = req.body
             
-            const employee = await employeeService.createEmployee(establishmentId, employeeData, roleId)
+            // 👇 Agora mandamos o req.body inteiro, pois o roleId já está lá dentro!
+            const employee = await employeeService.createEmployee(establishmentId, req.body)
             return res.status(201).json(employee)
         } catch (error) { next(error) }
     }
@@ -36,7 +36,8 @@ export class AccessController {
     async listEmployees(req: Request, res: Response, next: NextFunction) {
         try {
             const establishmentId = (req as any).usuario.estabelecimento
-            const employees = await employeeService.getEmployeesByEstablishment(establishmentId)
+            
+            const employees = await employeeService.listEmployees(establishmentId)
             return res.status(200).json(employees)
         } catch (error) { next(error) }
     }

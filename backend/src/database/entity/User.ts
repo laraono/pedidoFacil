@@ -52,6 +52,15 @@ export class User {
   })
   status: UserStatus;
 
+  @Column({
+    type: 'varchar',
+    name: 'CPF',
+    nullable: true,
+    length: 14,
+    unique: true,
+  })
+  cpf: string;
+
   @ManyToOne(() => Establishment, (establishment) => establishment.users)
   @JoinColumn({
     name: 'ID_Estabelecimento',

@@ -4,19 +4,22 @@ import { CategoryController } from './CategoryController'
 import { ComandaController } from './ComandaController'
 import { OrderController } from './OrderController'
 import { ProductController } from './ProductController'
+import { EmployeeController } from './EmployeeController'
 
 const authController: AuthController = new AuthController(authService)
 const categoryController: CategoryController = new CategoryController(categoryService)
 const comandaController: ComandaController = new ComandaController(comandaService)
 const orderController: OrderController = new OrderController(orderService)
 const productController: ProductController = new ProductController(productService)
+const employeeController: EmployeeController = new EmployeeController()
 
 export {
     authController,
     categoryController,
     comandaController,
     orderController,
-    productController
+    productController,
+    employeeController
 }
 
 export {
@@ -24,7 +27,8 @@ export {
     CategoryController,
     ComandaController,
     OrderController,
-    ProductController
+    ProductController,
+    EmployeeController
 }
 
 export { loginLimiter } from './AuthController'

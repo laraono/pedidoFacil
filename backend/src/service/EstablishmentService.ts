@@ -153,22 +153,29 @@ export class EstablishmentService {
   async updateEstablishment(establishmentId: number, updateData: any) {
     const establishment = await this.getEstablishmentProfile(establishmentId);
     
+    // 👇 AGORA SIM: Incluímos todas as colunas que vieram do Frontend!
     this.establishmentRepository.merge(establishment, {
       name: updateData.name,
+      cnpj: updateData.cnpj,
       phone: updateData.phone,
       address: updateData.address,
+      paymentMethods: updateData.paymentMethods,
+      selfServiceEnabled: updateData.selfServiceEnabled,
+      selfServiceCode: updateData.selfServiceCode,
     });
+    
     await this.establishmentRepository.save(establishment);
 
-    if (updateData.config || updateData.logo) {
+    // 👇 AJUSTE DE ROTA: O Frontend envia "configurations", e não "config"
+    if (updateData.configurations) {
         const config = await this.configRepository.findOne({ where: { establishment: { id: establishmentId } } });
         if (config) {
             this.configRepository.merge(config, {
-                logo: updateData.logo ?? config.logo,
-                backgroundColor: updateData.config?.backgroundColor ?? config.backgroundColor,
-                cardsColor: updateData.config?.cardsColor ?? config.cardsColor,
-                buttonsColor: updateData.config?.buttonsColor ?? config.buttonsColor,
-                comandaLabel: updateData.config?.comandaLabel ?? config.comandaLabel
+                logo: updateData.configurations.logo ?? config.logo,
+                backgroundColor: updateData.configurations.backgroundColor ?? config.backgroundColor,
+                cardsColor: updateData.configurations.cardsColor ?? config.cardsColor,
+                buttonsColor: updateData.configurations.buttonsColor ?? config.buttonsColor,
+                comandaLabel: updateData.configurations.comandaLabel ?? config.comandaLabel
             });
             await this.configRepository.save(config);
         }
@@ -183,7 +190,7 @@ export class EstablishmentService {
 
     await this.establishmentRepository.softRemove(establishment);
     
-    return { message: 'Establishment deativado com sucesso (Soft Delete).' };
+    return { message: 'Establishment desativado com sucesso (Soft Delete).' };
   }
 
   private async ensureDefaultConfiguration(establishmentId: number) {

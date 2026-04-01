@@ -60,6 +60,21 @@ export class Establishment {
     address?: string
 
     @Column({
+        type: 'json',
+        name: 'Metodos_Pagamento',
+        nullable: true
+    })
+    paymentMethods?: string
+
+    @Column({
+        type: 'boolean',
+        name: 'Autoatendimento_Ativo',
+        default: false
+    })
+    selfServiceEnabled?: boolean
+    // 👆 FIM DAS NOVAS COLUNAS 👆
+
+    @Column({
         type: 'enum',
         enum: ['Ativo', 'Suspenso'],
         default: 'Ativo',
@@ -95,7 +110,8 @@ export class Establishment {
     })
     manager: User
 
-    @OneToOne(() => Configuration, (config) => config.establishment)
+    // 👇 CASCADE ATIVADO: Salva o Logo na outra tabela automaticamente 👇
+    @OneToOne(() => Configuration, (config) => config.establishment, { cascade: true, eager: true })
     configurations: Configuration
 
     @OneToMany(() => Role, (role) => role.establishment)
