@@ -1,10 +1,10 @@
-import { AppDataSource } from '../database/data-source';
-import { User } from '../database/entity/User';
+import { UserRepository } from '../repository/UserRepository';
 import { AppError } from '../middleware/error/AppError';
 import * as bcrypt from 'bcrypt';
+import { UpdateProfileDTO, ChangePasswordDTO } from '../dto/profile/ProfileDTO';
 
 export class ProfileService {
-  private userRepository = AppDataSource.getRepository(User);
+  constructor(private userRepository: UserRepository) {}
 
   async getProfile(userId: number) {
     const user = await this.userRepository.findOne({
@@ -17,7 +17,7 @@ export class ProfileService {
     return user;
   }
 
-  async updateProfile(userId: number, data: any) {
+  async updateProfile(userId: number, data: UpdateProfileDTO) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new AppError('Perfil não encontrado.', 404);
 
@@ -47,7 +47,7 @@ export class ProfileService {
     return { ...user, ...updateData };
   }
 
-  async changePassword(userId: number, data: any) {
+  async changePassword(userId: number, data: ChangePasswordDTO) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new AppError('Perfil não encontrado.', 404);
 

@@ -7,7 +7,7 @@ export {authRouter} from './AuthRouter'
 export { establishmentRouter } from './EstablishmentRouter';
 export { metricsRouter } from './MetricsRouter';
 export { receiptRouter } from './ReceiptRouter';
-export { default as roleRouter } from './RoleRouter'; 
+export { roleRouter } from './RoleRouter';
 export { employeeRouter } from './EmployeeRouter'
 export {profileRouter} from './ProfileRouter'
 export { couponRouter } from './CouponRouter'

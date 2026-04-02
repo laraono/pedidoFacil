@@ -10,18 +10,22 @@ import { RefreshTokenRepository } from './RefreshTokenRepository'
 import { RoleRepository } from './RoleRepository'
 import { UserRepository } from './UserRepository'
 import { CouponRepository } from './CouponRepository'
+import { EstablishmentRepository } from './EstablishmentRepository'
+import { ConfigurationRepository } from './ConfigurationRepository'
 
-const categoryRepository: CategoryRepository = new CategoryRepository(AppDataSource)
-const comandaRepository: ComandaRepository = new ComandaRepository(AppDataSource)
-const orderRepository: OrderRepository = new OrderRepository(AppDataSource)
-const productRepository: ProductRepository = new ProductRepository(AppDataSource)
-const productOrderRepository: ProductOrderRepository = new ProductOrderRepository(AppDataSource)
-const productVariationRepository: ProductVariationRepository = new ProductVariationRepository(AppDataSource)
-const productVariationOrderRepository: ProductVariationOrderRepository = new ProductVariationOrderRepository(AppDataSource)
-const refreshTokenRepository: RefreshTokenRepository = new RefreshTokenRepository(AppDataSource)
-const roleRepository: RoleRepository = new RoleRepository(AppDataSource)
-const userRepository: UserRepository = new UserRepository(AppDataSource)
-const couponRepository: CouponRepository = new CouponRepository(AppDataSource)
+const categoryRepository = new CategoryRepository(AppDataSource)
+const comandaRepository = new ComandaRepository(AppDataSource)
+const orderRepository = new OrderRepository(AppDataSource)
+const productRepository = new ProductRepository(AppDataSource)
+const productOrderRepository = new ProductOrderRepository(AppDataSource)
+const productVariationRepository = new ProductVariationRepository(AppDataSource)
+const productVariationOrderRepository = new ProductVariationOrderRepository(AppDataSource)
+const refreshTokenRepository = new RefreshTokenRepository(AppDataSource)
+const roleRepository = new RoleRepository(AppDataSource)
+const userRepository = new UserRepository(AppDataSource)
+const couponRepository = new CouponRepository(AppDataSource)
+const establishmentRepository = new EstablishmentRepository(AppDataSource)
+const configurationRepository = new ConfigurationRepository(AppDataSource)
 
 export {
     categoryRepository,
@@ -34,10 +38,13 @@ export {
     refreshTokenRepository,
     roleRepository,
     userRepository,
-    couponRepository
+    couponRepository,
+    establishmentRepository,
+    configurationRepository
 }
 
 export {
     CategoryRepository, ComandaRepository, OrderRepository, ProductRepository, ProductOrderRepository, ProductVariationRepository,
-    ProductVariationOrderRepository, RefreshTokenRepository, RoleRepository, UserRepository, CouponRepository
+    ProductVariationOrderRepository, RefreshTokenRepository, RoleRepository, UserRepository, CouponRepository,
+    EstablishmentRepository, ConfigurationRepository
 }

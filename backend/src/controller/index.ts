@@ -1,4 +1,17 @@
-import { authService, categoryService, comandaService, employeeService, orderService, productService } from '../service'
+import { 
+    authService, 
+    categoryService, 
+    comandaService, 
+    employeeService, 
+    orderService, 
+    productService, 
+    profileService, 
+    couponService, 
+    establishmentService,
+    roleService,
+    ProfileService
+} from '../service'
+
 import { AuthController } from './AuthController'
 import { CategoryController } from './CategoryController'
 import { ComandaController } from './ComandaController'
@@ -6,14 +19,21 @@ import { OrderController } from './OrderController'
 import { ProductController } from './ProductController'
 import { EmployeeController } from './EmployeeController'
 import { ProfileController } from './ProfileController'
+import { CouponController } from './CouponController'
+import { EstablishmentController } from './EstablishmentController'
+import { RoleController } from './RoleController'
 
-const authController: AuthController = new AuthController(authService)
-const categoryController: CategoryController = new CategoryController(categoryService)
-const comandaController: ComandaController = new ComandaController(comandaService)
-const orderController: OrderController = new OrderController(orderService)
-const productController: ProductController = new ProductController(productService)
-const employeeController: EmployeeController = new EmployeeController()
-const profileController: ProfileController = new ProfileController()
+const authController = new AuthController(authService)
+const categoryController = new CategoryController(categoryService)
+const comandaController = new ComandaController(comandaService)
+const orderController = new OrderController(orderService)
+const productController = new ProductController(productService)
+const couponController = new CouponController(couponService)
+const establishmentController = new EstablishmentController(establishmentService)
+const roleController = new RoleController(roleService)
+
+const employeeController = new EmployeeController(employeeService) 
+const profileController = new ProfileController(profileService) 
 
 export {
     authController,
@@ -22,7 +42,10 @@ export {
     orderController,
     productController,
     employeeController,
-    profileController
+    profileController,
+    couponController,
+    establishmentController,
+    roleController
 }
 
 export {
@@ -32,7 +55,10 @@ export {
     OrderController,
     ProductController,
     EmployeeController,
-    ProfileController
+    ProfileController,
+    CouponController,
+    EstablishmentController,
+    RoleController
 }
 
 export { loginLimiter } from './AuthController'

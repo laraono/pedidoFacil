@@ -1,70 +1,43 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { EstablishmentService } from '../service/EstablishmentService';
-
-const establishmentService = new EstablishmentService();
+import { catchAsync } from '../middleware';
 
 export class EstablishmentController {
-  async onboarding(req: Request, res: Response, next: NextFunction) {
-    try {
-      const userId = (req as any).usuario.id;
-      const establishment = await establishmentService.saveOnboardingStep(
-        userId,
-        req.body,
-      );
-      return res.status(201).json(establishment);
-    } catch (error) {
-      next(error);
-    }
+  
+  private establishmentService: EstablishmentService;
+
+  constructor(establishmentService: EstablishmentService) {
+    this.establishmentService = establishmentService;
   }
 
-  async finalize(req: Request, res: Response, next: NextFunction) {
-    try {
-      const userId = (req as any).usuario.id;
-      const { roles, hasTotem } = req.body;
+  // O catchAsync abraça a função e envia qualquer erro automaticamente para o next()
+  onboarding = catchAsync(async (req: Request, res: Response) => {
+    const userId = (req as any).usuario.id;
+    const establishment = await this.establishmentService.saveOnboardingStep(userId, req.body);
+    return res.status(201).json(establishment);
+  });
 
-      const result = await establishmentService.finalizeOnboarding(
-        userId,
-        roles,
-        hasTotem,
-      );
-      return res.status(200).json(result);
-    } catch (error) {
-      next(error);
-    }
-  }
+  finalize = catchAsync(async (req: Request, res: Response) => {
+    const userId = (req as any).usuario.id;
+    const result = await this.establishmentService.finalizeOnboarding(userId, req.body);
+    return res.status(200).json(result);
+  });
 
-  async getProfile(req: Request, res: Response, next: NextFunction) {
-    try {
-      const establishmentId = (req as any).usuario.estabelecimento;
-      const establishment =
-        await establishmentService.getEstablishmentProfile(establishmentId);
-      return res.status(200).json(establishment);
-    } catch (error) {
-      next(error);
-    }
-  }
+  getProfile = catchAsync(async (req: Request, res: Response) => {
+    const establishmentId = (req as any).usuario.estabelecimento;
+    const establishment = await this.establishmentService.getEstablishmentProfile(establishmentId);
+    return res.status(200).json(establishment);
+  });
 
-  async update(req: Request, res: Response, next: NextFunction) {
-    try {
-      const establishmentId = (req as any).usuario.estabelecimento;
-      const updated = await establishmentService.updateEstablishment(
-        establishmentId,
-        req.body,
-      );
-      return res.status(200).json(updated);
-    } catch (error) {
-      next(error);
-    }
-  }
+  update = catchAsync(async (req: Request, res: Response) => {
+    const establishmentId = (req as any).usuario.estabelecimento;
+    const updated = await this.establishmentService.updateEstablishment(establishmentId, req.body);
+    return res.status(200).json(updated);
+  });
 
-  async disable(req: Request, res: Response, next: NextFunction) {
-    try {
-      const establishmentId = (req as any).usuario.estabelecimento;
-      const result =
-        await establishmentService.softDeleteEstablishment(establishmentId);
-      return res.status(200).json(result);
-    } catch (error) {
-      next(error);
-    }
-  }
+  disable = catchAsync(async (req: Request, res: Response) => {
+    const establishmentId = (req as any).usuario.estabelecimento;
+    const result = await this.establishmentService.softDeleteEstablishment(establishmentId);
+    return res.status(200).json(result);
+  });
 }

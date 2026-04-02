@@ -6,7 +6,10 @@ import {
     productRepository, 
     productVariationRepository, 
     userRepository, 
-    couponRepository 
+    couponRepository,
+    establishmentRepository,
+    configurationRepository,
+    roleRepository
 } from '../repository'
 
 import { AuthService } from './AuthService'
@@ -17,6 +20,8 @@ import { ProductService } from './ProductService'
 import { EmployeeService } from './EmployeeService'
 import { ProfileService } from './ProfileService'
 import { CouponService } from './CouponService'
+import { EstablishmentService } from './EstablishmentService'
+import { RoleService } from './RoleService'
 
 const authService = new AuthService(AppDataSource, userRepository)
 const categoryService = new CategoryService(categoryRepository)
@@ -24,9 +29,17 @@ const comandaService = new ComandaService(comandaRepository, userRepository)
 const productService = new ProductService(categoryService, productRepository, productVariationRepository)
 const orderService = new OrderService(AppDataSource, orderRepository, comandaService)
 const couponService = new CouponService(couponRepository)
+const roleService = new RoleService(roleRepository, userRepository)
+const profileService = new ProfileService(userRepository);
 
-const employeeService = new EmployeeService() 
-const profileService = new ProfileService()
+const establishmentService = new EstablishmentService(
+    establishmentRepository,
+    userRepository,
+    configurationRepository,
+    roleRepository
+)
+
+const employeeService = new EmployeeService(userRepository, roleRepository)
 
 export {
     authService,
@@ -36,7 +49,9 @@ export {
     productService,
     employeeService,
     profileService,
-    couponService
+    couponService,
+    establishmentService,
+    roleService
 }
 
 export {
@@ -47,5 +62,7 @@ export {
     ProductService,
     EmployeeService,
     ProfileService,
-    CouponService
+    CouponService,
+    EstablishmentService,
+    RoleService
 }

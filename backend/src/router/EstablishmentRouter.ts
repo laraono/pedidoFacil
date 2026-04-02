@@ -2,39 +2,50 @@ import { Router } from 'express';
 import { EstablishmentController } from '../controller/EstablishmentController';
 import authenticate from '../middleware/authenticate';
 import { checkPermission } from '../middleware/roleAccessControl';
+import { establishmentService } from '../service'; 
+import { 
+    validateSaveOnboarding, 
+    validateFinalizeOnboarding, 
+    validateUpdateEstablishment 
+} from '../validator/establishment/establishmentSchema';
 
 const establishmentRouter = Router();
-const establishmentController = new EstablishmentController();
+const establishmentController = new EstablishmentController(establishmentService);
 
 establishmentRouter.post(
   '/onboarding',
   authenticate,
-  establishmentController.onboarding,
+  validateSaveOnboarding,
+  establishmentController.onboarding // <-- Sem .bind() agora
 );
 
 establishmentRouter.post(
   '/finalize',
   authenticate,
-  establishmentController.finalize,
+  validateFinalizeOnboarding,
+  establishmentController.finalize
 );
 
 establishmentRouter.get(
   '/profile',
   authenticate,
   checkPermission('ESTABELECIMENTO_VIEW', 'ALL'),
-  establishmentController.getProfile,
+  establishmentController.getProfile
 );
+
 establishmentRouter.put(
   '/profile',
   authenticate,
   checkPermission('ESTABELECIMENTO_EDIT', 'ALL'),
-  establishmentController.update,
+  validateUpdateEstablishment,
+  establishmentController.update
 );
+
 establishmentRouter.delete(
   '/disable',
   authenticate,
   checkPermission('ESTABELECIMENTO_DELETE', 'ALL'),
-  establishmentController.disable,
+  establishmentController.disable
 );
 
 export { establishmentRouter };

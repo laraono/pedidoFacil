@@ -2,14 +2,7 @@ import { request } from './api';
 
 export const roleApi = {
   async list() {
-    const data = await request('/roles', { method: 'GET' });
-    
-    return data.map(role => ({
-      ...role,
-      permissions: typeof role.permissions === 'string' 
-        ? JSON.parse(role.permissions) 
-        : (role.permissions || [])
-    }));
+    return await request('/roles', { method: 'GET' });
   },
 
   async create(roleData) {
@@ -18,11 +11,10 @@ export const roleApi = {
       permissions: roleData.permissions 
     };
     
-    const data = await request('/roles', { 
+    return await request('/roles', { 
       method: 'POST',
       body: JSON.stringify(payload)
     });
-    return data;
   },
 
   async update(id, roleData) {
@@ -31,11 +23,10 @@ export const roleApi = {
       permissions: roleData.permissions
     };
     
-    const data = await request(`/roles/${id}`, {
+    return await request(`/roles/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload)
     });
-    return data;
   },
 
   async delete(id) {

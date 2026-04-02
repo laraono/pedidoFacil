@@ -1,17 +1,19 @@
-import { AppDataSource } from '../database/data-source';
-import { User } from '../database/entity/User';
-import { Role } from '../database/entity/Role';
+import { UserRepository } from '../repository/UserRepository';
+import { RoleRepository } from '../repository/RoleRepository';
 import { AppError } from '../middleware/error/AppError';
 import { UserStatus } from '../enum';
 import * as bcrypt from 'bcrypt';
+import { CreateEmployeeDTO, UpdateEmployeeDTO } from '../dto/employee/EmployeeDTO';
 
 export class EmployeeService {
-  private userRepository = AppDataSource.getRepository(User);
-  private roleRepository = AppDataSource.getRepository(Role);
+  constructor(
+      private userRepository: UserRepository,
+      private roleRepository: RoleRepository
+  ) {}
 
   async listEmployees(establishmentId: number) {
     return await this.userRepository.find({
-      where: { establishment: { id: establishmentId }, status: UserStatus.ATIVA },
+      where: { establishment: { id: establishmentId } as any, status: UserStatus.ATIVA },
       relations: ['role'],
       select: ['id', 'name', 'email', 'cpf', 'status'],
       order: { name: 'ASC' }
@@ -20,14 +22,14 @@ export class EmployeeService {
 
   async listInactiveEmployees(establishmentId: number) {
     return await this.userRepository.find({
-      where: { establishment: { id: establishmentId }, status: UserStatus.INATIVA },
+      where: { establishment: { id: establishmentId } as any, status: UserStatus.INATIVA },
       relations: ['role'],
       select: ['id', 'name', 'email', 'cpf', 'status'],
       order: { id: 'DESC' } 
     });
   }
 
-  async createEmployee(establishmentId: number, data: any) {
+  async createEmployee(establishmentId: number, data: CreateEmployeeDTO) {
     const emailExists = await this.userRepository.findOne({ where: { email: data.email } });
     if (emailExists) throw new AppError('Este e-mail já está em uso.', 400);
 
@@ -41,7 +43,9 @@ export class EmployeeService {
       }
     }
 
-    const role = await this.roleRepository.findOne({ where: { id: data.roleId, establishment: { id: establishmentId } } });
+    const role = await this.roleRepository.findOne({ 
+        where: { id: data.roleId, establishment: { id: establishmentId } as any } 
+    });
     if (!role) throw new AppError('Cargo não encontrado ou inválido.', 404);
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
@@ -53,7 +57,7 @@ export class EmployeeService {
       password: hashedPassword,
       status: UserStatus.ATIVA,
       role: role,
-      establishment: { id: establishmentId }
+      establishment: { id: establishmentId } as any
     });
 
     await this.userRepository.save(newUser);
@@ -62,9 +66,10 @@ export class EmployeeService {
     return userWithoutPassword;
   }
 
-  async updateEmployee(establishmentId: number, userId: number, data: any) {
+  async updateEmployee(establishmentId: number, userId: number, data: UpdateEmployeeDTO) {
     const user = await this.userRepository.findOne({ 
-      where: { id: userId, establishment: { id: establishmentId } } 
+      where: { id: userId, establishment: { id: establishmentId } as any },
+      relations: ['role']
     });
 
     if (!user) throw new AppError('Funcionário não encontrado.', 404);
@@ -76,8 +81,10 @@ export class EmployeeService {
       }
     }
 
-    if (data.roleId) {
-      const role = await this.roleRepository.findOne({ where: { id: data.roleId, establishment: { id: establishmentId } } });
+    if (data.roleId && (!user.role || data.roleId !== user.role.id)) {
+      const role = await this.roleRepository.findOne({ 
+          where: { id: data.roleId, establishment: { id: establishmentId } as any } 
+      });
       if (!role) throw new AppError('Cargo não encontrado.', 404);
       user.role = role;
     }
@@ -98,7 +105,7 @@ export class EmployeeService {
 
   async softDeleteEmployee(establishmentId: number, userId: number) {
     const user = await this.userRepository.findOne({ 
-      where: { id: userId, establishment: { id: establishmentId } },
+      where: { id: userId, establishment: { id: establishmentId } as any },
       relations: ['role']
     });
 
@@ -116,7 +123,7 @@ export class EmployeeService {
 
   async reactivateEmployee(establishmentId: number, userId: number) {
     const user = await this.userRepository.findOne({ 
-      where: { id: userId, establishment: { id: establishmentId } } 
+      where: { id: userId, establishment: { id: establishmentId } as any } 
     });
 
     if (!user) throw new AppError('Funcionário não encontrado.', 404);

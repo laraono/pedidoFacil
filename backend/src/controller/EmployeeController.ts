@@ -1,70 +1,47 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { EmployeeService } from '../service/EmployeeService';
-
-const employeeService = new EmployeeService();
+import { catchAsync } from '../middleware/error/catchAsync';
 
 export class EmployeeController {
   
-  async list(req: Request, res: Response, next: NextFunction) {
-    try {
-      const establishmentId = (req as any).usuario.estabelecimento;
-      const employees = await employeeService.listEmployees(establishmentId);
-      return res.json(employees);
-    } catch (error) {
-      next(error);
-    }
-  }
+  constructor(private employeeService: EmployeeService) {}
 
-  async listInactive(req: Request, res: Response, next: NextFunction) {
-    try {
-      const establishmentId = (req as any).usuario.estabelecimento;
-      const employees = await employeeService.listInactiveEmployees(establishmentId);
-      return res.json(employees);
-    } catch (error) {
-      next(error);
-    }
-  }
+  list = catchAsync(async (req: Request, res: Response) => {
+    const establishmentId = (req as any).usuario.estabelecimento;
+    const employees = await this.employeeService.listEmployees(establishmentId);
+    return res.json(employees);
+  });
 
-  async create(req: Request, res: Response, next: NextFunction) {
-    try {
-      const establishmentId = (req as any).usuario.estabelecimento;
-      const newEmployee = await employeeService.createEmployee(establishmentId, req.body);
-      return res.status(201).json(newEmployee);
-    } catch (error) {
-      next(error);
-    }
-  }
+  listInactive = catchAsync(async (req: Request, res: Response) => {
+    const establishmentId = (req as any).usuario.estabelecimento;
+    const employees = await this.employeeService.listInactiveEmployees(establishmentId);
+    return res.json(employees);
+  });
 
-  async update(req: Request, res: Response, next: NextFunction) {
-    try {
-      const establishmentId = (req as any).usuario.estabelecimento;
-      const userId = Number(req.params.id);
-      const updatedEmployee = await employeeService.updateEmployee(establishmentId, userId, req.body);
-      return res.json(updatedEmployee);
-    } catch (error) {
-      next(error);
-    }
-  }
+  create = catchAsync(async (req: Request, res: Response) => {
+    const establishmentId = (req as any).usuario.estabelecimento;
+    const newEmployee = await this.employeeService.createEmployee(establishmentId, req.body);
+    return res.status(201).json(newEmployee);
+  });
 
-  async delete(req: Request, res: Response, next: NextFunction) {
-    try {
-      const establishmentId = (req as any).usuario.estabelecimento;
-      const userId = Number(req.params.id);
-      const result = await employeeService.softDeleteEmployee(establishmentId, userId);
-      return res.json(result);
-    } catch (error) {
-      next(error);
-    }
-  }
+  update = catchAsync(async (req: Request, res: Response) => {
+    const establishmentId = (req as any).usuario.estabelecimento;
+    const userId = Number(req.params.id);
+    const updatedEmployee = await this.employeeService.updateEmployee(establishmentId, userId, req.body);
+    return res.json(updatedEmployee);
+  });
 
-  async reactivate(req: Request, res: Response, next: NextFunction) {
-    try {
-      const establishmentId = (req as any).usuario.estabelecimento;
-      const userId = Number(req.params.id);
-      const result = await employeeService.reactivateEmployee(establishmentId, userId);
-      return res.json(result);
-    } catch (error) {
-      next(error);
-    }
-  }
+  delete = catchAsync(async (req: Request, res: Response) => {
+    const establishmentId = (req as any).usuario.estabelecimento;
+    const userId = Number(req.params.id);
+    const result = await this.employeeService.softDeleteEmployee(establishmentId, userId);
+    return res.json(result);
+  });
+
+  reactivate = catchAsync(async (req: Request, res: Response) => {
+    const establishmentId = (req as any).usuario.estabelecimento;
+    const userId = Number(req.params.id);
+    const result = await this.employeeService.reactivateEmployee(establishmentId, userId);
+    return res.json(result);
+  });
 }

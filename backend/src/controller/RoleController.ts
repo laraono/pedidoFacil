@@ -1,48 +1,33 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { RoleService } from '../service/RoleService';
-
-const roleService = new RoleService();
+import { catchAsync } from '../middleware/error/catchAsync';
 
 export class RoleController {
-  async list(req: Request, res: Response, next: NextFunction) {
-    try {
-      const establishmentId = (req as any).usuario.estabelecimento;
-      const roles = await roleService.listRoles(establishmentId);
-      return res.json(roles);
-    } catch (error) {
-      next(error);
-    }
-  }
+    constructor(private roleService: RoleService) {}
 
-  async create(req: Request, res: Response, next: NextFunction) {
-    try {
-      const establishmentId = (req as any).usuario.estabelecimento;
-      const role = await roleService.createRole(establishmentId, req.body);
-      return res.status(201).json(role);
-    } catch (error) {
-      next(error);
-    }
-  }
+    list = catchAsync(async (req: Request, res: Response) => {
+        const establishmentId = (req as any).usuario.estabelecimento;
+        const roles = await this.roleService.listRoles(establishmentId);
+        return res.json(roles);
+    });
 
-  async update(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const establishmentId = (req as any).usuario.estabelecimento;
-      const updated = await roleService.updateRole(Number(id), establishmentId, req.body);
-      return res.json(updated);
-    } catch (error) {
-      next(error);
-    }
-  }
+    create = catchAsync(async (req: Request, res: Response) => {
+        const establishmentId = (req as any).usuario.estabelecimento;
+        const role = await this.roleService.createRole(establishmentId, req.body);
+        return res.status(201).json(role);
+    });
 
-  async delete(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const establishmentId = (req as any).usuario.estabelecimento;
-      await roleService.deleteRole(Number(id), establishmentId);
-      return res.status(204).send();
-    } catch (error) {
-      next(error);
-    }
-  }
+    update = catchAsync(async (req: Request, res: Response) => {
+        const { id } = req.params;
+        const establishmentId = (req as any).usuario.estabelecimento;
+        const updated = await this.roleService.updateRole(Number(id), establishmentId, req.body);
+        return res.json(updated);
+    });
+
+    delete = catchAsync(async (req: Request, res: Response) => {
+        const { id } = req.params;
+        const establishmentId = (req as any).usuario.estabelecimento;
+        await this.roleService.deleteRole(Number(id), establishmentId);
+        return res.status(204).send();
+    });
 }

@@ -1,30 +1,26 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { ProfileService } from '../service/ProfileService';
-
-const profileService = new ProfileService();
+import { catchAsync } from '../middleware/error/catchAsync';
 
 export class ProfileController {
-  async get(req: Request, res: Response, next: NextFunction) {
-    try {
-      const userId = (req as any).usuario.id;
-      const profile = await profileService.getProfile(userId);
-      return res.json(profile);
-    } catch (error) { next(error); }
-  }
+  
+  constructor(private profileService: ProfileService) {}
 
-  async update(req: Request, res: Response, next: NextFunction) {
-    try {
-      const userId = (req as any).usuario.id;
-      const updatedProfile = await profileService.updateProfile(userId, req.body);
-      return res.json(updatedProfile);
-    } catch (error) { next(error); }
-  }
+  get = catchAsync(async (req: Request, res: Response) => {
+    const userId = (req as any).usuario.id;
+    const profile = await this.profileService.getProfile(userId);
+    return res.json(profile);
+  });
 
-  async changePassword(req: Request, res: Response, next: NextFunction) {
-    try {
-      const userId = (req as any).usuario.id;
-      const result = await profileService.changePassword(userId, req.body);
-      return res.json(result);
-    } catch (error) { next(error); }
-  }
+  update = catchAsync(async (req: Request, res: Response) => {
+    const userId = (req as any).usuario.id;
+    const updatedProfile = await this.profileService.updateProfile(userId, req.body);
+    return res.json(updatedProfile);
+  });
+
+  changePassword = catchAsync(async (req: Request, res: Response) => {
+    const userId = (req as any).usuario.id;
+    const result = await this.profileService.changePassword(userId, req.body);
+    return res.json(result);
+  });
 }
