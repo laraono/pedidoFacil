@@ -57,10 +57,12 @@ const selectedSize = ref(null);
 
 const products = ref([])
 const categories = ref([])
+const comandas = ref([])
 
 onMounted(async () => {
   categories.value = await categoryApi.listActive()
   products.value = await productApi.listActiveByCategory(categories.value[0].id)
+  comandas.value = await comandaApi.listOpen()
 
   bgColor.value = localStorageService.getBackgroundColors() || '#F5F6FA';
   buttonColor.value = localStorageService.getButtonColors() || '#1E7BC4';
@@ -113,7 +115,9 @@ const productsByCategory = computed(() => {
 
 const selectedCategory = computed(() => productsByCategory.value.find(c => c.id === activeCategoryId.value) || null);
 const cartQuantity = computed(() => cart.value.length);
-const cartTotal = computed(() => cart.value.reduce((acc, item) => acc + item.price, 0));
+const cartTotal = computed(() => 
+  cart.value.reduce((acc, item) => acc + (item.price * item.quantity), 0)
+);
 
 const currentModalTotal = computed(() => {
   if (!currentProduct.value) return 0;
@@ -132,7 +136,7 @@ const openProductModal = (product) => {
   currentObservation.value = '';
   selectedSize.value = product.sizes?.length > 0
     ? product.sizes[0]
-    : { name: 'Padrão', price: product.price ?? 0 };
+    : { name: 'Padrão', price: product.basePrice ?? 0 };
   isProductModalOpen.value = true;
 };
 
@@ -146,7 +150,6 @@ const addToCart = () => {
   const unitPrice = selectedSize.value.price;
   for (let i = 0; i < currentQuantity.value; i++) {
     cart.value.push({
-      id: Date.now() + Math.random(),
       productId: currentProduct.value.id,
       name: currentProduct.value.name,
       sizeName: selectedSize.value.name,
@@ -175,7 +178,7 @@ const confirmAndSendToKitchen = async () => {
   if (!selectedComandaId.value) return;
   if (selectedComandaId.value === 'new' && !newComandaNumber.value.trim()) return;
 
-  let targetComanda;
+  let comandaId;
   if (selectedComandaId.value === 'new') {
     const label = `${comandaUnitLabel.value} ${newComandaNumber.value.trim()}`;
     const duplicate = comandaStore.comandas.some(c => c.label.trim().toLowerCase() === label.trim().toLowerCase());
@@ -183,27 +186,27 @@ const confirmAndSendToKitchen = async () => {
       showToast(`Já existe uma comanda com o nome "${label}". Use outro número.`, 'error');
       return;
     }
-    targetComanda = await comandaApi.post(label, 'Ativa');
+    comandaId = await comandaApi.post(label, 'Aberta');
   } else {
-    targetComanda = comandaStore.comandas.find(c => c.id === selectedComandaId.value);
+    comandaId = selectedComandaId.value
   }
-  if (!targetComanda) return;
+  if (!comandaId) return;
 
   const finalOrder = {
     status: 'Aguardando_Preparo',
-    comandaId: targetComanda.id,
+    comandaId: comandaId,
     itens: cart.value.map(item => ({
-      productId: item.id,
+      productId: item.productId,
       quantity: 1,
       obs: item.obs,
     })),
   };
 
-  await orderApi.post(targetComanda.id, 'Aguardando_Preparo', finalOrder.itens)
+  await orderApi.post(comandaId, finalOrder.status, finalOrder.itens)
 
   const kitchenOrder = {
     id: Date.now(),
-    comanda: targetComanda.label,
+    comanda: comandaId,
     waiter: 'Autoatendimento',
     status: 'pending',
     createdAt: new Date(),
@@ -214,7 +217,7 @@ const confirmAndSendToKitchen = async () => {
     })),
   };
 
-  comandaStore.updateComanda(targetComanda.id, finalOrder);
+  comandaStore.updateComanda(comandaId, finalOrder);
   kitchenStore.addOrder(kitchenOrder);
 
   cart.value = [];
@@ -319,7 +322,7 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
                 <div class="flex items-center justify-between mt-6 pt-4 border-t border-white/5 z-10">
                   <div class="flex flex-col">
                     <span v-if="product.sizes?.length > 1" class="text-[10px] opacity-70 uppercase tracking-widest font-bold mb-0.5" :style="{ color: textColor }">A partir de</span>
-                    <span class="font-black text-xl" :style="{ color: buttonColor }">{{ formatCurrency(product.sizes?.[0]?.price ?? product.price ?? 0) }}</span>
+                    <span class="font-black text-xl" :style="{ color: buttonColor }">{{ formatCurrency(product.sizes?.[0]?.price ?? product.basePrice ?? 0) }}</span>
                   </div>
                   <div class="w-10 h-10 rounded flex items-center justify-center font-bold transition-transform group-hover:scale-110 shadow-lg" :style="{ backgroundColor: buttonColor, color: buttonTextColor }">
                     <Plus :size="20" />
@@ -484,13 +487,13 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
             <div class="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-5" :style="{ backgroundColor: adaptiveSubtleBg }">
 
               <!-- Comandas abertas -->
-              <div v-if="comandaStore.comandas.length > 0">
+              <div v-if="comandas.length > 0">
                 <p class="text-xs font-black uppercase tracking-widest opacity-60 mb-3" :style="{ color: textColor }">
                   Comandas Abertas
                 </p>
                 <div class="space-y-2">
                   <button
-                    v-for="comanda in comandaStore.comandas"
+                    v-for="comanda in comandas"
                     :key="comanda.id"
                     @click="selectedComandaId = comanda.id"
                     class="w-full p-4 rounded border-2 text-left transition-all flex justify-between items-center"
@@ -498,7 +501,7 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
                       ? { borderColor: buttonColor, backgroundColor: buttonColor + '22' }
                       : { borderColor: adaptiveBorder, backgroundColor: adaptiveInputBg }"
                   >
-                    <span class="font-black text-base" :style="{ color: textColor }">{{ comanda.label }}</span>
+                    <span class="font-black text-base" :style="{ color: textColor }">{{ comanda.description }}</span>
                     <span class="text-xs opacity-60 font-bold" :style="{ color: textColor }">{{ comanda.orders.length }} pedido(s)</span>
                   </button>
                 </div>

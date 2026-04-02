@@ -365,7 +365,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         <p v-if="item.description" class="text-[#757575] text-xs mt-0.5">{{ item.description }}</p>
       </template>
       <template #cell-price="{ item }">
-        <span class="text-accent font-black">R$ {{ Number(item.price ?? item.sizes?.[0]?.price ?? 0).toFixed(2) }}</span>
+        <span class="text-accent font-black">R$ {{ Number(item.basePrice ?? item.sizes?.[0]?.price ?? 0).toFixed(2) }}</span>
       </template>
       <template #cell-status="{ item }">
         <span v-if="item.deletedAt" class="px-3 py-1 bg-gray-100 text-[#757575] border border-[#E0E0E0] rounded text-[10px] font-black uppercase tracking-widest">Arquivado</span>

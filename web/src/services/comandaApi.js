@@ -8,10 +8,10 @@ export const comandaApi = {
         request('/commands', { method: 'GET'}),
 
     listOpen: () => 
-        request('/commands/open', {method: 'GET', query: JSON.stringify({status: 'Aberta'})}),
+        request('/commands/open', {method: 'GET'}),
 
     listClosed: () => 
-        request('/commands/closed', {method: 'GET', query: JSON.stringify({status: 'Fechada'})}),
+        request('/commands/closed', {method: 'GET'}),
 
     putStatus: (comandaId, status) => 
         request(`/commands/${comandaId}`, {method: 'PUT', body: JSON.stringify({status})}),
