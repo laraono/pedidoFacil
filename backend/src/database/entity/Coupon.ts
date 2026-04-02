@@ -1,8 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, DeleteDateColumn, Unique, JoinColumn, ManyToOne } from "typeorm"
-import { ComandaStatus, DiscountType } from "../../enum"
+import { Entity, PrimaryGeneratedColumn, Column, DeleteDateColumn, Unique, JoinColumn, ManyToOne } from "typeorm"
+import { DiscountType } from "../../enum"
 import { Establishment } from "./Establishment"
 
-@Unique(['id', 'code'])
+@Unique('UK_Estabelecimento_Codigo', ['establishment', 'code'])
 @Entity({name: 'CUPOM_DESCONTO'})
 export class Coupon {
 
@@ -15,17 +15,17 @@ export class Coupon {
         type: 'varchar',
         name: 'Codigo',
         nullable: false,
-        length: 30
+        length: 50
     })
     code: string
 
     @Column({
         type: 'varchar',
-        name: 'status',
+        name: 'Tipo_Desconto',
         nullable: false,
-        length: 30
+        length: 20
     })
-    status: ComandaStatus
+    type: DiscountType 
 
     @Column({
         name: 'Valor_Desconto',
@@ -45,23 +45,20 @@ export class Coupon {
 
     @Column({
         type: 'date',
-        name: 'Data_Vencimento',
+        name: 'Data_Validade',
         nullable: true,
     })
-    expirationDate: Date
+    expirationDate: String
 
-    @Column({
-        type: 'varchar',
-        name: 'Tipo_Desconto',
-        nullable: false,
-        length: 20
+    @DeleteDateColumn({
+        name: 'Data_Exclusao',
+        nullable: true,
     })
-    type: DiscountType
+    deletedAt: Date
 
     @ManyToOne(() => Establishment, (establishment) => establishment.coupons)
     @JoinColumn({
         name: 'ID_Estabelecimento'
     })
     establishment: Establishment
-
 }

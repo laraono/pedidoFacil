@@ -2,7 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
-import { categoryRouter, comandaRouter, orderRouter, productRouter, authRouter, establishmentRouter, metricsRouter, receiptRouter, roleRouter, employeeRouter, profileRouter } from './router';
+import { categoryRouter, comandaRouter, orderRouter, productRouter, authRouter, establishmentRouter, metricsRouter, receiptRouter, roleRouter, employeeRouter, profileRouter, couponRouter } from './router';
 import { AppDataSource } from './database';
 import { errorHandler } from './middleware';
 
@@ -31,6 +31,7 @@ AppDataSource.initialize().then(async () => {
     app.use('/api/v1/roles', roleRouter)
     app.use('/api/v1/funcionario', employeeRouter)
     app.use('/api/v1/conta', profileRouter)
+    app.use('/api/v1/cupons', couponRouter)
 
     app.use(errorHandler)
 

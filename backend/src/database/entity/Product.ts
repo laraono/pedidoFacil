@@ -38,13 +38,6 @@ export class Product {
 
     @Column({
         type: 'boolean',
-        name: 'Disponivel',
-        nullable: false
-    })
-    isAvailable: boolean
-
-    @Column({
-        type: 'boolean',
         name: 'Estocavel',
         nullable: false
     })
@@ -60,18 +53,13 @@ export class Product {
     basePrice: number
 
     @Column({
-        type: 'varchar',
+        type: 'enum',
+        enum: ['Ativo', 'Inativo'],
         name: 'Status',
         nullable: false,
-        length: 30
+        default: 'Ativo'
     })
-    status: ProductStatus
-
-    @CreateDateColumn({ 
-        type: "timestamp", 
-        default: () => "CURRENT_TIMESTAMP(6)"
-     })
-    created_at: Date;
+    status: ProductStatus | string
 
     @DeleteDateColumn({
         name: 'Data_Exclusao',

@@ -11,9 +11,7 @@ export class CategoryService {
     }
 
     async createCategory(category: CreateCategory) {
-    
         const {id} = await this.categoryRepository.createCategory(category) 
-
         return id
     }
 
@@ -23,5 +21,21 @@ export class CategoryService {
 
     async getCategory(categoryId: number) {
         return await this.categoryRepository.getCategory(categoryId)
+    }
+
+    async listDeletedCategories() {
+        return await this.categoryRepository.listDeletedCategories()
+    }
+
+    async updateCategory(categoryId: number, data: any) {
+        await this.categoryRepository.updateCategory(categoryId, { name: data.name });
+    }
+
+    async softDeleteCategory(categoryId: number) {
+        await this.categoryRepository.softDeleteCategory(categoryId);
+    }
+
+    async restoreCategory(categoryId: number) {
+        await this.categoryRepository.restoreCategory(categoryId);
     }
 }

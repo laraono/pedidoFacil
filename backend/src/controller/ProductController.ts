@@ -1,5 +1,5 @@
 import { ProductService } from "../service";
-import {Request, Response} from 'express';
+import { Request, Response } from 'express';
 
 export class ProductController {
 
@@ -10,21 +10,41 @@ export class ProductController {
     }
 
     async createProduct(req: Request, res: Response) {
-        const productId = await this.productService.createProduct(req.body)
+        if (req.body.product) {
+            req.body.product.establishment = { id: (req as any).usuario.estabelecimento };
+        }
 
-        res.status(201).send(productId)
+        const productId = await this.productService.createProduct(req.body);
+        res.status(201).json(productId);
     }
 
     async listProducts(req: Request, res: Response) {
+        if (req.query.deleted === 'true') {
+            const products = await this.productService.listDeletedProducts();
+            return res.status(200).json(products);
+        }
+
         const products = await this.productService.listProducts()
-
-        res.status(200).send(products)
+        return res.status(200).json(products)
     }
 
-    async listProductsByCategory(req, res: Response) {
-        const products = await this.productService.listProductsByCategory(req.params)
-
-        res.status(200).send(products)
+    async listProductsByCategory(req: Request, res: Response) {
+        const products = await this.productService.listProductsByCategory(Number(req.params.categoryId))
+        res.status(200).json(products)
     }
-    
+
+    async updateProduct(req: Request, res: Response) {
+        await this.productService.updateProduct(Number(req.params.id), req.body);
+        res.sendStatus(204);
+    }
+
+    async deleteProduct(req: Request, res: Response) {
+        await this.productService.softDeleteProduct(Number(req.params.id));
+        res.sendStatus(204);
+    }
+
+    async restoreProduct(req: Request, res: Response) {
+        await this.productService.restoreProduct(Number(req.params.id));
+        res.sendStatus(204);
+    }
 }

@@ -9,6 +9,7 @@ import { ProductVariationRepository } from './ProductVariationRepository'
 import { RefreshTokenRepository } from './RefreshTokenRepository'
 import { RoleRepository } from './RoleRepository'
 import { UserRepository } from './UserRepository'
+import { CouponRepository } from './CouponRepository'
 
 const categoryRepository: CategoryRepository = new CategoryRepository(AppDataSource)
 const comandaRepository: ComandaRepository = new ComandaRepository(AppDataSource)
@@ -20,6 +21,7 @@ const productVariationOrderRepository: ProductVariationOrderRepository = new Pro
 const refreshTokenRepository: RefreshTokenRepository = new RefreshTokenRepository(AppDataSource)
 const roleRepository: RoleRepository = new RoleRepository(AppDataSource)
 const userRepository: UserRepository = new UserRepository(AppDataSource)
+const couponRepository: CouponRepository = new CouponRepository(AppDataSource)
 
 export {
     categoryRepository,
@@ -31,10 +33,11 @@ export {
     productVariationOrderRepository,
     refreshTokenRepository,
     roleRepository,
-    userRepository
+    userRepository,
+    couponRepository
 }
 
 export {
     CategoryRepository, ComandaRepository, OrderRepository, ProductRepository, ProductOrderRepository, ProductVariationRepository,
-    ProductVariationOrderRepository, RefreshTokenRepository, RoleRepository, UserRepository
+    ProductVariationOrderRepository, RefreshTokenRepository, RoleRepository, UserRepository, CouponRepository
 }

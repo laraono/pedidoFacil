@@ -1,73 +1,98 @@
-import { AppDataSource } from '../database/data-source'
-import { Coupon } from '../database/entity/Coupon'
-import { AppError } from '../middleware/error/AppError'
-import { ComandaStatus } from '../enum' 
+import { CreateCouponDTO } from "../dto/coupon/CreateCouponDTO";
+import { AppError } from "../middleware/error/AppError";
+import { CouponRepository } from "../repository/CouponRepository";
 
 export class CouponService {
-    private couponRepository = AppDataSource.getRepository(Coupon)
 
-    async createCoupon(establishmentId: number, data: Partial<Coupon>) {
-        const existingCoupon = await this.couponRepository.findOne({
-            where: { code: data.code?.toUpperCase(), establishment: { id: establishmentId } }
-        })
+    private couponRepository: CouponRepository;
+
+    constructor(couponRepository: CouponRepository) {
+        this.couponRepository = couponRepository;
+    }
+
+    async createCoupon(establishmentId: number, data: CreateCouponDTO) {
+        const existingCoupon = await this.couponRepository.getCouponByCode(data.code, establishmentId);
 
         if (existingCoupon) {
-            throw new AppError('Já existe um cupom com este código neste estabelecimento', 400)
+            throw new AppError('Já existe um cupom com este código para o seu estabelecimento.', 409);
         }
 
-        const coupon = this.couponRepository.create({
-            ...data,
-            code: data.code?.toUpperCase(),
-            establishment: { id: establishmentId }
-        })
+        if (data.expirationDate) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const expDate = new Date(`${data.expirationDate}T12:00:00`);
+            if (expDate < today) {
+                throw new AppError('A data de validade não pode ser anterior a hoje.', 400);
+            }
+        }
 
-        return await this.couponRepository.save(coupon)
+        const coupon = await this.couponRepository.createCoupon(establishmentId, data);
+        return coupon.id;
     }
 
-    async getCouponsByEstablishment(establishmentId: number) {
-        return await this.couponRepository.find({
-            where: { establishment: { id: establishmentId } }
-        })
+    async listCoupons(establishmentId: number) {
+        return await this.couponRepository.listCouponsByEstablishment(establishmentId);
     }
 
-    async validateCoupon(code: string, establishmentId: number) {
-        const coupon = await this.couponRepository.findOne({
-            where: { code: code.toUpperCase(), establishment: { id: establishmentId } }
-        })
-
-        if (!coupon) throw new AppError('Cupom inválido ou não encontrado', 404)
+    async updateCoupon(couponId: number, establishmentId: number, data: Partial<CreateCouponDTO>) {
+        const coupon = await this.couponRepository.getCouponById(couponId, establishmentId);
         
-        if (coupon.status !== ComandaStatus.ABERTA) {
-            throw new AppError('Este cupom não está ativo', 400)
-        }
-        
-        if (coupon.expirationDate && new Date() > new Date(coupon.expirationDate)) {
-            throw new AppError('Este cupom já expirou', 400)
+        if (!coupon) {
+            throw new AppError('Cupom não encontrado.', 404);
         }
 
-        if (coupon.quantity !== null && coupon.quantity !== undefined && coupon.quantity <= 0) {
-            throw new AppError('Este cupom esgotou', 400)
+        if (data.code && data.code !== coupon.code) {
+            const existingCoupon = await this.couponRepository.getCouponByCode(data.code, establishmentId);
+            if (existingCoupon) {
+                throw new AppError('Já existe um cupom com este código para o seu estabelecimento.', 409);
+            }
         }
 
-        return coupon
+        const { establishmentId: _, ...updateData } = data;
+
+        if (updateData.expirationDate) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const expDate = new Date(`${updateData.expirationDate}T12:00:00`);
+            if (expDate < today) {
+                throw new AppError('A data de validade não pode ser anterior a hoje.', 400);
+            }
+        }
+
+        await this.couponRepository.updateCoupon(couponId, establishmentId, updateData);
     }
 
-    async decrementCouponQuantity(couponId: number) {
-        const coupon = await this.couponRepository.findOne({ where: { id: couponId } })
-        if (coupon && coupon.quantity !== null && coupon.quantity > 0) {
-            coupon.quantity -= 1
-            await this.couponRepository.save(coupon)
+    async deleteCoupon(couponId: number, establishmentId: number) {
+        const coupon = await this.couponRepository.getCouponById(couponId, establishmentId);
+
+        if (!coupon) {
+            throw new AppError('Cupom não encontrado.', 404);
         }
+
+        await this.couponRepository.softDeleteCoupon(couponId);
     }
 
-    async softDeleteCoupon(couponId: number, establishmentId: number) {
-        const coupon = await this.couponRepository.findOne({
-            where: { id: couponId, establishment: { id: establishmentId } }
-        })
+    async validateAndApplyCoupon(code: string, establishmentId: number) {
+        const coupon = await this.couponRepository.getCouponByCode(code, establishmentId);
 
-        if (!coupon) throw new AppError('Cupom não encontrado', 404)
+        if (!coupon) {
+            throw new AppError('Cupom inválido ou inexistente.', 404);
+        }
 
-        await this.couponRepository.softRemove(coupon)
-        return { message: 'Cupom excluído com sucesso' }
+        if (coupon.quantity !== null && coupon.quantity <= 0) {
+            throw new AppError('Este cupom já atingiu o limite de usos.', 400);
+        }
+
+        if (coupon.expirationDate) {
+            const today = new Date();
+            const expiration = new Date(`${coupon.expirationDate}T12:00:00`);
+            today.setHours(0, 0, 0, 0);
+
+            if (today > expiration) {
+                throw new AppError('Este cupom está expirado.', 400);
+            }
+        }
+
+        return coupon;
     }
 }

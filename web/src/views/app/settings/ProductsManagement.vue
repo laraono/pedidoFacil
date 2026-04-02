@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { useMenuStore } from "@/stores/productsManagement.js";
 import { useToast } from "@/composables/useToast";
 import { useConfirm } from "@/composables/useConfirm";
@@ -15,6 +16,10 @@ import { PlusCircle, Edit, Archive, RotateCcw, Trash2, Image as ImageIcon, Layer
 const menuStore = useMenuStore();
 const { showToast } = useToast();
 const { confirmState, showConfirm } = useConfirm();
+
+onMounted(() => {
+  menuStore.loadData();
+});
 
 const showDeleted = ref(false);
 const showModal = ref(false);
@@ -37,13 +42,12 @@ const sortedProducts = computed(() => {
 });
 const categoryOptions = computed(() => menuStore.activeCategories.map(c => ({ label: c.name, value: c.id })));
 
-// ── Bulk edition ──────────────────────────────────────────────────────────────
 const bulkMode = ref(false);
-const sortMode = ref('none'); // 'none' | 'alpha' | 'category-alpha'
+const sortMode = ref('none');
 const selectedIds = ref([]);
-const bulkAction = ref('');       // 'price_increase' | 'price_decrease' | 'availability' | 'category' | 'delete'
+const bulkAction = ref('');
 const bulkPriceValue = ref('');
-const bulkPriceType = ref('percent');  // 'percent' | 'fixed'
+const bulkPriceType = ref('percent');
 const bulkAvailability = ref(true);
 const bulkCategoryId = ref('');
 const showBulkConfirm = ref(false);
@@ -107,9 +111,10 @@ const applyBulk = () => {
   showBulkConfirm.value = true;
 };
 
-const executeBulk = () => {
+const executeBulk = async () => {
   const ids = [...selectedIds.value];
   const prods = displayedProducts.value.filter(p => ids.includes(p.id));
+  
   for (const p of prods) {
     if (bulkAction.value === 'price_increase' || bulkAction.value === 'price_decrease') {
       const val = parseFloat(String(bulkPriceValue.value).replace(',', '.')) || 0;
@@ -121,22 +126,22 @@ const executeBulk = () => {
         newPrice = bulkAction.value === 'price_increase' ? basePrice + val : basePrice - val;
       }
       newPrice = Math.max(0, parseFloat(newPrice.toFixed(2)));
-      menuStore.updateProduct({ ...p, price: newPrice });
+      await menuStore.updateProduct({ ...p, price: newPrice });
     } else if (bulkAction.value === 'availability') {
-      menuStore.updateProduct({ ...p, available: bulkAvailability.value });
+      await menuStore.updateProduct({ ...p, available: bulkAvailability.value });
     } else if (bulkAction.value === 'category') {
-      menuStore.updateProduct({ ...p, categoryId: bulkCategoryId.value });
+      await menuStore.updateProduct({ ...p, categoryId: bulkCategoryId.value });
     } else if (bulkAction.value === 'delete') {
-      menuStore.softDeleteProduct(p.id);
+      await menuStore.softDeleteProduct(p.id);
     }
   }
+  
   showToast(`${ids.length} produto(s) atualizado(s) com sucesso!`, 'success');
   showBulkConfirm.value = false;
   selectedIds.value = [];
   bulkMode.value = false;
 };
 
-// ── Individual actions ────────────────────────────────────────────────────────
 const validate = () => {
   const e = {};
   if (!form.value.name?.trim()) e.name = "Nome do produto é obrigatório.";
@@ -171,7 +176,7 @@ const applyPriceMask = (raw) => {
 const onPriceInput = (e) => { form.value.price = applyPriceMask(e.target.value); };
 const onSizePriceInput = (e, i) => { form.value.sizes[i].price = applyPriceMask(e.target.value); };
 
-const save = () => {
+const save = async () => {
   if (!validate()) { showToast("Corrija os erros no formulário.", "error"); return; }
   isLoading.value = true;
   try {
@@ -179,15 +184,18 @@ const save = () => {
       .filter(s => s.name.trim())
       .map(s => ({ name: s.name.trim(), price: parseFloat(String(s.price).replace(',', '.')) || 0 }));
     const payload = { id: form.value.id, name: form.value.name, description: form.value.description, price: parseFloat(String(form.value.price).replace(",", ".")), categoryId: form.value.categoryId, image: form.value.image, available: form.value.available, sizes: parsedSizes };
-    if (isEditing.value) menuStore.updateProduct(payload); else menuStore.addProduct(payload);
+    
+    if (isEditing.value) await menuStore.updateProduct(payload); 
+    else await menuStore.addProduct(payload);
+    
     showToast(isEditing.value ? "Produto atualizado!" : "Produto criado!", "success");
     showModal.value = false;
   } catch { showToast("Erro ao salvar produto.", "error"); } finally { isLoading.value = false; }
 };
 
-const handleDelete = (p) => showConfirm({ title: "Arquivar Produto", message: "Arquivar " + p.name + "?", onConfirm: () => { menuStore.softDeleteProduct(p.id); showToast(p.name + " arquivado.", "success"); } });
-const handleRestore = (p) => showConfirm({ title: "Restaurar Produto", message: "Restaurar " + p.name + "?", onConfirm: () => { menuStore.restoreProduct(p.id); showToast(p.name + " restaurado.", "success"); } });
-const handlePermanentDelete = (p) => showConfirm({ title: "Excluir Permanentemente", message: "Excluir " + p.name + " para sempre?", onConfirm: () => { menuStore.permanentlyDeleteProduct(p.id); showToast(p.name + " excluído.", "success"); } });
+const handleDelete = (p) => showConfirm({ title: "Arquivar Produto", message: "Arquivar " + p.name + "?", onConfirm: async () => { await menuStore.softDeleteProduct(p.id); showToast(p.name + " arquivado.", "success"); } });
+const handleRestore = (p) => showConfirm({ title: "Restaurar Produto", message: "Restaurar " + p.name + "?", onConfirm: async () => { await menuStore.restoreProduct(p.id); showToast(p.name + " restaurado.", "success"); } });
+const handlePermanentDelete = (p) => showConfirm({ title: "Excluir Permanentemente", message: "Excluir " + p.name + " para sempre?", onConfirm: () => { menuStore.permanentlyDeleteProduct(p.id); showToast(p.name + " removido localmente.", "success"); } });
 
 const tableColumns = computed(() => {
   const base = [ { key: "image", label: "Foto" }, { key: "name", label: "Produto", sortable: true }, { key: "category", label: "Categoria" }, { key: "price", label: "Preço" }, { key: "status", label: "Status" } ];
@@ -227,9 +235,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
       <button @click="showDeleted = false" class="text-orange-300 hover:text-orange-100 text-sm font-bold underline">Voltar para ativos</button>
     </div>
 
-    <!-- Bulk action bar -->
     <div v-if="bulkMode" class="mb-5 bg-white border border-accent/30 rounded p-5 flex flex-col gap-4">
-      <!-- Selection controls -->
       <div class="flex items-center justify-between flex-wrap gap-3">
         <div class="flex items-center gap-3">
           <button @click="toggleSelectAll" class="flex items-center gap-2 text-sm font-bold transition-colors" :class="allSelected ? 'text-accent' : 'text-[#757575] hover:text-[#212121]'">
@@ -245,7 +251,6 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         </button>
       </div>
 
-      <!-- Action chooser -->
       <div class="flex flex-wrap gap-2">
         <button v-for="opt in [
           { key: 'price_increase', icon: TrendingUp, label: 'Aumentar Preço' },
@@ -263,7 +268,6 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         </button>
       </div>
 
-      <!-- Action parameters -->
       <div v-if="bulkAction === 'price_increase' || bulkAction === 'price_decrease'" class="flex items-end gap-3 flex-wrap">
         <div class="flex flex-col gap-1">
           <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-1">Tipo</label>
@@ -325,7 +329,6 @@ const tableActions = computed(() => bulkMode.value ? [] : [
       </div>
     </div>
 
-    <!-- Sort controls -->
     <div class="flex items-center gap-2 mb-4 flex-wrap">
       <span class="text-xs font-black text-[#757575] uppercase tracking-widest mr-1">Ordenar:</span>
       <button v-for="opt in [{ v: 'none', l: 'Padrão' }, { v: 'alpha', l: 'A → Z' }, { v: 'category-alpha', l: 'Categoria + A → Z' }]"
@@ -404,7 +407,6 @@ const tableActions = computed(() => bulkMode.value ? [] : [
           </button>
         </div>
 
-        <!-- Tamanhos / Variações -->
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <div>
@@ -439,7 +441,6 @@ const tableActions = computed(() => bulkMode.value ? [] : [
 
     <ConfirmModal :confirmModal="confirmState" @close="confirmState.show = false" />
 
-    <!-- Bulk confirmation modal -->
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="showBulkConfirm" class="fixed inset-0 bg-black/50  z-[110] flex items-center justify-center p-4">
