@@ -26,7 +26,7 @@ AppDataSource.initialize().then(async () => {
     app.use('/api/v1', orderRouter)
     app.use('/api/v1', productRouter)
     app.use('/api/v1/estabelecimento', establishmentRouter)
-    app.use('/api/v1/metricas', metricsRouter)
+    app.use('/api/v1/metrics', metricsRouter)
     app.use('/api/v1/receipts', receiptRouter)
     app.use('/api/v1/roles', roleRouter)
     app.use('/api/v1/funcionario', employeeRouter)

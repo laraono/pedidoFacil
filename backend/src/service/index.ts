@@ -9,7 +9,9 @@ import {
     couponRepository,
     establishmentRepository,
     configurationRepository,
-    roleRepository
+    roleRepository,
+    receiptRepository,    // Adicionado
+    paymentRepository      // Adicionado
 } from '../repository'
 
 import { AuthService } from './AuthService'
@@ -22,7 +24,10 @@ import { ProfileService } from './ProfileService'
 import { CouponService } from './CouponService'
 import { EstablishmentService } from './EstablishmentService'
 import { RoleService } from './RoleService'
+import { ReceiptService } from './ReceiptService'   // Adicionado
+import { MetricsService } from './MetricsService'   // Adicionado
 
+// Instanciação dos Serviços com Injeção de Dependência
 const authService = new AuthService(AppDataSource, userRepository)
 const categoryService = new CategoryService(categoryRepository)
 const comandaService = new ComandaService(comandaRepository, userRepository)
@@ -30,7 +35,7 @@ const productService = new ProductService(categoryService, productRepository, pr
 const orderService = new OrderService(AppDataSource, orderRepository, comandaService)
 const couponService = new CouponService(couponRepository)
 const roleService = new RoleService(roleRepository, userRepository)
-const profileService = new ProfileService(userRepository);
+const profileService = new ProfileService(userRepository)
 
 const establishmentService = new EstablishmentService(
     establishmentRepository,
@@ -41,6 +46,16 @@ const establishmentService = new EstablishmentService(
 
 const employeeService = new EmployeeService(userRepository, roleRepository)
 
+// Novos Serviços instanciados
+const receiptService = new ReceiptService(
+    receiptRepository, 
+    paymentRepository, 
+    establishmentRepository
+)
+
+const metricsService = new MetricsService(receiptRepository)
+
+// Exportação das Instâncias
 export {
     authService,
     categoryService,
@@ -51,7 +66,9 @@ export {
     profileService,
     couponService,
     establishmentService,
-    roleService
+    roleService,
+    receiptService,    // Adicionado
+    metricsService     // Adicionado
 }
 
 export {
@@ -64,5 +81,7 @@ export {
     ProfileService,
     CouponService,
     EstablishmentService,
-    RoleService
+    RoleService,
+    ReceiptService,    // Adicionado
+    MetricsService     // Adicionado
 }

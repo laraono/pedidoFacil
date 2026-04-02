@@ -1,75 +1,66 @@
-import { AppDataSource } from '../database/data-source';
-import { Order } from '../database/entity/Order';
-import { Between } from 'typeorm';
+import { ReceiptRepository } from '../repository/ReceiptRepository';
+import { ReceiptStatus } from '../database/entity/Receipt';
+import { Between, IsNull, Not } from 'typeorm';
 import { AppError } from '../middleware/error/AppError';
 
 export class MetricsService {
-    private orderRepository = AppDataSource.getRepository(Order);
+    constructor(private receiptRepository: ReceiptRepository) {}
 
-    async getDashboardMetrics(establishmentId: number, startDate: string, endDate: string) {
+    async getReceiptMetrics(establishmentId: number, startDate: string, endDate: string) {
+        if (!startDate || !endDate) {
+            throw new AppError('Parâmetros de data (startDate e endDate) são obrigatórios.', 400);
+        }
+
         const start = new Date(startDate);
-        start.setHours(0, 0, 0, 0);
-
         const end = new Date(endDate);
+        // Garante que a data final pegue até o último segundo do dia
         end.setHours(23, 59, 59, 999);
 
-        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-            throw new AppError('Formato de data inválido. Utilize AAAA-MM-DD.', 400);
-        }
+        const dateFilter = Between(start, end);
 
-        if (start > end) {
-            throw new AppError('A data inicial não pode ser maior que a data final.', 400);
-        }
+        // 1. Contagem de Notas Emitidas (Autorizadas)
+        const emitidasCount = await this.receiptRepository.count({
+            where: { 
+                establishment: { id: establishmentId },
+                status: ReceiptStatus.AUTORIZADA,
+                createdAt: dateFilter
+            }
+        });
 
-        const orders = await this.orderRepository.find({
+        // 2. Cálculo do Faturamento (Soma do totalValue) usando innerJoin para evitar erros de mapeamento de colunas
+        const faturamento = await this.receiptRepository
+            .createQueryBuilder("receipt")
+            .select("SUM(receipt.totalValue)", "total")
+            .innerJoin("receipt.establishment", "establishment")
+            .where("establishment.id = :establishmentId", { establishmentId })
+            .andWhere("receipt.status = :status", { status: ReceiptStatus.AUTORIZADA })
+            .andWhere("receipt.createdAt BETWEEN :start AND :end", { start, end })
+            .getRawOne();
+
+        // 3. Contagem de Notas com CPF na base
+        const comCpfCount = await this.receiptRepository.count({
             where: {
                 establishment: { id: establishmentId },
-                created_at: Between(start, end)
-            },
-            relations: ['productOrders', 'productOrders.product']
-        });
-
-        let faturamentoTotal = 0;
-        const productCount: Record<string, number> = {};
-
-        orders.forEach(order => {
-            if (order.tripPrice) {
-                faturamentoTotal += Number(order.tripPrice);
-            }
-
-            if (order.productOrders) {
-                order.productOrders.forEach(po => {
-                    if (po.product && po.product.name) {
-                        const name = po.product.name;
-                        const quantidade = Number((po as any).quantity || 1); 
-                        productCount[name] = (productCount[name] || 0) + quantidade;
-                    }
-
-                    
-                    const preco = Number((po as any).price || 0);
-                    const quantidadeItem = Number((po as any).quantity || 1);
-                    
-                    faturamentoTotal += preco * quantidadeItem;
-                });
+                status: ReceiptStatus.AUTORIZADA,
+                cpfcnpj: Not(IsNull()),
+                createdAt: dateFilter
             }
         });
 
-        const totalPedidos = orders.length;
-        const ticketMedio = totalPedidos > 0 ? faturamentoTotal / totalPedidos : 0;
-
-        const topProdutos = Object.entries(productCount)
-            .map(([nome, quantidade]) => ({ nome, quantidade }))
-            .sort((a, b) => b.quantidade - a.quantidade)
-            .slice(0, 5);
+        // 4. Contagem de Notas com Erro
+        const comErroCount = await this.receiptRepository.count({
+            where: {
+                establishment: { id: establishmentId },
+                status: ReceiptStatus.ERRO,
+                createdAt: dateFilter
+            }
+        });
 
         return {
-            periodo: { inicio: startDate, fim: endDate },
-            resumo: {
-                faturamentoTotal: Number(faturamentoTotal.toFixed(2)),
-                totalPedidos,
-                ticketMedio: Number(ticketMedio.toFixed(2)),
-            },
-            topProdutos
+            emitidas: emitidasCount,
+            faturado: parseFloat(faturamento?.total || 0),
+            comCpf: comCpfCount,
+            comErro: comErroCount
         };
     }
 }

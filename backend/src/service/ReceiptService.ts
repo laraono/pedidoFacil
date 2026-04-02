@@ -1,67 +1,68 @@
-import { AppDataSource } from '../database/data-source';
-import { Receipt } from '../database/entity/Receipt';
-import { Payment } from '../database/entity/Payment';
+import { ReceiptRepository } from '../repository/ReceiptRepository';
+import { EstablishmentRepository } from '../repository/EstablishmentRepository';
+import { PaymentRepository } from '../repository/PaymentRepository';
 import { AppError } from '../middleware/error/AppError';
+import { ReceiptStatus } from '../database/entity/Receipt';
 
 export class ReceiptService {
-    private receiptRepository = AppDataSource.getRepository(Receipt);
-    private paymentRepository = AppDataSource.getRepository(Payment);
+    constructor(
+        private receiptRepository: ReceiptRepository,
+        private paymentRepository: PaymentRepository,
+        private establishmentRepository: EstablishmentRepository
+    ) {}
 
-    async generateReceipt(paymentId: number, establishmentId: number, cpfCnpjCliente?: string) {
+    async generateReceipt(paymentId: number, establishmentId: number, cpfCnpj?: string) {
+        // Valida se o estabelecimento possui CNPJ configurado
+        const establishment = await this.establishmentRepository.findOne({ 
+            where: { id: establishmentId } 
+        });
+        
+        if (!establishment?.cnpj) {
+            throw new AppError('CNPJ do estabelecimento não configurado para emissão de NF.', 400);
+        }
+
+        // Busca o pagamento e garante que ele pertence ao estabelecimento
         const payment = await this.paymentRepository.findOne({
-            where: { id: paymentId, establishment: { id: establishmentId } },
-            relations: ['paymentOrders', 'paymentOrders.order']
+            where: { 
+                id: paymentId, 
+                establishment: { id: establishmentId } 
+            },
+            relations: ['paymentOrders']
         });
 
-        if (!payment) {
-            throw new AppError('Pagamento não encontrado ou não pertence ao seu estabelecimento.', 404);
-        }
+        if (!payment) throw new AppError('Pagamento não encontrado.', 404);
 
-        const existingReceipt = await this.receiptRepository.findOne({
-            where: { payment: { id: paymentId } }
-        });
-
-        if (existingReceipt) {
-            throw new AppError('Já existe uma nota fiscal/recibo gerado para este pagamento.', 400);
-        }
-
+        // Geração da Nota Fiscal
         const timestamp = new Date().getTime();
-        const receiptNumber = `NFE-${establishmentId}-${timestamp}`;
-
         const receipt = this.receiptRepository.create({
-            recepitNumber: receiptNumber,
-            cpfcnpj: cpfCnpjCliente || null,
-            payment: payment
+            receiptNumber: `001.${String(timestamp).slice(-3)}`,
+            cpfcnpj: cpfCnpj || null,
+            totalValue: payment.totalValue,
+            status: ReceiptStatus.AUTORIZADA,
+            payment: payment,
+            establishment: establishment
         });
 
         return await this.receiptRepository.save(receipt);
     }
 
-    async getReceiptDetails(receiptId: number, establishmentId: number) {
-        const receipt = await this.receiptRepository.findOne({
-            where: { id: receiptId, payment: { establishment: { id: establishmentId } } },
-            relations: [
-                'payment', 
-                'payment.user',
-                'payment.paymentOrders', 
-                'payment.paymentOrders.order',
-                'payment.paymentOrders.order.productOrders',
-                'payment.paymentOrders.order.productOrders.product'
-            ]
-        });
-
-        if (!receipt) {
-            throw new AppError('Recibo não encontrado.', 404);
-        }
-
-        return receipt;
+    async listReceipts(establishmentId: number, filters: any) {
+        return await this.receiptRepository.findByEstablishment(establishmentId, filters);
     }
 
-    async listEstablishmentReceipts(establishmentId: number) {
-        return await this.receiptRepository.find({
-            where: { payment: { establishment: { id: establishmentId } } },
-            relations: ['payment'],
-            order: { created_at: 'DESC' }
+    async cancelReceipt(receiptId: number, establishmentId: number) {
+        // Busca a nota e garante que é do estabelecimento correto
+        const receipt = await this.receiptRepository.findOne({
+            where: { 
+                id: receiptId, 
+                establishment: { id: establishmentId } 
+            }
         });
+
+        if (!receipt) throw new AppError('Nota Fiscal não encontrada.', 404);
+
+        receipt.status = ReceiptStatus.CANCELADA;
+        await this.receiptRepository.save(receipt);
+        return await this.receiptRepository.softRemove(receipt);
     }
 }

@@ -1,34 +1,20 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { MetricsService } from '../service/MetricsService';
-
-const metricsService = new MetricsService();
+import { catchAsync } from '../middleware/error/catchAsync';
 
 export class MetricsController {
-    
-    async getMetrics(req: Request, res: Response, next: NextFunction) {
-        try {
-            const establishmentId = (req as any).usuario.estabelecimento;
-            const { startDate, endDate } = req.query;
+  constructor(private metricsService: MetricsService) {}
 
-            if (!establishmentId) {
-                return res.status(400).json({ error: 'Usuário não possui estabelecimento vinculado.' });
-            }
+  getReceiptMetrics = catchAsync(async (req: Request, res: Response) => {
+    const establishmentId = (req as any).usuario.estabelecimento;
+    const { startDate, endDate } = req.query;
 
-            if (!startDate || !endDate) {
-                return res.status(400).json({ 
-                    error: 'Os parâmetros de data (startDate e endDate) são obrigatórios na URL.' 
-                });
-            }
+    const metrics = await this.metricsService.getReceiptMetrics(
+      establishmentId,
+      String(startDate),
+      String(endDate),
+    );
 
-            const metrics = await metricsService.getDashboardMetrics(
-                establishmentId,
-                String(startDate),
-                String(endDate)
-            );
-
-            return res.status(200).json(metrics);
-        } catch (error) {
-            next(error);
-        }
-    }
+    return res.json(metrics);
+  });
 }

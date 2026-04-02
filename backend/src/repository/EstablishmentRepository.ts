@@ -1,41 +1,24 @@
 import { DataSource, Repository, DeepPartial } from "typeorm";
 import { Establishment } from "../database/entity/Establishment";
 
-export class EstablishmentRepository {
-    private repo: Repository<Establishment>;
+export class EstablishmentRepository extends Repository<Establishment> {
 
     constructor(dataSource: DataSource) {
-        this.repo = dataSource.getRepository(Establishment);
-    }
-
-    create(data: Partial<Establishment>): Establishment {
-        return this.repo.create(data as DeepPartial<Establishment>);
-    }
-
-    async save(establishment: Establishment): Promise<Establishment> {
-        return await this.repo.save(establishment);
+        super(Establishment, dataSource.createEntityManager());
     }
 
     async findByManagerId(userId: number): Promise<Establishment | null> {
-        return await this.repo.findOne({ where: { manager: { id: userId } } });
+        return await this.findOne({ where: { manager: { id: userId } } });
     }
 
     async findByCnpj(cnpj: string): Promise<Establishment | null> {
-        return await this.repo.findOne({ where: { cnpj } });
+        return await this.findOne({ where: { cnpj } });
     }
 
     async getByIdWithRelations(id: number): Promise<Establishment | null> {
-        return await this.repo.findOne({
+        return await this.findOne({
             where: { id },
             relations: ['manager', 'configurations']
         });
-    }
-
-    async softRemove(establishment: Establishment): Promise<void> {
-        await this.repo.softRemove(establishment);
-    }
-
-    merge(target: Establishment, data: Partial<Establishment>): Establishment {
-        return this.repo.merge(target, data as DeepPartial<Establishment>);
     }
 }

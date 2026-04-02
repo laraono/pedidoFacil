@@ -1,17 +1,10 @@
 import { Router } from 'express';
-import { MetricsController } from '../controller/MetricsController';
-import authenticate from '../middleware/authenticate'; 
-import { checkPermission } from '../middleware/roleAccessControl'; 
+import { metricsController } from '../controller'; // Instanciado no index
+import authenticate from '../middleware/authenticate';
 
 const metricsRouter = Router();
-const metricsController = new MetricsController();
 
-
-metricsRouter.get(
-    '/', 
-    authenticate, 
-    checkPermission('DASHBOARD_VIEW', 'ALL'), 
-    metricsController.getMetrics
-);
+metricsRouter.use(authenticate);
+metricsRouter.get('/receipts', metricsController.getReceiptMetrics);
 
 export { metricsRouter };
