@@ -100,7 +100,7 @@ export class AuthService {
                 name: data.nome_usuario,
                 email: data.email,
                 password: passwordHash,
-                status: UserStatus.ATIVA
+                status: UserStatus.ATIVO
             })
             const savedUser = await tx.save(User, user)
 
@@ -116,7 +116,7 @@ export class AuthService {
 
     async login(data: LoginDTO) {
         const user = await this.userRepository.findOne({
-            where: { email: data.email, status: UserStatus.ATIVA },
+            where: { email: data.email, status: UserStatus.ATIVO },
             relations: { establishment: true, role: true }
         })
 
@@ -197,7 +197,7 @@ export class AuthService {
         }
 
         const user = await this.userRepository.findOne({
-            where: { id: userId, status: UserStatus.ATIVA },
+            where: { id: userId, status: UserStatus.ATIVO },
             relations: { role: true, establishment: true }
         })
 
