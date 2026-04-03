@@ -37,7 +37,7 @@ const receiptService = new ReceiptService(
   establishmentRepository,
 );
 
-const metricsService = new MetricsService(receiptRepository);
+const metricsService = new MetricsService(receiptRepository, AppDataSource);
 
 const comandaService = new ComandaService(
   comandaRepository,
