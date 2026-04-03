@@ -23,8 +23,7 @@ export type CreateProductParams = {
 
 export type ProductVariationParams = {
     name: string,
-    addPrice: number,
-    status: ProductStatus
+    addPrice: number
 }
 
 export type CreateProduct = {
@@ -35,6 +34,5 @@ export type CreateProduct = {
 export type CreateProductVariation = {
     name: string,
     addPrice: number,
-    status: ProductStatus,
     product: Product
 }

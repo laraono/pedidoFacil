@@ -39,6 +39,8 @@ export class ProductService {
 
         const createdProduct = await this.productRepository.createProduct({...product, establishment, category}) 
 
+        console.log(productVariations)
+
         if(createdProduct && productVariations) { 
             productVariations.forEach(async (productVariation) => {
                 await this.productVariationRepository.createProductVariation({...productVariation, product: createdProduct})
@@ -54,6 +56,10 @@ export class ProductService {
 
     async listProductsByCategory(categoryId: number, establishmentId: number) {
         return await this.productRepository.listProductsByCategory(categoryId, establishmentId)
+    }
+
+    async listActiveProductsByCategory(categoryId: number, establishmentId: number) {
+        return await this.productRepository.listActiveProductsByCategory(categoryId, establishmentId)
     }
  
     async getProduct(productId: number) {

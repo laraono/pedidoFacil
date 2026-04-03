@@ -1,6 +1,7 @@
 import { DataSource, Repository } from "typeorm";
 import { Product } from "../database";
 import { CreateProductParams } from "../dto";
+import { ProductStatus } from "../enum";
 
 export class ProductRepository extends Repository<Product>{
 
@@ -33,6 +34,9 @@ export class ProductRepository extends Repository<Product>{
             },
             relations: {
                 category: true
+            },
+            order: {
+                name: 'ASC'
             }
         })
     }
@@ -46,7 +50,31 @@ export class ProductRepository extends Repository<Product>{
                 establishment: {
                     id: establishmentId
                 }
+            },
+            order: {
+                name: 'ASC'
             }
+        })
+    }
+
+    async listActiveProductsByCategory(categoryId: number, establishmentId: number) {
+        return await this.find({
+            where: {
+                category: {
+                    id: categoryId
+                },
+                establishment: {
+                    id: establishmentId
+                },
+                isAvailable: true,
+                status: ProductStatus.ATIVO
+            },
+            order: {
+                name: 'ASC'
+            },
+            relations: {
+                productVariations: true
+            },
         })
     }
 

@@ -4,8 +4,7 @@ import { ComandaStatus } from "../../enum"
 export type CreateComanda = {
     description: string,
     status: ComandaStatus,
-    establishmentId: number,
-    total: number
+    establishmentId: number
 }
 
 export type CreateComandaParams = {

@@ -3,4 +3,4 @@ export {
     UserStatus, SubscriptionStatus
 } from './status'
 
-export {DiscountType, MovimentationType, ServiceType} from './type'
+export {DiscountType, MovimentationType, ServiceType, ProductVariationType} from './type'
