@@ -49,11 +49,10 @@ const newComandaNumber = ref('');
 const comandaUnitLabel = ref('Comanda');
 const activeCategoryId = ref(null);
 
-
 const currentProduct = ref(null);
 const currentQuantity = ref(1);
 const currentObservation = ref('');
-const selectedSize = ref(null);
+const selectedProductVariation = ref(null);
 
 const products = ref([])
 const categories = ref([])
@@ -63,6 +62,7 @@ onMounted(async () => {
   categories.value = await categoryApi.listActive()
   products.value = await productApi.listActiveByCategory(categories.value[0].id)
   comandas.value = await comandaApi.listOpen()
+  activeCategoryId.value = categories.value[0].id
 
   bgColor.value = localStorageService.getBackgroundColors() || '#F5F6FA';
   buttonColor.value = localStorageService.getButtonColors() || '#1E7BC4';
@@ -79,9 +79,6 @@ onMounted(async () => {
   const data = await getEstablishmentMock();
   establishmentName.value = data?.info?.name || 'Seu Restaurante';
 
-  if (productsByCategory.value.length > 0) {
-    activeCategoryId.value = productsByCategory.value[0].id;
-  }
   checkEditMode();
 });
 
@@ -105,37 +102,31 @@ const adaptiveButtonBg    = computed(() => isCardDark.value ? 'rgba(255,255,255,
 const adaptiveSubtleBg    = computed(() => isCardDark.value ? 'rgba(0,0,0,0.15)'       : 'rgba(0,0,0,0.03)');
 const adaptivePlaceholder = computed(() => isCardDark.value ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.32)');
 
-const productsByCategory = computed(() => {
-  const activeProducts = menuStore.activeProducts.filter(p => p.available !== false);
-  return menuStore.activeCategories.map(category => ({
-    ...category,
-    products: activeProducts.filter(p => p.categoryId === category.id),
-  })).filter(category => category.products.length > 0);
-});
-
-const selectedCategory = computed(() => productsByCategory.value.find(c => c.id === activeCategoryId.value) || null);
-const cartQuantity = computed(() => cart.value.length);
+const selectedCategory = computed(() => 
+  categories.value.find(c => c.id === activeCategoryId.value) || null
+);const cartQuantity = computed(() => cart.value.length);
 const cartTotal = computed(() => 
   cart.value.reduce((acc, item) => acc + (item.price * item.quantity), 0)
 );
 
 const currentModalTotal = computed(() => {
   if (!currentProduct.value) return 0;
-  const basePrice = selectedSize.value ? selectedSize.value.price : 0;
+  const basePrice = selectedProductVariation.value ? selectedProductVariation.value.addPrice : 0;
   return basePrice * currentQuantity.value;
 });
 
 const getProducts = async(categoryId) => {
   activeCategoryId.value = categoryId
   products.value = await productApi.listActiveByCategory(categoryId)
+  console.log(products.value)
 }
 
 const openProductModal = (product) => {
   currentProduct.value = product;
   currentQuantity.value = 1;
   currentObservation.value = '';
-  selectedSize.value = product.sizes?.length > 0
-    ? product.sizes[0]
+  selectedProductVariation.value = product.productVariations?.length > 0
+    ? product.productVariations[0]
     : { name: 'Padrão', price: product.basePrice ?? 0 };
   isProductModalOpen.value = true;
 };
@@ -146,13 +137,13 @@ const closeProductModal = () => {
 };
 
 const addToCart = () => {
-  if (!currentProduct.value || !selectedSize.value) return;
-  const unitPrice = selectedSize.value.price;
+  if (!currentProduct.value || !selectedProductVariation.value) return;
+  const unitPrice = selectedProductVariation.value.addPrice;
   for (let i = 0; i < currentQuantity.value; i++) {
     cart.value.push({
       productId: currentProduct.value.id,
       name: currentProduct.value.name,
-      sizeName: selectedSize.value.name,
+      variationName: selectedProductVariation.value.name,
       price: unitPrice,
       quantity: 1,
       obs: currentObservation.value,
@@ -211,7 +202,7 @@ const confirmAndSendToKitchen = async () => {
     status: 'pending',
     createdAt: new Date(),
     items: cart.value.map(item => ({
-      name: `${item.name} (${item.sizeName})`,
+      name: `${item.name} (${item.variationName})`,
       amount: 1,
       obs: item.obs,
     })),
@@ -321,8 +312,8 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
                 </div>
                 <div class="flex items-center justify-between mt-6 pt-4 border-t border-white/5 z-10">
                   <div class="flex flex-col">
-                    <span v-if="product.sizes?.length > 1" class="text-[10px] opacity-70 uppercase tracking-widest font-bold mb-0.5" :style="{ color: textColor }">A partir de</span>
-                    <span class="font-black text-xl" :style="{ color: buttonColor }">{{ formatCurrency(product.sizes?.[0]?.price ?? product.basePrice ?? 0) }}</span>
+                    <span v-if="product.productVariations?.length > 1" class="text-[10px] opacity-70 uppercase tracking-widest font-bold mb-0.5" :style="{ color: textColor }">A partir de</span>
+                    <span class="font-black text-xl" :style="{ color: buttonColor }">{{ formatCurrency(product.productVariations?.[0]?.addPrice ?? product.basePrice ?? 0) }}</span>
                   </div>
                   <div class="w-10 h-10 rounded flex items-center justify-center font-bold transition-transform group-hover:scale-110 shadow-lg" :style="{ backgroundColor: buttonColor, color: buttonTextColor }">
                     <Plus :size="20" />
@@ -332,7 +323,7 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
             </div>
           </div>
 
-          <div v-if="productsByCategory.length === 0" class="flex flex-col items-center justify-center h-full text-center px-6 py-12">
+          <div v-if="products.length === 0" class="flex flex-col items-center justify-center h-full text-center px-6 py-12">
             <ChefHat class="w-16 h-16 mb-4 opacity-30" :style="{ color: textColor }" />
             <p class="text-lg font-bold mb-2" :style="{ color: textColor }">Sem itens disponíveis no cardápio</p>
             <p class="text-sm opacity-60" :style="{ color: textColor }">
@@ -371,23 +362,23 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
             <div class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6" :style="{ backgroundColor: adaptiveSubtleBg }">
               <p class="leading-relaxed text-base opacity-90">{{ currentProduct?.description }}</p>
 
-              <div v-if="currentProduct?.sizes?.length > 0" class="space-y-3">
+              <div v-if="currentProduct?.productVariations?.length > 0" class="space-y-3">
                 <h4 class="font-bold uppercase tracking-wider text-sm opacity-70">Escolha o Tamanho</h4>
                 <div class="flex flex-col gap-2">
                   <label
-                    v-for="size in currentProduct.sizes"
-                    :key="size.name"
+                    v-for="productVariation in currentProduct.productVariations"
+                    :key="productVariation.name"
                     class="flex items-center justify-between p-4 border rounded cursor-pointer transition-all"
-                    :style="selectedSize?.name === size.name
+                    :style="selectedProductVariation?.name === productVariation.name
                       ? { borderColor: buttonColor, backgroundColor: buttonColor + '1A' }
                       : { borderColor: adaptiveBorder, backgroundColor: adaptiveInputBg }"
                   >
                     <div class="flex items-center gap-3">
-                      <input type="radio" :value="size" v-model="selectedSize" class="w-5 h-5" :style="{ accentColor: buttonColor }" />
-                      <span class="font-bold">{{ size.name }}</span>
+                      <input type="radio" :value="productVariation" v-model="selectedProductVariation" class="w-5 h-5" :style="{ accentColor: buttonColor }" />
+                      <span class="font-bold">{{ productVariation.name }}</span>
                     </div>
-                    <span class="font-bold" :style="{ color: selectedSize?.name === size.name ? buttonColor : textColor }">
-                      {{ formatCurrency(size.price) }}
+                    <span class="font-bold" :style="{ color: selectedProductVariation?.name === productVariation.name ? buttonColor : textColor }">
+                      {{ formatCurrency(productVariation.addPrice) }}
                     </span>
                   </label>
                 </div>
@@ -419,8 +410,8 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
             </div>
 
             <div class="p-6 shrink-0" :style="{ borderTop: `1px solid ${adaptiveBorder}` }">
-              <button @click="addToCart" :disabled="!selectedSize" :style="{ backgroundColor: buttonColor, color: buttonTextColor }" class="w-full py-5 font-black rounded shadow-xl transition-transform active:scale-95 flex items-center justify-between px-8 text-lg disabled:opacity-50">
-                <span>{{ selectedSize ? 'Adicionar' : 'Selecione um tamanho' }}</span>
+              <button @click="addToCart" :disabled="!selectedProductVariation" :style="{ backgroundColor: buttonColor, color: buttonTextColor }" class="w-full py-5 font-black rounded shadow-xl transition-transform active:scale-95 flex items-center justify-between px-8 text-lg disabled:opacity-50">
+                <span>{{ selectedProductVariation ? 'Adicionar' : 'Selecione um tamanho' }}</span>
                 <span>{{ formatCurrency(currentModalTotal) }}</span>
               </button>
             </div>
@@ -448,7 +439,7 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
                   <div class="font-black w-10 h-10 rounded flex items-center justify-center shrink-0 text-sm" :style="{ backgroundColor: adaptiveButtonBg, color: textColor }">1x</div>
                   <div class="flex-1">
                     <div class="flex justify-between items-start mb-1">
-                      <h4 class="font-bold text-lg leading-tight">{{ item.name }} <span class="text-sm font-medium opacity-60">({{ item.sizeName }})</span></h4>
+                      <h4 class="font-bold text-lg leading-tight">{{ item.name }} <span class="text-sm font-medium opacity-60">({{ item.variationName }})</span></h4>
                       <span class="font-black ml-2">{{ formatCurrency(item.price) }}</span>
                     </div>
                     <p v-if="item.obs" class="text-sm inline-block px-3 py-1 rounded mt-2 font-medium border" :style="{ backgroundColor: adaptiveButtonBg, borderColor: adaptiveBorder }">Obs: {{ item.obs }}</p>
