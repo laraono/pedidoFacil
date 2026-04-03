@@ -26,8 +26,17 @@ export class OrderController {
         res.sendStatus(204)
     }
 
+    async cancelOrder(req, res) {
+        const { comandaId} = req.params
+        const { orderId } = req.params
+
+        await this.orderService.cancelOrder(orderId, {comandaId, ...req.body})
+        
+        res.sendStatus(204)
+    }
+
     async listOrders(req, res) {
-        const orders = await this.orderService.listOrders(req.query)
+        const orders = await this.orderService.listOrders(req.body)
 
         res.status(200).send(orders)
     }

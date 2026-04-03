@@ -56,8 +56,9 @@ export class OrderService {
         });
     }
 
-    async listOrders(establishmentId: number) {
-        return await this.orderRepository.listOrders(establishmentId)
+    async listOrders({establishmentId}: {establishmentId: number}) {
+        const orders = await this.orderRepository.listOrders(establishmentId)
+        return orders
     }
 
     async listOrdersByComanda(comandaId: number) {
@@ -66,6 +67,32 @@ export class OrderService {
 
     async updateOrderStatus(orderId: number, status: OrderStatus) {
         await this.orderRepository.updateOrderStatus(orderId, status)
+    }
+
+    async cancelOrder(orderId: number, params: CancelOrder) {
+        const comanda = await this.comandaService.getComanda(params.comandaId)
+
+        if(!comanda) {
+            throw new AppError('Comanda não existe', 400)
+        }
+
+        const establishment = await this.establishmentRepository.getEstablishment(params.establishmentId)
+
+        if(!establishment) {
+            throw new AppError('Estabelecimento não encontrado', 400)
+        }
+
+        const user = await this.userRepository.getUser(params.userId)
+
+        if(!user) {
+            throw new AppError('Usuário não existe', 400)
+        }
+
+        await this.orderRepository.cancelOrder(orderId, {
+            user, 
+            cancellationDescription: params.cancellationDescription,
+            status: OrderStatus.CANCELADO
+        })
     }
 
     async saveItens(
@@ -128,32 +155,5 @@ export class OrderService {
             productVariation
         };
     }
-
-    async cancelComanda(params: CancelOrder) {
-    
-        const user = await this.userRepository.getUser(params.userId)
-
-        if(!user) {
-            throw new AppError('Usuário não existe', 409)
-        }
-
-        const establishment = await this.establishmentRepository.getEstablishment(params.establishmentId)
-
-        if(!establishment) {
-            throw new AppError("Estabelecimento não encontrado", 400)
-        }
-
-        await this.orderRepository.cancelOrder(
-            params.comandaId, 
-            {
-                user, 
-                establishment,
-                cancellationDescription: params.cancellationDescription, 
-                status: OrderStatus.CANCELADO
-            }
-        )
-    }
-
-
     
 } 

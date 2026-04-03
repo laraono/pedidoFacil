@@ -1,6 +1,6 @@
 import express from 'express'
 import { orderController, OrderController } from '../controller';
-import { validateCreateOrder, validateListOrders } from '../validator';
+import { validateCancelOrders, validateCreateOrder, validateListOrders } from '../validator';
 import { catchAsync } from '../middleware';
 const authenticate = require('../middleware/authenticate');
 const tenant = require('../middleware/tenant');
@@ -13,5 +13,7 @@ orderRouter.post('/commands/:comandaId/orders', authenticate, tenant.verifyTenan
 orderRouter.get('/commands/:comandaId/orders', authenticate, tenant.verifyTenancy('COMANDA', 'comandaId'),  roleAccessControl.checkPermission('CAIXA'), catchAsync((req, res) => orderController.listOrdersByComanda(req, res)))
 
 orderRouter.put('/commands/:comandaId/orders/:orderId', authenticate, tenant.verifyTenancy('COMANDA', 'comandaId'), tenant.verifyTenancy('PEDIDO', 'orderId'), roleAccessControl.checkPermission('COZINHA'), catchAsync((req, res) => orderController.updateOrderStatus(req, res)))
+
+orderRouter.post('/commands/:comandaId/orders/:orderId/cancel', authenticate, tenant.verifyTenancy('COMANDA', 'comandaId'), tenant.verifyTenancy('PEDIDO', 'orderId'), validateCancelOrders, roleAccessControl.checkPermission('COZINHA'), catchAsync((req, res) => orderController.cancelOrder(req, res)))
 
 orderRouter.get('/orders', authenticate, roleAccessControl.checkPermission('COZINHA'), validateListOrders, catchAsync((req, res) => orderController.listOrders(req, res)))
