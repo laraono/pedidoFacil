@@ -1,12 +1,12 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useKitchenStore } from '@/stores/kitchen';
 import { PERMISSIONS } from '@/utils/permissions';
 import OrderCard from '@/components/kitchen/OrderCard.vue';
 import SubscriptionGuard from '@/components/SubscriptionGuard.vue';
-import { Bell, Volume2, VolumeX, UtensilsCrossed, List, ChefHat, CheckCircle, XCircle, X, ArrowLeft, Settings, Clock } from 'lucide-vue-next';
+import { Bell, Volume2, VolumeX, UtensilsCrossed, List, ChefHat, CheckCircle, XCircle, X, ArrowLeft, Settings, Clock, ListOrderedIcon } from 'lucide-vue-next';
 import { orderApi } from "@/services/orderApi";
 
 const AUDIO_URL = 'https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/pause.wav';
@@ -17,11 +17,15 @@ const router = useRouter();
 const authStore = useAuthStore();
 const kitchenStore = useKitchenStore();
 
-const activeTab = ref('pending');
+const activeTab = ref('Aguardando_Preparo');
 const showTimerSettings = ref(false);
 const alertMinutes = ref(Number(localStorage.getItem('kitchenAlertMinutes') || 15));
 
 const orders = ref([])
+
+const pendingOrders = computed(() => orders.value.filter( (order) => order.status === 'Aguardando_Preparo'))
+const preparingOders = computed(() => orders.value.filter( (order) => order.status === 'Em_Preparo'))
+const readyOrders = computed(() => orders.value.filter( (order) => order.status === 'Pronto'))
 
 const saveAlertMinutes = () => {
   const val = Math.max(1, Math.min(120, alertMinutes.value));
@@ -54,39 +58,52 @@ const simulateSocketEvent = () => {
   if (hasNew) playAlert();
 };
 
-const handleMove = async (comandaId, id, status) => await orderApi.putStatus(comandaId, id, status);
-const handleFinish = (id) => kitchenStore.finishOrder(id);
+const handleMove = async (comandaId, id, status) => {
+  try {
+    await orderApi.putStatus(comandaId, id, status);
+    
+    orders.value = await orderApi.list();
+  } catch (error) {
+    console.error("Failed to move order:", error);
+  }
+}
 
 const cancelTargetId = ref(null);
+const cancelComandaId = ref(null);
 const cancelReason = ref('');
 
-const openCancelModal = (id) => {
+const openCancelModal = (id, comandaId) => {
   cancelTargetId.value = id;
+  cancelComandaId.value = comandaId;
   cancelReason.value = '';
 };
 
-const confirmCancel = () => {
+const confirmCancel = async () => {
   if (!cancelReason.value.trim()) return;
-  kitchenStore.finishOrder(cancelTargetId.value);
+  await orderApi.cancelOrder(cancelComandaId.value, cancelTargetId.value, cancelReason.value)
+  orders.value = await orderApi.list();
   cancelTargetId.value = null;
+  cancelComandaId.value = null;
   cancelReason.value = '';
 };
 
 const dismissCancelModal = () => {
   cancelTargetId.value = null;
+  cancelComandaId.value = null;
   cancelReason.value = '';
 };
 
 const columns = [
-  { key: 'pending', label: 'Pendente', color: 'yellow', badgeClass: 'bg-yellow-500 text-white' },
-  { key: 'preparing', label: 'Preparo', color: 'blue', badgeClass: 'bg-blue-500 text-white' },
-  { key: 'ready', label: 'Pronto', color: 'brand-green', badgeClass: 'bg-primary text-white' },
+  { key: 'Aguardando_Preparo', label: 'Pendente', color: 'yellow', badgeClass: 'bg-yellow-500 text-white' },
+  { key: 'Em_Preparo', label: 'Preparo', color: 'blue', badgeClass: 'bg-blue-500 text-white' },
+  { key: 'Pronto', label: 'Pronto', color: 'brand-green', badgeClass: 'bg-primary text-white' },
 ];
 
 const columnOrders = (key) => {
-  if (key === 'pending') return orders.value.map( (order) => order.status === 'Aguardando_Preparo');
-  if (key === 'preparing') return orders.value.map( (order) => order.status === 'Em_Preparo');
-  return orders.value.map( (order) => order.status === 'Pronto');
+  if(!orders.value[0]) return []
+  if (key === 'Aguardando_Preparo') return pendingOrders.value;
+  if (key === 'Em_Preparo') return preparingOders.value;
+  return readyOrders.value;
 };
 
 const indicatorColor = (color) => {
@@ -186,7 +203,6 @@ const indicatorColor = (color) => {
             :order="order"
             :alertMinutes="alertMinutes"
             @move="handleMove"
-            @finish="handleFinish"
             @cancel="openCancelModal"
           />
 
@@ -201,31 +217,31 @@ const indicatorColor = (color) => {
 
     <nav class="fixed bottom-0 left-0 w-full bg-white border-t border-[#E0E0E0] shadow-lg md:hidden z-50 px-8 py-3 pb-8 flex justify-between items-center">
 
-      <button @click="activeTab = 'pending'" class="flex flex-col items-center gap-1 p-2 transition-all relative" :class="activeTab === 'pending' ? 'text-yellow-500' : 'text-[#757575]'">
+      <button @click="activeTab = 'Aguardando_Preparo'" class="flex flex-col items-center gap-1 p-2 transition-all relative" :class="activeTab === 'Aguardando_Preparo' ? 'text-yellow-500' : 'text-[#757575]'">
         <div class="relative">
           <List :size="24" stroke-width="3" />
-          <span v-if="kitchenStore.pendingOrders.length > 0" class="absolute -top-2 -right-3 bg-yellow-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-white">
-            {{ kitchenStore.pendingOrders.length }}
+          <span v-if="pendingOrders.length > 0" class="absolute -top-2 -right-3 bg-yellow-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-white">
+            {{ pendingOrders.length }}
           </span>
         </div>
         <span class="text-[9px] font-black uppercase tracking-widest mt-1">Fila</span>
       </button>
 
-      <button @click="activeTab = 'preparing'" class="flex flex-col items-center gap-1 p-2 transition-all relative" :class="activeTab === 'preparing' ? 'text-blue-500' : 'text-[#757575]'">
+      <button @click="activeTab = 'Em_Preparo'" class="flex flex-col items-center gap-1 p-2 transition-all relative" :class="activeTab === 'Em_Preparo' ? 'text-blue-500' : 'text-[#757575]'">
         <div class="relative">
           <ChefHat :size="24" stroke-width="3" />
-          <span v-if="kitchenStore.preparingOrders.length > 0" class="absolute -top-2 -right-3 bg-blue-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-white">
-            {{ kitchenStore.preparingOrders.length }}
+          <span v-if="preparingOders.length > 0" class="absolute -top-2 -right-3 bg-blue-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-white">
+            {{ preparingOders.length }}
           </span>
         </div>
         <span class="text-[9px] font-black uppercase tracking-widest mt-1">Preparo</span>
       </button>
 
-      <button @click="activeTab = 'ready'" class="flex flex-col items-center gap-1 p-2 transition-all relative" :class="activeTab === 'ready' ? 'text-accent' : 'text-[#757575]'">
+      <button @click="activeTab = 'Pronto'" class="flex flex-col items-center gap-1 p-2 transition-all relative" :class="activeTab === 'Pronto' ? 'text-accent' : 'text-[#757575]'">
         <div class="relative">
           <CheckCircle :size="24" stroke-width="3" />
-          <span v-if="kitchenStore.readyOrders.length > 0" class="absolute -top-2 -right-3 bg-primary text-white text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-white">
-            {{ kitchenStore.readyOrders.length }}
+          <span v-if="readyOrders.length > 0" class="absolute -top-2 -right-3 bg-primary text-white text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-white">
+            {{ readyOrders.length }}
           </span>
         </div>
         <span class="text-[9px] font-black uppercase tracking-widest mt-1">Pronto</span>

@@ -11,5 +11,8 @@ export const orderApi = {
         request('/orders', {method: 'GET'}),
 
     putStatus: (comandaId, orderId, status) => 
-        request(`/commands/${comandaId}/orders/${orderId}`, {method: 'PUT', body: JSON.stringify({status})})
+        request(`/commands/${comandaId}/orders/${orderId}`, {method: 'PUT', body: JSON.stringify({status})}),
+
+    cancelOrder: (comandaId, orderId, cancellationDescription) => 
+        request(`/commands/${comandaId}/orders/${orderId}/cancel`, {method: 'POST', body: JSON.stringify({cancellationDescription})})
 };

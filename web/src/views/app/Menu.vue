@@ -23,7 +23,6 @@ const route = useRoute();
 const router = useRouter();
 const isEditMode = ref(false);
 
-const menuStore = useMenuStore();
 const comandaStore = useComandaStore();
 const kitchenStore = useKitchenStore();
 const { formatCurrency } = useUtils();
@@ -104,14 +103,23 @@ const adaptivePlaceholder = computed(() => isCardDark.value ? 'rgba(255,255,255,
 
 const selectedCategory = computed(() => 
   categories.value.find(c => c.id === activeCategoryId.value) || null
-);const cartQuantity = computed(() => cart.value.length);
-const cartTotal = computed(() => 
-  cart.value.reduce((acc, item) => acc + (item.price * item.quantity), 0)
 );
+
+const cartQuantity = computed(() => cart.value.length);
+
+const cartTotal = computed(() => {
+  return cart.value.reduce((acc, item) => {
+    return acc + (item.price * item.quantity);
+  }, 0); // Initial value goes here
+});
 
 const currentModalTotal = computed(() => {
   if (!currentProduct.value) return 0;
-  const basePrice = selectedProductVariation.value ? selectedProductVariation.value.addPrice : 0;
+
+  const productPrice = currentProduct.value.basePrice ? currentProduct.value.basePrice : 0
+  const variantPrice = selectedProductVariation.value.addPrice ? selectedProductVariation.value.addPrice : 0
+  const basePrice = productPrice + variantPrice
+
   return basePrice * currentQuantity.value;
 });
 
@@ -122,7 +130,7 @@ const getProducts = async(categoryId) => {
 }
 
 const openProductModal = (product) => {
-  currentProduct.value = product;
+  currentProduct.value = product
   currentQuantity.value = 1;
   currentObservation.value = '';
   selectedProductVariation.value = product.productVariations?.length > 0
@@ -138,17 +146,16 @@ const closeProductModal = () => {
 
 const addToCart = () => {
   if (!currentProduct.value || !selectedProductVariation.value) return;
-  const unitPrice = selectedProductVariation.value.addPrice;
-  for (let i = 0; i < currentQuantity.value; i++) {
+  const unitPrice = Number(currentProduct.value.basePrice) + Number(selectedProductVariation.value.addPrice ?? 0);
     cart.value.push({
       productId: currentProduct.value.id,
       name: currentProduct.value.name,
       variationName: selectedProductVariation.value.name,
       price: unitPrice,
-      quantity: 1,
+      quantity: currentQuantity.value,
       obs: currentObservation.value,
     });
-  }
+  
   showToast(`${currentQuantity.value}x ${currentProduct.value.name} adicionado!`, 'success');
   closeProductModal();
 };
@@ -188,7 +195,7 @@ const confirmAndSendToKitchen = async () => {
     comandaId: comandaId,
     itens: cart.value.map(item => ({
       productId: item.productId,
-      quantity: 1,
+      quantity: item.quantity,
       obs: item.obs,
     })),
   };
@@ -436,7 +443,7 @@ watch(() => route.query.editMode, () => { checkEditMode(); });
             <div class="p-4 overflow-y-auto custom-scrollbar flex-1" :style="{ backgroundColor: adaptiveSubtleBg }">
               <div class="space-y-3">
                 <div v-for="(item, index) in cart" :key="item.id" class="p-5 rounded border flex gap-4 items-center relative overflow-hidden" :style="{ backgroundColor: adaptiveInputBg, borderColor: adaptiveBorder }">
-                  <div class="font-black w-10 h-10 rounded flex items-center justify-center shrink-0 text-sm" :style="{ backgroundColor: adaptiveButtonBg, color: textColor }">1x</div>
+                  <div class="font-black w-10 h-10 rounded flex items-center justify-center shrink-0 text-sm" :style="{ backgroundColor: adaptiveButtonBg, color: textColor }">{{ item.quantity }} x</div>
                   <div class="flex-1">
                     <div class="flex justify-between items-start mb-1">
                       <h4 class="font-bold text-lg leading-tight">{{ item.name }} <span class="text-sm font-medium opacity-60">({{ item.variationName }})</span></h4>
