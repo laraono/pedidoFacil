@@ -68,21 +68,23 @@ export class ProductService {
 
     async updateProduct(productId: number, params: EditProduct) {
 
-        console.log('on service')
         const product = await this.productRepository.getProduct(productId)
 
         if(!product) {
             throw new AppError('Produto não existe', 400)
         }
 
-        if(product.productVariations.length > 0 && !params.productVariations) {
+        if(product.productVariations.length > 0 && params.productVariations.length === 0) {
             await this.deleteProductVariations(product)
         }
 
         if(params.productVariations) {
             params.productVariations.forEach(async (variation) => {
                 const {id, ...editParams} = variation
-                await this.productVariationRepository.updateProductVariation(id, editParams)
+                if(id)
+                    await this.productVariationRepository.updateProductVariation(id, editParams)
+                else
+                    await this.productVariationRepository.createProductVariation({...editParams, product})
             })
         }
 
@@ -100,7 +102,6 @@ export class ProductService {
         }
 
         await this.productRepository.updateProduct(productId, editParams)
-        console.log('done')
 
     }
 

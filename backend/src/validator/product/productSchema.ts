@@ -32,7 +32,7 @@ const updateProductSchema = z.object({
             basePrice: z.coerce.number().positive(),
         }),
         productVariations: z.object({
-            id: z.coerce.number().int().positive(),
+            id: z.coerce.number().int().positive().optional(),
             name: z.string().min(1).max(20),
             addPrice: z.coerce.number().positive(),
         }).array().optional()
@@ -102,9 +102,9 @@ export const validateUpdateProduct =
     (req, res: Response, next: NextFunction) => {
         try {
             const product = {...req.body.product, establishmentId: req.usuario.estabelecimento}
-            const productVariation = req.body.productVariations
+            const productVariations = req.body.productVariations
 
-            const validation = updateProductSchema.parse({params: req.params, body: {product, productVariation}})
+            const validation = updateProductSchema.parse({params: req.params, body: {product, productVariations}})
 
             req.params = validation.params
             req.body = validation.body

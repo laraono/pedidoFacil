@@ -47,7 +47,6 @@ export class ProductController {
     async updateProductStatus(req, res: Response) {
         const {productId} = req.params
         const {status} = req.body
-        console.log(req.body)
 
         await this.productService.updateProductStatus(productId, status)
 

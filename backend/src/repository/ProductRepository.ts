@@ -93,7 +93,6 @@ export class ProductRepository extends Repository<Product>{
     }
 
     async updateProduct(productId: number, params: EditProductParams) {
-        console.log(params)
         await this.update(productId, params)
     }
 
