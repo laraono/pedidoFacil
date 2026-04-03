@@ -6,7 +6,6 @@ import { ComandaStatus } from '../../enum';
 const createComandaSchema = z.object({
     description: z.string().min(1).max(100),
     status: z.string().min(1).max(20), 
-    total: z.coerce.number().int(),
     establishmentId: z.coerce.number().int().positive(),
     discountValue: z.coerce.number().positive().optional()
     
@@ -23,19 +22,24 @@ const cancelComandaSchema = z.object({
     })
 })
 
-const listComandas = z.object({
+const listComandasSchema = z.object({
     establishmentId: z.coerce.number().int().positive()
 })
 
-const listComandasByStatus = z.object({
+const listComandasByStatusSchema = z.object({
     establishmentId: z.coerce.number().int().positive(),
     status: z.enum(ComandaStatus)
+})
+
+const getComandaSchema = z.object({
+    comandaId: z.coerce.number().int().positive()
 })
 
 export const validateCreateComanda = 
     (req, res: Response, next: NextFunction) => {
         try {
-            req.body = createComandaSchema.parse({...req.body, establishmentId: req.usuario.establecimento})
+            const comanda = {...req.body, establishmentId: req.usuario.estabelecimento}
+            req.body = createComandaSchema.parse(comanda)
 
             next();
         } catch (error) {
@@ -66,7 +70,7 @@ export const validateCancelComanda =
 export const validateListComandas = 
     (req, res: Response, next: NextFunction) => {
         try {
-            req.query = listComandas.parse(req.usuario)
+            req.body = listComandasSchema.parse({establishmentId: req.usuario.estabelecimento})
 
             next()
         } catch (error) {
@@ -80,7 +84,21 @@ export const validateListComandas =
 export const validateListComandasByStatus = 
     (req, res: Response, next: NextFunction) => {
         try {
-            req.query = listComandasByStatus.parse({...req.query, ...req.usuario})
+            req.body = listComandasByStatusSchema.parse({...req.body, ...req.usuario})
+
+            next()
+        } catch (error) {
+            if (error instanceof ZodError) {
+                return res.status(400).send(error.message);
+            }
+            return res.status(500).send("Internal Server Error");
+        }
+    };
+
+export const validateGetComanda = 
+    (req, res: Response, next: NextFunction) => {
+        try {
+            req.params = getComandaSchema.parse(req.params)
 
             next()
         } catch (error) {

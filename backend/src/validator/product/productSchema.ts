@@ -14,10 +14,9 @@ const createProductSchema = z.object({
         basePrice: z.coerce.number().positive(),
         status: z.enum(ProductStatus)
     }),
-    productVarations: z.object({
+    productVariations: z.object({
         name: z.string().min(1).max(20),
         addPrice: z.coerce.number().positive(),
-        status: z.enum(ProductStatus)
     }).array().optional()
     
 });
@@ -35,7 +34,10 @@ export const validateCreateProduct =
     (req, res: Response, next: NextFunction) => {
         try {
             const product = {...req.body.product, establishmentId: req.usuario.estabelecimento}
-            req.body = createProductSchema.parse({product})
+            console.log(req.body.productVariations)
+            req.body = createProductSchema.parse({product, productVariations: req.body.productVariations})
+
+            console.log('post parse', req.body)
 
             next()
         } catch (error) {
@@ -63,7 +65,8 @@ export const validateListProducts =
 export const validateListProductsByCategories = 
     (req, res: Response, next: NextFunction) => {
         try {
-            req.query = listProductsByCategorySchema.parse({...req.query, ...req.usuario})
+            const params = {categoryId: req.params.categoryId, establishmentId: req.usuario.estabelecimento }
+            req.body = listProductsByCategorySchema.parse(params)
 
             next()
         } catch (error) {

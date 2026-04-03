@@ -10,7 +10,7 @@ const createOrderchema = z.object({
     }),
     body: z.object({
         status: z.enum(OrderStatus),
-        serviceType: z.enum(ServiceType),
+        serviceType: z.enum(ServiceType).optional(),
         tripPrice: z.coerce.number().positive().optional(),
         establishmentId: z.coerce.number().int().positive(),
         itens: z.object({
@@ -30,7 +30,9 @@ const listOrdersSchema = z.object({
 export const validateCreateOrder = 
     (req, res: Response, next: NextFunction) => {
         try {
-            const {params, body} = createOrderchema.parse({params: req.params, body: {...req.body, ...req.usuario}})
+            const order = {...req.body, establishmentId: req.usuario.estabelecimento}
+            console.log(order)
+            const {params, body} = createOrderchema.parse({params: req.params, body: order})
 
             req.params = params
             req.body = body
