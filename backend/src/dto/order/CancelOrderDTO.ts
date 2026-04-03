@@ -11,7 +11,6 @@ export type CancelOrder = {
 
 export type CancelOrderParams = {
     user: User,
-    establishment: Establishment,
     cancellationDescription?: string,
     status: OrderStatus.CANCELADO
 }
