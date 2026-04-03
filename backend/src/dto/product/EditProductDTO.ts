@@ -5,10 +5,8 @@ import { ProductParams, ProductVariationParams } from "./CreateProductDTO"
 export type EditProductParams = {
     name: string,
     description?: string, 
-    isAvailable: boolean,
     category: Category,
-    basePrice: number,
-    status: ProductStatus
+    basePrice: number
 }
 
 export type EditProductVariation = {

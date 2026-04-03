@@ -38,13 +38,6 @@ export class Product {
 
     @Column({
         type: 'boolean',
-        name: 'Disponivel',
-        nullable: false
-    })
-    isAvailable: boolean
-
-    @Column({
-        type: 'boolean',
         name: 'Estocavel',
         nullable: false
     })

@@ -14,7 +14,12 @@ export enum ComandaStatus {
 
 export enum ProductStatus {
     ATIVO ='Ativo',
-    INATIVO = 'Inativo'
+    ARQUIVADO = 'Arquivado'
+}
+
+export enum CategoryStatus {
+    ATIVA ='Ativa',
+    ARVUIVADA = 'Arquivada'
 }
 
 export enum UserStatus {

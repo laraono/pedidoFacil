@@ -1,15 +1,22 @@
 import { CreateCategory } from "../dto";
+import { CategoryStatus, ProductStatus } from "../enum";
 import { AppError } from "../middleware";
-import { CategoryRepository, EstablishmentRepository } from "../repository";
+import { CategoryRepository, EstablishmentRepository, ProductRepository } from "../repository";
 
 export class CategoryService {
 
     private categoryRepository: CategoryRepository
     private establishmentRepository: EstablishmentRepository
+    private productRepository: ProductRepository
 
-    constructor(categoryRepository: CategoryRepository, establishmentRepository: EstablishmentRepository) {
+    constructor(
+        categoryRepository: CategoryRepository, 
+        establishmentRepository: EstablishmentRepository,
+        productRepository: ProductRepository
+    ) {
         this.categoryRepository = categoryRepository
         this.establishmentRepository = establishmentRepository
+        this.productRepository = productRepository
     }
 
     async createCategory(category: CreateCategory) {
@@ -39,8 +46,15 @@ export class CategoryService {
         return await this.categoryRepository.getCategory(categoryId)
     }
 
-    async updateCategory(categoryId: number, name: string) {
-        await this.categoryRepository.updateCategory(categoryId, name)
+    async updateCategory(categoryId: number, {name, status}:  {name: string, status: CategoryStatus}) {
+        await this.categoryRepository.updateCategory(categoryId, {name, status})
+
+        const category = await this.categoryRepository.getCategory(categoryId)
+
+        category.products.forEach(async(product) => {
+            const productStatus = status === CategoryStatus.ATIVA ? ProductStatus.ATIVO : ProductStatus.ARQUIVADO
+            await this.productRepository.updateProductStatus(product.id, productStatus)
+        })
     }
 
     async deleteCategory(categoryId: number) {

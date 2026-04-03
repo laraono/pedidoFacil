@@ -1,18 +1,15 @@
 import { z } from 'zod';
 import express, { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-import { ProductStatus } from '../../enum';
 
 const createProductSchema = z.object({
     product: z.object({
         name: z.string().min(1).max(20),
         description: z.string().optional(), 
-        isAvailable: z.coerce.boolean(),
         estocavel: z.coerce.boolean(),
         categoryId: z.coerce.number().int().positive(),
         establishmentId: z.coerce.number().int().positive(),
         basePrice: z.coerce.number().positive(),
-        status: z.enum(ProductStatus)
     }),
     productVariations: z.object({
         name: z.string().min(1).max(20),
@@ -23,19 +20,16 @@ const createProductSchema = z.object({
 
 const updateProductSchema = z.object({
     params: z.object({
-        productId: z.coerce.number().int().positive(),
-        categoryId: z.coerce.number().int().positive()
+        categoryId: z.coerce.number().int().positive(),
+        productId: z.coerce.number().int().positive()
     }),
     body: z.object({
         product: z.object({
             name: z.string().min(1).max(20),
             description: z.string().optional(), 
-            isAvailable: z.coerce.boolean(),
-            estocavel: z.coerce.boolean(),
             categoryId: z.coerce.number().int().positive(),
             establishmentId: z.coerce.number().int().positive(),
             basePrice: z.coerce.number().positive(),
-            status: z.enum(ProductStatus)
         }),
         productVariations: z.object({
             id: z.coerce.number().int().positive(),

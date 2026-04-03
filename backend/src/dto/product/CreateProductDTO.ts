@@ -5,20 +5,16 @@ export type ProductParams = {
     name: string,
     description?: string, 
     establishmentId: number,
-    isAvailable: boolean,
     categoryId: number,
-    basePrice: number,
-    status: ProductStatus
+    basePrice: number
 }
 
 export type CreateProductParams = {
     name: string,
     description?: string, 
     establishment: Establishment,
-    isAvailable: boolean,
     category: Category,
-    basePrice: number,
-    status: ProductStatus
+    basePrice: number
 }
 
 export type ProductVariationParams = {

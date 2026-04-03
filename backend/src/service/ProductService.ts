@@ -1,5 +1,6 @@
 import { Product } from "../database";
-import { CreateProduct, EditProduct } from "../dto";
+import { CreateProduct, EditProduct, EditProductParams } from "../dto";
+import { ProductStatus } from "../enum";
 import { AppError } from "../middleware";
 import { EstablishmentRepository, ProductRepository, ProductVariationRepository } from "../repository";
 import { CategoryService } from "./CategoryService";
@@ -67,13 +68,14 @@ export class ProductService {
 
     async updateProduct(productId: number, params: EditProduct) {
 
+        console.log('on service')
         const product = await this.productRepository.getProduct(productId)
 
         if(!product) {
             throw new AppError('Produto não existe', 400)
         }
 
-        if(product.productVariations && !params.productVariations) {
+        if(product.productVariations.length > 0 && !params.productVariations) {
             await this.deleteProductVariations(product)
         }
 
@@ -90,8 +92,20 @@ export class ProductService {
             throw new AppError('Categoria não existe', 400)
         }
 
-        await this.productRepository.updateProduct(productId, {...params.product, category})
+        const editParams: EditProductParams = {
+            basePrice: params.product.basePrice,
+            category,
+            name: params.product.name,
+            description: params.product.description
+        }
 
+        await this.productRepository.updateProduct(productId, editParams)
+        console.log('done')
+
+    }
+
+    async updateProductStatus(productId: number, status: ProductStatus) {
+        await this.productRepository.updateProductStatus(productId, status)
     }
 
     async deleteProduct({productId, categoryId}: {productId: number, categoryId: number}) {

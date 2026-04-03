@@ -44,6 +44,16 @@ export class ProductController {
         res.sendStatus(204)
     }
 
+    async updateProductStatus(req, res: Response) {
+        const {productId} = req.params
+        const {status} = req.body
+        console.log(req.body)
+
+        await this.productService.updateProductStatus(productId, status)
+
+        res.sendStatus(204)
+    }
+
     async deleteProduct(req, res: Response) {
         await this.productService.deleteProduct(req.params)
 

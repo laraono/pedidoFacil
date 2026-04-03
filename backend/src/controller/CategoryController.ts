@@ -28,10 +28,7 @@ export class CategoryController {
     }
 
     async updateCategory(req, res: Response) {
-        const {categoryId} = req.params
-        const {name} = req.body
-
-        await this.categoryService.updateCategory(categoryId, name)
+        await this.categoryService.updateCategory(req.params, req.body)
 
         res.sendStatus(204)
     }

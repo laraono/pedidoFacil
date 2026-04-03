@@ -1,6 +1,7 @@
 import { DataSource, IsNull, Not, Repository } from "typeorm";
 import { CreateCategoryParams } from "../dto";
 import { Category } from "../database";
+import { CategoryStatus } from "../enum";
 
 export class CategoryRepository extends Repository<Category>{
 
@@ -18,6 +19,9 @@ export class CategoryRepository extends Repository<Category>{
                 establishment: {
                     id: establishmentId
                 }
+            },
+            relations: {
+                products: true
             }
         })
     }
@@ -26,7 +30,8 @@ export class CategoryRepository extends Repository<Category>{
         return await this.find({
             where: {
                 establishment: { id: establishmentId },
-                products: { id: Not(IsNull()) }
+                products: { id: Not(IsNull()) },
+                status: CategoryStatus.ATIVA
             },
             relations: ["products"]
         })
@@ -43,8 +48,8 @@ export class CategoryRepository extends Repository<Category>{
         })
     }
 
-    async updateCategory(categoryId: number, name: string) {
-        await this.update(categoryId, {name})
+    async updateCategory(categoryId: number, {name, status}:  {name: string, status: CategoryStatus}) {
+        await this.update(categoryId, {name, status})
     }
 
     async deleteCategory(categoryId: number) {

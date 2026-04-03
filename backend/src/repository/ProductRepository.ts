@@ -28,8 +28,8 @@ export class ProductRepository extends Repository<Product>{
                 basePrice: true,
                 deletedAt: true,
                 description: true,
+                status: true,
                 id: true,
-                isAvailable: true,
                 name: true
             },
             relations: {
@@ -66,7 +66,6 @@ export class ProductRepository extends Repository<Product>{
                 establishment: {
                     id: establishmentId
                 },
-                isAvailable: true,
                 status: ProductStatus.ATIVO
             },
             order: {
@@ -89,7 +88,12 @@ export class ProductRepository extends Repository<Product>{
         })
     }
 
+    async updateProductStatus(productId: number, status: ProductStatus) {
+        await this.update(productId, {status})
+    }
+
     async updateProduct(productId: number, params: EditProductParams) {
+        console.log(params)
         await this.update(productId, params)
     }
 

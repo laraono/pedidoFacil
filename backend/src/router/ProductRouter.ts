@@ -18,4 +18,6 @@ productRouter.get('/categories/:categoryId/products/active', authenticate, roleA
 
 productRouter.put('/categories/:categoryId/products/:productId', authenticate, roleAccessControl.checkPermission('CARDAPIO'), validateUpdateProduct, catchAsync((req, res) => productController.updateProduct(req, res)));
 
+productRouter.put('/categories/:categoryId/products/:productId/status', authenticate, roleAccessControl.checkPermission('CARDAPIO'), catchAsync((req, res) => productController.updateProductStatus(req, res)));
+
 productRouter.delete('/categories/:categoryId/products/:productId', authenticate, roleAccessControl.checkPermission('CARDAPIO'), validateDeleteProduct, catchAsync((req, res) => productController.deleteProduct(req, res)));

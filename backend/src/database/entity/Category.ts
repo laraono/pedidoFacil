@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, DeleteDateColumn, ManyToOne, JoinColumn } from "typeorm"
 import { Product } from "./Product"
 import { Establishment } from "./Establishment"
+import { CategoryStatus } from "../../enum"
 
 @Entity({name: 'CATEGORIA'})
 export class Category {
@@ -17,6 +18,15 @@ export class Category {
         length: 50
     })
     name: string
+
+    @Column({
+        type: 'varchar',
+        name: 'Status',
+        nullable: false,
+        length: 30,
+        default: CategoryStatus.ATIVA
+    })
+    status: CategoryStatus
 
     @DeleteDateColumn({
         name: 'Data_Exclusao',

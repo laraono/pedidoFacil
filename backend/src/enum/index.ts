@@ -1,5 +1,5 @@
 export {
-    ComandaStatus, OrderStatus, ProductStatus, 
+    CategoryStatus, ComandaStatus, OrderStatus, ProductStatus, 
     UserStatus, SubscriptionStatus
 } from './status'
 

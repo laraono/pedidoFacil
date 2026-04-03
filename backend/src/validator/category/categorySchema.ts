@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import express, { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
+import { CategoryStatus } from '../../enum';
 
 const createCategorySchema = z.object({
     name: z.string().min(1).max(20),
@@ -13,7 +14,10 @@ const listCategoriesSchema = z.object({
 
 const updateCategorySchema = z.object({
     categoryId: z.coerce.number().int().positive(),
-    name: z.string().min(1).max(20)
+    body: z.object({
+        name: z.string().min(1).max(20),
+        status: z.enum(CategoryStatus)
+    })
 })
 
 const deleteCategorySchema = z.object({
@@ -55,9 +59,9 @@ export const validateListCategories =
 export const validateUpdateCategory = 
     (req, res: Response, next: NextFunction) => {
         try {
-            const validation = updateCategorySchema.parse({categoryId: req.params.categoryId, name: req.body.name})
+            const validation = updateCategorySchema.parse({categoryId: req.params.categoryId, body: req.body})
 
-            req.body = validation.name
+            req.body = validation.body
             req.params = validation.categoryId
             
             next()
