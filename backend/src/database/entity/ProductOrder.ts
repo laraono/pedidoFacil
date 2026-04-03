@@ -56,7 +56,7 @@ export class ProductOrder {
     @JoinColumn({name: 'ID_Pedido'})
     order: Order
 
-    @OneToOne(() => ProductVariationOrder)
-    productVariantionOrder: ProductVariationOrder
+    @OneToOne(() => ProductVariationOrder, (pvo) => pvo.order) // Add the inverse side here
+    productVariationOrder: ProductVariationOrder; // Recommended: fix the spelling to "Variation"
 
 }
