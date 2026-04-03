@@ -10,7 +10,6 @@ export class ProductController {
     }
 
     async createProduct(req: Request, res: Response) {
-        console.log('on controller req.body', req.body)
         const productId = await this.productService.createProduct(req.body)
 
         res.status(201).send(productId)

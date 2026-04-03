@@ -39,8 +39,6 @@ export class ProductService {
 
         const createdProduct = await this.productRepository.createProduct({...product, establishment, category}) 
 
-        console.log(productVariations)
-
         if(createdProduct && productVariations) { 
             productVariations.forEach(async (productVariation) => {
                 await this.productVariationRepository.createProductVariation({...productVariation, product: createdProduct})

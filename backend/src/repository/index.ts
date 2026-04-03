@@ -13,7 +13,7 @@ import { UserRepository } from './UserRepository'
 
 const categoryRepository: CategoryRepository = new CategoryRepository(AppDataSource)
 const comandaRepository: ComandaRepository = new ComandaRepository(AppDataSource)
-const establishemtnRepository: EstablishmentRepository = new EstablishmentRepository(AppDataSource)
+const establishmentRepository: EstablishmentRepository = new EstablishmentRepository(AppDataSource)
 const orderRepository: OrderRepository = new OrderRepository(AppDataSource)
 const productRepository: ProductRepository = new ProductRepository(AppDataSource)
 const productOrderRepository: ProductOrderRepository = new ProductOrderRepository(AppDataSource)
@@ -26,7 +26,7 @@ const userRepository: UserRepository = new UserRepository(AppDataSource)
 export {
     categoryRepository,
     comandaRepository,
-    establishemtnRepository,
+    establishmentRepository,
     orderRepository,
     productRepository,
     productOrderRepository,
