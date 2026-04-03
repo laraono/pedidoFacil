@@ -23,9 +23,7 @@ const showModal = ref(false);
 const isEditing = ref(false);
 const isLoading = ref(false);
 const errors = ref({});
-const form = ref({ id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true, sizes: [] });
-
-const displayedProducts = computed(() => showDeleted.value ? menuStore.deletedProducts : menuStore.activeProducts);
+const form = ref({ id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true, productVariations: [] });
 
 const categoryOptions = ref([])
 const products = ref([])
@@ -48,7 +46,7 @@ const showBulkConfirm = ref(false);
 const bulkConfirmMessage = ref('');
 
 const allSelected = computed(() =>
-    displayedProducts.value.length > 0 && displayedProducts.value.every(p => selectedIds.value.includes(p.id))
+    products.value.length > 0 && products.value.every(p => selectedIds.value.includes(p.id))
 );
 
 const toggleBulkMode = () => {
@@ -66,7 +64,7 @@ const toggleSelect = (id) => {
 
 const toggleSelectAll = () => {
     if (allSelected.value) selectedIds.value = [];
-    else selectedIds.value = displayedProducts.value.map(p => p.id);
+    else selectedIds.value = products.value.map(p => p.id);
 };
 
 const isSelected = (id) => selectedIds.value.includes(id);
@@ -107,11 +105,11 @@ const applyBulk = () => {
 
 const executeBulk = () => {
     const ids = [...selectedIds.value];
-    const prods = displayedProducts.value.filter(p => ids.includes(p.id));
+    const prods = products.value.filter(p => ids.includes(p.id));
     for (const p of prods) {
         if (bulkAction.value === 'price_increase' || bulkAction.value === 'price_decrease') {
         const val = parseFloat(String(bulkPriceValue.value).replace(',', '.')) || 0;
-        const basePrice = p.price ?? (p.sizes?.[0]?.price ?? 0);
+        const basePrice = p.price ?? (p.productVariations?.[0]?.addPrice ?? 0);
         let newPrice;
         if (bulkPriceType.value === 'percent') {
             newPrice = bulkAction.value === 'price_increase' ? basePrice * (1 + val / 100) : basePrice * (1 - val / 100);
@@ -139,19 +137,19 @@ const validate = () => {
     const e = {};
     if (!form.value.name?.trim()) e.name = "Nome do produto é obrigatório.";
     const price = parseFloat(String(form.value.price).replace(",", "."));
-    if (form.value.sizes.length === 0 && (!form.value.price || isNaN(price) || price <= 0)) e.price = "Preço inválido.";
+    if (form.value.productVariations.length === 0 && (!form.value.price || isNaN(price) || price <= 0)) e.price = "Preço inválido.";
     if (!form.value.categoryId) e.categoryId = "Selecione uma categoria.";
-    const badSize = form.value.sizes.some(s => s.name.trim() && (isNaN(parseFloat(String(s.price).replace(',', '.'))) || parseFloat(String(s.price).replace(',', '.')) <= 0));
-    if (badSize) e.sizes = "Informe um preço válido para cada tamanho.";
+    const badSize = form.value.productVariations.some(s => s.name.trim() && (isNaN(parseFloat(String(s.addPrice).replace(',', '.'))) || parseFloat(String(s.addPrice).replace(',', '.')) <= 0));
+    if (badSize) e.productVariations = "Informe um preço válido para cada tamanho.";
     errors.value = e;
     return Object.keys(e).length === 0;
 };
 
-const openAdd = () => { isEditing.value = false; form.value = { id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true, sizes: [] }; errors.value = {}; showModal.value = true; };
-const openEdit = (p) => { isEditing.value = true; form.value = { id: p.id, name: p.name, description: p.description || "", price: p.price != null ? String(p.price).replace('.', ',') : "", categoryId: p.categoryId, image: p.image, imagePreview: p.image, available: p.available !== false, sizes: p.sizes ? p.sizes.map(s => ({ name: s.name, price: String(s.price).replace('.', ',') })) : [] }; errors.value = {}; showModal.value = true; };
+const openAdd = () => { isEditing.value = false; form.value = { id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true, productVariations: [] }; errors.value = {}; showModal.value = true; };
+const openEdit = (p) => { isEditing.value = true; form.value = { id: p.id, name: p.name, description: p.description || "", price: p.price != null ? String(p.price).replace('.', ',') : "", categoryId: p.categoryId, image: p.image, imagePreview: p.image, available: p.available !== false, productVariations: p.productVariations ? p.productVariations.map(s => ({ name: s.name, addPrice: String(s.addPrice).replace('.', ',') })) : [] }; errors.value = {}; showModal.value = true; };
 
-const addSize = () => form.value.sizes.push({ name: '', price: '' });
-const removeSize = (i) => form.value.sizes.splice(i, 1);
+const addSize = () => form.value.productVariations.push({ name: '', addPrice: '' });
+const removeSize = (i) => form.value.productVariations.splice(i, 1);
 const handleImageUpload = (e) => { const file = e.target.files[0]; if (!file) return; const url = URL.createObjectURL(file); form.value.imagePreview = url; form.value.image = url; };
 
 const applyPriceMask = (raw) => {
@@ -167,27 +165,31 @@ const applyPriceMask = (raw) => {
 };
 
 const onPriceInput = (e) => { form.value.price = applyPriceMask(e.target.value); };
-const onSizePriceInput = (e, i) => { form.value.sizes[i].price = applyPriceMask(e.target.value); };
+const onSizePriceInput = (e, i) => { form.value.productVariations[i].addPrice = applyPriceMask(e.target.value); };
 
 const save = async () => {
     if (!validate()) { showToast("Corrija os erros no formulário.", "error"); return; }
     isLoading.value = true;
     try {
-        const parsedSizes = form.value.sizes
+        const parsedSizes = form.value.productVariations
         .filter(s => s.name.trim())
-        .map(s => ({ name: s.name.trim(), price: parseFloat(String(s.price).replace(',', '.')) || 0 }));
-        const payload = { id: form.value.id, name: form.value.name, description: form.value.description, price: parseFloat(String(form.value.price).replace(",", ".")), categoryId: form.value.categoryId, image: form.value.image, available: form.value.available, sizes: parsedSizes };
+        .map(s => ({ name: s.name.trim(), addPrice: parseFloat(String(s.addPrice).replace(',', '.')) || 0 }));
+        const payload = { id: form.value.id, name: form.value.name, description: form.value.description, price: parseFloat(String(form.value.price).replace(",", ".")), categoryId: form.value.categoryId, image: form.value.image, available: form.value.available, productVariations: parsedSizes };
         
+        console.log(payload.productVariations)
         if (isEditing.value) menuStore.updateProduct(payload); 
         else {
-            await productApi.post({
-                name: payload.name,
-                description: payload.description, 
-                isAvailable: payload.available,
-                categoryId: payload.categoryId,
-                basePrice: payload.price,
-                status: payload.available ? 'Ativo' : 'Inativo'
-            })
+            await productApi.post(
+                {
+                    name: payload.name,
+                    description: payload.description, 
+                    isAvailable: payload.available,
+                    categoryId: payload.categoryId,
+                    basePrice: payload.price,
+                    status: payload.available ? 'Ativo' : 'Inativo',
+                },
+                payload.productVariations
+            )
         }
 
         showToast(isEditing.value ? "Produto atualizado!" : "Produto criado!", "success");
@@ -365,7 +367,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         <p v-if="item.description" class="text-[#757575] text-xs mt-0.5">{{ item.description }}</p>
       </template>
       <template #cell-price="{ item }">
-        <span class="text-accent font-black">R$ {{ Number(item.basePrice ?? item.sizes?.[0]?.price ?? 0).toFixed(2) }}</span>
+        <span class="text-accent font-black">R$ {{ Number(item.basePrice ?? item.productVariations?.[0]?.addPrice ?? 0).toFixed(2) }}</span>
       </template>
       <template #cell-status="{ item }">
         <span v-if="item.deletedAt" class="px-3 py-1 bg-gray-100 text-[#757575] border border-[#E0E0E0] rounded text-[10px] font-black uppercase tracking-widest">Arquivado</span>
@@ -425,14 +427,14 @@ const tableActions = computed(() => bulkMode.value ? [] : [
               <PlusCircle :size="14" /> Adicionar
             </button>
           </div>
-          <div v-for="(size, i) in form.sizes" :key="i" class="flex gap-2 items-center">
+          <div v-for="(productVariation, i) in form.productVariations" :key="i" class="flex gap-2 items-center">
             <input
-              v-model="size.name"
+              v-model="productVariation.name"
               placeholder="Nome (ex: Grande)"
               class="flex-1 py-2.5 px-3 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] text-sm focus:outline-none focus:border-primary/50 transition-all"
             />
             <input
-              :value="size.price"
+              :value="productVariation.addPrice"
               @input="onSizePriceInput($event, i)"
               inputmode="numeric"
               placeholder="0,00"
@@ -442,7 +444,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
               <Trash2 :size="16" />
             </button>
           </div>
-          <p v-if="errors.sizes" class="text-danger text-[11px] font-bold ml-1">{{ errors.sizes }}</p>
+          <p v-if="errors.productVariations" class="text-danger text-[11px] font-bold ml-1">{{ errors.productVariations }}</p>
         </div>
       </div>
     </FormModal>

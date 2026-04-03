@@ -20,7 +20,7 @@ export const useMenuStore = defineStore('menu', () => {
       categoryId: 1,
       isAvailable: true,
       deletedAt: null,
-      sizes: [
+      productVariations: [
         { name: 'Padrão', price: 25.00 },
         { name: 'Grande', price: 30.00 }
       ],
