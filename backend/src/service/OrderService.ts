@@ -1,7 +1,7 @@
 import { DataSource, EntityManager } from "typeorm";
 import { Order, Product, ProductOrder, ProductVariation, ProductVariationOrder } from "../database";
 import { CancelOrder, CreateOrder, ItensArray, ProductOrderParams } from "../dto";
-import { OrderStatus } from "../enum";
+import { OrderStatus, ServiceType } from "../enum";
 import { AppError } from "../middleware";
 import {  EstablishmentRepository, OrderRepository, UserRepository} from "../repository";
 import { ComandaService } from "./ComandaService";
@@ -46,7 +46,8 @@ export class OrderService {
             const order = await transactionalEntityManager.save(Order, {
                 status: createOrder.status,
                 comanda,
-                establishment
+                establishment,
+                serviceType: ServiceType.AUTOATENDIMENTO
             });
 
             await this.saveItens(createOrder.itens, order, transactionalEntityManager);
@@ -95,12 +96,14 @@ export class OrderService {
 
             const newProductOrder = await manager.save(ProductOrder, productOrder);
 
-            await manager.save(ProductVariationOrder, {
-                productId: newProductOrder.product.id,
-                orderId: newProductOrder.order.id,
-                productVariationid: validatedProduct.productVariation.id,
-                price: value2
-            });
+            if(validatedProduct.productVariation) {
+                await manager.save(ProductVariationOrder, {
+                    productId: newProductOrder.product.id,
+                    orderId: newProductOrder.order.id,
+                    productVariationId: validatedProduct.productVariation.id,
+                    price: value2
+                });
+            }
         }
 
         await this.comandaService.updateComandaTotalTransaction(order.comanda, total, manager);
