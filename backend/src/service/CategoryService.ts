@@ -32,6 +32,10 @@ export class CategoryService {
         return await this.categoryRepository.listCategories(establishmentId)
     }
 
+    async listActiveCategories({establishmentId}:{establishmentId: number}) {
+        return await this.categoryRepository.listActiveCategories(establishmentId)
+    }
+
     async getCategory(categoryId: number) {
         return await this.categoryRepository.getCategory(categoryId)
     }

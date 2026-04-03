@@ -1,4 +1,4 @@
-import { DataSource, Repository } from "typeorm";
+import { DataSource, IsNull, Not, Repository } from "typeorm";
 import { CreateCategoryParams } from "../dto";
 import { Category } from "../database";
 
@@ -19,6 +19,16 @@ export class CategoryRepository extends Repository<Category>{
                     id: establishmentId
                 }
             }
+        })
+    }
+
+    async listActiveCategories(establishmentId: number) {
+        return await this.find({
+            where: {
+                establishment: { id: establishmentId },
+                products: { id: Not(IsNull()) }
+            },
+            relations: ["products"]
         })
     }
 

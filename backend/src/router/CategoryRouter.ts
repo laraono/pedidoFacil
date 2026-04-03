@@ -10,3 +10,5 @@ export const categoryRouter = express.Router();
 categoryRouter.get('/categories', authenticate, roleAccessControl.checkPermission('CARDAPIO'), validateListCategories, catchAsync((req, res) => categoryController.listCategories(req, res)))
 
 categoryRouter.post('/categories', authenticate, roleAccessControl.checkPermission('CARDAPIO'), validateCreateCategory, catchAsync((req, res) => categoryController.createCategory(req, res)))
+
+categoryRouter.get('/categories/active', authenticate, roleAccessControl.checkPermission('CARDAPIO'), validateListCategories, catchAsync((req, res) => categoryController.listActivieCategories(req, res)))
