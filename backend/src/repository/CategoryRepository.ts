@@ -36,8 +36,19 @@ export class CategoryRepository extends Repository<Category>{
         return await this.findOne({
             where: {
                 id: categoryId
+            },
+            relations: {
+                products: true
             }
         })
+    }
+
+    async updateCategory(categoryId: number, name: string) {
+        await this.update(categoryId, {name})
+    }
+
+    async deleteCategory(categoryId: number) {
+        await this.softDelete(categoryId)
     }
     
 }

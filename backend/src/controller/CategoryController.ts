@@ -26,5 +26,23 @@ export class CategoryController {
         
         res.status(200).send(categories)
     }
+
+    async updateCategory(req, res: Response) {
+        const {categoryId} = req.params
+        const {name} = req.body
+
+        await this.categoryService.updateCategory(categoryId, name)
+
+        res.sendStatus(204)
+    }
+
+    async deleteCategory(req, res: Response) {
+        const {categoryId} = req.params
+
+        await this.categoryService.deleteCategory(categoryId)
+
+        res.sendStatus(204)
+
+    }
     
 }

@@ -12,6 +12,7 @@ module.exports = function authenticate(req, res, next) {
     try {
         const payload = jwt.verify(token, process.env.JWT_SECRET)
         req.usuario = payload
+        console.log(req.usuario)
         next()
     } catch {
         return res.status(401).json({ error: 'Token inválido ou expirado.' })

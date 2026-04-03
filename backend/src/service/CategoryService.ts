@@ -1,4 +1,3 @@
-import { Category } from "../database";
 import { CreateCategory } from "../dto";
 import { AppError } from "../middleware";
 import { CategoryRepository, EstablishmentRepository } from "../repository";
@@ -38,5 +37,19 @@ export class CategoryService {
 
     async getCategory(categoryId: number) {
         return await this.categoryRepository.getCategory(categoryId)
+    }
+
+    async updateCategory(categoryId: number, name: string) {
+        await this.categoryRepository.updateCategory(categoryId, name)
+    }
+
+    async deleteCategory(categoryId: number) {
+        const category = await this.categoryRepository.getCategory(categoryId)
+
+        if(category.products) {
+            throw new AppError('Categoria possui produtos ligados a ela e não pode ser deletada', 409)
+        }
+
+        await this.categoryRepository.deleteCategory(categoryId)
     }
 }
