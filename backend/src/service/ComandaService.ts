@@ -32,7 +32,7 @@ export class ComandaService {
                 throw new AppError("Estabelecimento não encontrado", 400)
             }
 
-            const comandaParams = { ...comanda, establishment}
+            const comandaParams = { ...comanda, establishment, total: 0}
 
             const {id} = await this.comandaRepository.createComanda(comandaParams) 
 
@@ -40,7 +40,6 @@ export class ComandaService {
         } else {
             throw new AppError('Duas comandas abertas não podem ter o mesmo nome', 400)
         }
-        
     }
 
     async listComandas(establishmentId: number) {
@@ -63,7 +62,6 @@ export class ComandaService {
         }
 
         return false
-
     }
 
     async updateComandaTotal(comanda: Comanda, total: number) {

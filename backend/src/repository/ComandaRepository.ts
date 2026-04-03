@@ -30,6 +30,17 @@ export class ComandaRepository extends Repository<Comanda>{
                 establishment: {
                     id: establishmentId
                 }
+            },
+            relations: {
+                orders: true
+            },
+            select: {
+                description: true,
+                id: true,
+                total: true,
+                orders: {
+                    id: true
+                }
             }
         })
     }

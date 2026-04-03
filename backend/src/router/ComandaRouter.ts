@@ -11,12 +11,14 @@ export const comandaRouter = express.Router();
 
 comandaRouter.get('/commands', authenticate,  roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'), validateListComandas, catchAsync((req, res) => comandaController.listComandas(req, res)))
 
-comandaRouter.get('/commands/open', authenticate,  roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'), validateListComandasByStatus, catchAsync((req, res) => comandaController.listComandasByStatus(req, res)))
+comandaRouter.get('/commands/open', authenticate,  roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'), validateListComandas, catchAsync((req, res) => comandaController.listOpenComandas(req, res)))
 
-comandaRouter.get('/commands/closed', authenticate, roleAccessControl.checkPermission('COMANDAS_FINALIZADAS'), validateListComandasByStatus, catchAsync((req, res) => comandaController.listComandasByStatus(req, res)))
+comandaRouter.get('/commands/closed', authenticate, roleAccessControl.checkPermission('COMANDAS_FINALIZADAS'), validateListComandas, catchAsync((req, res) => comandaController.listClosedComandas(req, res)))
 
 comandaRouter.post('/commands', authenticate, roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO'), validateCreateComanda, catchAsync((req, res) => comandaController.createComanda(req, res)))
 
 comandaRouter.post('/commands/:comandaId/cancel', authenticate, tenant.verifyTenancy('COMANDA', 'comandaId'), roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'), validateCancelComanda, catchAsync((req, res) => comandaController.cancelComanda(req, res)))
 
 comandaRouter.put('/commands/:comandaId', authenticate, tenant.verifyTenancy('COMANDA', 'comandaId'),  roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO'), catchAsync((req, res) => comandaController.updateComandaStatus(req, res)))
+
+comandaRouter.get('/commands/:comandaId', authenticate, roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'), validateCreateComanda, catchAsync((req, res) => comandaController.getComanda(req, res)))
