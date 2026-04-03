@@ -20,14 +20,6 @@ export class Coupon {
     code: string
 
     @Column({
-        type: 'varchar',
-        name: 'status',
-        nullable: false,
-        length: 30
-    })
-    status: ComandaStatus
-
-    @Column({
         name: 'Valor_Desconto',
         type: "decimal",
         precision: 10,

@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, PrimaryColumn, JoinColumn, CreateDateColumn, DeleteDateColumn, ManyToOne } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, PrimaryColumn, JoinColumn, CreateDateColumn, DeleteDateColumn, ManyToOne, OneToOne } from "typeorm"
 import { ProductVariation } from "./ProductVariation"
 import { Product } from "./Product"
 import { Order } from "./Order"
+import { ProductVariationOrder } from "./ProductVariationOrder"
 
 @Entity({name: 'ITEM_PEDIDO'})
 export class ProductOrder {
@@ -54,5 +55,8 @@ export class ProductOrder {
     @ManyToOne(() => Order, (category) => category.productOrders)
     @JoinColumn({name: 'ID_Pedido'})
     order: Order
+
+    @OneToOne(() => ProductVariationOrder)
+    productVariantionOrder: ProductVariationOrder
 
 }

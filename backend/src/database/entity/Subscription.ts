@@ -29,6 +29,7 @@ export class Subscription {
         type: 'varchar',
         name: 'Status',
         nullable: false,
+        default: SubscriptionStatus.PENDENTE
     })
     status: SubscriptionStatus
 

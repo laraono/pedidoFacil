@@ -18,7 +18,8 @@ export class Order {
         type: 'varchar',
         name: 'Status',
         nullable: false,
-        length: 30
+        length: 30,
+        default: OrderStatus.AGUARDANDO_PREPARO
     })
     status: OrderStatus
 
@@ -39,10 +40,10 @@ export class Order {
     @Column({
         type: 'varchar',
         name: 'Tipo_Atendimento',
-        nullable: false,
+        nullable: true,
         length: 30
     })
-    serviceType: ServiceType
+    serviceType?: ServiceType
 
     @Column({
         name: 'Custo_Adicional_Viagem',
@@ -75,7 +76,7 @@ export class Order {
     })
     deletedAt?: Date
 
-    @ManyToOne(() => Comanda, (comanda) => comanda.pedidos)
+    @ManyToOne(() => Comanda, (comanda) => comanda.orders)
     @JoinColumn({
         name: 'ID_Comanda'
     })

@@ -50,14 +50,6 @@ export class Payment {
     })
     change: number
 
-    @Column({
-        type: 'varchar',
-        name: 'status',
-        nullable: false,
-        length: 30
-    })
-    status: ProductStatus
-
     @CreateDateColumn({ 
         type: "datetime", 
         default: () => "CURRENT_TIMESTAMP(6)",

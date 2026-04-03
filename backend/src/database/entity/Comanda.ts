@@ -70,7 +70,7 @@ export class Comanda {
     deletedAt?: Date
 
     @OneToMany(() => Order, (pedido) => pedido.comanda)
-    pedidos: Order[]
+    orders: Order[]
 
     @ManyToOne(() => Establishment, (establishment) => establishment.comandas)
     @JoinColumn({

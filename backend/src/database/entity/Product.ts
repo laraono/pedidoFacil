@@ -63,7 +63,8 @@ export class Product {
         type: 'varchar',
         name: 'Status',
         nullable: false,
-        length: 30
+        length: 30,
+        default: ProductStatus.ATIVO
     })
     status: ProductStatus
 

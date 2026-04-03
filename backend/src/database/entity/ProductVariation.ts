@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, CreateDateColumn, DeleteDateColumn, JoinColumn } from "typeorm"
 import { Product } from "./Product"
 import { ProductOrder } from "./ProductOrder"
-import { ProductStatus } from "../../enum"
+import { ProductStatus, ProductVariationType } from "../../enum"
 import { ProductVariationOrder } from "./ProductVariationOrder"
 
 @Entity({name: 'PRODUTO_VARIACAO'})
@@ -33,7 +33,8 @@ export class ProductVariation {
         type: 'varchar',
         name: 'status',
         nullable: false,
-        length: 30
+        length: 30,
+        default: ProductStatus.ATIVO
     })
     status: ProductStatus
 
