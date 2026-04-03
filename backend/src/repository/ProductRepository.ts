@@ -30,10 +30,16 @@ export class ProductRepository extends Repository<Product>{
                 description: true,
                 status: true,
                 id: true,
-                name: true
+                name: true,
+                productVariations: {
+                    addPrice: true,
+                    name: true,
+                    id: true
+                }
             },
             relations: {
-                category: true
+                category: true,
+                productVariations: true
             },
             order: {
                 name: 'ASC'
