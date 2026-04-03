@@ -1,23 +1,26 @@
 import { EntityManager } from "typeorm";
 import { Comanda } from "../database";
 import { CancelComanda, CreateComanda } from "../dto";
-import { ComandaStatus } from "../enum";
+import { ComandaStatus, OrderStatus } from "../enum";
 import { AppError } from "../middleware";
-import { ComandaRepository, EstablishmentRepository, UserRepository } from "../repository";
+import { ComandaRepository, EstablishmentRepository, OrderRepository, UserRepository } from "../repository";
 
 export class ComandaService {
 
     private comandaRepository: ComandaRepository
     private establishmentRepository: EstablishmentRepository
+    private orderRepository: OrderRepository
     private userRepository: UserRepository
 
     constructor(
         comandaRepository: ComandaRepository, 
         establishmentRepository: EstablishmentRepository,
+        orderRepository: OrderRepository,
         userRepository: UserRepository
     ) {
         this.comandaRepository = comandaRepository
         this.establishmentRepository = establishmentRepository
+        this.orderRepository = orderRepository
         this.userRepository = userRepository
     }
 
@@ -105,5 +108,18 @@ export class ComandaService {
                 status: ComandaStatus.CANCELADA
             }
         )
+
+        const comanda = await this.comandaRepository.getComanda(params.comandaId)
+
+        comanda.orders.forEach(async (order) => {
+            await this.orderRepository.cancelOrder(
+                order.id, 
+                {
+                    status: OrderStatus.CANCELADO,
+                    user,
+                    cancellationDescription: params.reason
+                }
+            )
+        })
     }
 }

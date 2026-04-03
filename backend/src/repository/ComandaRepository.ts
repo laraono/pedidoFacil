@@ -58,6 +58,9 @@ export class ComandaRepository extends Repository<Comanda>{
         return await this.findOne({
             where: {
                 id: comandaId
+            },
+            relations: {
+                orders: true
             }
         })
     }
