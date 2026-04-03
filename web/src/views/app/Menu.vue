@@ -126,7 +126,6 @@ const currentModalTotal = computed(() => {
 const getProducts = async(categoryId) => {
   activeCategoryId.value = categoryId
   products.value = await productApi.listActiveByCategory(categoryId)
-  console.log(products.value)
 }
 
 const openProductModal = (product) => {

@@ -1,19 +1,17 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useMenuStore } from '@/stores/productsManagement.js';
 import { useToast } from '@/composables/useToast';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmModal from '@/components/ui/ConfirmModal.vue';
 import {
-  ArrowLeft, PlusCircle, Edit, Image as ImageIcon,
-  X, Archive, RotateCcw, Trash2,
+    ArrowLeft, PlusCircle, Edit, Image as ImageIcon,
+    X, Archive, RotateCcw, Trash2,
 } from 'lucide-vue-next';
 import {categoryApi} from '@/services/categoryApi'
 
 const router = useRouter();
-const menuStore = useMenuStore();
 const { showToast } = useToast();
 
 const showModal = ref(false);
@@ -21,7 +19,12 @@ const isEditing = ref(false);
 const isLoading = ref(false);
 const showDeleted = ref(false);
 
-const displayedCategories = ref([])
+const categories = ref([])
+const displayedCategories = computed(() => 
+    categories.value.filter((category) => 
+        showDeleted.value ? category.status === 'Arquivada' : category.status === 'Ativa'
+    )
+)
 
 const errors = ref({});
 const touched = ref({});
@@ -33,7 +36,7 @@ const confirmModal = ref({
 });
 
 onMounted(async () => {
-    displayedCategories.value = await categoryApi.list()
+    categories.value = await categoryApi.list()
 })
 
 const showConfirm = (title, message, onConfirm, data = null, options = {}) => {
@@ -84,12 +87,14 @@ const saveCategory = async () => {
     try {
         const payload = { id: form.value.id, name: form.value.name, image: form.value.image };
         if (isEditing.value) {
-            menuStore.updateCategory(payload);
+            await categoryApi.putCategory(payload.id, payload.name);
         } else {
             await categoryApi.post(form.value.name)
         }
         showToast(`Categoria "${form.value.name}" salva com sucesso!`, 'success');
         showModal.value = false;
+
+        categories.value = await categoryApi.list()
     } catch {
         showToast('Erro ao salvar categoria.', 'error');
     } finally {
@@ -97,8 +102,21 @@ const saveCategory = async () => {
     }
 };
 
-const handleDelete = (category) => {
-  const hasProducts = menuStore.activeProducts?.some(p => String(p.categoryId) === String(category.id));
+const handleDelete = async (category) => {
+    showConfirm('Arquivar Categoria', `Deseja arquivar "${category.name}"?`, async (cat) => {
+        const result = await categoryApi.putCategory(cat.id, cat.name, 'Arquivada');
+        if (result && !result.success) showConfirm('Erro', result.message, null, null, { isError: true });
+    }, category);
+    categories.value = await categoryApi.list()
+};
+
+const handleRestore = async (category) => {
+    showConfirm('Restaurar Categoria', `Restaurar "${category.name}"?`, async (cat) => {await categoryApi.putCategory(cat.id, cat.name, 'Ativa')}, category);
+    categories.value = await categoryApi.list()
+};
+
+const handlePermanentDelete = async (category) => {
+    const hasProducts = category.products ? true: false;
     if (hasProducts) {
         showConfirm(
             'Ação Bloqueada',
@@ -107,18 +125,8 @@ const handleDelete = (category) => {
         );
         return;
     }
-    showConfirm('Arquivar Categoria', `Deseja arquivar "${category.name}"?`, (cat) => {
-        const result = menuStore.softDeleteCategory(cat.id);
-        if (result && !result.success) showConfirm('Erro', result.message, null, null, { isError: true });
-    }, category);
-};
-
-const handleRestore = (category) => {
-    showConfirm('Restaurar Categoria', `Restaurar "${category.name}"?`, (cat) => menuStore.restoreCategory(cat.id), category);
-};
-
-const handlePermanentDelete = (category) => {
-    showConfirm('Excluir Permanentemente', `Esta ação é irreversível! "${category.name}" será excluída.`, (cat) => menuStore.permanentlyDeleteCategory(cat.id), category);
+    showConfirm('Excluir Permanentemente', `Esta ação é irreversível! "${category.name}" será excluída.`, async (cat) => await categoryApi.deleteCategory(cat.id), category);
+    categories.value = await categoryApi.list()
 };
 </script>
 
@@ -193,7 +201,7 @@ const handlePermanentDelete = (category) => {
                                 {{ new Date(cat.deletedAt).toLocaleDateString() }}
                             </span>
                             <span v-else class="px-3 py-1 bg-accent-light text-accent border border-accent/30 rounded text-[10px] font-black uppercase tracking-widest">
-                                Ativa
+                                {{cat.status}}
                             </span>
                         </td>
                         <td class="p-4 sm:p-6 text-right whitespace-nowrap">

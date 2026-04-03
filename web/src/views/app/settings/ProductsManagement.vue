@@ -23,10 +23,15 @@ const showModal = ref(false);
 const isEditing = ref(false);
 const isLoading = ref(false);
 const errors = ref({});
-const form = ref({ id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true, productVariations: [] });
+const form = ref({ id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, productVariations: [] });
 
 const categoryOptions = ref([])
 const products = ref([])
+const displayedProducts = computed(() => 
+    products.value.filter((product) => 
+        showDeleted.value ? product.status === 'Arquivado' : product.status === 'Ativo'
+    )
+)
 
 onMounted(async () => {
     categoryOptions.value = await categoryApi.list()
@@ -103,6 +108,8 @@ const applyBulk = () => {
     showBulkConfirm.value = true;
 };
 
+// TO-DO
+/*
 const executeBulk = () => {
     const ids = [...selectedIds.value];
     const prods = products.value.filter(p => ids.includes(p.id));
@@ -118,8 +125,6 @@ const executeBulk = () => {
         }
         newPrice = Math.max(0, parseFloat(newPrice.toFixed(2)));
         menuStore.updateProduct({ ...p, price: newPrice });
-        } else if (bulkAction.value === 'availability') {
-            menuStore.updateProduct({ ...p, available: bulkAvailability.value });
         } else if (bulkAction.value === 'category') {
             menuStore.updateProduct({ ...p, categoryId: bulkCategoryId.value });
         } else if (bulkAction.value === 'delete') {
@@ -130,7 +135,7 @@ const executeBulk = () => {
     showBulkConfirm.value = false;
     selectedIds.value = [];
     bulkMode.value = false;
-};
+}; */
 
 // ── Individual actions ────────────────────────────────────────────────────────
 const validate = () => {
@@ -145,8 +150,28 @@ const validate = () => {
     return Object.keys(e).length === 0;
 };
 
-const openAdd = () => { isEditing.value = false; form.value = { id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true, productVariations: [] }; errors.value = {}; showModal.value = true; };
-const openEdit = (p) => { isEditing.value = true; form.value = { id: p.id, name: p.name, description: p.description || "", price: p.price != null ? String(p.price).replace('.', ',') : "", categoryId: p.categoryId, image: p.image, imagePreview: p.image, available: p.available !== false, productVariations: p.productVariations ? p.productVariations.map(s => ({ name: s.name, addPrice: String(s.addPrice).replace('.', ',') })) : [] }; errors.value = {}; showModal.value = true; };
+const openAdd = () => { 
+    isEditing.value = false; 
+    form.value = { id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, productVariations: [] }; 
+    errors.value = {}; 
+    showModal.value = true; 
+};
+
+const openEdit = (p) => { 
+    isEditing.value = true;
+    form.value = { 
+        id: p.id, 
+        name: p.name, 
+        description: p.description || "", 
+        price: p.price != null ? String(p.price).replace('.', ',') : "", 
+        categoryId: p.categoryId, 
+        image: p.image, 
+        imagePreview: p.image, 
+        productVariations: p.productVariations ? p.productVariations.map(s => ({ name: s.name, addPrice: String(s.addPrice).replace('.', ',') })) : [] 
+    }; 
+    errors.value = {}; 
+    showModal.value = true; 
+};
 
 const addSize = () => form.value.productVariations.push({ name: '', addPrice: '' });
 const removeSize = (i) => form.value.productVariations.splice(i, 1);
@@ -174,32 +199,75 @@ const save = async () => {
         const parsedSizes = form.value.productVariations
         .filter(s => s.name.trim())
         .map(s => ({ name: s.name.trim(), addPrice: parseFloat(String(s.addPrice).replace(',', '.')) || 0 }));
-        const payload = { id: form.value.id, name: form.value.name, description: form.value.description, price: parseFloat(String(form.value.price).replace(",", ".")), categoryId: form.value.categoryId, image: form.value.image, available: form.value.available, productVariations: parsedSizes };
+        const payload = { id: form.value.id, name: form.value.name, description: form.value.description, price: parseFloat(String(form.value.price).replace(",", ".")), categoryId: form.value.categoryId, image: form.value.image, productVariations: parsedSizes };
         
-        console.log(payload.productVariations)
-        if (isEditing.value) menuStore.updateProduct(payload); 
+        if (isEditing.value) {
+            await productApi.putProduct(
+                payload.categoryId,
+                payload.id,
+                {
+                    name: payload.name,
+                    description: payload.description, 
+                    categoryId: payload.categoryId,
+                    basePrice: payload.price
+                },
+                payload.productVariations
+            )
+        }
         else {
             await productApi.post(
                 {
                     name: payload.name,
                     description: payload.description, 
-                    isAvailable: payload.available,
                     categoryId: payload.categoryId,
                     basePrice: payload.price,
-                    status: payload.available ? 'Ativo' : 'Inativo',
+                    status: 'Ativo'
                 },
                 payload.productVariations
             )
         }
+
+        products.value = await productApi.list()
 
         showToast(isEditing.value ? "Produto atualizado!" : "Produto criado!", "success");
         showModal.value = false;
     } catch { showToast("Erro ao salvar produto.", "error"); } finally { isLoading.value = false; }
 };
 
-const handleDelete = (p) => showConfirm({ title: "Arquivar Produto", message: "Arquivar " + p.name + "?", onConfirm: () => { menuStore.softDeleteProduct(p.id); showToast(p.name + " arquivado.", "success"); } });
-const handleRestore = (p) => showConfirm({ title: "Restaurar Produto", message: "Restaurar " + p.name + "?", onConfirm: () => { menuStore.restoreProduct(p.id); showToast(p.name + " restaurado.", "success"); } });
-const handlePermanentDelete = (p) => showConfirm({ title: "Excluir Permanentemente", message: "Excluir " + p.name + " para sempre?", onConfirm: () => { menuStore.permanentlyDeleteProduct(p.id); showToast(p.name + " excluído.", "success"); } });
+const handleDelete = async (p) => {
+    showConfirm(
+        { 
+            title: "Arquivar Produto", message: "Arquivar " + p.name + "?", 
+            onConfirm: async () => {  
+                await productApi.putStatus(p.category.id, p.id, 'Arquivado'); showToast(p.name + " arquivado.", "success"); 
+            }
+        }
+    );
+    products.value = await productApi.list()
+}
+const handleRestore = async (p) => {
+    showConfirm(
+        { 
+            title: "Restaurar Produto", message: "Restaurar " + p.name + "?", 
+            onConfirm: async () => { 
+                await productApi.putStatus(p.category.id, p.id, 'Atiivo'); showToast(p.name + " restaurado.", "success"); 
+            }
+        }
+    );
+    products.value = await productApi.list()
+}
+
+const handlePermanentDelete = async (p) => {
+    showConfirm(
+        { 
+            title: "Excluir Permanentemente", message: "Excluir " + p.name + " para sempre?", 
+            onConfirm: async () => { 
+                await productApi.deleteProduct(p.category.id, p.id); showToast(p.name + " excluído.", "success"); 
+            } 
+        }
+    );
+    products.value = await productApi.list()
+}
 
 const tableColumns = computed(() => {
   const base = [ { key: "image", label: "Foto" }, { key: "name", label: "Produto", sortable: true }, { key: "category", label: "Categoria" }, { key: "price", label: "Preço" }, { key: "status", label: "Status" } ];
@@ -222,6 +290,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         <button @click="showDeleted = !showDeleted" class="px-5 py-3 rounded flex items-center gap-2 font-bold text-sm border transition-all" :class="showDeleted ? 'bg-gray-100 text-[#212121] border-[#E0E0E0]' : 'bg-gray-50 text-[#757575] border-[#E0E0E0] hover:bg-gray-100 hover:text-[#212121]'">
           <Archive :size="18" /> {{ showDeleted ? 'Ver Ativos' : 'Ver Arquivados' }}
         </button>
+        <!--
         <button
           v-if="!showDeleted"
           @click="toggleBulkMode"
@@ -230,6 +299,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         >
           <Layers :size="18" /> {{ bulkMode ? 'Cancelar Lote' : 'Edição em Lote' }}
         </button>
+        -->
         <BaseButton v-if="!showDeleted && !bulkMode" @click="openAdd" :icon="PlusCircle">Novo Produto</BaseButton>
       </template>
     </PageHeader>
@@ -239,9 +309,8 @@ const tableActions = computed(() => bulkMode.value ? [] : [
       <button @click="showDeleted = false" class="text-orange-300 hover:text-orange-100 text-sm font-bold underline">Voltar para ativos</button>
     </div>
 
-    <!-- Bulk action bar -->
+    <!-- Bulk action bar
     <div v-if="bulkMode" class="mb-5 bg-white border border-accent/30 rounded p-5 flex flex-col gap-4">
-      <!-- Selection controls -->
       <div class="flex items-center justify-between flex-wrap gap-3">
         <div class="flex items-center gap-3">
           <button @click="toggleSelectAll" class="flex items-center gap-2 text-sm font-bold transition-colors" :class="allSelected ? 'text-accent' : 'text-[#757575] hover:text-[#212121]'">
@@ -255,9 +324,8 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         <button @click="toggleBulkMode" class="flex items-center gap-1.5 text-xs text-[#757575] hover:text-[#212121] transition-colors">
           <X :size="14" /> Cancelar
         </button>
-      </div>
+      </div> 
 
-      <!-- Action chooser -->
       <div class="flex flex-wrap gap-2">
         <button v-for="opt in [
           { key: 'price_increase', icon: TrendingUp, label: 'Aumentar Preço' },
@@ -275,7 +343,6 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         </button>
       </div>
 
-      <!-- Action parameters -->
       <div v-if="bulkAction === 'price_increase' || bulkAction === 'price_decrease'" class="flex items-end gap-3 flex-wrap">
         <div class="flex flex-col gap-1">
           <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-1">Tipo</label>
@@ -336,6 +403,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         </button>
       </div>
     </div>
+-->
 
     <!-- Sort controls -->
     <div class="flex items-center gap-2 mb-4 flex-wrap">
@@ -347,7 +415,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
       >{{ opt.l }}</button>
     </div>
 
-    <DataTable :columns="tableColumns" :data="products" :actions="tableActions" emptyMessage="Nenhum produto encontrado.">
+    <DataTable :columns="tableColumns" :data="displayedProducts" :actions="tableActions" emptyMessage="Nenhum produto encontrado.">
       <template #cell-select="{ item }">
         <button @click="toggleSelect(item.id)" class="flex items-center justify-center w-8 h-8 rounded transition-colors hover:bg-gray-50">
           <component :is="isSelected(item.id) ? CheckSquare : Square" :size="18" :class="isSelected(item.id) ? 'text-accent' : 'text-[#757575]'" />
@@ -371,7 +439,6 @@ const tableActions = computed(() => bulkMode.value ? [] : [
       </template>
       <template #cell-status="{ item }">
         <span v-if="item.deletedAt" class="px-3 py-1 bg-gray-100 text-[#757575] border border-[#E0E0E0] rounded text-[10px] font-black uppercase tracking-widest">Arquivado</span>
-        <span v-else-if="item.available === false" class="px-3 py-1 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded text-[10px] font-black uppercase tracking-widest">Indisponível</span>
         <span v-else class="px-3 py-1 bg-accent-light text-accent border border-accent/30 rounded text-[10px] font-black uppercase tracking-widest">Disponível</span>
       </template>
     </DataTable>
@@ -409,12 +476,6 @@ const tableActions = computed(() => bulkMode.value ? [] : [
           </select>
           <p v-if="errors.categoryId" class="text-danger text-[11px] font-bold mt-0.5 ml-2">{{ errors.categoryId }}</p>
         </div>
-        <div class="flex items-center justify-between p-4 bg-gray-50 rounded border border-[#E0E0E0]">
-          <div><p class="text-sm font-bold text-[#212121]">Disponível no cardápio</p><p class="text-xs text-[#757575]">Clientes poderão pedir este produto</p></div>
-          <button type="button" @click="form.available = !form.available" class="relative inline-flex h-7 w-12 items-center rounded transition-colors duration-300" :class="form.available ? 'bg-accent' : 'bg-gray-600'">
-            <span class="inline-block h-5 w-5 transform rounded bg-white transition-transform duration-300" :class="form.available ? 'translate-x-6' : 'translate-x-1'" />
-          </button>
-        </div>
 
         <!-- Tamanhos / Variações -->
         <div class="space-y-3">
@@ -451,7 +512,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
 
     <ConfirmModal :confirmModal="confirmState" @close="confirmState.show = false" />
 
-    <!-- Bulk confirmation modal -->
+    <!-- Bulk confirmation modal
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="showBulkConfirm" class="fixed inset-0 bg-black/50  z-[110] flex items-center justify-center p-4">
@@ -472,6 +533,6 @@ const tableActions = computed(() => bulkMode.value ? [] : [
           </div>
         </div>
       </Transition>
-    </Teleport>
+    </Teleport>  -->
   </main>
 </template>
