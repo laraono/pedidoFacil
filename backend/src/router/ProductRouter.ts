@@ -12,4 +12,6 @@ productRouter.post('/products', authenticate, roleAccessControl.checkPermission(
 
 productRouter.get('/products', authenticate, roleAccessControl.checkPermission('CARDAPIO'), validateListProducts, catchAsync((req, res) => productController.listProducts(req, res)));
 
-productRouter.get('/categories/:categoryId/products', authenticate, tenant.verifyTenancy('CATEGORIA', 'categoryId'),  roleAccessControl.checkPermission('CARDAPIO'), validateListProductsByCategories, catchAsync((req, res) => productController.listProductsByCategory(req, res)));
+productRouter.get('/categories/:categoryId/products', authenticate, roleAccessControl.checkPermission('CARDAPIO'), validateListProductsByCategories, catchAsync((req, res) => productController.listProductsByCategory(req, res)));
+
+productRouter.get('/categories/:categoryId/products/active', authenticate, roleAccessControl.checkPermission('CARDAPIO'), validateListProductsByCategories, catchAsync((req, res) => productController.listActiveProductsByCategory(req, res)));
