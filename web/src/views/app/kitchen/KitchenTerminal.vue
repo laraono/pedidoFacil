@@ -7,6 +7,7 @@ import { PERMISSIONS } from '@/utils/permissions';
 import OrderCard from '@/components/kitchen/OrderCard.vue';
 import SubscriptionGuard from '@/components/SubscriptionGuard.vue';
 import { Bell, Volume2, VolumeX, UtensilsCrossed, List, ChefHat, CheckCircle, XCircle, X, ArrowLeft, Settings, Clock } from 'lucide-vue-next';
+import { orderApi } from "@/services/orderApi";
 
 const AUDIO_URL = 'https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/pause.wav';
 const audioPlayer = new Audio(AUDIO_URL);
@@ -20,6 +21,8 @@ const activeTab = ref('pending');
 const showTimerSettings = ref(false);
 const alertMinutes = ref(Number(localStorage.getItem('kitchenAlertMinutes') || 15));
 
+const orders = ref([])
+
 const saveAlertMinutes = () => {
   const val = Math.max(1, Math.min(120, alertMinutes.value));
   alertMinutes.value = val;
@@ -27,7 +30,8 @@ const saveAlertMinutes = () => {
   showTimerSettings.value = false;
 };
 
-onMounted(() => {
+onMounted(async () => {
+  orders.value = await orderApi.list()
   if (!authStore.hasPermission(PERMISSIONS.COZINHA)) {
     router.push('/app/dashboard');
   }
@@ -50,7 +54,7 @@ const simulateSocketEvent = () => {
   if (hasNew) playAlert();
 };
 
-const handleMove = (id, status) => kitchenStore.moveOrder(id, status);
+const handleMove = async (comandaId, id, status) => await orderApi.putStatus(comandaId, id, status);
 const handleFinish = (id) => kitchenStore.finishOrder(id);
 
 const cancelTargetId = ref(null);
@@ -80,9 +84,9 @@ const columns = [
 ];
 
 const columnOrders = (key) => {
-  if (key === 'pending') return kitchenStore.pendingOrders;
-  if (key === 'preparing') return kitchenStore.preparingOrders;
-  return kitchenStore.readyOrders;
+  if (key === 'pending') return orders.value.map( (order) => order.status === 'Aguardando_Preparo');
+  if (key === 'preparing') return orders.value.map( (order) => order.status === 'Em_Preparo');
+  return orders.value.map( (order) => order.status === 'Pronto');
 };
 
 const indicatorColor = (color) => {
