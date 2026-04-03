@@ -1,6 +1,5 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import { useMenuStore } from "@/stores/productsManagement.js";
 import { useToast } from "@/composables/useToast";
 import { useConfirm } from "@/composables/useConfirm";
 import BaseButton from "@/components/ui/BaseButton.vue";
@@ -14,7 +13,6 @@ import { PlusCircle, Edit, Archive, RotateCcw, Trash2, Image as ImageIcon, Layer
 import { categoryApi } from "@/services/categoryApi";
 import { productApi } from "@/services/productApi";
 
-const menuStore = useMenuStore();
 const { showToast } = useToast();
 const { confirmState, showConfirm } = useConfirm();
 
@@ -163,11 +161,11 @@ const openEdit = (p) => {
         id: p.id, 
         name: p.name, 
         description: p.description || "", 
-        price: p.price != null ? String(p.price).replace('.', ',') : "", 
-        categoryId: p.categoryId, 
+        price: p.basePrice != null ? String(p.basePrice).replace('.', ',') : "", 
+        categoryId: p.category.id, 
         image: p.image, 
         imagePreview: p.image, 
-        productVariations: p.productVariations ? p.productVariations.map(s => ({ name: s.name, addPrice: String(s.addPrice).replace('.', ',') })) : [] 
+        productVariations: p.productVariations ? p.productVariations.map(s => ({ id: s.id, name: s.name, addPrice: String(s.addPrice).replace('.', ',') })) : [] 
     }; 
     errors.value = {}; 
     showModal.value = true; 
@@ -198,8 +196,21 @@ const save = async () => {
     try {
         const parsedSizes = form.value.productVariations
         .filter(s => s.name.trim())
-        .map(s => ({ name: s.name.trim(), addPrice: parseFloat(String(s.addPrice).replace(',', '.')) || 0 }));
-        const payload = { id: form.value.id, name: form.value.name, description: form.value.description, price: parseFloat(String(form.value.price).replace(",", ".")), categoryId: form.value.categoryId, image: form.value.image, productVariations: parsedSizes };
+        .map(s => ({
+                name: s.name.trim(), 
+                addPrice: parseFloat(String(s.addPrice).replace(',', '.')) || 0 ,
+                id: s.id
+            }));
+
+        const payload = { 
+            id: form.value.id, 
+            name: form.value.name, 
+            description: form.value.description, 
+            price: parseFloat(String(form.value.price).replace(",", ".")), 
+            categoryId: form.value.categoryId, 
+            image: form.value.image, 
+            productVariations: parsedSizes 
+        };
         
         if (isEditing.value) {
             await productApi.putProduct(
@@ -438,7 +449,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         <span class="text-accent font-black">R$ {{ Number(item.basePrice ?? item.productVariations?.[0]?.addPrice ?? 0).toFixed(2) }}</span>
       </template>
       <template #cell-status="{ item }">
-        <span v-if="item.deletedAt" class="px-3 py-1 bg-gray-100 text-[#757575] border border-[#E0E0E0] rounded text-[10px] font-black uppercase tracking-widest">Arquivado</span>
+        <span v-if="item.status === 'Arquivados'" class="px-3 py-1 bg-gray-100 text-[#757575] border border-[#E0E0E0] rounded text-[10px] font-black uppercase tracking-widest">Arquivado</span>
         <span v-else class="px-3 py-1 bg-accent-light text-accent border border-accent/30 rounded text-[10px] font-black uppercase tracking-widest">Disponível</span>
       </template>
     </DataTable>
