@@ -24,7 +24,7 @@ export class Order {
 
     @Column({
         type: 'varchar',
-        name: 'Observacoes_Geral',
+        name: 'Observacao',
         nullable: true,
     })
     observation?: string

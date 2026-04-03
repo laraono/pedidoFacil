@@ -18,11 +18,10 @@ export class ComandaRepository extends Repository<Comanda>{
     }
 
     async listComandasByStatus(status: ComandaStatus) {
-        return await this.find({
-            where: {
-                status
-            }
-        })
+        return await this.find({ 
+            where: { status },
+            relations: ['pedidos', 'pedidos.productOrders', 'pedidos.productOrders.product'] 
+        });
     }
 
     async getComandaByDesc(description: string) {

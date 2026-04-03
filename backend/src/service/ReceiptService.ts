@@ -12,7 +12,6 @@ export class ReceiptService {
     ) {}
 
     async generateReceipt(paymentId: number, establishmentId: number, cpfCnpj?: string) {
-        // Valida se o estabelecimento possui CNPJ configurado
         const establishment = await this.establishmentRepository.findOne({ 
             where: { id: establishmentId } 
         });
@@ -21,7 +20,6 @@ export class ReceiptService {
             throw new AppError('CNPJ do estabelecimento não configurado para emissão de NF.', 400);
         }
 
-        // Busca o pagamento e garante que ele pertence ao estabelecimento
         const payment = await this.paymentRepository.findOne({
             where: { 
                 id: paymentId, 
@@ -32,7 +30,6 @@ export class ReceiptService {
 
         if (!payment) throw new AppError('Pagamento não encontrado.', 404);
 
-        // Geração da Nota Fiscal
         const timestamp = new Date().getTime();
         const receipt = this.receiptRepository.create({
             receiptNumber: `001.${String(timestamp).slice(-3)}`,
@@ -51,7 +48,6 @@ export class ReceiptService {
     }
 
     async cancelReceipt(receiptId: number, establishmentId: number) {
-        // Busca a nota e garante que é do estabelecimento correto
         const receipt = await this.receiptRepository.findOne({
             where: { 
                 id: receiptId, 

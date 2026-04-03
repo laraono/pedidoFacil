@@ -10,7 +10,8 @@ import {
     establishmentService,
     roleService,
     receiptService,    
-    metricsService      
+    metricsService,
+    menuService // Importado do seu service index
 } from '../service'
 
 import { AuthController } from './AuthController'
@@ -25,6 +26,7 @@ import { EstablishmentController } from './EstablishmentController'
 import { RoleController } from './RoleController'
 import { ReceiptController } from './ReceiptController'
 import { MetricsController } from './MetricsController' 
+import { MenuController } from './MenuController' // Novo controller
 
 const authController = new AuthController(authService)
 const categoryController = new CategoryController(categoryService)
@@ -36,9 +38,9 @@ const establishmentController = new EstablishmentController(establishmentService
 const roleController = new RoleController(roleService)
 const employeeController = new EmployeeController(employeeService) 
 const profileController = new ProfileController(profileService) 
-
 const receiptController = new ReceiptController(receiptService)
 const metricsController = new MetricsController(metricsService)
+const menuController = new MenuController(menuService) // Instanciado com o service
 
 export {
     authController,
@@ -52,7 +54,8 @@ export {
     establishmentController,
     roleController,
     receiptController,
-    metricsController
+    metricsController,
+    menuController // Exportado
 }
 
 export {
@@ -67,7 +70,8 @@ export {
     EstablishmentController,
     RoleController,
     ReceiptController,
-    MetricsController
+    MetricsController,
+    MenuController // Exportado
 }
 
 export { loginLimiter } from './AuthController'

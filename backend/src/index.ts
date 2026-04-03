@@ -2,7 +2,21 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
-import { categoryRouter, comandaRouter, orderRouter, productRouter, authRouter, establishmentRouter, metricsRouter, receiptRouter, roleRouter, employeeRouter, profileRouter, couponRouter } from './router';
+import { 
+    categoryRouter, 
+    comandaRouter, 
+    orderRouter, 
+    productRouter, 
+    authRouter, 
+    establishmentRouter, 
+    metricsRouter, 
+    receiptRouter, 
+    roleRouter, 
+    employeeRouter, 
+    profileRouter, 
+    couponRouter,
+    menuRouter 
+} from './router';
 import { AppDataSource } from './database';
 import { errorHandler } from './middleware';
 
@@ -25,6 +39,9 @@ AppDataSource.initialize().then(async () => {
     app.use('/api/v1', comandaRouter)
     app.use('/api/v1', orderRouter)
     app.use('/api/v1', productRouter)
+    
+    app.use('/api/v1', menuRouter)
+
     app.use('/api/v1/estabelecimento', establishmentRouter)
     app.use('/api/v1/metrics', metricsRouter)
     app.use('/api/v1/receipts', receiptRouter)
@@ -40,4 +57,4 @@ AppDataSource.initialize().then(async () => {
     app.listen(PORT, () => {
         console.log(`🚀 Server rodando em http://localhost:${PORT}`);
     });
-})
+}).catch(error => console.log("Erro na inicialização do Banco:", error));

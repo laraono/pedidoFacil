@@ -11,3 +11,4 @@ export { roleRouter } from './RoleRouter';
 export { employeeRouter } from './EmployeeRouter'
 export {profileRouter} from './ProfileRouter'
 export { couponRouter } from './CouponRouter'
+export { menuRouter } from './MenuRouter';

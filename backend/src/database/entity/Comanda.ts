@@ -5,7 +5,7 @@ import { Establishment } from "./Establishment"
 import { User } from "./User"
 import { Coupon } from "./Coupon"
 
-@Entity({name: 'Comanda'})
+@Entity({name: 'COMANDA'})
 export class Comanda {
 
     @PrimaryGeneratedColumn({
