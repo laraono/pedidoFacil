@@ -34,10 +34,8 @@ export const validateCreateProduct =
     (req, res: Response, next: NextFunction) => {
         try {
             const product = {...req.body.product, establishmentId: req.usuario.estabelecimento}
-            console.log(req.body.productVariations)
-            req.body = createProductSchema.parse({product, productVariations: req.body.productVariations})
 
-            console.log('post parse', req.body)
+            req.body = createProductSchema.parse({product, productVariations: req.body.productVariations})
 
             next()
         } catch (error) {

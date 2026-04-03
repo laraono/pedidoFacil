@@ -2,6 +2,7 @@ import { z } from 'zod';
 import express, { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { OrderStatus, ServiceType } from '../../enum';
+import { establishmentRepository } from '../../repository';
 
 const createOrderchema = z.object({
     
@@ -27,11 +28,23 @@ const listOrdersSchema = z.object({
     estblishmentId: z.coerce.number().int().positive()
 })
 
+const cancelOrderSchema = z.object({
+    params: z.object({
+        comandaId: z.coerce.number().int().positive(),
+        orderId: z.coerce.number().int().positive()
+    }),
+    body: z.object({
+        cancellationDescription: z.string().min(1).max(100),
+        establishmentId: z.coerce.number().int().positive(),
+        userId: z.coerce.number().int().positive(),
+    })
+})
+
 export const validateCreateOrder = 
     (req, res: Response, next: NextFunction) => {
         try {
             const order = {...req.body, establishmentId: req.usuario.estabelecimento}
-            console.log(order)
+
             const {params, body} = createOrderchema.parse({params: req.params, body: order})
 
             req.params = params
@@ -49,7 +62,7 @@ export const validateCreateOrder =
 export const validateListOrders = 
     (req, res: Response, next: NextFunction) => {
         try {
-            req.query = listOrdersSchema.parse(req.usuario)
+            req.body = listOrdersSchema.parse({estblishmentId: req.usuario.estabelecimento})
 
             next()
         } catch (error) {
@@ -60,4 +73,21 @@ export const validateListOrders =
         }
     }
        
+export const validateCancelOrders =
+    (req, res: Response, next: NextFunction) => {
+        try {
+            const body = {...req.body, establishmentId: req.usuario.estabelecimento, userId: req.usuario.id}
 
+            const validation = cancelOrderSchema.parse({params: req.params, body})
+
+            req.params = validation.params
+            req.body = validation.body
+
+            next()
+        } catch (error) {
+            if (error instanceof ZodError) {
+                return res.status(400).send(error.message);
+            }
+            return res.status(500).send("Internal Server Error");
+        }
+    }
