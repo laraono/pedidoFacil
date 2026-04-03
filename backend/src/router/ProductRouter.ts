@@ -1,6 +1,6 @@
 import express from 'express'
 import { productController } from '../controller';
-import { validateCreateProduct, validateListProducts, validateListProductsByCategories } from '../validator/product';
+import { validateCreateProduct, validateDeleteProduct, validateListProducts, validateListProductsByCategories, validateUpdateProduct } from '../validator/product';
 import { catchAsync } from '../middleware';
 const authenticate = require('../middleware/authenticate');
 const tenant = require('../middleware/tenant');
@@ -15,3 +15,7 @@ productRouter.get('/products', authenticate, roleAccessControl.checkPermission('
 productRouter.get('/categories/:categoryId/products', authenticate, roleAccessControl.checkPermission('CARDAPIO'), validateListProductsByCategories, catchAsync((req, res) => productController.listProductsByCategory(req, res)));
 
 productRouter.get('/categories/:categoryId/products/active', authenticate, roleAccessControl.checkPermission('CARDAPIO'), validateListProductsByCategories, catchAsync((req, res) => productController.listActiveProductsByCategory(req, res)));
+
+productRouter.put('/categories/:categoryId/products/:productId', authenticate, roleAccessControl.checkPermission('CARDAPIO'), validateUpdateProduct, catchAsync((req, res) => productController.updateProduct(req, res)));
+
+productRouter.delete('/categories/:categoryId/products/:productId', authenticate, roleAccessControl.checkPermission('CARDAPIO'), validateDeleteProduct, catchAsync((req, res) => productController.deleteProduct(req, res)));

@@ -21,6 +21,30 @@ const createProductSchema = z.object({
     
 });
 
+const updateProductSchema = z.object({
+    params: z.object({
+        productId: z.coerce.number().int().positive(),
+        categoryId: z.coerce.number().int().positive()
+    }),
+    body: z.object({
+        product: z.object({
+            name: z.string().min(1).max(20),
+            description: z.string().optional(), 
+            isAvailable: z.coerce.boolean(),
+            estocavel: z.coerce.boolean(),
+            categoryId: z.coerce.number().int().positive(),
+            establishmentId: z.coerce.number().int().positive(),
+            basePrice: z.coerce.number().positive(),
+            status: z.enum(ProductStatus)
+        }),
+        productVariations: z.object({
+            id: z.coerce.number().int().positive(),
+            name: z.string().min(1).max(20),
+            addPrice: z.coerce.number().positive(),
+        }).array().optional()
+    })    
+});
+
 const listProductsSchema = z.object({
     establishmentId: z.coerce.number().int().positive()
 })
@@ -28,6 +52,11 @@ const listProductsSchema = z.object({
 const listProductsByCategorySchema = z.object({
     categoryId: z.coerce.number().int().positive(),
     establishmentId: z.coerce.number().int().positive()
+})
+
+const deleteProductSchema = z.object({
+    productId: z.coerce.number().int().positive(),
+    categoryId: z.coerce.number().int().positive()
 })
 
 export const validateCreateProduct = 
@@ -74,3 +103,37 @@ export const validateListProductsByCategories =
             return res.status(500).send("Internal Server Error");
         }
     };
+
+export const validateUpdateProduct = 
+    (req, res: Response, next: NextFunction) => {
+        try {
+            const product = {...req.body.product, establishmentId: req.usuario.estabelecimento}
+            const productVariation = req.body.productVariations
+
+            const validation = updateProductSchema.parse({params: req.params, body: {product, productVariation}})
+
+            req.params = validation.params
+            req.body = validation.body
+
+            next()
+        } catch (error) {
+            if (error instanceof ZodError) {
+                return res.status(400).send(error.message);
+            }
+            return res.status(500).send("Internal Server Error");
+        }
+    };
+
+export const validateDeleteProduct = 
+    (req, res: Response, next: NextFunction) => {
+        try {
+            req.params = deleteProductSchema.parse(req.params)
+
+            next()
+        } catch (error) {
+            if (error instanceof ZodError) {
+                return res.status(400).send(error.message);
+            }
+            return res.status(500).send("Internal Server Error");
+        }
+    }

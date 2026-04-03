@@ -1,6 +1,6 @@
 import { DataSource, Repository } from "typeorm";
 import { Product } from "../database";
-import { CreateProductParams } from "../dto";
+import { CreateProductParams, EditProductParams } from "../dto";
 import { ProductStatus } from "../enum";
 
 export class ProductRepository extends Repository<Product>{
@@ -82,8 +82,19 @@ export class ProductRepository extends Repository<Product>{
         return await this.findOne({
             where: {
                 id: productId
+            },
+            relations: {
+                productVariations: true
             }
         })
+    }
+
+    async updateProduct(productId: number, params: EditProductParams) {
+        await this.update(productId, params)
+    }
+
+    async deleteProduct(productId: number) {
+        await this.softDelete(productId)
     }
     
 }

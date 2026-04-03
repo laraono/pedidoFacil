@@ -1,4 +1,5 @@
-import { CreateProduct } from "../dto";
+import { Product } from "../database";
+import { CreateProduct, EditProduct } from "../dto";
 import { AppError } from "../middleware";
 import { EstablishmentRepository, ProductRepository, ProductVariationRepository } from "../repository";
 import { CategoryService } from "./CategoryService";
@@ -62,5 +63,58 @@ export class ProductService {
  
     async getProduct(productId: number) {
         return await this.productRepository.getProduct(productId)
+    }
+
+    async updateProduct(productId: number, params: EditProduct) {
+
+        const product = await this.productRepository.getProduct(productId)
+
+        if(!product) {
+            throw new AppError('Produto não existe', 400)
+        }
+
+        if(product.productVariations && !params.productVariations) {
+            await this.deleteProductVariations(product)
+        }
+
+        if(params.productVariations) {
+            params.productVariations.forEach(async (variation) => {
+                const {id, ...editParams} = variation
+                await this.productVariationRepository.updateProductVariation(id, editParams)
+            })
+        }
+
+        const category = await this.categoryService.getCategory(params.product.categoryId)
+
+        if(!product) {
+            throw new AppError('Categoria não existe', 400)
+        }
+
+        await this.productRepository.updateProduct(productId, {...params.product, category})
+
+    }
+
+    async deleteProduct({productId, categoryId}: {productId: number, categoryId: number}) {
+        const category = await this.categoryService.getCategory(categoryId)
+
+        if(!category) {
+            throw new AppError('Categoria não existe', 400)
+        }
+
+        const product = await this.productRepository.getProduct(productId)
+
+        if(!product) {
+            throw new AppError('Produto não existe', 400)
+        }
+
+        await this.deleteProductVariations(product)
+
+        await this.productRepository.deleteProduct(productId)
+    }
+
+    async deleteProductVariations(product: Product) {
+        product.productVariations.forEach(async (variation) => {
+            await this.productVariationRepository.deleteProductVariation(variation.id)
+        })
     }
 }

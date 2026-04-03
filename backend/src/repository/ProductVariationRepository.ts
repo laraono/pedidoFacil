@@ -1,5 +1,5 @@
 import { DataSource, Repository } from "typeorm";
-import { CreateProductVariation } from "../dto";
+import { CreateProductVariation, ProductVariationOrderParams, ProductVariationParams } from "../dto";
 import { ProductVariation } from "../database";
 
 export class ProductVariationRepository extends Repository<ProductVariation>{
@@ -28,6 +28,14 @@ export class ProductVariationRepository extends Repository<ProductVariation>{
                 }
             }
         })
+    }
+
+    async updateProductVariation(variationId: number, params: ProductVariationParams) {
+        await this.update(variationId, params)
+    }
+
+    async deleteProductVariation(productId: number) {
+        await this.softDelete(productId)
     }
     
 }
