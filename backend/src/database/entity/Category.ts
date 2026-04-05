@@ -21,6 +21,13 @@ export class Category {
 
     @Column({
         type: 'varchar',
+        name: 'Imagem',
+        nullable: true
+    })
+    image?: string
+
+    @Column({
+        type: 'varchar',
         name: 'Status',
         nullable: false,
         length: 30,
