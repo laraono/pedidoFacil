@@ -2,10 +2,12 @@ import { Establishment } from "../../database"
 
 export type CreateCategory = {
     name: string,
-    establishmentId: number
+    establishmentId: number,
+    image?: Buffer
 }
 
 export type CreateCategoryParams = {
     name: string,
-    establishment: Establishment
+    establishment: Establishment,
+    image: string
 }

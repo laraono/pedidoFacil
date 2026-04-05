@@ -1,16 +1,16 @@
 import { Category } from "../../database"
-import { ProductStatus } from "../../enum"
-import { ProductParams, ProductVariationParams } from "./CreateProductDTO"
+import { ProductParams } from "./CreateProductDTO"
 
 export type EditProductParams = {
     name: string,
     description?: string, 
     category: Category,
-    basePrice: number
+    basePrice: number,
+    image?: string
 }
 
 export type EditProductVariation = {
-    id: number,
+    id?: number,
     name: string,
     addPrice: number
 }

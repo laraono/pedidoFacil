@@ -6,7 +6,8 @@ export type ProductParams = {
     description?: string, 
     establishmentId: number,
     categoryId: number,
-    basePrice: number
+    basePrice: number,
+    image?: Buffer
 }
 
 export type CreateProductParams = {
@@ -14,7 +15,8 @@ export type CreateProductParams = {
     description?: string, 
     establishment: Establishment,
     category: Category,
-    basePrice: number
+    basePrice: number,
+    image?: string
 }
 
 export type ProductVariationParams = {
