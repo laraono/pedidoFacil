@@ -10,7 +10,7 @@ export class ProductController {
     }
 
     async createProduct(req: Request, res: Response) {
-        const productId = await this.productService.createProduct(req.body)
+        const productId = await this.productService.createProduct({...req.body, image: req.file.buffer})
 
         res.status(201).send(productId)
     }
@@ -39,7 +39,7 @@ export class ProductController {
 
     async updateProduct(req, res: Response) {
         const {productId} = req.params
-        await this.productService.updateProduct(productId, req.body)
+        await this.productService.updateProduct(productId, {...req.body, image: req.file.buffer})
 
         res.sendStatus(204)
     }

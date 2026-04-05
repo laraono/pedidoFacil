@@ -1,9 +1,10 @@
-import { Product } from "../database";
-import { CreateProduct, EditProduct, EditProductParams } from "../dto";
+import { Establishment, Product } from "../database";
+import { CreateProduct, EditProduct, EditProductParams, ProductParams } from "../dto";
 import { ProductStatus } from "../enum";
 import { AppError } from "../middleware";
 import { EstablishmentRepository, ProductRepository, ProductVariationRepository } from "../repository";
 import { CategoryService } from "./CategoryService";
+import { ensureBucketExists, generateUniqueImageKey, getImageContentType, uploadToS3 } from "./S3Service";
 
 export class ProductService {
 
@@ -39,7 +40,16 @@ export class ProductService {
             throw new AppError('Estabelecimento não encontrado', 400)
         }
 
-        const createdProduct = await this.productRepository.createProduct({...product, establishment, category}) 
+        const imageUrl = await this.saveImage(product, establishment.name)
+
+        const productParams = {
+            ...product, 
+            establishment, 
+            category,
+            image: imageUrl
+        }
+
+        const createdProduct = await this.productRepository.createProduct(productParams) 
 
         if(createdProduct && productVariations) { 
             productVariations.forEach(async (productVariation) => {
@@ -51,11 +61,43 @@ export class ProductService {
     }
 
     async listProducts({establishmentId}:{establishmentId: number}) {
-        return await this.productRepository.listProducts(establishmentId)
+        const products = await this.productRepository.listProducts(establishmentId)
+
+        const establishment = await this.establishmentRepository.getEstablishment(establishmentId)
+    
+        if(!establishment) {
+            throw new AppError("Estabelecimento não encontrado", 400)
+        }
+
+        products.map( (product) => {
+            if(product.image) {
+                const imageURL = this.getImage(establishment.name, product.image)
+
+                product.image = imageURL
+            }
+        })
+
+        return products
     }
 
     async listProductsByCategory(categoryId: number, establishmentId: number) {
-        return await this.productRepository.listProductsByCategory(categoryId, establishmentId)
+        const products = await this.productRepository.listProductsByCategory(categoryId, establishmentId)
+
+        const establishment = await this.establishmentRepository.getEstablishment(establishmentId)
+    
+        if(!establishment) {
+            throw new AppError("Estabelecimento não encontrado", 400)
+        }
+
+        products.map( (product) => {
+            if(product.image) {
+                const imageURL = this.getImage(establishment.name, product.image)
+
+                product.image = imageURL
+            }
+        })
+
+        return products
     }
 
     async listActiveProductsByCategory(categoryId: number, establishmentId: number) {
@@ -72,6 +114,12 @@ export class ProductService {
 
         if(!product) {
             throw new AppError('Produto não existe', 400)
+        }
+
+        const establishment = await this.establishmentRepository.getEstablishment(params.product.establishmentId)
+    
+        if(!establishment) {
+            throw new AppError("Estabelecimento não encontrado", 400)
         }
 
         if(product.productVariations.length > 0 && params.productVariations.length === 0) {
@@ -94,11 +142,14 @@ export class ProductService {
             throw new AppError('Categoria não existe', 400)
         }
 
+        const imageUrl = await this.saveImage(params.product, establishment.name)
+
         const editParams: EditProductParams = {
             basePrice: params.product.basePrice,
             category,
             name: params.product.name,
-            description: params.product.description
+            description: params.product.description,
+            image: imageUrl
         }
 
         await this.productRepository.updateProduct(productId, editParams)
@@ -131,5 +182,41 @@ export class ProductService {
         product.productVariations.forEach(async (variation) => {
             await this.productVariationRepository.deleteProductVariation(variation.id)
         })
+    }
+
+    getImage(name: string, image: string) {
+        const bucketName = name.toLocaleLowerCase()
+
+        const endpoint = process.env.LOCALSTACK_ENDPOINT || 'http://localhost:4566';
+        return `${endpoint}/${bucketName}/${image}`;
+    
+    }
+
+    async saveImage(product: ProductParams, name: string) {
+        if(!product.image) return ''
+
+        console.log('nome da empresa', name)
+        const bucketName = name.toLocaleLowerCase()
+
+        await ensureBucketExists(bucketName)
+
+        const imageKey = generateUniqueImageKey(product.image);
+
+        try {
+            const result = await uploadToS3({
+                bucket: bucketName, 
+                key: imageKey, 
+                body: product.image,
+                contentType: getImageContentType(product.image)
+            })
+
+            if (!result.Location) 
+                throw new AppError("Falha ao obter URL da imagem", 500);
+
+            return imageKey
+
+        } catch(error) {
+            throw new AppError(`Erro ao salvar imagem: ${error.message}`, 500)
+        }
     }
 }

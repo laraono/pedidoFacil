@@ -10,7 +10,7 @@ export class CategoryController {
     }
 
     async createCategory(req: Request, res: Response) {
-        const categoryId = await this.categoryService.createCategory(req.body)
+        const categoryId = await this.categoryService.createCategory({...req.body, image: req.file.buffer})
 
         res.status(201).send(categoryId)
     }
@@ -28,7 +28,7 @@ export class CategoryController {
     }
 
     async updateCategory(req, res: Response) {
-        await this.categoryService.updateCategory(req.params, req.body)
+        await this.categoryService.updateCategory(req.params, {...req.body, image: req.file.buffer})
 
         res.sendStatus(204)
     }

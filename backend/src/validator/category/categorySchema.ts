@@ -3,9 +3,23 @@ import express, { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { CategoryStatus } from '../../enum';
 
+const fileSizeLimit = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_MIME_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+
 const createCategorySchema = z.object({
     name: z.string().min(1).max(20),
-    establishmentId: z.coerce.number().int().positive()
+    establishmentId: z.coerce.number().int().positive(),
+    image: z
+        .object({
+            mimetype: z.string().refine((type) => ACCEPTED_IMAGE_MIME_TYPES.includes(type), {
+                message: "Tipo de imagem inválido",
+            }),
+            size: z.number().max(fileSizeLimit, {
+                message: "Tamanho do arquivo não deve exceder 5MB",
+            }),
+            buffer: z.instanceof(Buffer), // Ensure it has the actual data
+        })
+        .optional(),
 });
 
 const listCategoriesSchema = z.object({
@@ -17,7 +31,18 @@ const updateCategorySchema = z.object({
     body: z.object({
         name: z.string().min(1).max(20),
         status: z.enum(CategoryStatus)
-    })
+    }),
+    image: z
+        .object({
+            mimetype: z.string().refine((type) => ACCEPTED_IMAGE_MIME_TYPES.includes(type), {
+                message: "Tipo de imagem inválido",
+            }),
+            size: z.number().max(fileSizeLimit, {
+                message: "Tamanho do arquivo não deve exceder 5MB",
+            }),
+            buffer: z.instanceof(Buffer), // Ensure it has the actual data
+        })
+        .optional(),
 })
 
 const deleteCategorySchema = z.object({
@@ -27,9 +52,14 @@ const deleteCategorySchema = z.object({
 export const validateCreateCategory = 
     (req, res: Response, next: NextFunction) => {
         try {
-            const name = createCategorySchema.parse({...req.body, establishmentId: req.usuario.estabelecimento})
+            const {image, ...body} = createCategorySchema.parse({
+                name: req.body.name, 
+                image: req.file,
+                establishmentId: req.usuario.estabelecimento
+            })
 
-            req.body = name
+            req.body = body
+            console.log()
 
             next()
         } catch (error) {
@@ -59,7 +89,7 @@ export const validateListCategories =
 export const validateUpdateCategory = 
     (req, res: Response, next: NextFunction) => {
         try {
-            const validation = updateCategorySchema.parse({categoryId: req.params.categoryId, body: req.body})
+            const validation = updateCategorySchema.parse({categoryId: req.params.categoryId, body: req.body, image: req.file})
 
             req.body = validation.body
             req.params = validation.categoryId

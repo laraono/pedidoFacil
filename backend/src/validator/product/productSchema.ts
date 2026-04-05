@@ -2,6 +2,9 @@ import { z } from 'zod';
 import express, { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 
+const fileSizeLimit = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_MIME_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+
 const createProductSchema = z.object({
     product: z.object({
         name: z.string().min(1).max(20),
@@ -10,6 +13,17 @@ const createProductSchema = z.object({
         categoryId: z.coerce.number().int().positive(),
         establishmentId: z.coerce.number().int().positive(),
         basePrice: z.coerce.number().positive(),
+        image: z
+            .instanceof(File)
+            .refine(
+                (file) => ACCEPTED_IMAGE_MIME_TYPES.includes(file.type),
+                { message: "Tipo de imagem inválido" }
+            )
+            .refine(
+                (file) => file.size <= fileSizeLimit,
+                { message: "Tamanho do arquivo não deve exceder 5MB" }
+            )
+            .optional()
     }),
     productVariations: z.object({
         name: z.string().min(1).max(20),
@@ -36,7 +50,18 @@ const updateProductSchema = z.object({
             name: z.string().min(1).max(20),
             addPrice: z.coerce.number().positive(),
         }).array().optional()
-    })    
+    }),
+        image: z
+            .object({
+                mimetype: z.string().refine((type) => ACCEPTED_IMAGE_MIME_TYPES.includes(type), {
+                    message: "Tipo de imagem inválido",
+                }),
+                size: z.number().max(fileSizeLimit, {
+                    message: "Tamanho do arquivo não deve exceder 5MB",
+                }),
+                buffer: z.instanceof(Buffer), // Ensure it has the actual data
+            })
+            .optional(),
 });
 
 const listProductsSchema = z.object({
@@ -58,7 +83,7 @@ export const validateCreateProduct =
         try {
             const product = {...req.body.product, establishmentId: req.usuario.estabelecimento}
 
-            req.body = createProductSchema.parse({product, productVariations: req.body.productVariations})
+            req.body = createProductSchema.parse({product, productVariations: req.body.productVariations, image: req.file})
 
             next()
         } catch (error) {
@@ -104,7 +129,7 @@ export const validateUpdateProduct =
             const product = {...req.body.product, establishmentId: req.usuario.estabelecimento}
             const productVariations = req.body.productVariations
 
-            const validation = updateProductSchema.parse({params: req.params, body: {product, productVariations}})
+            const validation = updateProductSchema.parse({params: req.params, body: {product, productVariations, image: req.file}})
 
             req.params = validation.params
             req.body = validation.body

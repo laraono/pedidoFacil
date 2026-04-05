@@ -1,5 +1,5 @@
 import { DataSource, IsNull, Not, Repository } from "typeorm";
-import { CreateCategoryParams } from "../dto";
+import { CreateCategoryParams, EditCategoryParams } from "../dto";
 import { Category } from "../database";
 import { CategoryStatus } from "../enum";
 
@@ -48,8 +48,8 @@ export class CategoryRepository extends Repository<Category>{
         })
     }
 
-    async updateCategory(categoryId: number, {name, status}:  {name: string, status: CategoryStatus}) {
-        await this.update(categoryId, {name, status})
+    async updateCategory(categoryId: number, params: EditCategoryParams) {
+        await this.update(categoryId, params)
     }
 
     async deleteCategory(categoryId: number) {
