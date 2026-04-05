@@ -75,7 +75,7 @@ const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
         form.value.imagePreview = URL.createObjectURL(file);
-        form.value.image = form.value.imagePreview;
+        form.value.image = file;
     }
 };
 
@@ -87,9 +87,9 @@ const saveCategory = async () => {
     try {
         const payload = { id: form.value.id, name: form.value.name, image: form.value.image };
         if (isEditing.value) {
-            await categoryApi.putCategory(payload.id, payload.name);
+            await categoryApi.putCategory(payload.id, payload.name, payload.image);
         } else {
-            await categoryApi.post(form.value.name)
+            await categoryApi.post(form.value.name, form.value.image)
         }
         showToast(`Categoria "${form.value.name}" salva com sucesso!`, 'success');
         showModal.value = false;

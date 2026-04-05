@@ -1,26 +1,36 @@
 import { request } from "./api";
 
 export const productApi = {
-    post: (product, productVariations) =>
-        request('/products', { method: 'POST', body: JSON.stringify({ product, productVariations}) }),
+    post: async (product, productVariations, image) =>{
+        const formData = new FormData()
+        formData.append('product', product)
+        formData.append('productVariations', productVariations)
+        formData.append('image', image)
 
-    listByCategory: (categoryId) =>
-        request(`/categories/${categoryId}/products`, { method: 'GET'}),
+        await request('/products', { method: 'POST', body: formData })
+    },
+    listByCategory: async (categoryId) =>
+        await request(`/categories/${categoryId}/products`, { method: 'GET'}),
 
-    listActiveByCategory: (categoryId) =>
-        request(`/categories/${categoryId}/products/active`, { method: 'GET'}),
+    listActiveByCategory: async (categoryId) =>
+        await request(`/categories/${categoryId}/products/active`, { method: 'GET'}),
 
-    list: () => 
-        request('/products', {method: 'GET'}),
+    list: async () => 
+        await request('/products', {method: 'GET'}),
 
-    deleteProduct: (categoryId, productId) => 
-        request(`/categories/${categoryId}/products/${productId}`, { method: 'DELETE'}),
+    deleteProduct: async (categoryId, productId) => 
+        await request(`/categories/${categoryId}/products/${productId}`, { method: 'DELETE'}),
 
-    putProduct: (categoryId, productId, product, productVariations) =>
-        request(`/categories/${categoryId}/products/${productId}`, { method: 'PUT', body: JSON.stringify({ product, productVariations})}),
+    putProduct: async (categoryId, productId, product, productVariations, image) =>{
+        const formData = new FormData()
+        formData.append('product', product)
+        formData.append('productVariations', productVariations)
+        formData.append('image', image)
 
-    putStatus: (categoryId, productId, status) =>
-        request(`/categories/${categoryId}/products/${productId}/status`, { method: 'PUT', body: JSON.stringify({ status })}),
+        await request(`/categories/${categoryId}/products/${productId}`, { method: 'PUT', body: formData})
+    },
+    putStatus: async (categoryId, productId, status) =>
+        await request(`/categories/${categoryId}/products/${productId}/status`, { method: 'PUT', body: JSON.stringify({ status })}),
 
 
 };

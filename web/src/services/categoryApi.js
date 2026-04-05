@@ -1,19 +1,30 @@
 import { request } from "./api";
 
 export const categoryApi = {
-    post: (name) =>
-        request('/categories', { method: 'POST', body: JSON.stringify({ name }) }),
+    post: async (name, image) => {
+        const formData = new FormData()
+        formData.append('name', name)
+        formData.append('image', image)
 
-    list: () =>
-        request('/categories', { method: 'GET'}),
+        await request('/categories', { method: 'POST',  body: formData })
+    },
 
-    listActive: () => 
-        request('/categories/active', { method: 'GET'}),
+    list: async () =>
+        await request('/categories', { method: 'GET'}),
 
-    putCategory: (categoryId, name, status) =>
-        request(`/categories/${categoryId}`, {method: 'PUT', body: JSON.stringify({name, status})}),
+    listActive: async () => 
+        await request('/categories/active', { method: 'GET'}),
 
-    deleteCategory: (categoryId) => 
-        request(`/categories/${categoryId}`, {method: 'DELETE'}),
+    putCategory: async (categoryId, name, status, image) => {
+        const formData = new FormData()
+        formData.append('name', name)
+        formData.append('status', status)
+        formData.append('image', image)
+
+        await request(`/categories/${categoryId}`, {method: 'PUT', body: formData})
+    },      
+
+    deleteCategory: async (categoryId) => 
+        await request(`/categories/${categoryId}`, {method: 'DELETE'}),
 
 };

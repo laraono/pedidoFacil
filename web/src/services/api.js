@@ -7,12 +7,21 @@ export function getToken() {
 }
 
 export async function request(path, options = {}) {
-    const headers = { 'Content-Type': 'application/json', ...options.headers };
+    const isFormData = options.body instanceof FormData;
+    
+    const headers = { ...options.headers };
+    if (!isFormData && !options.headers?.['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
+    }
+    
     const token = getToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
+    let body = options.body;
+
     const res = await fetch(`${BASE_URL}${path}`, {
         ...options,
+        body,
         headers,
         credentials: 'include',
     });
@@ -22,16 +31,23 @@ export async function request(path, options = {}) {
     const data = await res.json().catch(() => ({}));
 
     if (res.status === 401 && path !== '/refresh' && path !== '/login') {
-        // Tenta renovar o token e repetir
         try {
             const refreshed = await request('/refresh', { method: 'POST' });
             localStorage.setItem('accessToken', refreshed.accessToken);
             headers['Authorization'] = `Bearer ${refreshed.accessToken}`;
+            
+            let retryBody = options.body;
+            if (!isFormData && retryBody && typeof retryBody === 'object' && !(retryBody instanceof FormData)) {
+                retryBody = JSON.stringify(retryBody);
+            }
+            
             const retry = await fetch(`${BASE_URL}${path}`, {
                 ...options,
+                body: retryBody,
                 headers,
                 credentials: 'include',
             });
+            
             if (!retry.ok) {
                 const retryData = await retry.json().catch(() => ({}));
                 throw new Error(retryData.error || `Erro ${retry.status}`);

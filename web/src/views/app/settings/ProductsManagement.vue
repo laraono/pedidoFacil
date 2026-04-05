@@ -222,7 +222,8 @@ const save = async () => {
                     categoryId: payload.categoryId,
                     basePrice: payload.price
                 },
-                payload.productVariations
+                payload.productVariations,
+                payload.image
             )
         }
         else {
@@ -234,7 +235,8 @@ const save = async () => {
                     basePrice: payload.price,
                     status: 'Ativo'
                 },
-                payload.productVariations
+                payload.productVariations,
+                payload.image
             )
         }
 

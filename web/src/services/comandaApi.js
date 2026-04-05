@@ -1,21 +1,21 @@
 import { request } from "./api";
 
 export const comandaApi = {
-    post: (description, status) =>
-        request('/commands', { method: 'POST', body: JSON.stringify({ description, status}) }),
+    post: async (description, status) =>
+        await request('/commands', { method: 'POST', body: JSON.stringify({ description, status}) }),
 
-    list: () =>
-        request('/commands', { method: 'GET'}),
+    list: async () =>
+        await request('/commands', { method: 'GET'}),
 
-    listOpen: () => 
-        request('/commands/open', {method: 'GET'}),
+    listOpen: async () => 
+        await request('/commands/open', {method: 'GET'}),
 
-    listClosed: () => 
-        request('/commands/closed', {method: 'GET'}),
+    listClosed: async () => 
+        await request('/commands/closed', {method: 'GET'}),
 
-    putStatus: (comandaId, status) => 
-        request(`/commands/${comandaId}`, {method: 'PUT', body: JSON.stringify({status})}),
+    putStatus: async (comandaId, status) => 
+        await request(`/commands/${comandaId}`, {method: 'PUT', body: JSON.stringify({status})}),
 
-    cancelComanda: (comandaId, reason) => 
-        request(`/commands/${comandaId}`, {method: 'PUT', body: JSON.stringify({reason})})
+    cancelComanda: async (comandaId, reason) => 
+        await request(`/commands/${comandaId}`, {method: 'PUT', body: JSON.stringify({reason})})
 };
