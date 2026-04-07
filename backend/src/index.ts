@@ -1,3 +1,4 @@
+import http from 'http';
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors'
@@ -19,6 +20,7 @@ import {
 } from './router';
 import { AppDataSource } from './database';
 import { errorHandler } from './middleware';
+import { initSocket } from './socket';
 
 dotenv.config();
 
@@ -28,10 +30,16 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: [
+        process.env.FRONTEND_URL || 'http://localhost:5173',
+        'http://localhost:8081',
+        'exp://localhost:8081',
+    ],
     credentials: true
 }));
 app.use(cookieParser());
+
+const httpServer = http.createServer(app);
 
 AppDataSource.initialize().then(async () => {
     app.use('/api/v1', authRouter)
@@ -53,8 +61,11 @@ AppDataSource.initialize().then(async () => {
     app.use(errorHandler)
 
     const PORT = 3000;
-    
-    app.listen(PORT, () => {
+
+    initSocket(httpServer);
+
+    httpServer.listen(PORT, () => {
         console.log(`🚀 Server rodando em http://localhost:${PORT}`);
+        console.log(` Socket.IO ativo na porta ${PORT}`);
     });
 }).catch(error => console.log("Erro na inicialização do Banco:", error));

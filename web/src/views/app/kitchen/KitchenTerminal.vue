@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useKitchenStore } from "@/stores/kitchen";
@@ -17,7 +17,6 @@ import {
   XCircle,
   X,
   ArrowLeft,
-  Settings,
   Clock,
 } from "lucide-vue-next";
 
@@ -43,13 +42,6 @@ const saveAlertMinutes = () => {
   showTimerSettings.value = false;
 };
 
-onMounted(async () => {
-  if (!authStore.hasPermission(PERMISSIONS.COZINHA)) {
-    router.push("/app/dashboard");
-  }
-  await kitchenStore.fetchOrders();
-});
-
 const toggleAudio = () => {
   audioEnabled.value = !audioEnabled.value;
   if (audioEnabled.value) audioPlayer.play().catch(() => {});
@@ -62,12 +54,25 @@ const playAlert = () => {
   }
 };
 
-const simulateSocketEvent = () => {
-  const hasNew = kitchenStore.incomingOrderMock();
-  if (hasNew) playAlert();
+onMounted(async () => {
+  if (!authStore.hasPermission(PERMISSIONS.COZINHA)) {
+    router.push("/app/dashboard");
+    return;
+  }
+
+  await kitchenStore.fetchOrders();
+
+  kitchenStore.initKitchenSocket(playAlert);
+});
+
+onUnmounted(() => {
+  kitchenStore.destroyKitchenSocket();
+});
+
+const handleMove = (id, status) => {
+  kitchenStore.moveOrder(id, status);
 };
 
-const handleMove = (id, status) => kitchenStore.moveOrder(id, status);
 const handleFinish = (id) => kitchenStore.finishOrder(id);
 
 const cancelTargetId = ref(null);
@@ -158,14 +163,6 @@ const indicatorColor = (color) => {
         </div>
 
         <div class="flex items-center gap-3">
-          <button
-            @click="simulateSocketEvent"
-            class="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-[#757575] rounded text-xs font-black uppercase tracking-widest transition-all border border-[#E0E0E0] flex items-center gap-2"
-          >
-            <Bell :size="14" />
-            <span class="hidden md:inline">Simular Entrada</span>
-          </button>
-
           <div class="relative">
             <button
               @click="showTimerSettings = !showTimerSettings"

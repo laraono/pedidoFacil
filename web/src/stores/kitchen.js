@@ -2,21 +2,26 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { request } from '@/services/api';
 import { comandaApi } from '@/services/comandaApi';
+import { connectSocket, disconnectSocket, getSocket } from '@/services/socket';
+
+const dbToFrontMap = {
+  'Aguardando_Preparo': 'pending',
+  'Em_Preparo': 'preparing',
+  'Pronto': 'ready',
+  'Finalizado': 'finished',
+  'Cancelado': 'cancelled'
+};
+
+const frontToDbMap = {
+  'pending': 'Aguardando_Preparo',
+  'preparing': 'Em_Preparo',
+  'ready': 'Pronto',
+  'finished': 'Finalizado',
+  'cancelled': 'Cancelado'
+};
 
 export const useKitchenStore = defineStore('kitchen', () => {
   const orders = ref([]);
-
-  const dbToFrontMap = {
-    'Aguardando_Preparo': 'pending',
-    'Em_Preparo': 'preparing',
-    'Pronto': 'ready'
-  };
-
-  const frontToDbMap = {
-    'pending': 'Aguardando_Preparo',
-    'preparing': 'Em_Preparo',
-    'ready': 'Pronto'
-  };
 
   const pendingOrders = computed(() => orders.value.filter(o => o.status === 'pending'));
   const preparingOrders = computed(() => orders.value.filter(o => o.status === 'preparing'));
@@ -30,12 +35,12 @@ export const useKitchenStore = defineStore('kitchen', () => {
       comandas.forEach(comanda => {
         if (comanda.pedidos && comanda.pedidos.length > 0) {
           comanda.pedidos.forEach(pedido => {
-            if (dbToFrontMap[pedido.status]) {
+            if (dbToFrontMap[pedido.status] && dbToFrontMap[pedido.status] !== 'finished' && dbToFrontMap[pedido.status] !== 'cancelled') {
               allOrders.push({
                 id: pedido.id,
                 comandaId: comanda.id,
                 comanda: comanda.description || `Comanda #${comanda.id}`,
-                waiter: pedido.serviceType,
+                waiter: pedido.serviceType || 'Garçom',
                 status: dbToFrontMap[pedido.status],
                 createdAt: pedido.created_at || new Date(),
                 items: pedido.productOrders?.map(po => ({
@@ -55,10 +60,18 @@ export const useKitchenStore = defineStore('kitchen', () => {
     }
   }
 
+  function addOrder(order) {
+    const already = orders.value.find(o => o.id === order.id);
+    if (!already) {
+      orders.value.push({ ...order, status: order.status || 'pending' });
+    }
+  }
+
   async function moveOrder(id, targetFrontendCol) {
     const order = orders.value.find(o => o.id === id);
     if (!order) return;
 
+    const previousStatus = order.status;
     const newDbStatus = frontToDbMap[targetFrontendCol];
 
     try {
@@ -68,8 +81,14 @@ export const useKitchenStore = defineStore('kitchen', () => {
       });
       
       order.status = targetFrontendCol;
+
+      if (targetFrontendCol === 'finished' || targetFrontendCol === 'cancelled') {
+        finishOrder(id);
+      }
+
     } catch (error) {
       console.error("Erro ao mover pedido:", error);
+      order.status = previousStatus; 
     }
   }
 
@@ -94,9 +113,39 @@ export const useKitchenStore = defineStore('kitchen', () => {
     }
   }
 
-  function incomingOrderMock() {
-    fetchOrders();
-    return true; 
+  function initKitchenSocket(onNewOrder) {
+    connectSocket('kitchen');
+    const socket = getSocket();
+
+    if (!socket) return;
+
+    socket.on('new_order', (data) => {
+      console.log('[Kitchen Socket] Novo pedido recebido:', data);
+
+      const newOrder = {
+        id: data.orderId,
+        comandaId: data.comandaId,
+        comanda: data.comandaLabel,
+        waiter: data.source === 'mobile' ? 'Totem' : (data.source || 'Caixa/Web'),
+        status: 'pending',
+        createdAt: new Date(data.createdAt),
+        items: (data.items || []).map(i => ({
+          name: i.productName || `Produto #${i.productId}`,
+          amount: i.quantity,
+          obs: i.observation || '',
+        })),
+      };
+
+      addOrder(newOrder);
+
+      if (typeof onNewOrder === 'function') onNewOrder(newOrder);
+    });
+  }
+
+  function destroyKitchenSocket() {
+    const socket = getSocket();
+    if (socket) socket.off('new_order');
+    disconnectSocket();
   }
 
   return {
@@ -105,8 +154,10 @@ export const useKitchenStore = defineStore('kitchen', () => {
     preparingOrders,
     readyOrders,
     fetchOrders,
+    addOrder,
     moveOrder,
     finishOrder,
-    incomingOrderMock
+    initKitchenSocket,
+    destroyKitchenSocket
   };
 });

@@ -29,8 +29,10 @@ export class ProductController {
     }
 
     async listProductsByCategory(req: Request, res: Response) {
-        const products = await this.productService.listProductsByCategory(Number(req.params.categoryId))
-        res.status(200).json(products)
+        const categoryId = Number(req.params.categoryId || req.params.id);
+        const products = await this.productService.listProductsByCategory(categoryId);
+        
+        res.status(200).json(products);
     }
 
     async updateProduct(req: Request, res: Response) {

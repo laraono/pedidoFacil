@@ -769,7 +769,7 @@
 
 <script setup>
 import SubscriptionGuard from "@/components/SubscriptionGuard.vue";
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useComandaStore } from "@/stores/comandaManagement";
 import { useClosedComandaStore } from "@/stores/closedComandas";
 import { useKitchenStore } from "@/stores/kitchen";
@@ -788,6 +788,7 @@ import {
   Tag,
   XCircle,
 } from "lucide-vue-next";
+import { initCashierSocket, destroyCashierSocket } from '@/stores/cashierSocket';
 
 const comandaStore = useComandaStore();
 const closedComandaStore = useClosedComandaStore();
@@ -796,8 +797,37 @@ const couponStore = useCouponStore();
 const utils = useUtils();
 const { showToast } = useToast();
 
+const BACKEND_TO_LOCAL_STATUS = {
+    'Aguardando_Preparo': 'pending',
+    'Em_Preparo': 'preparing',
+    'Pronto': 'ready',
+    'Finalizado': 'finished',
+    'Cancelado': 'cancelled',
+};
+
 onMounted(async () => {
   await comandaStore.loadComandas();
+
+  initCashierSocket((data) => {
+      const localStatus = BACKEND_TO_LOCAL_STATUS[data.status] || data.status;
+
+      const order = kitchenStore.orders.find(o => o.id === data.orderId);
+      if (order) {
+          order.status = localStatus;
+      } else {
+          kitchenStore.addOrder({ id: data.orderId, comandaId: data.comandaId, status: localStatus });
+      }
+
+      if (data.status === 'Pronto') {
+          showToast(`Pedido #${data.orderId} está PRONTO para retirada!`, 'success');
+      } else if (data.status === 'Cancelado') {
+          showToast(`Pedido #${data.orderId} foi cancelado pela cozinha.`, 'error');
+      }
+  });
+});
+
+onUnmounted(() => {
+    destroyCashierSocket();
 });
 
 function getOrderItems(order) {
@@ -822,6 +852,7 @@ const ALL_PAYMENT_METHODS = [
   "Cartão Crédito",
   "PIX",
 ];
+
 const enabledPaymentMethods = computed(() => {
   try {
     const saved = localStorage.getItem("paymentMethods");

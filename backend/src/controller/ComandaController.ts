@@ -1,8 +1,7 @@
 import { ComandaService } from "../service";
-import {Request, Response} from 'express';
+import { Request, Response } from 'express';
 
 export class ComandaController {
-
     private comandaService: ComandaService
 
     constructor(comandaService: ComandaService) {
@@ -37,26 +36,34 @@ export class ComandaController {
     }
 
     async listComandasByStatus(req: Request, res: Response) {
-        const {status} = req.query
-        const comandas = await this.comandaService.listComandasByStatus(status as any)
-        res.status(200).send(comandas)
+        const { status } = req.query;
+        const comandas = await this.comandaService.listComandasByStatus(status as any);
+        res.status(200).send(comandas);
     }
     
     async updateComandaStatus(req: Request, res: Response) {
-        await this.comandaService.updateComandaStatus(Number(req.params.comandaId), req.body.status)
-        res.sendStatus(204)
+        const { id } = req.params;
+        const idNumero = Number(id || req.params.comandaId); 
+
+        await this.comandaService.updateComandaStatus(idNumero, req.body.status);
+        
+        res.sendStatus(204);
     }
 
     async cancelComanda(req: Request, res: Response) {
-        const { comandaId } = req.params
-        await this.comandaService.cancelComanda({comandaId: Number(comandaId), ...req.body})
-        res.sendStatus(204)
+        const { comandaId } = req.params;
+
+        await this.comandaService.cancelComanda({
+            comandaId: Number(comandaId), 
+            ...req.body
+        });
+        
+        res.sendStatus(204);
     }
 
     async checkout(req: Request, res: Response) {
         try {
             const { comandaId } = req.params;
-            
             const user = (req as any).user || (req as any).usuario; 
             
             if (!user) {

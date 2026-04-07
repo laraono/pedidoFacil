@@ -1,0 +1,318 @@
+import React, { useState, useMemo } from "react";
+import {
+  View,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  Image,
+  useWindowDimensions,
+  Text,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Feather } from "@expo/vector-icons";
+
+import { useCart } from "../contexts/CartContext";
+import { useTheme } from "../contexts/ThemeContext";
+import { useIdleTimer } from "../hooks/useIdleTimer";
+import CartBottomBar from "../components/CartBottomBar";
+import BrandHeader from "../components/ui/BrandHeader";
+import ProductModal from "../components/ProductModal";
+import { CATEGORIES, PRODUCTS } from "../mocks";
+
+export default function MenuScreen() {
+  const [categories] = useState(CATEGORIES);
+  const [products] = useState(PRODUCTS);
+
+  const { addToCart } = useCart();
+  const { theme } = useTheme();
+  const { width } = useWindowDimensions();
+  const panHandlers = useIdleTimer(45);
+
+  const [selectedCategory, setSelectedCategory] = useState(1);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const numColumns = width >= 600 ? 3 : 2;
+  const availableWidth = width - 90 - 16;
+  const cardWidth = availableWidth / numColumns - 12;
+
+  const styles = useMemo(
+    () => getStyles(theme, width, cardWidth),
+    [theme, width, cardWidth],
+  );
+
+  const filteredProducts = products.filter(
+    (p) => p.categoryId === selectedCategory,
+  );
+
+  const handleConfirmAdd = (selectedSize, quantity, obs) => {
+    addToCart(selectedProduct, selectedSize, quantity, obs);
+    setModalVisible(false);
+  };
+
+  return (
+    <SafeAreaView style={styles.container} {...panHandlers}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.fundoGeral} />
+      <BrandHeader title="PedidoFácil" />
+
+      <View style={styles.mainContent}>
+        <View style={styles.sidebar}>
+          <Text style={styles.sidebarTitle}>Cardápio</Text>
+          {categories.map((item) => {
+            const isSelected = selectedCategory === item.id;
+            return (
+              <TouchableOpacity
+                key={item.id}
+                style={[
+                  styles.sidebarItem,
+                  isSelected && styles.sidebarItemSelected,
+                ]}
+                onPress={() => setSelectedCategory(item.id)}
+                activeOpacity={0.8}
+              >
+                <View
+                  style={[
+                    styles.imageWrapper,
+                    isSelected && styles.imageWrapperSelected,
+                  ]}
+                >
+                  <Image
+                    source={item.image}
+                    style={styles.sidebarImage}
+                    resizeMode="cover"
+                  />
+                  {isSelected && <View style={styles.activeIndicator} />}
+                </View>
+                <Text
+                  style={[
+                    styles.sidebarLabel,
+                    isSelected && styles.sidebarLabelSelected,
+                  ]}
+                  numberOfLines={2}
+                  adjustsFontSizeToFit
+                >
+                  {item.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <View style={styles.contentArea}>
+          <Text style={styles.categoryHeaderTitle}>
+            {categories.find((c) => c.id === selectedCategory)?.name}
+          </Text>
+
+          <View style={styles.gridContainer}>
+            <FlatList
+              data={filteredProducts}
+              key={`grid-${numColumns}`}
+              numColumns={numColumns}
+              keyExtractor={(item) => item.id.toString()}
+              contentContainerStyle={styles.listContainer}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.productCard}
+                  onPress={() => {
+                    setSelectedProduct(item);
+                    setModalVisible(true);
+                  }}
+                  activeOpacity={0.9}
+                >
+                  <Image
+                    source={item.image}
+                    style={styles.productImage}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.productInfo}>
+                    <Text style={styles.productTitle} numberOfLines={1}>
+                      {item.name}
+                    </Text>
+                    <Text style={styles.productDescription} numberOfLines={2}>
+                      {item.description}
+                    </Text>
+
+                    <View style={styles.productFooter}>
+                      <View style={styles.priceBlock}>
+                        {item.sizes && item.sizes.length > 1 && (
+                          <Text style={styles.startingFrom}>A partir de</Text>
+                        )}
+                        <Text
+                          style={styles.productPrice}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                        >
+                          R${" "}
+                          {item.sizes && item.sizes.length > 0
+                            ? item.sizes[0].price.toFixed(2).replace(".", ",")
+                            : "0,00"}
+                        </Text>
+                      </View>
+
+                      <View style={styles.addBtnIcon}>
+                        <Feather
+                          name="plus"
+                          size={20}
+                          color={theme.textoBotoes}
+                        />
+                      </View>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </View>
+
+      <ProductModal
+        visible={modalVisible}
+        product={selectedProduct}
+        onClose={() => setModalVisible(false)}
+        onConfirm={handleConfirmAdd}
+      />
+
+      <CartBottomBar />
+    </SafeAreaView>
+  );
+}
+
+const getStyles = (theme, width, cardWidth) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.fundoGeral },
+    mainContent: { flex: 1, flexDirection: "row" },
+    sidebar: {
+      backgroundColor: theme.fundoProdutos,
+      borderRightWidth: 1,
+      borderRightColor: theme.borda,
+      paddingTop: 24,
+      alignItems: "center",
+      width: 90,
+    },
+    sidebarTitle: {
+      fontSize: 10,
+      fontWeight: "900",
+      color: theme.textoSecundario,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+      marginBottom: 20,
+      textAlign: "center",
+    },
+    sidebarItem: {
+      alignItems: "center",
+      marginBottom: 24,
+      width: "100%",
+      paddingHorizontal: 4,
+    },
+    imageWrapper: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      padding: 3,
+      borderWidth: 2,
+      borderColor: "transparent",
+      marginBottom: 10,
+    },
+    imageWrapperSelected: { borderColor: theme.corCategorias },
+    sidebarImage: { width: "100%", height: "100%", borderRadius: 30 },
+    activeIndicator: {
+      position: "absolute",
+      bottom: 0,
+      right: 0,
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: theme.corCategorias,
+      borderWidth: 2,
+      borderColor: theme.fundoProdutos,
+    },
+    sidebarLabel: {
+      textAlign: "center",
+      fontWeight: "700",
+      fontSize: 12,
+      color: theme.textoSecundario,
+      paddingHorizontal: 2,
+    },
+    sidebarLabelSelected: { color: theme.corTextoPrincipal, fontWeight: "900" },
+    contentArea: { flex: 1, backgroundColor: theme.fundoGeral },
+    categoryHeaderTitle: {
+      fontSize: 28,
+      fontWeight: "900",
+      color: theme.corTextoPrincipal,
+      paddingHorizontal: 16,
+      paddingTop: 20,
+      paddingBottom: 8,
+      letterSpacing: -0.5,
+    },
+    gridContainer: { flex: 1 },
+    listContainer: { padding: 8, paddingBottom: 150 },
+    productCard: {
+      width: cardWidth,
+      backgroundColor: theme.fundoProdutos,
+      margin: 6,
+      borderRadius: 16,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: theme.borda,
+      elevation: 2,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+    },
+    productImage: {
+      width: "100%",
+      height: 120,
+    },
+    productInfo: {
+      padding: 12,
+      flex: 1,
+      justifyContent: "space-between",
+    },
+    productTitle: {
+      fontWeight: "900",
+      fontSize: 16,
+      color: theme.corTextoPrincipal,
+      marginBottom: 4,
+    },
+    productDescription: {
+      fontSize: 12,
+      color: theme.textoSecundario,
+      marginBottom: 8,
+      lineHeight: 16,
+    },
+    productFooter: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: 8,
+    },
+    priceBlock: {
+      flex: 1,
+      paddingRight: 8,
+    },
+    startingFrom: {
+      fontSize: 9,
+      fontWeight: "900",
+      textTransform: "uppercase",
+      color: theme.textoSecundario,
+      letterSpacing: 0.5,
+      marginBottom: 2,
+    },
+    productPrice: {
+      fontWeight: "900",
+      color: theme.corBotoes,
+      fontSize: 18,
+      letterSpacing: -0.5,
+    },
+    addBtnIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: theme.corBotoes,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+  });
