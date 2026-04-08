@@ -44,7 +44,7 @@ export class AuthController {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-                maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN!) * 24 * 60 * 60 * 1000
+                maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN || '7') * 24 * 60 * 60 * 1000
             })
         }
 
@@ -63,7 +63,7 @@ export class AuthController {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-            maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN!) * 24 * 60 * 60 * 1000
+            maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN || '7') * 24 * 60 * 60 * 1000
         })
 
         res.json({ accessToken, usuario })

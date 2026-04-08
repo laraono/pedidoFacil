@@ -6,13 +6,13 @@ export const productApi = {
   listDeleted: () => request('/products?deleted=true', { method: 'GET' }),
   
   create: (data) => request('/products', { 
-    method: 'POST',
-    body: JSON.stringify(data)
+    method: 'POST', 
+    body: JSON.stringify(data) 
   }),
   
   update: (id, data) => request(`/products/${id}`, { 
-    method: 'PUT',
-    body: JSON.stringify(data)
+    method: 'PUT', 
+    body: JSON.stringify(data) 
   }),
   
   delete: (id) => request(`/products/${id}`, { method: 'DELETE' }),

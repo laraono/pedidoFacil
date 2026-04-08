@@ -5,4 +5,4 @@ const authenticate = require('../middleware/authenticate');
 
 export const menuRouter = express.Router();
 
-menuRouter.get('/menu', authenticate, catchAsync((req, res) => menuController.getMenu(req, res)));
+menuRouter.get('/menu', catchAsync((req, res) => menuController.getMenu(req, res)));

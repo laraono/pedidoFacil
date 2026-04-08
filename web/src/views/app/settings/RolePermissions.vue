@@ -54,7 +54,36 @@ const fetchRoles = async () => {
   try {
     isLoading.value = true;
     const data = await roleApi.list();
-    roles.value = data.filter((r) => !HIDDEN_ROLE_NAMES.includes(r.name));
+    
+    // Interceptamos os dados assim que chegam da API para arrumar as permissões
+    roles.value = data
+      .filter((r) => !HIDDEN_ROLE_NAMES.includes(r.name))
+      .map((role) => {
+        let perms = role.permissions;
+
+        // 1. Se o banco devolveu como String JSON (ex: '["CAIXA"]')
+        if (typeof perms === "string") {
+          try {
+            perms = JSON.parse(perms);
+          } catch (e) {
+            perms = [];
+          }
+        }
+
+        // 2. Se veio null, undefined ou algo bizarro, força virar Array vazio
+        if (!Array.isArray(perms)) {
+          perms = [];
+        }
+
+        // 3. Se o TypeORM enviou como Array de Objetos (ex: [{ id: 'CAIXA' }])
+        if (perms.length > 0 && typeof perms[0] === "object") {
+          perms = perms.map((p) => p.id || p.name || p.value || p);
+        }
+
+        // Retorna o cargo com as permissões limpas e transformadas num Array de verdade
+        return { ...role, permissions: perms };
+      });
+      
   } catch (error) {
     showToast("Erro ao carregar os cargos.", "error");
   } finally {
@@ -67,8 +96,13 @@ onMounted(async () => {
 });
 
 const saveRole = async () => {
+  // Garante que é array antes de validar
+  if (!Array.isArray(currentRole.value.permissions)) {
+    currentRole.value.permissions = [];
+  }
+
   if (!validateAll(currentRole.value)) {
-    const msg = !currentRole.value.permissions?.length
+    const msg = !currentRole.value.permissions.length
       ? "Selecione ao menos uma permissão antes de salvar o cargo."
       : "Preencha o nome do cargo.";
     showToast(msg, "error");
@@ -100,6 +134,10 @@ const saveRole = async () => {
 const openModal = (role = null) => {
   if (role) {
     currentRole.value = JSON.parse(JSON.stringify(role));
+    // Blindagem: Se o cargo vier do banco sem permissões, força um Array vazio
+    if (!Array.isArray(currentRole.value.permissions)) {
+      currentRole.value.permissions = [];
+    }
     isEditing.value = true;
   } else {
     currentRole.value = { id: null, name: "", permissions: [] };
@@ -132,6 +170,11 @@ const deleteRole = async () => {
 };
 
 const togglePermission = (id) => {
+  // Blindagem principal: Evita o erro "perms.push is not a function"
+  if (!Array.isArray(currentRole.value.permissions)) {
+    currentRole.value.permissions = [];
+  }
+
   const perms = currentRole.value.permissions;
   const idx = perms.indexOf(id);
 
@@ -209,11 +252,11 @@ const togglePermission = (id) => {
         <p
           class="text-[10px] font-black uppercase tracking-widest text-[#757575] mt-2"
         >
-          {{ role.permissions.length }} Permissões Ativas
+          {{ role.permissions?.length || 0 }} Permissões Ativas
         </p>
         <div class="flex flex-wrap gap-1 mt-4">
           <span
-            v-for="permId in role.permissions.slice(0, 3)"
+            v-for="permId in (role.permissions || []).slice(0, 3)"
             :key="permId"
             class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 bg-accent-light text-accent rounded border border-accent/30"
           >
@@ -223,7 +266,7 @@ const togglePermission = (id) => {
             }}
           </span>
           <span
-            v-if="role.permissions.length > 3"
+            v-if="(role.permissions?.length || 0) > 3"
             class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 bg-gray-50 text-[#757575] rounded"
           >
             +{{ role.permissions.length - 3 }}

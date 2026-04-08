@@ -183,12 +183,12 @@ const ESTABLISHMENT_PREFIXES = [
   "/app/subscription",
 ];
 
-router.beforeEach(async (to, _from, next) => {
+router.beforeEach(async (to, _from) => {
   const auth = useAuthStore();
   auth.loadSession();
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
-    return next("/login");
+    return { path: "/login" };
   }
 
   const onboardingStep = auth.user?.onboardingStep;
@@ -198,13 +198,10 @@ router.beforeEach(async (to, _from, next) => {
     onboardingStep !== "COMPLETED"
   ) {
     if (onboardingStep === "NAME" && to.path !== "/onboarding/name") {
-      return next("/onboarding/name");
+      return { path: "/onboarding/name" };
     }
     if (onboardingStep === "TYPE" && to.path !== "/onboarding/type") {
-      return next("/onboarding/type");
-    }
-    if (to.path === "/onboarding/name" || to.path === "/onboarding/type") {
-      return next();
+      return { path: "/onboarding/type" };
     }
   }
 
@@ -212,18 +209,18 @@ router.beforeEach(async (to, _from, next) => {
     auth.isAdmin &&
     ESTABLISHMENT_PREFIXES.some((p) => to.path.startsWith(p))
   ) {
-    return next({ name: "admin-subscriptions" });
+    return { name: "admin-subscriptions" };
   }
 
   if (to.meta.requiresAdmin && !auth.isAdmin) {
-    return next({ name: "dashboard" });
+    return { name: "dashboard" };
   }
 
   if (to.meta.permission && !auth.hasPermission(to.meta.permission)) {
-    return next({ name: "dashboard" });
+    return { name: "dashboard" };
   }
 
-  next();
+  return true;
 });
 
 export default router;

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { EstablishmentService } from '../service/EstablishmentService';
 import { catchAsync } from '../middleware';
+import { getIO } from '../socket';
 
 export class EstablishmentController {
   
@@ -10,7 +11,6 @@ export class EstablishmentController {
     this.establishmentService = establishmentService;
   }
 
-  // O catchAsync abraça a função e envia qualquer erro automaticamente para o next()
   onboarding = catchAsync(async (req: Request, res: Response) => {
     const userId = (req as any).usuario.id;
     const establishment = await this.establishmentService.saveOnboardingStep(userId, req.body);
@@ -28,10 +28,24 @@ export class EstablishmentController {
     const establishment = await this.establishmentService.getEstablishmentProfile(establishmentId);
     return res.status(200).json(establishment);
   });
+  
+  getPublicProfile = catchAsync(async (req: Request, res: Response) => {
+    const establishmentId = Number(req.params.id);
+    const establishment = await this.establishmentService.getEstablishmentProfile(establishmentId);
+    
+    return res.status(200).json({
+      name: establishment.name,
+      paymentMethods: establishment.paymentMethods,
+      selfServiceEnabled: establishment.selfServiceEnabled
+    });
+  });
 
   update = catchAsync(async (req: Request, res: Response) => {
     const establishmentId = (req as any).usuario.estabelecimento;
     const updated = await this.establishmentService.updateEstablishment(establishmentId, req.body);
+    
+    getIO().emit('profile_updated');
+
     return res.status(200).json(updated);
   });
 

@@ -1,5 +1,6 @@
 import { CategoryService } from "../service";
 import { Request, Response } from 'express';
+import { getIO } from '../socket';
 
 export class CategoryController {
 
@@ -14,6 +15,7 @@ export class CategoryController {
         
         const categoryId = await this.categoryService.createCategory(req.body);
         
+        getIO().emit('menu_updated'); 
         res.status(201).json(categoryId);
     }
 
@@ -29,16 +31,22 @@ export class CategoryController {
 
     async updateCategory(req: Request, res: Response) {
         await this.categoryService.updateCategory(Number(req.params.id), req.body);
+        
+        getIO().emit('menu_updated'); 
         res.sendStatus(204);
     }
 
     async deleteCategory(req: Request, res: Response) {
         await this.categoryService.softDeleteCategory(Number(req.params.id));
+        
+        getIO().emit('menu_updated'); 
         res.sendStatus(204);
     }
 
     async restoreCategory(req: Request, res: Response) {
         await this.categoryService.restoreCategory(Number(req.params.id));
+        
+        getIO().emit('menu_updated'); 
         res.sendStatus(204);
     }
 }

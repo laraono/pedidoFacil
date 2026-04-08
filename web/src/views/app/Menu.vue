@@ -3,12 +3,15 @@ import { ref, computed, onMounted, watch } from "vue";
 import { useMenuStore } from "@/stores/menu";
 import { useComandaStore } from "@/stores/comandaManagement";
 import { comandaApi } from "@/services/comandaApi";
+import { request } from "@/services/api";
 import SubscriptionGuard from "@/components/SubscriptionGuard.vue";
 import { useToast } from "@/composables/useToast";
 import localStorageService from "@/services/localStorageService";
 import { getEstablishmentMock } from "@/mock/stablishmentmock";
 import ToastMessage from "@/components/ui/ToastMessage.vue";
 import { useUtils } from "@/composables/useUtils";
+import { useRoute, useRouter } from "vue-router";
+
 import {
   Utensils,
   X,
@@ -21,7 +24,6 @@ import {
   Palette,
   ArrowLeft,
 } from "lucide-vue-next";
-import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
@@ -66,8 +68,7 @@ onMounted(async () => {
   textColor.value = localStorageService.getTextColor() || "#212121";
   cardBg.value = localStorageService.getProductCardBg() || "#FFFFFF";
   fontFamily.value = localStorageService.getFontFamily() || "Inter, sans-serif";
-  comandaUnitLabel.value =
-    localStorageService.getComandaUnitLabel() || "Comanda";
+  comandaUnitLabel.value = localStorageService.getComandaUnitLabel() || "Comanda";
 
   const savedImage = localStorageService.getImage();
   if (savedImage) imageUrl.value = savedImage;
@@ -78,7 +79,7 @@ onMounted(async () => {
   await menuStore.loadData();
   await comandaStore.loadComandas();
 
-  if (productsByCategory.value.length > 0) {
+  if (productsByCategory.value && productsByCategory.value.length > 0) {
     activeCategoryId.value = productsByCategory.value[0].id;
   }
   checkEditMode();
@@ -96,27 +97,17 @@ const cardBgLuminance = computed(() => {
 });
 const isCardDark = computed(() => cardBgLuminance.value < 0.5);
 
-const adaptiveBorder = computed(() =>
-  isCardDark.value ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.13)",
-);
-const adaptiveInputBg = computed(() =>
-  isCardDark.value ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.04)",
-);
-const adaptiveButtonBg = computed(() =>
-  isCardDark.value ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.07)",
-);
-const adaptiveSubtleBg = computed(() =>
-  isCardDark.value ? "rgba(0,0,0,0.15)" : "rgba(0,0,0,0.03)",
-);
-const adaptivePlaceholder = computed(() =>
-  isCardDark.value ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.32)",
-);
+const adaptiveBorder = computed(() => isCardDark.value ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.13)");
+const adaptiveInputBg = computed(() => isCardDark.value ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.04)");
+const adaptiveButtonBg = computed(() => isCardDark.value ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.07)");
+const adaptiveSubtleBg = computed(() => isCardDark.value ? "rgba(0,0,0,0.15)" : "rgba(0,0,0,0.03)");
+const adaptivePlaceholder = computed(() => isCardDark.value ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.32)");
 
 const productsByCategory = computed(() => {
-  const activeProducts = menuStore.activeProducts.filter(
-    (p) => p.available !== false,
-  );
-  return menuStore.activeCategories
+  const activeProducts = (menuStore.activeProducts || []).filter(p => p.available !== false);
+  const activeCategories = (menuStore.activeCategories || []);
+  
+  return activeCategories
     .map((category) => ({
       ...category,
       products: activeProducts.filter((p) => p.categoryId === category.id),
@@ -124,15 +115,12 @@ const productsByCategory = computed(() => {
     .filter((category) => category.products.length > 0);
 });
 
-const selectedCategory = computed(
-  () =>
-    productsByCategory.value.find((c) => c.id === activeCategoryId.value) ||
-    null,
+const selectedCategory = computed(() => 
+  productsByCategory.value.find((c) => c.id === activeCategoryId.value) || null
 );
+
 const cartQuantity = computed(() => cart.value.length);
-const cartTotal = computed(() =>
-  cart.value.reduce((acc, item) => acc + item.price, 0),
-);
+const cartTotal = computed(() => cart.value.reduce((acc, item) => acc + item.price, 0));
 
 const currentModalTotal = computed(() => {
   if (!currentProduct.value) return 0;
@@ -144,18 +132,15 @@ const openProductModal = (product) => {
   currentProduct.value = product;
   currentQuantity.value = 1;
   currentObservation.value = "";
-  selectedSize.value =
-    product.sizes?.length > 0
-      ? product.sizes[0]
-      : { name: "Padrão", price: product.price ?? 0 };
+  selectedSize.value = product.sizes?.length > 0 
+    ? product.sizes[0] 
+    : { name: "Padrão", price: product.price ?? 0 };
   isProductModalOpen.value = true;
 };
 
 const closeProductModal = () => {
   isProductModalOpen.value = false;
-  setTimeout(() => {
-    currentProduct.value = null;
-  }, 300);
+  setTimeout(() => { currentProduct.value = null; }, 300);
 };
 
 const addToCart = () => {
@@ -173,10 +158,7 @@ const addToCart = () => {
       obs: currentObservation.value,
     });
   }
-  showToast(
-    `${currentQuantity.value}x ${currentProduct.value.name} adicionado!`,
-    "success",
-  );
+  showToast(`${currentQuantity.value}x ${currentProduct.value.name} adicionado!`, "success");
   closeProductModal();
 };
 
@@ -194,69 +176,76 @@ const openComandaModal = () => {
 
 const confirmAndSendToKitchen = async () => {
   if (!selectedComandaId.value) return;
-  if (selectedComandaId.value === "new" && !newComandaNumber.value.trim())
-    return;
+  if (selectedComandaId.value === "new" && !newComandaNumber.value.trim()) return;
   if (isSubmitting.value) return;
 
   isSubmitting.value = true;
-
   try {
     let comandaIdParaEnviar = selectedComandaId.value;
-    let labelDaComanda = "";
-
     if (comandaIdParaEnviar === "new") {
-      labelDaComanda = `${comandaUnitLabel.value} ${newComandaNumber.value.trim()}`;
-
-      const comandaGeradaId = await comandaApi.create({
-        description: labelDaComanda,
-        status: "Aberta",
-        total: 0,
-      });
-      comandaIdParaEnviar = comandaGeradaId;
+      const label = `${comandaUnitLabel.value} ${newComandaNumber.value.trim()}`;
+      comandaIdParaEnviar = await comandaApi.create({ description: label, status: "Aberta", total: 0 });
     }
-
-    const itensMapeados = cart.value.map((item) => {
-      const mapeado = {
-        productId: item.productId,
-        quantity: item.quantity,
-        observation: item.obs || "",
-      };
-      if (item.sizeId) mapeado.productVariationId = item.sizeId;
-      return mapeado;
-    });
 
     const orderPayload = {
       status: "Aguardando_Preparo",
       serviceType: "Autoatendimento",
-      itens: itensMapeados,
+      itens: cart.value.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        observation: item.obs || "",
+        productVariationId: item.sizeId
+      })),
     };
 
     await comandaApi.addOrder(comandaIdParaEnviar, orderPayload);
-
     await comandaStore.loadComandas();
-
     cart.value = [];
     isComandaModalOpen.value = false;
     isCartModalOpen.value = false;
-    showToast("Pedido registrado e enviado para a cozinha!", "success");
+    showToast("Pedido enviado para a cozinha!", "success");
   } catch (error) {
-    console.error("Erro ao salvar:", error);
-    showToast("Erro ao salvar pedido no servidor.", "error");
+    showToast("Erro ao enviar pedido.", "error");
   } finally {
     isSubmitting.value = false;
   }
 };
 
-const saveVisuals = () => {
-  localStorageService.saveBackgroundColors(bgColor.value);
-  localStorageService.saveButtonColors(buttonColor.value);
-  localStorageService.saveButtonTextColor(buttonTextColor.value);
-  localStorageService.saveCategoryColors(categoryColor.value);
-  localStorageService.saveFontFamily(fontFamily.value);
-  localStorageService.saveTextColor(textColor.value);
-  localStorageService.saveProductCardBg(cardBg.value);
-  localStorageService.saveComandaUnitLabel(comandaUnitLabel.value);
-  showToast("Aparência salva com sucesso!", "success");
+const saveVisuals = async () => {
+  try {
+    isSubmitting.value = true;
+
+    await request("/estabelecimento/config", {
+      method: "PUT",
+      body: JSON.stringify({
+        backgroundColor: bgColor.value,
+        cardsColor: cardBg.value,
+        textsColor: textColor.value,
+        buttonsColor: buttonColor.value,
+        buttonsTextColor: buttonTextColor.value,
+        activeCateogryColor: categoryColor.value,
+        fontFamily: fontFamily.value,
+        comandaLabel: comandaUnitLabel.value, 
+        allowObservations: observacoesPermitidas.value,
+      }),
+    });
+
+    localStorageService.saveBackgroundColors(bgColor.value);
+    localStorageService.saveButtonColors(buttonColor.value);
+    localStorageService.saveButtonTextColor(buttonTextColor.value);
+    localStorageService.saveCategoryColors(categoryColor.value);
+    localStorageService.saveFontFamily(fontFamily.value);
+    localStorageService.saveTextColor(textColor.value);
+    localStorageService.saveProductCardBg(cardBg.value);
+    localStorageService.saveComandaUnitLabel(comandaUnitLabel.value);
+
+    showToast("Aparência salva com sucesso!", "success");
+  } catch (error) {
+    console.error("Erro ao salvar no servidor:", error);
+    showToast("Erro ao salvar no servidor.", "error");
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 
 const closeVisuals = () => {
@@ -265,21 +254,10 @@ const closeVisuals = () => {
 };
 
 const checkEditMode = () => {
-  if (route.query.editMode === "true") {
-    setTimeout(() => {
-      isEditMode.value = true;
-    }, 150);
-  } else {
-    isEditMode.value = false;
-  }
+  isEditMode.value = route.query.editMode === "true";
 };
 
-watch(
-  () => route.query.editMode,
-  () => {
-    checkEditMode();
-  },
-);
+watch(() => route.query.editMode, checkEditMode);
 </script>
 
 <template>

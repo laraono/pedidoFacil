@@ -96,10 +96,43 @@ const openEditModal = (category) => {
 
 const handleImageUpload = (event) => {
   const file = event.target.files[0];
-  if (file) {
-    form.value.imagePreview = URL.createObjectURL(file);
-    form.value.image = form.value.imagePreview;
-  }
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX_WIDTH = 600;
+      const MAX_HEIGHT = 600;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+          height = MAX_HEIGHT;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+      form.value.imagePreview = compressedBase64;
+      form.value.image = compressedBase64; 
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
 };
 
 const saveCategory = async () => {
@@ -111,17 +144,20 @@ const saveCategory = async () => {
     const payload = {
       id: form.value.id,
       name: form.value.name,
-      image: form.value.image,
+      image: form.value.image, 
     };
+
     if (isEditing.value) {
       await menuStore.updateCategory(payload);
     } else {
       await menuStore.addCategory(payload);
     }
+    
     showToast(`Categoria "${form.value.name}" salva com sucesso!`, "success");
     showModal.value = false;
-  } catch {
-    showToast("Erro ao salvar categoria.", "error");
+  } catch (error) {
+    console.error("Erro ao salvar categoria:", error);
+    showToast("Erro ao salvar categoria no banco.", "error");
   } finally {
     isLoading.value = false;
   }

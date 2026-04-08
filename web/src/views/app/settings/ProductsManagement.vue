@@ -159,7 +159,43 @@ const openEdit = (p) => { isEditing.value = true; form.value = { id: p.id, name:
 
 const addSize = () => form.value.sizes.push({ name: '', price: '' });
 const removeSize = (i) => form.value.sizes.splice(i, 1);
-const handleImageUpload = (e) => { const file = e.target.files[0]; if (!file) return; const url = URL.createObjectURL(file); form.value.imagePreview = url; form.value.image = url; };
+
+const handleImageUpload = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX_WIDTH = 600;
+      const MAX_HEIGHT = 600;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height && width > MAX_WIDTH) {
+        height *= MAX_WIDTH / width;
+        width = MAX_WIDTH;
+      } else if (height > MAX_HEIGHT) {
+        width *= MAX_HEIGHT / height;
+        height = MAX_HEIGHT;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+      form.value.imagePreview = compressedBase64;
+      form.value.image = compressedBase64;
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+};
 
 const applyPriceMask = (raw) => {
   let val = String(raw).replace(/[^\d,]/g, '');

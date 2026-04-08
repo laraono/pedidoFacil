@@ -1,4 +1,4 @@
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+import { API_URL } from './apiConfig';
 
 export async function submitOrder({ comandaId, comandaLabel, cartItems, authToken }) {
 
@@ -26,7 +26,7 @@ export async function submitOrder({ comandaId, comandaLabel, cartItems, authToke
     }
 
     const response = await fetch(
-        `${BASE_URL}/api/v1/commands/${comandaId}/orders`,
+        `${API_URL}/commands/${comandaId}/orders`,
         {
             method: 'POST',
             headers,
@@ -40,6 +40,5 @@ export async function submitOrder({ comandaId, comandaLabel, cartItems, authToke
         throw new Error(`Erro ao enviar pedido: ${response.status} — ${errorText}`);
     }
 
-    const order = await response.json();
-    return order;
+    return await response.json();
 }

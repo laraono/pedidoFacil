@@ -12,11 +12,16 @@ import {
 const establishmentRouter = Router();
 const establishmentController = new EstablishmentController(establishmentService);
 
+establishmentRouter.get(
+  '/:id/public',
+  establishmentController.getPublicProfile
+);
+
 establishmentRouter.post(
   '/onboarding',
   authenticate,
   validateSaveOnboarding,
-  establishmentController.onboarding // <-- Sem .bind() agora
+  establishmentController.onboarding
 );
 
 establishmentRouter.post(

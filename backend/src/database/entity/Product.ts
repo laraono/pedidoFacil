@@ -30,7 +30,7 @@ export class Product {
     description?: string
 
     @Column({
-        type: 'varchar',
+        type: 'longtext',
         name: 'Imagem',
         nullable: true,
     })
