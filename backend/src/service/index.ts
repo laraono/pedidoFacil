@@ -27,23 +27,21 @@ import { RoleService } from './RoleService';
 import { ReceiptService } from './ReceiptService';
 import { MetricsService } from './MetricsService';
 import { MenuService } from './MenuService';
+import { PaymentService } from './PaymentService';
 
 const authService = new AuthService(AppDataSource, userRepository);
 const categoryService = new CategoryService(categoryRepository);
 
-const receiptService = new ReceiptService(
-  receiptRepository,
-  paymentRepository,
-  establishmentRepository,
-);
-
 const metricsService = new MetricsService(receiptRepository, AppDataSource);
 
+const receiptService = new ReceiptService(receiptRepository, paymentRepository, establishmentRepository);
+const paymentService = new PaymentService(AppDataSource);
+
 const comandaService = new ComandaService(
-  comandaRepository,
-  userRepository,
-  paymentRepository,
-  receiptService,
+    AppDataSource, 
+    comandaRepository, 
+    paymentService, 
+    receiptService
 );
 
 const productService = new ProductService(
@@ -85,6 +83,7 @@ export {
   receiptService,
   metricsService,
   menuService,
+  paymentService
 };
 
 export {
@@ -101,4 +100,5 @@ export {
   ReceiptService,
   MetricsService,
   MenuService,
+  PaymentService
 };

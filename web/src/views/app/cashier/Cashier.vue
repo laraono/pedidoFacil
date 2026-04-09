@@ -1177,12 +1177,14 @@ async function finishPaymentFlow() {
     await request(`/commands/${selectedComanda.value.id}/checkout`, {
       method: "POST",
       body: JSON.stringify({
-        paymentType: pendingPayments.value[0]?.type || "Dinheiro",
+        payments: pendingPayments.value.map(p => ({ type: p.type, amount: p.amount })),
         totalValue: totalWithDiscount.value,
         change:
           cashReceivedForCurrent.value > (pendingPayments.value[0]?.amount || 0)
             ? cashReceivedForCurrent.value - pendingPayments.value[0].amount
             : 0,
+        discountType: discountType.value,
+        discountValue: discountValue.value
       }),
     });
 

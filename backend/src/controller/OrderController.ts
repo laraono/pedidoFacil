@@ -24,11 +24,19 @@ export class OrderController {
                 establishmentId: usuario.estabelecimento 
             });
 
+            const fullOrder = await this.orderService.getOrderWithDetails(order.id);
+            
+            const mappedItems = fullOrder?.productOrders.map(po => ({
+                name: po.product?.name || po.product?.name || "Produto",
+                quantity: po.quantity,
+                observation: po.observation
+            })) || [];
+
             getIO().to('kitchen').emit('new_order', {
-                orderId:      order.id || order, 
+                orderId:      order.id, 
                 comandaId:    Number(comandaId),
                 comandaLabel: req.body.comandaLabel || `Comanda #${comandaId}`,
-                items:        req.body.itens || [],
+                items:        mappedItems, 
                 createdAt:    new Date().toISOString(),
                 source:       req.body.serviceType || 'web',
             });

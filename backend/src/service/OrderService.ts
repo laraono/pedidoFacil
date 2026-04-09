@@ -120,4 +120,11 @@ export class OrderService {
   async updateOrderStatus(orderId: number, status: OrderStatus) {
     await this.orderRepository.updateOrderStatus(orderId, status);
   }
+
+  async getOrderWithDetails(orderId: number) {
+    return await this.dataSource.getRepository(Order).findOne({
+        where: { id: orderId },
+        relations: ['productOrders', 'productOrders.product']
+    });
+  }
 }

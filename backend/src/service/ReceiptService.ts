@@ -61,4 +61,26 @@ export class ReceiptService {
         await this.receiptRepository.save(receipt);
         return await this.receiptRepository.softRemove(receipt);
     }
+
+
+    async getMetrics(establishmentId: number, startDate: string, endDate: string) {
+        // 🔥 SOLUÇÃO: A mesma blindagem para as métricas
+        const start = startDate.includes('T') ? startDate : `${startDate}T00:00:00.000Z`;
+        const end = endDate.includes('T') ? endDate : `${endDate}T23:59:59.999Z`;
+
+        const query = this.receiptRepository.createQueryBuilder('receipt')
+            .where('receipt.ID_Estabelecimento = :establishmentId', { establishmentId })
+            .andWhere('receipt.Data_Emissao BETWEEN :startDate AND :endDate', { startDate: new Date(start), endDate: new Date(end) });
+
+        const receipts = await query.getMany();
+
+        return {
+            emitidas: receipts.length,
+            faturado: receipts
+                .filter(r => r.status === ReceiptStatus.AUTORIZADA)
+                .reduce((sum, r) => sum + Number(r.totalValue), 0),
+            comCpf: receipts.filter(r => !!r.cpfcnpj).length,
+            comErro: receipts.filter(r => r.status === ReceiptStatus.ERRO).length
+        };
+    }
 }
