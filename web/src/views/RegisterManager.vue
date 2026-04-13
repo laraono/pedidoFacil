@@ -13,7 +13,6 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 const nome = ref('');
-const username = ref('');
 const email = ref('');
 const cpf = ref('');
 const senha = ref('');
@@ -42,11 +41,6 @@ function validate() {
 
   if (!nome.value.trim().includes(' '))
     errors.value.nome = 'Por favor, insira seu nome e sobrenome.';
-
-  if (!username.value.trim() || username.value.trim().length < 3)
-    errors.value.username = 'Nome de usuário deve ter pelo menos 3 caracteres.';
-  else if (!/^[a-z0-9_]+$/.test(username.value.trim()))
-    errors.value.username = 'Use apenas letras minúsculas, números e _.';
 
   if (!email.value.trim())
     errors.value.email = 'O e-mail é obrigatório.';
@@ -81,7 +75,6 @@ async function handleSubmit() {
 
   localStorage.setItem('onboarding_personal', JSON.stringify({
     nome: nome.value,
-    username: username.value.trim(),
     email: email.value.trim(),
     cpf: cpf.value,
     senha: senha.value
@@ -115,7 +108,6 @@ async function handleSubmit() {
 
         <form @submit.prevent="handleSubmit" class="space-y-5">
           <BaseInput v-model="nome" placeholder="Nome completo" dark :error="errors.nome" />
-          <BaseInput v-model="username" placeholder="Nome de usuário (ex: joao_silva)" dark :error="errors.username" />
           <BaseInput v-model="email" type="email" placeholder="E-mail de contato" dark :error="errors.email" />
           <BaseInput v-model="cpf" placeholder="000.000.000-00" dark maxlength="14" :error="errors.cpf" @input="onCpfInput" />
 
