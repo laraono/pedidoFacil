@@ -1,4 +1,4 @@
-import { DataSource, IsNull, Not, Repository } from "typeorm";
+import { DataSource, IsNull, Not, Repository, Not, IsNull } from "typeorm";
 import { CreateCategoryParams, EditCategoryParams } from "../dto";
 import { Category } from "../database";
 import { CategoryStatus } from "../enum";
@@ -55,5 +55,23 @@ export class CategoryRepository extends Repository<Category>{
     async deleteCategory(categoryId: number) {
         await this.softDelete(categoryId)
     }
-    
+
+    async listDeletedCategories() {
+        return await this.find({
+            where: { deletedAt: Not(IsNull()) },
+            withDeleted: true 
+        });
+    }
+
+    async updateCategory(categoryId: number, data: Partial<Category>) {
+        await this.update(categoryId, data);
+    }
+
+    async softDeleteCategory(categoryId: number) {
+        await this.softDelete(categoryId);
+    }
+
+    async restoreCategory(categoryId: number) {
+        await this.restore(categoryId);
+    }
 }

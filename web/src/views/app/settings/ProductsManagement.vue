@@ -16,6 +16,10 @@ import { productApi } from "@/services/productApi";
 const { showToast } = useToast();
 const { confirmState, showConfirm } = useConfirm();
 
+onMounted(() => {
+  menuStore.loadData();
+});
+
 const showDeleted = ref(false);
 const showModal = ref(false);
 const isEditing = ref(false);
@@ -36,13 +40,12 @@ onMounted(async () => {
     products.value = await productApi.list()
 })
 
-// ── Bulk edition ──────────────────────────────────────────────────────────────
 const bulkMode = ref(false);
-const sortMode = ref('none'); // 'none' | 'alpha' | 'category-alpha'
+const sortMode = ref('none');
 const selectedIds = ref([]);
-const bulkAction = ref('');       // 'price_increase' | 'price_decrease' | 'availability' | 'category' | 'delete'
+const bulkAction = ref('');
 const bulkPriceValue = ref('');
-const bulkPriceType = ref('percent');  // 'percent' | 'fixed'
+const bulkPriceType = ref('percent');
 const bulkAvailability = ref(true);
 const bulkCategoryId = ref('');
 const showBulkConfirm = ref(false);
@@ -135,7 +138,6 @@ const executeBulk = () => {
     bulkMode.value = false;
 }; */
 
-// ── Individual actions ────────────────────────────────────────────────────────
 const validate = () => {
     const e = {};
     if (!form.value.name?.trim()) e.name = "Nome do produto é obrigatório.";
@@ -418,7 +420,6 @@ const tableActions = computed(() => bulkMode.value ? [] : [
     </div>
 -->
 
-    <!-- Sort controls -->
     <div class="flex items-center gap-2 mb-4 flex-wrap">
       <span class="text-xs font-black text-[#757575] uppercase tracking-widest mr-1">Ordenar:</span>
       <button v-for="opt in [{ v: 'none', l: 'Padrão' }, { v: 'alpha', l: 'A → Z' }, { v: 'category-alpha', l: 'Categoria + A → Z' }]"
@@ -490,7 +491,6 @@ const tableActions = computed(() => bulkMode.value ? [] : [
           <p v-if="errors.categoryId" class="text-danger text-[11px] font-bold mt-0.5 ml-2">{{ errors.categoryId }}</p>
         </div>
 
-        <!-- Tamanhos / Variações -->
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <div>

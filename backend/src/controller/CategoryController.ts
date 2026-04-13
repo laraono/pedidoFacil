@@ -1,5 +1,6 @@
 import { CategoryService } from "../service";
-import {Request, Response} from 'express';
+import { Request, Response } from 'express';
+import { getIO } from '../socket';
 
 export class CategoryController {
 
@@ -10,9 +11,12 @@ export class CategoryController {
     }
 
     async createCategory(req: Request, res: Response) {
-        const categoryId = await this.categoryService.createCategory({...req.body, image: req.file.buffer})
-
-        res.status(201).send(categoryId)
+        req.body.establishment = { id: (req as any).usuario.estabelecimento };
+        
+        const categoryId = await this.categoryService.createCategory({...req.body, image: req.file.buffer});
+        
+        getIO().emit('menu_updated'); 
+        res.status(201).json(categoryId);
     }
 
     async listCategories(req, res: Response) {

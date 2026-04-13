@@ -1,4 +1,4 @@
-import express from 'express'
+import express, { Request, Response } from 'express';
 import multer from 'multer';
 import { productController } from '../controller';
 import { validateCreateProduct, validateDeleteProduct, validateListProducts, validateListProductsByCategories, validateUpdateProduct } from '../validator/product';
@@ -23,3 +23,24 @@ productRouter.put('/categories/:categoryId/products/:productId', authenticate, r
 productRouter.put('/categories/:categoryId/products/:productId/status', authenticate, roleAccessControl.checkPermission('CARDAPIO'), catchAsync((req, res) => productController.updateProductStatus(req, res)));
 
 productRouter.delete('/categories/:categoryId/products/:productId', authenticate, roleAccessControl.checkPermission('CARDAPIO'), validateDeleteProduct, catchAsync((req, res) => productController.deleteProduct(req, res)));
+
+productRouter.put(
+  '/products/:id', 
+  authenticate, 
+  roleAccessControl.checkPermission('CARDAPIO'), 
+  catchAsync((req: Request, res: Response) => productController.updateProduct(req, res))
+);
+
+productRouter.delete(
+  '/products/:id', 
+  authenticate, 
+  roleAccessControl.checkPermission('CARDAPIO'), 
+  catchAsync((req: Request, res: Response) => productController.deleteProduct(req, res))
+);
+
+productRouter.patch(
+  '/products/:id/restore', 
+  authenticate, 
+  roleAccessControl.checkPermission('CARDAPIO'), 
+  catchAsync((req: Request, res: Response) => productController.restoreProduct(req, res))
+);

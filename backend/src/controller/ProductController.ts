@@ -1,24 +1,25 @@
-import { ProductService } from "../service";
-import {Request, Response} from 'express';
+import { ProductService } from '../service';
+import { Request, Response } from 'express';
+import { getIO } from '../socket'; 
 
 export class ProductController {
+  private productService: ProductService;
 
-    private productService: ProductService
-
-    constructor(productService: ProductService) {
-        this.productService = productService
-    }
+  constructor(productService: ProductService) {
+    this.productService = productService;
+  }
 
     async createProduct(req: Request, res: Response) {
         const productId = await this.productService.createProduct({...req.body, image: req.file.buffer})
 
-        res.status(201).send(productId)
-    }
+    getIO().emit('menu_updated'); 
+    res.status(201).json(productId);
+  }
 
-    async listProducts(req, res: Response) {
-        const products = await this.productService.listProducts(req.body)
-
-        res.status(200).send(products)
+  async listProducts(req, res: Response) {
+    if (req.query.deleted === 'true') {
+      const products = await this.productService.listDeletedProducts(req.body);
+      return res.status(200).json(products);
     }
 
     async listProductsByCategory(req, res: Response) {

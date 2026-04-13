@@ -1,12 +1,20 @@
-import express, { Request, Response } from 'express'
-import { authController, loginLimiter } from '../controller'
-import { catchAsync } from '../middleware'
-const authenticate = require('../middleware/authenticate')
+import { Router } from 'express';
+import { AuthController, loginLimiter } from '../controller/AuthController';
+import { AuthService } from '../service/AuthService';
+import { AppDataSource } from '../database/data-source';
+import { UserRepository } from '../repository/UserRepository';
+import authenticate from '../middleware/authenticate';
 
-export const authRouter = express.Router()
+const userRepository = new UserRepository(AppDataSource);
+const authService = new AuthService(AppDataSource, userRepository);
+const authController = new AuthController(authService);
 
-authRouter.post('/register', catchAsync((req: Request, res: Response) => authController.register(req, res)))
-authRouter.post('/login', loginLimiter, catchAsync((req: Request, res: Response) => authController.login(req, res)))
-authRouter.post('/logout', authenticate, catchAsync((req: Request, res: Response) => authController.logout(req, res)))
-authRouter.post('/refresh', catchAsync((req: Request, res: Response) => authController.refresh(req, res)))
-authRouter.get('/me', authenticate, catchAsync((req: Request, res: Response) => authController.perfil(req, res)))
+const authRouter = Router();
+
+authRouter.post('/register', authController.registerManager.bind(authController));
+authRouter.post('/login', loginLimiter, authController.login.bind(authController));
+authRouter.post('/refresh', authController.refresh.bind(authController));
+authRouter.post('/logout', authController.logout.bind(authController));
+authRouter.get('/perfil', authenticate, authController.perfil.bind(authController));
+
+export { authRouter };

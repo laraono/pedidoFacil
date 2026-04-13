@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import localStorageService from '@/services/localStorageService';
+import { establishmentApi } from '@/services/establishmentApi'; 
 import { useToast } from '@/composables/useToast';
 import { Save, ArrowLeft, UploadCloud, AlertCircle, Smartphone, Copy, CheckCheck, RefreshCw, Banknote } from 'lucide-vue-next';
 
@@ -9,14 +9,14 @@ const router = useRouter();
 const { showToast } = useToast();
 
 const isLoading = ref(false);
+const isFetching = ref(true); 
 const logoPreview = ref(null);
 const errors = ref({});
 const touched = ref({});
 
-// Métodos de pagamento
 const ALL_PAYMENT_METHODS = ['Dinheiro', 'Cartão Débito', 'Cartão Crédito', 'PIX'];
-const paymentMethods = ref([...ALL_PAYMENT_METHODS]);
-const originalPaymentMethods = ref([...ALL_PAYMENT_METHODS]);
+const paymentMethods = ref([]);
+const originalPaymentMethods = ref([]);
 
 const togglePaymentMethod = (method) => {
   const idx = paymentMethods.value.indexOf(method);
@@ -24,14 +24,15 @@ const togglePaymentMethod = (method) => {
   else if (paymentMethods.value.length > 1) paymentMethods.value.splice(idx, 1);
 };
 
-// Autoatendimento
 const selfService = ref(false);
+const originalSelfService = ref(false);
+
 const selfServiceCode = ref('');
+const originalSelfServiceCode = ref('');
 const codeCopied = ref(false);
 
 const generateCode = () => {
   selfServiceCode.value = Math.floor(100000 + Math.random() * 900000).toString();
-  localStorage.setItem('selfServiceCode', selfServiceCode.value);
 };
 
 const copyCode = () => {
@@ -40,7 +41,7 @@ const copyCode = () => {
   setTimeout(() => { codeCopied.value = false; }, 2000);
 };
 
-const form = ref({ name: '', cnpj: '', phone: '', description: '' });
+const form = ref({ name: '', cnpj: '', phone: '' });
 const originalForm = ref(null);
 const originalLogo = ref(null);
 
@@ -48,7 +49,9 @@ const isDirty = computed(() =>
   originalForm.value !== null && (
     JSON.stringify(form.value) !== JSON.stringify(originalForm.value) ||
     logoPreview.value !== originalLogo.value ||
-    JSON.stringify([...paymentMethods.value].sort()) !== JSON.stringify([...originalPaymentMethods.value].sort())
+    JSON.stringify([...paymentMethods.value].sort()) !== JSON.stringify([...originalPaymentMethods.value].sort()) ||
+    selfService.value !== originalSelfService.value ||
+    selfServiceCode.value !== originalSelfServiceCode.value
   )
 );
 
@@ -67,30 +70,40 @@ const maskPhone = (v) => {
   return d.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2');
 };
 
-onMounted(() => {
-  const data = localStorageService.getOnboarding();
-  if (data) {
+onMounted(async () => {
+  isFetching.value = true;
+  try {
+    const data = await establishmentApi.getProfile();
+    
     form.value = {
-      name: data.nome_estabelecimento || '',
+      name: data.name || '',
       cnpj: data.cnpj || '',
-      phone: data.telefone || '',
-      description: data.descricao || '',
+      phone: data.phone || '',
     };
-  }
-  originalForm.value = { ...form.value };
-  originalLogo.value = logoPreview.value;
-  logoPreview.value = localStorageService.getImage();
-  const savedMethods = localStorage.getItem('paymentMethods');
-  if (savedMethods) {
-    paymentMethods.value = JSON.parse(savedMethods);
+    
+    logoPreview.value = data.configurations?.logo || null;
+    
+    if (data.paymentMethods && data.paymentMethods.length > 0) {
+      paymentMethods.value = [...data.paymentMethods];
+    } else {
+      paymentMethods.value = [...ALL_PAYMENT_METHODS]; 
+    }
+
+    selfService.value = !!data.selfServiceEnabled;
+    selfServiceCode.value = data.selfServiceCode || Math.floor(100000 + Math.random() * 900000).toString();
+
+    originalForm.value = { ...form.value };
+    originalLogo.value = logoPreview.value;
     originalPaymentMethods.value = [...paymentMethods.value];
-  }
-  selfService.value = localStorage.getItem('selfServiceEnabled') === 'true';
-  const savedCode = localStorage.getItem('selfServiceCode');
-  if (savedCode) {
-    selfServiceCode.value = savedCode;
-  } else {
-    generateCode();
+    originalSelfService.value = selfService.value;
+    originalSelfServiceCode.value = selfServiceCode.value;
+
+  } catch (error) {
+    console.error("🔎 ERRO CAPTURADO NO FRONT:", error);
+    console.error("Resposta do Back:", error.response?.data || error.message);
+    showToast('Erro ao carregar dados do estabelecimento.', 'error');
+  } finally {
+    isFetching.value = false;
   }
 });
 
@@ -118,22 +131,32 @@ const saveSettings = async () => {
     showToast('Corrija os erros antes de salvar.', 'error');
     return;
   }
+  
   isLoading.value = true;
+  
   try {
-    localStorageService.saveOnboarding({
-      nome_estabelecimento: form.value.name,
+    await establishmentApi.updateProfile({
+      name: form.value.name,
       cnpj: form.value.cnpj,
-      telefone: form.value.phone,
-      descricao: form.value.description,
+      phone: form.value.phone,
+      paymentMethods: paymentMethods.value,
+      selfServiceEnabled: selfService.value,
+      selfServiceCode: selfServiceCode.value,
+      logo: logoPreview.value
     });
-    if (logoPreview.value) localStorageService.saveImage(logoPreview.value);
-    localStorage.setItem('paymentMethods', JSON.stringify(paymentMethods.value));
+
     originalForm.value = { ...form.value };
     originalLogo.value = logoPreview.value;
     originalPaymentMethods.value = [...paymentMethods.value];
+    originalSelfService.value = selfService.value;
+    originalSelfServiceCode.value = selfServiceCode.value;
+    
     showToast('Dados atualizados com sucesso!', 'success');
-  } catch {
-    showToast('Erro ao salvar os dados.', 'error');
+  } catch (error) {
+    console.error("🔎 ERRO CAPTURADO NO FRONT:", error);
+    console.error("Resposta do Back:", error.response?.data || error.message);
+    const msg = error.response?.data?.message || 'Erro ao salvar os dados.';
+    showToast(msg, 'error');
   } finally {
     isLoading.value = false;
   }
@@ -155,15 +178,18 @@ const saveSettings = async () => {
         </div>
       </div>
 
-      <button @click="saveSettings" :disabled="!isDirty || isLoading"
+      <button @click="saveSettings" :disabled="!isDirty || isLoading || isFetching"
         class="hidden sm:flex items-center gap-2 bg-primary text-white font-black px-8 py-4 rounded hover:bg-primary-dark transition-all active:scale-95 shadow-lg shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100">
         <Save :size="20" />
         {{ isLoading ? 'Gravando...' : 'Salvar Dados' }}
       </button>
     </header>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div v-if="isFetching" class="flex justify-center items-center py-20 text-[#757575] font-bold">
+      Carregando informações do estabelecimento...
+    </div>
 
+    <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <section class="lg:col-span-1">
         <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl flex flex-col items-center">
           <h3 class="text-base font-black text-[#212121] mb-6 w-full text-left uppercase tracking-widest text-[11px]">Logo
@@ -188,7 +214,7 @@ const saveSettings = async () => {
         <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            <div class="space-y-1.5">
+            <div class="space-y-1.5 md:col-span-2">
               <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1">Nome do Negócio</label>
               <input v-model="form.name" maxlength="80" type="text" placeholder="Ex: Hamburgueria 2000"
                 class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all"
@@ -226,24 +252,12 @@ const saveSettings = async () => {
               </p>
             </div>
 
-            <div class="space-y-1.5">
-              <div class="flex justify-between items-center ml-1 mr-1">
-                <label class="text-xs font-black uppercase tracking-widest text-[#757575]">Sobre o
-                  Estabelecimento</label>
-                <span class="text-[10px] text-[#757575] font-mono">{{ form.description.length }}/300</span>
-              </div>
-              <textarea v-model="form.description" maxlength="300" rows="4"
-                placeholder="Conte um pouco sobre a história ou especialidades do seu negócio..."
-                class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all resize-none" />
-            </div>
-
           </div>
         </div>
       </section>
     </div>
 
-    <!-- Métodos de Pagamento -->
-    <div class="mt-8">
+    <div v-if="!isFetching" class="mt-8">
       <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl">
         <div class="flex items-center gap-3 mb-6">
           <div class="w-10 h-10 bg-accent-light border border-accent/30 rounded flex items-center justify-center">
@@ -276,8 +290,7 @@ const saveSettings = async () => {
       </div>
     </div>
 
-    <!-- Autoatendimento -->
-    <div class="mt-8">
+    <div v-if="!isFetching" class="mt-8">
       <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl">
         <div class="flex items-center justify-between mb-2">
           <div>
@@ -285,7 +298,7 @@ const saveSettings = async () => {
             <p class="text-sm text-[#757575] mt-1">Permite que clientes façam pedidos pelo aplicativo móvel.</p>
           </div>
           <button
-            @click="() => { selfService = !selfService; localStorage.setItem('selfServiceEnabled', selfService); }"
+            @click="selfService = !selfService"
             class="relative w-14 h-7 rounded transition-colors duration-300 flex items-center"
             :class="selfService ? 'bg-accent' : 'bg-gray-100'"
           >
@@ -297,7 +310,7 @@ const saveSettings = async () => {
         <Transition name="slide-down">
           <div v-if="selfService" class="mt-6 border-t border-[#E0E0E0] pt-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- Download app -->
+              
               <div class="bg-gray-50 border border-[#E0E0E0] rounded p-6 flex flex-col gap-4">
                 <div class="flex items-center gap-3">
                   <div class="w-12 h-12 bg-accent-light border border-accent/30 rounded flex items-center justify-center">
@@ -321,7 +334,6 @@ const saveSettings = async () => {
                 </div>
               </div>
 
-              <!-- Access code -->
               <div class="bg-gray-50 border border-[#E0E0E0] rounded p-6 flex flex-col gap-4">
                 <div>
                   <p class="font-black text-[#212121] text-sm mb-1">Código de Acesso</p>
@@ -355,7 +367,7 @@ const saveSettings = async () => {
     </div>
 
     <div class="mt-8 sm:hidden">
-      <button @click="saveSettings" :disabled="!isDirty || isLoading"
+      <button @click="saveSettings" :disabled="!isDirty || isLoading || isFetching"
         class="w-full bg-primary text-white font-black py-5 rounded shadow-xl active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
         {{ isLoading ? 'Gravando...' : 'Salvar Alterações' }}
       </button>

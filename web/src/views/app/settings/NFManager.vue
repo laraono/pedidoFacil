@@ -1,10 +1,11 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import PageHeader from '@/components/ui/PageHeader.vue';
 import ToastMessage from '@/components/ui/ToastMessage.vue';
 import { useToast } from '@/composables/useToast';
-import localStorageService from '@/services/localStorageService';
+import { receiptApi } from '@/services/receiptApi';
+import { establishmentApi } from '@/services/establishmentApi';
 import {
   FileText, Download, Search, CheckCircle2, XCircle,
   AlertTriangle, Clock, RefreshCw, Eye, FileDown, Building2
@@ -14,26 +15,89 @@ const { showToast } = useToast();
 const router = useRouter();
 
 const hasCnpj = ref(true);
-onMounted(() => {
-  const data = localStorageService.getOnboarding();
-  hasCnpj.value = !!data?.cnpj?.trim();
-});
+const receipts = ref([]);
+const isLoading = ref(false);
 
 const activeTab = ref('todas');
 const searchQuery = ref('');
-const dateFrom = ref('');
-const dateTo = ref('');
 
-const MOCK_NFS = [
-  { id: 1, numero: '001.248', status: 'autorizada', emissao: '2026-03-18T22:15:00', valor: 93.50, cpf: '321.xxx.xxx-09', caixa: 'Maria' },
-  { id: 2, numero: '001.247', status: 'autorizada', emissao: '2026-03-18T21:42:00', valor: 47.00, cpf: null, caixa: 'Maria' },
-  { id: 3, numero: '001.246', status: 'erro', emissao: '2026-03-18T20:58:00', valor: 62.00, cpf: null, caixa: 'Maria', erro: 'Rejeição 539 — CPF inválido na chave de acesso.' },
-  { id: 4, numero: '001.245', status: 'cancelada', emissao: '2026-03-18T19:30:00', valor: 28.00, cpf: null, caixa: 'João' },
-  { id: 5, numero: '001.244', status: 'pendente', emissao: '2026-03-18T19:10:00', valor: 115.00, cpf: null, caixa: 'João' },
-  { id: 6, numero: '001.243', status: 'autorizada', emissao: '2026-03-18T18:55:00', valor: 38.90, cpf: '456.xxx.xxx-12', caixa: 'João' },
-  { id: 7, numero: '001.242', status: 'autorizada', emissao: '2026-03-18T18:30:00', valor: 77.00, cpf: null, caixa: 'Maria' },
-  { id: 8, numero: '001.241', status: 'erro', emissao: '2026-03-18T17:55:00', valor: 55.50, cpf: null, caixa: 'Maria', erro: 'Timeout na comunicação com SEFAZ.' },
-];
+const today = new Date().toISOString().split('T')[0];
+const dateFrom = ref(today);
+const dateTo = ref(today);
+
+const metricsData = ref({ emitidas: 0, faturado: 0, comCpf: 0, comErro: 0 });
+
+onMounted(async () => {
+  try {
+    isLoading.value = true;
+    
+    const estData = await establishmentApi.getProfile(); 
+    
+    hasCnpj.value = !!estData?.cnpj?.trim();
+    
+    if (hasCnpj.value) {
+      await fetchReceipts();
+      await fetchMetrics();
+    }
+  } catch (error) {
+    console.error("Erro ao validar CNPJ do estabelecimento", error);
+    showToast("Erro ao validar configuração fiscal.", "error");
+  } finally {
+    isLoading.value = false;
+  }
+});
+
+const fetchReceipts = async () => {
+  isLoading.value = true;
+  try {
+    const filters = {
+      status: activeTab.value,
+      startDate: dateFrom.value,
+      endDate: dateTo.value
+    };
+    
+    const data = await receiptApi.list(filters);
+    
+    // Mapeamento do formato do Backend para o template do Vue
+    receipts.value = data.map(nf => ({
+      id: nf.id,
+      numero: nf.receiptNumber,
+      status: nf.status,
+      emissao: nf.createdAt,
+      valor: Number(nf.totalValue),
+      cpf: nf.cpfcnpj,
+      caixa: nf.payment?.user?.name || 'Sistema',
+      erro: nf.status === 'erro' ? 'Erro na comunicação ou validação fiscal.' : null
+    }));
+  } catch (error) {
+    showToast("Erro ao carregar notas fiscais.", "error");
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const fetchMetrics = async () => {
+  try {
+    metricsData.value = await receiptApi.getMetrics(dateFrom.value, dateTo.value);
+  } catch (error) {
+    console.error("Erro ao carregar métricas fiscais.");
+  }
+};
+
+// Se a aba de status mudar, recarrega a lista
+watch(activeTab, () => {
+  currentPage.value = 1;
+  fetchReceipts();
+});
+
+// Se a data mudar, recarrega a lista e as métricas
+watch([dateFrom, dateTo], () => {
+  if (dateFrom.value && dateTo.value) {
+    currentPage.value = 1;
+    fetchReceipts();
+    fetchMetrics();
+  }
+});
 
 const tabs = [
   { key: 'todas', label: 'Todas' },
@@ -42,22 +106,15 @@ const tabs = [
   { key: 'cancelada', label: 'Canceladas' },
 ];
 
+// O filtro de status e data agora acontece no back. Aqui só filtramos a busca por texto.
 const filteredNFs = computed(() => {
-  let list = MOCK_NFS;
-  if (activeTab.value !== 'todas') list = list.filter(n => n.status === activeTab.value);
+  let list = receipts.value;
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase();
-    list = list.filter(n => n.numero.includes(q) || (n.cpf && n.cpf.includes(q)));
+    list = list.filter(n => n.numero.toLowerCase().includes(q) || (n.cpf && n.cpf.includes(q)));
   }
   return list;
 });
-
-const metrics = computed(() => ({
-  emitidas: MOCK_NFS.filter(n => n.status === 'autorizada').length,
-  faturado: MOCK_NFS.filter(n => n.status === 'autorizada').reduce((s, n) => s + n.valor, 0),
-  comCpf: MOCK_NFS.filter(n => n.cpf).length,
-  comErro: MOCK_NFS.filter(n => n.status === 'erro').length,
-}));
 
 const statusConfig = {
   autorizada: { label: 'Autorizada', cls: 'bg-accent-light text-accent border-accent/30' },
@@ -67,14 +124,26 @@ const statusConfig = {
 };
 
 const formatDate = (iso) => {
+  if (!iso) return '—';
   const d = new Date(iso);
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' +
     d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 };
 
-const viewError = (nf) => showToast(nf.erro, 'error');
+// Integração das Ações Reais
+const cancel = async (nf) => {
+  try {
+    await receiptApi.cancel(nf.id);
+    showToast(`Nota ${nf.numero} cancelada com sucesso.`, 'success');
+    await fetchReceipts(); // Atualiza a lista
+    await fetchMetrics();  // Atualiza os cards
+  } catch (error) {
+    showToast(error.message || "Erro ao cancelar nota.", 'error');
+  }
+};
+
+const viewError = (nf) => showToast(nf.erro || "Detalhe de erro não disponível.", 'error');
 const reissue = (nf) => showToast(`Reemissão de ${nf.numero} solicitada (simulação).`, 'success');
-const cancel = (nf) => showToast(`Cancelamento de ${nf.numero} solicitado (simulação).`, 'success');
 const downloadDANFE = (nf) => showToast(`DANFE de ${nf.numero} gerada (simulação).`, 'success');
 const downloadXML = (nf) => showToast(`XML de ${nf.numero} exportado (simulação).`, 'success');
 const exportAll = () => showToast('Exportação em lote solicitada (simulação).', 'success');
@@ -89,7 +158,6 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
   <main class="max-w-7xl mx-auto py-12 px-6 font-inter">
     <ToastMessage />
 
-    <!-- CNPJ guard -->
     <div v-if="!hasCnpj" class="flex items-center justify-center min-h-[60vh]">
       <div class="bg-white border border-[#E0E0E0] rounded p-10 max-w-md w-full text-center shadow-2xl">
         <div class="w-16 h-16 rounded bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-5">
@@ -124,25 +192,24 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
       </template>
     </PageHeader>
 
-    <!-- Métricas -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       <div class="bg-white border border-[#E0E0E0] rounded p-6 flex flex-col gap-2">
         <div class="flex items-center gap-3">
           <div class="p-2.5 bg-accent-light border border-accent/30 rounded">
             <CheckCircle2 :size="18" class="text-accent" />
           </div>
-          <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest">Emitidas hoje</p>
+          <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest">Emitidas</p>
         </div>
-        <p class="text-3xl font-black text-[#212121]">{{ metrics.emitidas }}</p>
+        <p class="text-3xl font-black text-[#212121]">{{ metricsData.emitidas }}</p>
       </div>
       <div class="bg-white border border-[#E0E0E0] rounded p-6 flex flex-col gap-2">
         <div class="flex items-center gap-3">
           <div class="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded">
             <FileText :size="18" class="text-blue-400" />
           </div>
-          <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest">Total faturado</p>
+          <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest">Faturado no Período</p>
         </div>
-        <p class="text-3xl font-black text-accent">R$ {{ metrics.faturado.toFixed(2) }}</p>
+        <p class="text-3xl font-black text-accent">R$ {{ Number(metricsData.faturado || 0).toFixed(2) }}</p>
       </div>
       <div class="bg-white border border-[#E0E0E0] rounded p-6 flex flex-col gap-2">
         <div class="flex items-center gap-3">
@@ -151,7 +218,7 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
           </div>
           <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest">Com CPF</p>
         </div>
-        <p class="text-3xl font-black text-[#212121]">{{ metrics.comCpf }}</p>
+        <p class="text-3xl font-black text-[#212121]">{{ metricsData.comCpf }}</p>
       </div>
       <div class="bg-white border border-[#E0E0E0] rounded p-6 flex flex-col gap-2">
         <div class="flex items-center gap-3">
@@ -160,16 +227,15 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
           </div>
           <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest">Com erro</p>
         </div>
-        <p class="text-3xl font-black text-[#212121]" :class="metrics.comErro > 0 ? 'text-danger' : ''">{{ metrics.comErro }}</p>
+        <p class="text-3xl font-black text-[#212121]" :class="metricsData.comErro > 0 ? 'text-danger' : ''">{{ metricsData.comErro }}</p>
       </div>
     </div>
 
-    <!-- Tabs -->
     <div class="flex gap-1 bg-gray-50 border border-[#E0E0E0] rounded p-1 w-fit mb-6">
       <button
         v-for="tab in tabs"
         :key="tab.key"
-        @click="activeTab = tab.key; currentPage = 1"
+        @click="activeTab = tab.key"
         class="px-4 py-2 rounded text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap"
         :class="activeTab === tab.key ? 'bg-primary text-white' : 'text-[#757575] hover:text-[#212121]'"
       >
@@ -177,7 +243,6 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
       </button>
     </div>
 
-    <!-- Filtros -->
     <div class="flex gap-3 mb-6 flex-wrap">
       <div class="relative flex-1 min-w-[200px]">
         <Search :size="15" class="absolute left-3 top-1/2 -translate-y-1/2 text-[#757575] pointer-events-none" />
@@ -199,12 +264,16 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
       />
     </div>
 
-    <!-- Tabela -->
-    <div class="bg-white border border-[#E0E0E0] rounded overflow-hidden mb-6">
-      <div v-if="pagedNFs.length === 0" class="flex flex-col items-center justify-center py-20 text-[#757575]">
-        <FileText :size="48" class="mb-4 opacity-20" />
-        <p class="font-black uppercase tracking-widest text-sm opacity-40">Nenhuma nota encontrada</p>
+    <div class="bg-white border border-[#E0E0E0] rounded overflow-hidden mb-6 relative">
+      <div v-if="isLoading" class="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center">
+        <RefreshCw class="animate-spin text-primary" :size="32" />
       </div>
+
+      <div v-if="pagedNFs.length === 0 && !isLoading" class="flex flex-col items-center justify-center py-20 text-[#757575]">
+        <FileText :size="48" class="mb-4 opacity-20" />
+        <p class="font-black uppercase tracking-widest text-sm opacity-40">Nenhuma nota encontrada neste período</p>
+      </div>
+      
       <div v-else class="overflow-x-auto">
         <table class="w-full text-left border-collapse min-w-[800px]">
           <thead class="bg-gray-100 text-[#757575] uppercase text-[10px] font-black tracking-widest border-b border-[#E0E0E0]">
@@ -226,8 +295,8 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
             >
               <td class="p-5 font-black text-[#212121]">{{ nf.numero }}</td>
               <td class="p-5">
-                <span class="px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest border" :class="statusConfig[nf.status].cls">
-                  {{ statusConfig[nf.status].label }}
+                <span class="px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest border" :class="statusConfig[nf.status]?.cls || statusConfig.autorizada.cls">
+                  {{ statusConfig[nf.status]?.label || nf.status }}
                 </span>
               </td>
               <td class="p-5 text-[#757575] text-sm">{{ formatDate(nf.emissao) }}</td>
@@ -236,7 +305,6 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
               <td class="p-5 text-[#757575] text-sm">{{ nf.caixa }}</td>
               <td class="p-5">
                 <div class="flex items-center justify-end gap-1">
-                  <!-- Autorizada -->
                   <template v-if="nf.status === 'autorizada'">
                     <button @click="downloadDANFE(nf)" title="DANFE" class="px-3 py-1.5 bg-gray-50 border border-[#E0E0E0] text-[#757575] text-xs font-black rounded hover:bg-gray-100 transition-all flex items-center gap-1">
                       <Eye :size="12" /> DANFE
@@ -248,7 +316,6 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
                       Cancelar
                     </button>
                   </template>
-                  <!-- Com erro -->
                   <template v-else-if="nf.status === 'erro'">
                     <button @click="viewError(nf)" class="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-black rounded hover:bg-amber-500/20 transition-all flex items-center gap-1">
                       <AlertTriangle :size="12" /> Ver erro
@@ -257,13 +324,11 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
                       <RefreshCw :size="12" /> Reemitir
                     </button>
                   </template>
-                  <!-- Cancelada -->
                   <template v-else-if="nf.status === 'cancelada'">
                     <button @click="downloadXML(nf)" class="px-3 py-1.5 bg-gray-50 border border-[#E0E0E0] text-[#757575] text-xs font-black rounded hover:bg-gray-100 transition-all flex items-center gap-1">
                       <FileDown :size="12" /> XML
                     </button>
                   </template>
-                  <!-- Pendente -->
                   <template v-else-if="nf.status === 'pendente'">
                     <button @click="reissue(nf)" class="px-3 py-1.5 bg-gray-50 border border-[#E0E0E0] text-[#757575] text-xs font-black rounded hover:bg-gray-100 transition-all flex items-center gap-1">
                       <RefreshCw :size="12" /> Reemitir
@@ -277,7 +342,6 @@ const pagedNFs = computed(() => filteredNFs.value.slice((currentPage.value - 1) 
       </div>
     </div>
 
-    <!-- Paginação -->
     <div class="flex items-center justify-between">
       <p class="text-xs text-[#757575] font-bold">{{ filteredNFs.length }} nota(s) encontrada(s)</p>
       <div v-if="totalPages > 1" class="flex gap-2">

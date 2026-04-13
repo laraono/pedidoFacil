@@ -49,7 +49,10 @@ export class ProductService {
             image: imageUrl
         }
 
-        const createdProduct = await this.productRepository.createProduct(productParams) 
+        const createdProduct = await this.productRepository.createProduct({
+            ...productParams,
+            category: category
+        } as any) 
 
         if(createdProduct && productVariations) { 
             productVariations.forEach(async (productVariation) => {

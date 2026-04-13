@@ -1,5 +1,4 @@
 import { Establishment } from "../../database"
-
 export type CreateCategory = {
     name: string,
     establishmentId: number,

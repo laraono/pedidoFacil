@@ -21,7 +21,7 @@ export class ProductVariation {
     name: string
 
     @Column({
-        name: 'preco_adicional',
+        name: 'Preco_Adicional',
         type: "decimal",
         precision: 10,
         scale: 2,
@@ -38,14 +38,8 @@ export class ProductVariation {
     })
     status: ProductStatus
 
-    @CreateDateColumn({ 
-        type: "timestamp", 
-        default: () => "CURRENT_TIMESTAMP(6)"
-        })
-    created_at: Date;
-
     @DeleteDateColumn({
-        name: 'deleted_at',
+        name: 'Data_Exclusao',
         type: 'datetime',
         nullable: true
     })

@@ -1,23 +1,37 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, DeleteDateColumn, ManyToOne, JoinColumn } from "typeorm"
-import { Product } from "./Product"
-import { Establishment } from "./Establishment"
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  DeleteDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { Product } from './Product';
+import { Establishment } from './Establishment';
 import { CategoryStatus } from "../../enum"
 
-@Entity({name: 'CATEGORIA'})
+@Entity({ name: 'CATEGORIA' })
 export class Category {
+  @PrimaryGeneratedColumn({
+    name: 'ID_Categoria',
+  })
+  id: number;
 
-    @PrimaryGeneratedColumn({
-        name: 'ID_Categoria'
-    })
-    id: number
+  @Column({
+    type: 'varchar',
+    name: 'Nome',
+    nullable: false,
+    length: 50,
+  })
+  name: string;
 
-    @Column({
-        type: 'varchar',
-        name: 'Nome',
-        nullable: false,
-        length: 50
-    })
-    name: string
+  @Column({
+    type: 'longtext',
+    name: 'Imagem',
+    nullable: true,
+  })
+  image?: string;
 
     @Column({
         type: 'varchar',
@@ -35,19 +49,19 @@ export class Category {
     })
     status: CategoryStatus
 
-    @DeleteDateColumn({
-        name: 'Data_Exclusao',
-        type: 'datetime',
-        nullable: true
-    })
-    deletedAt?: Date
-    
-    @OneToMany(() => Product, (product) => product.category)
-    products: Product[]
+  @DeleteDateColumn({
+    name: 'Data_Exclusao',
+    type: 'datetime',
+    nullable: true,
+  })
+  deletedAt?: Date;
 
-    @ManyToOne(() => Establishment, (establishment) => establishment.categories)
-    @JoinColumn({
-        name: 'ID_Estabelecimento'
-    })
-    establishment: Establishment
+  @OneToMany(() => Product, (product) => product.category)
+  products: Product[];
+
+  @ManyToOne(() => Establishment, (establishment) => establishment.categories)
+  @JoinColumn({
+    name: 'ID_Estabelecimento',
+  })
+  establishment: Establishment;
 }

@@ -6,13 +6,23 @@ import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmModal from '@/components/ui/ConfirmModal.vue';
 import {
-    ArrowLeft, PlusCircle, Edit, Image as ImageIcon,
-    X, Archive, RotateCcw, Trash2,
-} from 'lucide-vue-next';
+    ArrowLeft,
+  PlusCircle,
+  Edit,
+  Image as ImageIcon,
+    X,
+  Archive,
+  RotateCcw,
+  Trash2,
+} from "lucide-vue-next";
 import {categoryApi} from '@/services/categoryApi'
 
 const router = useRouter();
 const { showToast } = useToast();
+
+onMounted(() => {
+  menuStore.loadData();
+});
 
 const showModal = ref(false);
 const isEditing = ref(false);
@@ -29,7 +39,7 @@ const displayedCategories = computed(() =>
 const errors = ref({});
 const touched = ref({});
 
-const form = ref({ id: null, name: '', image: null, imagePreview: null });
+const form = ref({ id: null, name: "", image: null, imagePreview: null });
 
 const confirmModal = ref({
     show: false, title: '', message: '', onConfirm: null, data: null, isError: false,
@@ -40,7 +50,14 @@ onMounted(async () => {
 })
 
 const showConfirm = (title, message, onConfirm, data = null, options = {}) => {
-    confirmModal.value = { show: true, title, message, onConfirm, data, isError: options.isError || false };
+    confirmModal.value = {
+    show: true,
+    title,
+    message,
+    onConfirm,
+    data,
+    isError: options.isError || false,
+  };
 };
 
 const validateField = (field) => {
@@ -65,7 +82,12 @@ const openAddModal = () => {
 
 const openEditModal = (category) => {
     isEditing.value = true;
-    form.value = { id: category.id, name: category.name, image: category.image, imagePreview: category.image };
+    form.value = {
+    id: category.id,
+    name: category.name,
+    image: category.image,
+    imagePreview: category.image,
+  };
     errors.value = {};
     touched.value = {};
     showModal.value = true;
@@ -287,6 +309,12 @@ const handlePermanentDelete = async (category) => {
 </template>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 </style>

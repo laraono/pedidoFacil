@@ -1,145 +1,169 @@
-import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
-import imgFood from '@/assets/food.jpg';
-import imgHamburguer from '@/assets/hamburguer.png'
+import { defineStore } from "pinia";
+import { ref, computed } from "vue";
+import { categoryApi } from "@/services/categoryApi";
+import { productApi } from "@/services/productApi";
 
-export const useMenuStore = defineStore('menu', () => {
+export const useMenuStore = defineStore("menu", () => {
+  const categories = ref([]);
+  const products = ref([]);
 
-  const categories = ref([
-    { id: 1, name: 'Lanches', image: imgFood, deletedAt: null },
-    { id: 2, name: 'Bebidas', image: imgFood, deletedAt: null },
-    { id: 3, name: 'Sobremesas', image: imgFood, deletedAt: null }
-  ]);
-
-  const products = ref([
-    {
-      id: 1,
-      name: 'X-Bacon',
-      description: 'Hambúrguer com muito bacon crocante.',
-      image: null,
-      categoryId: 1,
-      isAvailable: true,
-      deletedAt: null,
-      productVariations: [
-        { name: 'Padrão', price: 25.00 },
-        { name: 'Grande', price: 30.00 }
-      ],
-      addons: [
-        { name: 'Bacon Extra', price: 5.00 }
-      ]
-    }
-  ]);
-
-  const activeCategories = computed(() => 
-    categories.value.filter(c => !c.deletedAt)
+  const activeCategories = computed(() =>
+    categories.value.filter((c) => !c.deletedAt),
   );
 
-  const activeProducts = computed(() => 
-    products.value.filter(p => !p.deletedAt)
+  const activeProducts = computed(() =>
+    products.value.filter((p) => !p.deletedAt),
   );
 
-  const deletedCategories = computed(() => 
-    categories.value.filter(c => c.deletedAt)
+  const deletedCategories = computed(() =>
+    categories.value.filter((c) => c.deletedAt),
   );
 
-  const deletedProducts = computed(() => 
-    products.value.filter(p => p.deletedAt)
+  const deletedProducts = computed(() =>
+    products.value.filter((p) => p.deletedAt),
   );
 
-  const toggleAvailability = (productId) => {
-    const product = products.value.find(p => p.id === productId);
-    if (product) {
-      product.isAvailable = !product.isAvailable;
+  const mapCategory = (c) => ({
+    id: c.id,
+    name: c.name,
+    image: c.image || null,
+    deletedAt: c.deletedAt,
+  });
+
+  const mapProduct = (p) => ({
+    id: p.id,
+    name: p.name,
+    description: p.description || "",
+    image: p.image || null,
+    price: Number(p.basePrice || 0),
+    available: p.status === "Ativo",
+    categoryId: p.category?.id,
+    deletedAt: p.deletedAt,
+    sizes:
+      p.productVariations?.map((v) => ({
+        name: v.name,
+        price: Number(v.addPrice),
+      })) || [],
+  });
+
+  const loadData = async () => {
+    try {
+      const [catActive, catDeleted, prodActive, prodDeleted] =
+        await Promise.all([
+          categoryApi.list(),
+          categoryApi.listDeleted(),
+          productApi.list(),
+          productApi.listDeleted(),
+        ]);
+
+      categories.value = [...catActive, ...catDeleted].map(mapCategory);
+      products.value = [...prodActive, ...prodDeleted].map(mapProduct);
+    } catch (error) {
+      console.error(
+        "Erro ao sincronizar cardápio com o banco de dados:",
+        error,
+      );
     }
   };
 
-  const addCategory = (category) => {
-    categories.value.push({ 
-      ...category, 
-      id: Date.now(),
-      deletedAt: null 
-    });
+  const addCategory = async (category) => {
+    const payload = {
+      name: category.name,
+      image: category.image,
+    };
+    await categoryApi.create(payload);
+    await loadData();
   };
 
-  const updateCategory = (updatedCategory) => {
-    const index = categories.value.findIndex(c => c.id === updatedCategory.id);
-    if (index !== -1) {
-      categories.value[index] = {
-        ...categories.value[index],
-        ...updatedCategory,
-        deletedAt: categories.value[index].deletedAt
+  const updateCategory = async (updatedCategory) => {
+    const payload = {
+      name: updatedCategory.name,
+      image: updatedCategory.image,
+    };
+    await categoryApi.update(updatedCategory.id, payload);
+    await loadData();
+  };
+
+  const softDeleteCategory = async (id) => {
+    const hasActiveProducts = products.value.some(
+      (p) => String(p.categoryId) === String(id) && !p.deletedAt,
+    );
+
+    if (hasActiveProducts) {
+      return {
+        success: false,
+        message:
+          "Esta categoria possui produtos ativos. Arquive ou mova os produtos primeiro.",
       };
     }
-  };
 
-  const softDeleteCategory = (id) => {
-    const hasActiveProducts = products.value.some(
-      p => p.categoryId === id && !p.deletedAt
-    );
-    
-    if (hasActiveProducts) {
-      return { success: false, message: 'Esta categoria possui produtos ativos. Arquivar ou mova os produtos primeiro.' };
-    }
-    
-    const category = categories.value.find(c => c.id === id);
-    if (category) {
-      category.deletedAt = new Date().toISOString();
-    }
+    await categoryApi.delete(id);
+    await loadData();
     return { success: true };
   };
 
-  const restoreCategory = (id) => {
-    const category = categories.value.find(c => c.id === id);
-    if (category) {
-      category.deletedAt = null;
-    }
+  const restoreCategory = async (id) => {
+    await categoryApi.restore(id);
+    await loadData();
   };
 
   const permanentlyDeleteCategory = (id) => {
-    categories.value = categories.value.filter(c => c.id !== id);
-    products.value = products.value.filter(p => p.categoryId !== id);
+    categories.value = categories.value.filter((c) => c.id !== id);
   };
 
-  const addProduct = (product) => {
-    products.value.push({ 
-      ...product, 
-      id: Date.now(),
-      deletedAt: null 
-    });
+  const addProduct = async (productData) => {
+    const payload = {
+      product: {
+        name: productData.name,
+        description: productData.description,
+        basePrice: productData.price,
+        categoryId: productData.categoryId,
+        image: productData.image,
+        status: productData.available ? "Ativo" : "Inativo",
+        estocavel: false,
+      },
+      productVariations: productData.sizes.map((s) => ({
+        name: s.name,
+        addPrice: s.price,
+        status: "Ativo",
+      })),
+    };
+
+    await productApi.create(payload);
+    await loadData();
   };
 
-  const updateProduct = (updatedProduct) => {
-    const index = products.value.findIndex(p => p.id === updatedProduct.id);
-    if (index !== -1) {
-      products.value[index] = {
-        ...products.value[index],
-        ...updatedProduct,
-        deletedAt: products.value[index].deletedAt
-      };
-    }
+  const updateProduct = async (updatedProduct) => {
+    await productApi.update(updatedProduct.id, updatedProduct);
+    await loadData();
   };
 
-  const softDeleteProduct = (id) => {
-    const product = products.value.find(p => p.id === id);
-    if (product) {
-      product.deletedAt = new Date().toISOString();
-    }
+  const softDeleteProduct = async (id) => {
+    await productApi.delete(id);
+    await loadData();
   };
 
-  const restoreProduct = (id) => {
-    const product = products.value.find(p => p.id === id);
-    if (product) {
-      product.deletedAt = null;
-    }
+  const restoreProduct = async (id) => {
+    await productApi.restore(id);
+    await loadData();
   };
 
   const permanentlyDeleteProduct = (id) => {
-    products.value = products.value.filter(p => p.id !== id);
+    products.value = products.value.filter((p) => p.id !== id);
+  };
+
+  const toggleAvailability = async (productId) => {
+    const product = products.value.find((p) => p.id === productId);
+    if (product) {
+      const newStatus = !product.available;
+      await productApi.update(productId, { available: newStatus });
+      await loadData();
+    }
   };
 
   const getCategoryName = (id) => {
-    const cat = categories.value.find(c => c.id === id);
-    return cat ? cat.name : 'Sem categoria';
+    const cat = categories.value.find((c) => String(c.id) === String(id));
+    return cat ? cat.name : "Sem categoria";
   };
 
   return {
@@ -149,6 +173,7 @@ export const useMenuStore = defineStore('menu', () => {
     activeProducts,
     deletedCategories,
     deletedProducts,
+    loadData,
     addCategory,
     updateCategory,
     softDeleteCategory,
@@ -160,6 +185,6 @@ export const useMenuStore = defineStore('menu', () => {
     restoreProduct,
     permanentlyDeleteProduct,
     getCategoryName,
-    toggleAvailability
+    toggleAvailability,
   };
 });

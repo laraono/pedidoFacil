@@ -30,7 +30,7 @@ export class Product {
     description?: string
 
     @Column({
-        type: 'varchar',
+        type: 'longtext',
         name: 'Imagem',
         nullable: true,
     })
@@ -53,19 +53,14 @@ export class Product {
     basePrice: number
 
     @Column({
-        type: 'varchar',
+        type: 'enum',
+        enum: ['Ativo', 'Inativo'],
         name: 'Status',
         nullable: false,
-        length: 30,
+        default: 'Ativo',
         default: ProductStatus.ATIVO
     })
-    status: ProductStatus
-
-    @CreateDateColumn({ 
-        type: "timestamp", 
-        default: () => "CURRENT_TIMESTAMP(6)"
-     })
-    created_at: Date;
+    status: ProductStatus | string
 
     @DeleteDateColumn({
         name: 'Data_Exclusao',

@@ -1,50 +1,60 @@
-import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { defineStore } from "pinia";
+import { ref } from "vue";
+import { couponApi } from "@/services/couponApi";
 
-const STORAGE_KEY = 'pedidofacil_coupons';
+export const useCouponStore = defineStore("coupons", () => {
+  const coupons = ref([]);
 
-const SEED = [
-  { id: 1, code: 'BEMVINDO10', description: 'Cupom de boas-vindas', type: 'percent', value: 10, expiresAt: null, active: true },
-  { id: 2, code: 'FIDELIDADE15', description: 'Clientes fiéis', type: 'percent', value: 15, expiresAt: null, active: true },
-  { id: 3, code: 'DESC5REAIS', description: 'Desconto fixo', type: 'fixed', value: 5, expiresAt: '2026-12-31', active: true },
-];
+  const mapCouponToFront = (c) => ({
+    id: c.id,
+    code: c.code,
+    description: "",
+    type: c.type === "Percentual" ? "percent" : "fixed",
+    value: Number(c.value),
+    expiresAt: c.expirationDate ? c.expirationDate.split("T")[0] : "",
+    active: true,
+  });
 
-const load = () => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
-  } catch { /* ignore */ }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED));
-  return SEED;
-};
-
-const save = (list) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-};
-
-export const useCouponStore = defineStore('coupons', () => {
-  const coupons = ref(load());
-
-  const addCoupon = (coupon) => {
-    coupons.value.push({ ...coupon, id: Date.now() });
-    save(coupons.value);
+  const mapCouponToBack = (payload) => {
+    return {
+      code: payload.code,
+      type: payload.type === "percent" ? "Percentual" : "Valor",
+      value: Number(payload.value),
+      expirationDate: payload.expiresAt || null, // Envia a string YYYY-MM-DD direta do input
+    };
   };
 
-  const updateCoupon = (updated) => {
-    const idx = coupons.value.findIndex(c => c.id === updated.id);
-    if (idx !== -1) { coupons.value[idx] = { ...updated }; save(coupons.value); }
+  const loadData = async () => {
+    try {
+      const data = await couponApi.list();
+      coupons.value = data.map(mapCouponToFront);
+    } catch (error) {
+      console.error("Erro ao carregar cupons:", error);
+    }
   };
 
-  const removeCoupon = (id) => {
-    coupons.value = coupons.value.filter(c => c.id !== id);
-    save(coupons.value);
+  const addCoupon = async (payload) => {
+    const backendPayload = mapCouponToBack(payload);
+    await couponApi.create(backendPayload);
+    await loadData();
   };
 
-  const findByCode = (code) => {
-    return coupons.value.find(
-      c => c.code.trim().toUpperCase() === code.trim().toUpperCase() && c.active !== false
-    );
+  const updateCoupon = async (payload) => {
+    const backendPayload = mapCouponToBack(payload);
+    await couponApi.update(payload.id, backendPayload);
+    await loadData();
   };
 
-  return { coupons, addCoupon, updateCoupon, removeCoupon, findByCode };
+  const removeCoupon = async (id) => {
+    await couponApi.delete(id);
+    await loadData();
+  };
+
+  return {
+    coupons,
+    loadData,
+    addCoupon,
+    updateCoupon,
+    removeCoupon,
+  };
 });

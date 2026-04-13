@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import express, { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { CategoryStatus } from '../../enum';
 

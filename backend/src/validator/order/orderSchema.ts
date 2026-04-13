@@ -1,6 +1,5 @@
 import { z } from 'zod';
-import express, { Request, Response, NextFunction } from 'express';
-import { ZodError } from 'zod';
+import { Request, Response, NextFunction } from 'express';
 import { OrderStatus, ServiceType } from '../../enum';
 import { establishmentRepository } from '../../repository';
 
@@ -18,7 +17,7 @@ const createOrderchema = z.object({
             productId: z.coerce.number().int().positive(),
             quantity: z.coerce.number().int().positive(),
             productVariationId: z.coerce.number().int().positive().optional(),
-            observation: z.string().optional()
+            observation: z.string().optional().nullable()
         }).array()
     })
     

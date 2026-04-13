@@ -21,6 +21,10 @@ export class CategoryService {
         this.productRepository = productRepository
     }
 
+    /**
+     * Cria uma nova categoria. 
+     * Certifique-se de que o DTO CreateCategory agora aceite o campo 'image'.
+     */
     async createCategory(category: CreateCategory) {
 
         const establishment = await this.establishmentRepository.getEstablishment(category.establishmentId)

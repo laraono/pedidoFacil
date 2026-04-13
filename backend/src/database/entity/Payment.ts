@@ -1,24 +1,34 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, DeleteDateColumn, CreateDateColumn, JoinColumn } from "typeorm"
-import { ProductVariation } from "./ProductVariation"
-import { Category } from "./Category"
-import { ProductOrder } from "./ProductOrder"
-import { ProductStatus } from "../../enum"
+import { 
+    Entity, 
+    PrimaryGeneratedColumn, 
+    Column, 
+    OneToMany, 
+    ManyToOne, 
+    DeleteDateColumn, 
+    CreateDateColumn, 
+    JoinColumn 
+} from "typeorm"
 import { Establishment } from "./Establishment"
 import { User } from "./User"
 import { PaymentOrder } from "./PaymentOrder"
 
-@Entity({name: 'PAGAMENTO'})
+// Enum específico para pagamentos (mais profissional para o TCC)
+export enum PaymentStatus {
+    PENDING = 'Pendente',
+    PAID = 'Aprovado',
+    CANCELED = 'Cancelado',
+    REFUNDED = 'Estornado'
+}
+
+@Entity({ name: 'PAGAMENTO' })
 export class Payment {
 
-    @PrimaryGeneratedColumn({
-        name: 'ID_Pagamento'
-    })
+    @PrimaryGeneratedColumn({ name: 'ID_Pagamento' })
     id: number
 
     @Column({
         type: 'varchar',
         name: 'Forma_Pagamento',
-        nullable: false,
         length: 50
     })
     paymentType: string
@@ -28,52 +38,55 @@ export class Payment {
         type: "decimal",
         precision: 10,
         scale: 2,
-        nullable: false
+        default: 0.00
     })
-    total: number
+    totalValue: number
 
     @Column({
         name: 'Valor_Taxa_Servico',
         type: "decimal",
         precision: 10,
         scale: 2,
-        nullable: true
+        default: 0.00
     })
-    serviceTAx: number
+    serviceTax: number // Corrigido o typo 'TAx'
 
     @Column({
         name: 'Troco',
         type: "decimal",
         precision: 10,
         scale: 2,
-        nullable: true
+        default: 0.00
     })
     change: number
 
+    @Column({
+        type: 'enum',
+        enum: PaymentStatus,
+        name: 'Status',
+        default: PaymentStatus.PAID
+    })
+    status: PaymentStatus
+
     @CreateDateColumn({ 
         type: "datetime", 
-        default: () => "CURRENT_TIMESTAMP(6)",
         name: 'Data_Hora_Pagamento'
-     })
-    created_at: Date;
+    })
+    createdAt: Date
 
     @DeleteDateColumn({
-        name: 'deleted_at',
+        name: 'Data_Exclusao', // Sincronizado com o DDL
         type: 'datetime',
         nullable: true
     })
     deletedAt?: Date
 
-    @ManyToOne(() => Establishment, (establishment) => establishment.payments)
-    @JoinColumn({
-        name: 'ID_Estabelecimento'
-    })
+    @ManyToOne(() => Establishment)
+    @JoinColumn({ name: 'ID_Estabelecimento' })
     establishment: Establishment
 
-    @ManyToOne(() => User, (user) => user.payments)
-    @JoinColumn({
-        name: 'ID_Caixa'
-    })
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'ID_Usuario_Caixa' }) 
     user: User
 
     @OneToMany(() => PaymentOrder, (paymentOrder) => paymentOrder.payment)
