@@ -21,7 +21,7 @@ export type ProductOrderParams = {
     quantity: number,
     price: number,
     product: Product,
-    productVariation?: ProductVariation,
+    productVariation?: ProductVariation | null,
 }
 
 export type ProductVariationOrderParams = {

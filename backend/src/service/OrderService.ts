@@ -7,14 +7,16 @@ import {
   ProductVariation,
   ProductVariationOrder,
 } from '../database';
-import { CreateOrder, ItensArray, ProductOrderParams } from '../dto';
-import { OrderStatus } from '../enum';
+import { CancelOrder, CreateOrder, ItensArray, ProductOrderParams } from '../dto';
+import { OrderStatus, ServiceType } from '../enum';
 import { AppError } from '../middleware';
 import {
+    EstablishmentRepository,
   OrderRepository,
   ProductOrderRepository,
   ProductVariationOrderRepository,
   ProductVariationRepository,
+  UserRepository,
 } from '../repository';
 import { ComandaService } from './ComandaService';
 import { ProductService } from './ProductService';
@@ -63,11 +65,11 @@ export class OrderService {
                 serviceType: ServiceType.AUTOATENDIMENTO
             });
 
-      await this.saveItens(createOrder.itens, order, manager);
+            await this.saveItens(createOrder.itens, order, transactionalEntityManager);
 
-      return order;
-    });
-  }
+            return order;
+        });
+    }
 
     async listOrders({establishmentId}: {establishmentId: number}) {
         const orders = await this.orderRepository.listOrders(establishmentId)
@@ -108,29 +110,31 @@ export class OrderService {
         })
     }
 
-    async saveItens(
+   async saveItens(
         itens: ItensArray[], 
         order: Order, 
         manager: EntityManager 
     ) {
         let total = 0;
 
-    for (const iten of itens) {
-      const validated = await this.validateItens(iten, manager);
+        for (const iten of itens) {
+            const validatedProduct = await this.validateItens(iten, manager);
 
-      const basePrice = Number(validated.product.basePrice);
-      const addPrice = validated.productVariation ? Number(validated.productVariation.addPrice) : 0;
-      const finalPrice = basePrice + addPrice;
+            const value1 = Number(validatedProduct.product.basePrice);
+            const value2 = validatedProduct.productVariation 
+                ? Number(validatedProduct.productVariation.addPrice) 
+                : 0;
 
-      totalAcumulado += (finalPrice * iten.quantity);
+            const price = value1 + value2;
+            total += price;
 
-      const productOrder = await manager.save(ProductOrder, {
-        orderId: order.id, 
-        productId: validated.product.id,
-        observation: iten.observation || '',
-        quantity: iten.quantity,
-        price: finalPrice
-      });
+            const productOrder: ProductOrderParams = {
+                ...validatedProduct,
+                order,
+                observation: iten.observation,
+                quantity: iten.quantity,
+                price
+            };
 
             const newProductOrder = await manager.save(ProductOrder, productOrder);
 
@@ -143,11 +147,9 @@ export class OrderService {
                 });
             }
         }
-      }
-    }
 
-    await this.comandaService.updateComandaTotalTransaction(order.comanda, totalAcumulado, manager);
-  }
+        await this.comandaService.updateComandaTotalTransaction(order.comanda, total, manager);
+    }
 
     async validateItens(itens: ItensArray, manager: EntityManager) {
 
@@ -168,5 +170,8 @@ export class OrderService {
             productVariation
         };
     }
-    
+
+    async getOrder(orderId: number) {
+        return await this.orderRepository.getOrder(orderId)
+    }
 } 

@@ -59,6 +59,53 @@ export class OrderRepository extends Repository<Order>{
     
     }
 
+    async getOrder(orderId: number) {
+        return await this.findOne({
+            where: {
+                id: orderId
+            },
+            relations: {
+                productOrders: {
+                    product: true,
+                    productVariationOrder: {
+                        productVariation: true
+                    }
+                },
+                comanda: true
+            },
+            order: {
+                created_at: 'ASC'
+            },
+            select: {
+                id: true,
+                observation: true,
+                created_at: true,
+                status: true,
+                comanda: {
+                    id: true,
+                    description: true
+                },
+                productOrders: {
+                    id: true,
+                    quantity: true,
+                    observation: true,
+                    product: {
+                        id: true,
+                        name: true
+                    },
+                    productVariationOrder: {
+                        orderId: true,
+                        productVariationId: true,
+                        productVariation: {
+                            id: true,
+                            name: true
+                        }
+                    }
+                }
+            }
+        })
+    }
+
     async listOrdersByComanda(comandaId: number) {
         return await this.find({
             where: {

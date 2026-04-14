@@ -63,8 +63,8 @@ export class ProductService {
         return createdProduct.id
     }
 
-    async listProducts({establishmentId}:{establishmentId: number}) {
-        const products = await this.productRepository.listProducts(establishmentId)
+    async listProducts(establishmentId: number, status: ProductStatus) {
+        const products = await this.productRepository.listProducts(establishmentId, status)
 
         const establishment = await this.establishmentRepository.getEstablishment(establishmentId)
     
@@ -125,7 +125,7 @@ export class ProductService {
             throw new AppError("Estabelecimento não encontrado", 400)
         }
 
-        if(product.productVariations.length > 0 && params.productVariations.length === 0) {
+        if(product.productVariations && product.productVariations.length > 0 && params.productVariations.length === 0) {
             await this.deleteProductVariations(product)
         }
 
@@ -141,7 +141,7 @@ export class ProductService {
 
         const category = await this.categoryService.getCategory(params.product.categoryId)
 
-        if(!product) {
+        if(!category) {
             throw new AppError('Categoria não existe', 400)
         }
 
@@ -182,6 +182,8 @@ export class ProductService {
     }
 
     async deleteProductVariations(product: Product) {
+        if(!product.productVariations) return
+        
         product.productVariations.forEach(async (variation) => {
             await this.productVariationRepository.deleteProductVariation(variation.id)
         })
@@ -219,7 +221,7 @@ export class ProductService {
             return imageKey
 
         } catch(error) {
-            throw new AppError(`Erro ao salvar imagem: ${error.message}`, 500)
+            throw new AppError(`Erro ao salvar imagem: ${error}`, 500)
         }
     }
 }

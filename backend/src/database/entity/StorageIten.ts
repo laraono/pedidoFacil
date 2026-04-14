@@ -10,7 +10,7 @@ export class StorageIten {
     @PrimaryGeneratedColumn({
         name: 'ID_Estoque_Item'
     })
-    id: number
+    id!: number
 
     @Column({
         type: 'varchar',
@@ -18,21 +18,21 @@ export class StorageIten {
         nullable: false,
         length: 50
     })
-    name: string
+    name!: string
 
     @Column({
         type: 'varchar',
         name: 'Unidade_Medida',
         nullable: false,
     })
-    unitity: string
+    unitity!: string
 
     @Column({
         type: 'int',
         name: 'Quantidade_Atual',
         nullable: false,
     })
-    quantity: number
+    quantity!: number
 
     @DeleteDateColumn({
         name: 'Data_Exclusao',
@@ -42,12 +42,12 @@ export class StorageIten {
     deletedAt?: Date
 
     @OneToMany(() => StorageMovimentation, (movimentation) => movimentation.storageIten)
-    movimentations: StorageMovimentation[]
+    movimentations?: StorageMovimentation[]
 
     @OneToOne(() => Product)
     @JoinColumn({
         name: 'ID_Produto'
     })
-    product: Product
+    product?: Product
 
 }

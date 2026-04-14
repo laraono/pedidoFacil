@@ -13,32 +13,25 @@ import { CategoryStatus } from "../../enum"
 
 @Entity({ name: 'CATEGORIA' })
 export class Category {
-  @PrimaryGeneratedColumn({
-    name: 'ID_Categoria',
-  })
-  id: number;
-
-  @Column({
-    type: 'varchar',
-    name: 'Nome',
-    nullable: false,
-    length: 50,
-  })
-  name: string;
-
-  @Column({
-    type: 'longtext',
-    name: 'Imagem',
-    nullable: true,
-  })
-  image?: string;
+    @PrimaryGeneratedColumn({
+        name: 'ID_Categoria',
+    })
+    id!: number;
 
     @Column({
         type: 'varchar',
-        name: 'Imagem',
-        nullable: true
+        name: 'Nome',
+        nullable: false,
+        length: 50,
     })
-    image?: string
+    name!: string;
+
+    @Column({
+        type: 'longtext',
+        name: 'Imagem',
+        nullable: true,
+    })
+    image?: string;
 
     @Column({
         type: 'varchar',
@@ -47,21 +40,21 @@ export class Category {
         length: 30,
         default: CategoryStatus.ATIVA
     })
-    status: CategoryStatus
+    status!: CategoryStatus
 
-  @DeleteDateColumn({
-    name: 'Data_Exclusao',
-    type: 'datetime',
-    nullable: true,
-  })
-  deletedAt?: Date;
+    @DeleteDateColumn({
+        name: 'Data_Exclusao',
+        type: 'datetime',
+        nullable: true,
+    })
+    deletedAt?: Date;
 
-  @OneToMany(() => Product, (product) => product.category)
-  products: Product[];
+    @OneToMany(() => Product, (product) => product.category)
+    products?: Product[];
 
-  @ManyToOne(() => Establishment, (establishment) => establishment.categories)
-  @JoinColumn({
-    name: 'ID_Estabelecimento',
-  })
-  establishment: Establishment;
+    @ManyToOne(() => Establishment, (establishment) => establishment.categories)
+    @JoinColumn({
+        name: 'ID_Estabelecimento',
+    })
+    establishment?: Establishment;
 }

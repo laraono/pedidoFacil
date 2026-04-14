@@ -1,28 +1,23 @@
-import { EntityManager } from "typeorm";
+import { DataSource, EntityManager } from "typeorm";
 import { Comanda } from "../database";
 import { CancelComanda, CreateComanda } from "../dto";
 import { ComandaStatus, OrderStatus } from "../enum";
 import { AppError } from "../middleware";
 import { ComandaRepository, EstablishmentRepository, OrderRepository, UserRepository } from "../repository";
+import { PaymentService } from "./PaymentService";
+import { ReceiptService } from "./ReceiptService";
 
 export class ComandaService {
 
-    private comandaRepository: ComandaRepository
-    private establishmentRepository: EstablishmentRepository
-    private orderRepository: OrderRepository
-    private userRepository: UserRepository
-
     constructor(
-        comandaRepository: ComandaRepository, 
-        establishmentRepository: EstablishmentRepository,
-        orderRepository: OrderRepository,
-        userRepository: UserRepository
-    ) {
-        this.comandaRepository = comandaRepository
-        this.establishmentRepository = establishmentRepository
-        this.orderRepository = orderRepository
-        this.userRepository = userRepository
-    }
+        private dataSource: DataSource,
+        private paymentService: PaymentService,
+        private receiptService: ReceiptService,
+        private comandaRepository: ComandaRepository,
+        private establishmentRepository: EstablishmentRepository,
+        private orderRepository: OrderRepository,
+        private userRepository: UserRepository
+    ) {}
 
     async createComanda(comanda: CreateComanda) {
 
@@ -111,6 +106,10 @@ export class ComandaService {
 
         const comanda = await this.comandaRepository.getComanda(params.comandaId)
 
+        if(!comanda) {
+            throw new AppError('Comanda não encontrada', 404)
+        }
+
         comanda.orders.forEach(async (order) => {
             await this.orderRepository.cancelOrder(
                 order.id, 
@@ -121,5 +120,80 @@ export class ComandaService {
                 }
             )
         })
+    }
+
+    async checkoutComanda(
+        comandaId: number,
+        userId: number,
+        establishmentId: number,
+        checkoutData: any,
+    ) {
+        let firstPaymentId: number | null = null;
+
+        const result = await this.dataSource.transaction(async (manager) => {
+        const comanda = await manager.findOne(Comanda, {
+            where: { id: comandaId, establishment: { id: establishmentId } },
+            relations: ['pedidos'],
+        });
+
+        if (!comanda) throw new AppError('Comanda não encontrada.', 404);
+        if (comanda.status === ComandaStatus.FECHADA)
+            throw new AppError('Esta comanda já está fechada.', 400);
+
+        const pedidos = comanda.orders || [];
+        const validOrders = pedidos.filter(
+            (p) => p.status !== OrderStatus.CANCELADO,
+        );
+
+        comanda.discountType = checkoutData.discountType || null;
+        comanda.discountValue = checkoutData.discountValue || 0;
+        comanda.total = checkoutData.totalValue;
+        comanda.status = ComandaStatus.FECHADA;
+
+        await manager.save(Comanda, comanda);
+
+        const paymentsArray = Array.isArray(checkoutData.payments)
+            ? checkoutData.payments
+            : [{ type: checkoutData.paymentType, amount: checkoutData.totalValue }];
+
+        const registeredPayments =
+            await this.paymentService.processCheckoutPayments(
+            comandaId,
+            validOrders,
+            paymentsArray,
+            checkoutData.change || 0,
+            establishmentId,
+            userId,
+            manager,
+            );
+
+        if (registeredPayments.length > 0) {
+            firstPaymentId = registeredPayments[0].id;
+        }
+
+        return {
+            success: true,
+            message: 'Comanda finalizada com sucesso.',
+            comanda,
+            payments: registeredPayments,
+        };
+        });
+
+        if (firstPaymentId) {
+        try {
+            await this.receiptService.generateReceipt(
+            firstPaymentId,
+            establishmentId,
+            checkoutData.cpfcnpj || null,
+            );
+        } catch (error: any) {
+            console.error(
+            '⚠️ [ComandaService] Erro ao gerar Nota Fiscal:',
+            error.message,
+            );
+        }
+        }
+
+        return result;
     }
 }

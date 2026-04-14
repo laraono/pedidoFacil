@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { CategoryStatus } from '../../enum';
+import { AppError } from '../../middleware';
 
 const fileSizeLimit = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_MIME_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
@@ -50,8 +51,12 @@ const deleteCategorySchema = z.object({
 })
 
 export const validateCreateCategory = 
-    (req, res: Response, next: NextFunction) => {
+    (req: Request, res: Response, next: NextFunction) => {
         try {
+            if(!req.usuario) {
+                throw new AppError('unauthorized', 401)
+            }
+
             const {image, ...body} = createCategorySchema.parse({
                 name: req.body.name, 
                 image: req.file,
@@ -71,8 +76,12 @@ export const validateCreateCategory =
     };
 
 export const validateListCategories = 
-    (req, res: Response, next: NextFunction) => {
+    (req: Request, res: Response, next: NextFunction) => {
         try {
+            if(!req.usuario) {
+                throw new AppError('unauthorized', 401)
+            }
+
             const establishmentId = listCategoriesSchema.parse({establishmentId: req.usuario.estabelecimento})
 
             req.body = establishmentId

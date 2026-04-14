@@ -1,5 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, PrimaryColumn, JoinColumn, CreateDateColumn, DeleteDateColumn, ManyToOne, OneToOne } from "typeorm"
-import { ProductVariation } from "./ProductVariation"
+import { Entity, PrimaryGeneratedColumn, Column,  JoinColumn, CreateDateColumn, DeleteDateColumn, ManyToOne, OneToOne } from "typeorm"
 import { Product } from "./Product"
 import { Order } from "./Order"
 import { ProductVariationOrder } from "./ProductVariationOrder"
@@ -10,7 +9,7 @@ export class ProductOrder {
     @PrimaryGeneratedColumn({
         name: "ID_Item_Pedido"
     })
-    id: number
+    id!: number
 
     @Column({
         type: 'varchar',
@@ -24,7 +23,7 @@ export class ProductOrder {
         name: 'Quantidade',
         nullable: false
     })
-    quantity: number
+    quantity!: number
 
     @Column({
         name: 'Preco_Unitario_Momento',
@@ -33,13 +32,13 @@ export class ProductOrder {
         scale: 2,
         nullable: false
     })
-    price: number
+    price!: number
 
     @CreateDateColumn({ 
         type: "timestamp", 
         default: () => "CURRENT_TIMESTAMP(6)"
         })
-    created_at: Date;
+    createdAt!: Date;
 
     @DeleteDateColumn({
         name: 'deleted_at',
@@ -50,13 +49,13 @@ export class ProductOrder {
 
     @ManyToOne(() => Product, (product) => product.productOrders)
     @JoinColumn({name: 'ID_Produto'})
-    product: Product
+    product?: Product
 
     @ManyToOne(() => Order, (category) => category.productOrders)
     @JoinColumn({name: 'ID_Pedido'})
-    order: Order
+    order?: Order
 
     @OneToOne(() => ProductVariationOrder, (pvo) => pvo.order) // Add the inverse side here
-    productVariationOrder: ProductVariationOrder; // Recommended: fix the spelling to "Variation"
+    productVariationOrder?: ProductVariationOrder; // Recommended: fix the spelling to "Variation"
 
 }

@@ -24,14 +24,14 @@ export enum PaymentStatus {
 export class Payment {
 
     @PrimaryGeneratedColumn({ name: 'ID_Pagamento' })
-    id: number
+    id!: number
 
     @Column({
         type: 'varchar',
         name: 'Forma_Pagamento',
         length: 50
     })
-    paymentType: string
+    paymentType!: string
 
     @Column({
         name: 'Valor_Total',
@@ -40,25 +40,27 @@ export class Payment {
         scale: 2,
         default: 0.00
     })
-    totalValue: number
+    totalValue!: number
 
     @Column({
         name: 'Valor_Taxa_Servico',
         type: "decimal",
         precision: 10,
         scale: 2,
-        default: 0.00
+        default: 0.00,
+        nullable: true
     })
-    serviceTax: number // Corrigido o typo 'TAx'
+    serviceTax?: number // Corrigido o typo 'TAx'
 
     @Column({
         name: 'Troco',
         type: "decimal",
         precision: 10,
         scale: 2,
-        default: 0.00
+        default: 0.00,
+        nullable: true
     })
-    change: number
+    change?: number
 
     @Column({
         type: 'enum',
@@ -66,13 +68,13 @@ export class Payment {
         name: 'Status',
         default: PaymentStatus.PAID
     })
-    status: PaymentStatus
+    status!: PaymentStatus
 
     @CreateDateColumn({ 
         type: "datetime", 
         name: 'Data_Hora_Pagamento'
     })
-    createdAt: Date
+    createdAt?: Date
 
     @DeleteDateColumn({
         name: 'Data_Exclusao', // Sincronizado com o DDL
@@ -83,12 +85,12 @@ export class Payment {
 
     @ManyToOne(() => Establishment)
     @JoinColumn({ name: 'ID_Estabelecimento' })
-    establishment: Establishment
+    establishment?: Establishment
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'ID_Usuario_Caixa' }) 
-    user: User
+    user?: User
 
     @OneToMany(() => PaymentOrder, (paymentOrder) => paymentOrder.payment)
-    paymentOrders: PaymentOrder[]
+    paymentOrders?: PaymentOrder[]
 }

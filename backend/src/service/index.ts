@@ -30,7 +30,7 @@ import { MenuService } from './MenuService';
 import { PaymentService } from './PaymentService';
 
 const authService = new AuthService(AppDataSource, userRepository);
-const categoryService = new CategoryService(categoryRepository);
+const categoryService = new CategoryService(categoryRepository, establishmentRepository, productRepository);
 
 const metricsService = new MetricsService(receiptRepository, AppDataSource);
 
@@ -39,20 +39,26 @@ const paymentService = new PaymentService(AppDataSource);
 
 const comandaService = new ComandaService(
     AppDataSource, 
+    paymentService,
+    receiptService,
     comandaRepository, 
-    paymentService, 
-    receiptService
+    establishmentRepository,
+    orderRepository,
+    userRepository
 );
 
 const productService = new ProductService(
-  categoryService,
-  productRepository,
-  productVariationRepository,
+    categoryService,
+    establishmentRepository,
+    productRepository,
+    productVariationRepository
 );
 const orderService = new OrderService(
-  AppDataSource,
-  orderRepository,
-  comandaService,
+    AppDataSource,
+    establishmentRepository,
+    orderRepository,
+    userRepository,
+    comandaService,
 );
 const couponService = new CouponService(couponRepository);
 const roleService = new RoleService(roleRepository, userRepository);

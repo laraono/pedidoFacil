@@ -11,7 +11,6 @@ import { RefreshTokenRepository } from './RefreshTokenRepository';
 import { RoleRepository } from './RoleRepository';
 import { UserRepository } from './UserRepository';
 import { CouponRepository } from './CouponRepository';
-import { EstablishmentRepository } from './EstablishmentRepository';
 import { ConfigurationRepository } from './ConfigurationRepository';
 import { ReceiptRepository } from './ReceiptRepository';
 import { PaymentRepository } from './PaymentRepository'; 
@@ -32,33 +31,31 @@ const refreshTokenRepository = new RefreshTokenRepository(AppDataSource);
 const roleRepository = new RoleRepository(AppDataSource);
 const userRepository = new UserRepository(AppDataSource);
 const couponRepository = new CouponRepository(AppDataSource);
-const establishmentRepository = new EstablishmentRepository(AppDataSource);
 const configurationRepository = new ConfigurationRepository(AppDataSource);
 const receiptRepository = new ReceiptRepository(AppDataSource);
 const paymentRepository = new PaymentRepository(AppDataSource); 
 
 export {
-  categoryRepository,
-  comandaRepository,
+    categoryRepository,
+    comandaRepository,
     establishmentRepository,
-  orderRepository,
-  productRepository,
-  productOrderRepository,
-  productVariationRepository,
-  productVariationOrderRepository,
-  refreshTokenRepository,
-  roleRepository,
-  userRepository,
-  couponRepository,
-  establishmentRepository,
-  configurationRepository,
-  receiptRepository, 
-  paymentRepository,
+    orderRepository,
+    productRepository,
+    productOrderRepository,
+    productVariationRepository,
+    productVariationOrderRepository,
+    refreshTokenRepository,
+    roleRepository,
+    userRepository,
+    couponRepository,
+    configurationRepository,
+    receiptRepository, 
+    paymentRepository,
 };
 
 export {
   CategoryRepository,
-  ComandaRepository, EstablishmentRepository,
+  ComandaRepository,
   OrderRepository,
   ProductRepository,
   ProductOrderRepository,

@@ -13,11 +13,12 @@ export class ProductRepository extends Repository<Product>{
         return await this.save(product)
     }
 
-    async listProducts(establishmentId: number) {
+    async listProducts(establishmentId: number, status: ProductStatus) {
         return await this.find({
             where: {
                 establishment: {
-                    id: establishmentId
+                    id: establishmentId,
+                    status
                 }
             },
             select: {
@@ -106,10 +107,6 @@ export class ProductRepository extends Repository<Product>{
         await this.softDelete(productId)
     }
 
-    async updateProductStatus(productId: number, status: ProductStatus) {
-        await this.update(productId, {status})
-    }
-
     async listDeletedProducts() {
         return await this.find({
             where: { 
@@ -121,10 +118,6 @@ export class ProductRepository extends Repository<Product>{
                 productVariations: true
             }
         });
-    }
-
-    async updateProduct(productId: number, data: Partial<Product>) {
-        await this.update(productId, data);
     }
 
     async softDeleteProduct(productId: number) {

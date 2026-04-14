@@ -24,7 +24,7 @@ export class OrderController {
                 establishmentId: usuario.estabelecimento 
             });
 
-            const fullOrder = await this.orderService.getOrderWithDetails(order.id);
+            const fullOrder = await this.orderService.getOrder(order.id);
             
             const mappedItems = fullOrder?.productOrders.map(po => ({
                 name: po.product?.name || po.product?.name || "Produto",
@@ -63,7 +63,7 @@ export class OrderController {
         res.sendStatus(204);
     }
 
-    async cancelOrder(req, res) {
+    async cancelOrder(req, res: Response) {
         const { comandaId} = req.params
         const { orderId } = req.params
 
@@ -78,7 +78,7 @@ export class OrderController {
         res.sendStatus(204);
     }
 
-    async listOrders(req, res) {
+    async listOrders(req, res: Response) {
         const orders = await this.orderService.listOrders(req.body)
 
         res.status(200).send(orders)

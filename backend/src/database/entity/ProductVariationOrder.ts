@@ -9,13 +9,13 @@ export class ProductVariationOrder {
         name: 'ID_Item_Pedido',
         type: 'int'
     })
-    orderId: number
+    orderId!: number
 
     @PrimaryColumn({
         name: 'ID_Variacao',
         type: 'int'
     })
-    productVariationId: number
+    productVariationId!: number
 
     @Column({
         name: 'Preco_Adicional_Momento',
@@ -24,13 +24,13 @@ export class ProductVariationOrder {
         scale: 2,
         nullable: false
     })
-    price: number
+    price!: number
 
     @CreateDateColumn({ 
         type: "timestamp", 
         default: () => "CURRENT_TIMESTAMP(6)"
         })
-    created_at: Date;
+    createdAt!: Date;
 
     @DeleteDateColumn({
         name: 'deleted_at',
@@ -41,10 +41,10 @@ export class ProductVariationOrder {
 
     @ManyToOne(() => ProductVariation, (productVariation) => productVariation.productVariationOrders)
     @JoinColumn({name: 'ID_Variacao'})
-    productVariation: ProductVariation
+    productVariation?: ProductVariation
 
     @OneToOne(() => ProductOrder, (po) => po.productVariationOrder) // Add the inverse side here
     @JoinColumn({ name: 'ID_Item_Pedido' })
-    order: ProductOrder;
+    order?: ProductOrder;
 
 }

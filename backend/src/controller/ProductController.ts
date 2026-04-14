@@ -1,6 +1,9 @@
 import { ProductService } from '../service';
 import { Request, Response } from 'express';
 import { getIO } from '../socket'; 
+import { ProductStatus } from '../enum';
+
+//Request<Params, ResBody, ReqBody, ReqQuery, Locals>
 
 export class ProductController {
   private productService: ProductService;
@@ -10,19 +13,24 @@ export class ProductController {
   }
 
     async createProduct(req: Request, res: Response) {
-        const productId = await this.productService.createProduct({...req.body, image: req.file.buffer})
+        const productId = await this.productService.createProduct({...req.body, image: req.file?.buffer})
 
-    getIO().emit('menu_updated'); 
-    res.status(201).json(productId);
-  }
-
-  async listProducts(req, res: Response) {
-    if (req.query.deleted === 'true') {
-      const products = await this.productService.listDeletedProducts(req.body);
-      return res.status(200).json(products);
+        getIO().emit('menu_updated'); 
+        res.status(201).json(productId);
     }
 
-    async listProductsByCategory(req, res: Response) {
+    async listProducts(req: Request, res: Response) {
+        if (req.query.deleted === 'true') {
+            const products = await this.productService.listProducts(req.body.establishmentId, ProductStatus.ARQUIVADO);
+            return res.status(200).json(products);
+        } else {
+            const products = await this.productService.listProducts(req.body.establishmentId, ProductStatus.ATIVO)
+
+            return res.status(200).send(products)
+        }
+    }
+
+    async listProductsByCategory(req: Request, res: Response) {
         const {categoryId, establishmentId} = req.body
 
         const products = await this.productService.listProductsByCategory(categoryId, establishmentId)
@@ -30,7 +38,7 @@ export class ProductController {
         res.status(200).send(products)
     }
 
-    async listActiveProductsByCategory(req, res: Response) {
+    async listActiveProductsByCategory(req: Request, res: Response) {
         const {categoryId, establishmentId} = req.body
 
         const products = await this.productService.listActiveProductsByCategory(categoryId, establishmentId)

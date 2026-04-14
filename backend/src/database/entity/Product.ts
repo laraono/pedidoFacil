@@ -11,7 +11,7 @@ export class Product {
     @PrimaryGeneratedColumn({
         name: 'ID_Produto'
     })
-    id: number
+    id!: number
 
     @Column({
         type: 'varchar',
@@ -19,7 +19,7 @@ export class Product {
         nullable: false,
         length: 50
     })
-    name: string
+    name!: string
 
     @Column({
         type: 'varchar',
@@ -41,7 +41,7 @@ export class Product {
         name: 'Estocavel',
         nullable: false
     })
-    estocavel: boolean
+    estocavel!: boolean
 
     @Column({
         name: 'Preco_Base',
@@ -50,7 +50,7 @@ export class Product {
         scale: 2,
         nullable: false
     })
-    basePrice: number
+    basePrice!: number
 
     @Column({
         type: 'enum',
@@ -58,9 +58,8 @@ export class Product {
         name: 'Status',
         nullable: false,
         default: 'Ativo',
-        default: ProductStatus.ATIVO
     })
-    status: ProductStatus | string
+    status!: ProductStatus
 
     @DeleteDateColumn({
         name: 'Data_Exclusao',
@@ -70,21 +69,21 @@ export class Product {
     deletedAt?: Date
 
     @OneToMany(() => ProductOrder, (productOrders) => productOrders.product)
-    productOrders: ProductOrder[]
+    productOrders?: ProductOrder[]
 
     @OneToMany(() => ProductVariation, (productVariation) => productVariation.product)
-    productVariations: ProductVariation[]
+    productVariations?: ProductVariation[]
 
     @ManyToOne(() => Category, (category) => category.products)
     @JoinColumn({
         name: 'ID_Categoria'
     })
-    category: Category
+    category?: Category
 
     @ManyToOne(() => Establishment, (establishment) => establishment.products)
     @JoinColumn({
         name: 'ID_Estabelecimento'
     })
-    establishment: Establishment
+    establishment?: Establishment
 
 }
