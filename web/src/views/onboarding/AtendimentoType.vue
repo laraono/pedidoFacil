@@ -1,9 +1,9 @@
-<script setup>
-import { ref, computed } from 'vue';
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useOnboardingStore } from '@/stores/onboarding';
 import { useAuthStore } from '@/stores/auth';
-import { Check, ArrowRight, Loader2, ChefHat, CreditCard, Users, ChevronDown, Tablet } from 'lucide-vue-next';
+import { Check, ArrowRight, ArrowLeft, Loader2, ChefHat, CreditCard, Users, ChevronDown, Tablet } from 'lucide-vue-next';
 import { PERMISSIONS } from '@/utils/permissions';
 import { authApi } from '@/services/authApi';
 import LandingHeader from '@/components/LandingHeader.vue';
@@ -18,7 +18,6 @@ const totens = ref(false);
 const isLoading = ref(false);
 const serverError = ref(null);
 
-// Staff role cards
 const staffRoles = ref([
   {
     key: 'cozinheiro',
@@ -64,15 +63,48 @@ const staffRoles = ref([
   },
 ]);
 
-const nomeEstabelecimento = computed(
-  () => onboardingStore.estabelecimentoData?.nome_estabelecimento || ''
-);
+onMounted(() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem('onboarding_roles') || '{}');
+    if (saved.totens !== undefined) totens.value = saved.totens;
+    if (saved.staffRoles) {
+      saved.staffRoles.forEach((saved: any) => {
+        const role = staffRoles.value.find(r => r.key === saved.key);
+        if (!role) return;
+        role.selected = saved.selected;
+        saved.allPerms?.forEach((sp: any) => {
+          const perm = role.allPerms.find(p => p.id === sp.id);
+          if (perm) perm.checked = sp.checked;
+        });
+      });
+    }
+  } catch { /* ignora */ }
+});
+
+function saveRolesToStorage() {
+  localStorage.setItem('onboarding_roles', JSON.stringify({
+    totens: totens.value,
+    staffRoles: staffRoles.value.map(r => ({
+      key: r.key,
+      selected: r.selected,
+      allPerms: r.allPerms.map(p => ({ id: p.id, checked: p.checked })),
+    })),
+  }));
+}
+
+const nomeEstabelecimento = computed(() => {
+  try {
+    const personal = JSON.parse(localStorage.getItem('onboarding_personal') || '{}');
+    return personal.nome_estabelecimento || onboardingStore.estabelecimentoData?.nome_estabelecimento || '';
+  } catch {
+    return onboardingStore.estabelecimentoData?.nome_estabelecimento || '';
+  }
+});
 
 const getPersonalData = () => {
   try { return JSON.parse(localStorage.getItem('onboarding_personal') || '{}'); }
   catch { return {}; }
 };
-const pessoalData = getPersonalData();
 
 const skipRoles = ref(false);
 
@@ -88,11 +120,11 @@ const pularOnboarding = () => {
 const toggleStaffRole = (role) => {
   role.selected = !role.selected;
   if (role.selected) {
-    // Collapse others, expand this one
     staffRoles.value.forEach(r => { r.expanded = r.key === role.key; });
   } else {
     role.expanded = false;
   }
+  saveRolesToStorage();
 };
 
 const expandRole = (role) => {
@@ -102,12 +134,19 @@ const expandRole = (role) => {
 const togglePerm = (role, permId) => {
   const p = role.allPerms.find(p => p.id === permId);
   if (p) p.checked = !p.checked;
+  saveRolesToStorage();
+};
+
+const goBack = () => {
+  saveRolesToStorage();
+  router.push('/onboarding/name');
 };
 
 const finalizeRegistration = async () => {
   serverError.value = null;
+  const pessoalData = getPersonalData();
   if (!pessoalData.email || !nomeEstabelecimento.value) {
-    serverError.value = 'Dados perdidos. Por favor, reinicie o cadastro.';
+    serverError.value = 'Dados perdidos. Por favor, volte e preencha as etapas anteriores.';
     return;
   }
   if (!isSelectionValid.value) return;
@@ -147,6 +186,7 @@ const finalizeRegistration = async () => {
 
     localStorage.setItem('user', JSON.stringify(user));
     localStorage.removeItem('onboarding_personal');
+    localStorage.removeItem('onboarding_roles');
     onboardingStore.clearOnboarding();
 
     authStore.user = user;
@@ -177,7 +217,7 @@ const finalizeRegistration = async () => {
     <div class="z-10 w-full max-w-5xl text-center">
 
       <div class="inline-flex items-center justify-center px-4 py-1.5 rounded bg-gray-50 border border-[#E0E0E0] mb-6 md:mb-8 ">
-        <span class="text-accent text-[10px] md:text-xs font-bold uppercase tracking-widest">Etapa Final</span>
+        <span class="text-accent text-[10px] md:text-xs font-bold uppercase tracking-widest">Etapa 3 de 3</span>
       </div>
 
       <h1 class="text-2xl md:text-5xl font-bold text-[#212121] mb-4 md:mb-6 tracking-tight leading-tight">
@@ -193,6 +233,10 @@ const finalizeRegistration = async () => {
       <transition enter-active-class="transition duration-300" enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0">
         <div v-if="serverError" class="bg-danger-light border border-danger text-danger p-3 rounded mb-6 inline-block font-medium text-sm">
           {{ serverError }}
+          <button
+            @click="goBack"
+            class="ml-3 underline underline-offset-2 font-bold hover:opacity-70 transition-opacity"
+          >Voltar e corrigir</button>
         </div>
       </transition>
 
@@ -261,7 +305,7 @@ const finalizeRegistration = async () => {
 
         <!-- Autoatendimento — selectable, no expand -->
         <div
-          @click="totens = !totens"
+          @click="totens = !totens; saveRolesToStorage()"
           class="bg-white  rounded border-2 transition-all duration-300 cursor-pointer select-none"
           :class="totens ? 'border-accent ' : 'border-[#E0E0E0] hover:border-[#E0E0E0]'"
         >
@@ -283,27 +327,41 @@ const finalizeRegistration = async () => {
 
       </div>
 
-      <button
-        @click="finalizeRegistration"
-        :disabled="isLoading || !isSelectionValid"
-        class="py-4 px-10 md:py-5 md:px-14 bg-primary text-white font-extrabold rounded text-lg md:text-xl hover:bg-primary-dark transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3 mx-auto w-full md:w-auto min-w-[280px] shadow-xl shadow-primary/20 active:scale-95"
-      >
-        <Loader2 v-if="isLoading" class="w-5 h-5 md:w-6 md:h-6 animate-spin" />
-        <span v-else>Finalizar e Acessar Sistema</span>
-        <ArrowRight v-if="!isLoading" class="w-5 h-5 md:w-6 md:h-6" />
-      </button>
+      <div class="flex flex-col items-center gap-4">
+        <div class="flex gap-3 w-full max-w-xl justify-center">
+          <button
+            type="button"
+            @click="goBack"
+            :disabled="isLoading"
+            class="flex items-center gap-2 px-5 py-4 rounded border border-[#E0E0E0] text-[#757575] font-semibold hover:border-[#212121] hover:text-[#212121] transition-colors disabled:opacity-40"
+          >
+            <ArrowLeft class="w-5 h-5" />
+            Voltar
+          </button>
 
-      <p v-if="!isSelectionValid" class="text-xs md:text-sm text-[#757575] mt-6 font-bold uppercase tracking-widest animate-pulse">
-        Selecione ao menos uma opção para prosseguir
-      </p>
+          <button
+            @click="finalizeRegistration"
+            :disabled="isLoading || !isSelectionValid"
+            class="flex-1 py-4 px-10 bg-primary text-white font-extrabold rounded text-lg hover:bg-primary-dark transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-xl shadow-primary/20 active:scale-95"
+          >
+            <Loader2 v-if="isLoading" class="w-5 h-5 animate-spin" />
+            <span v-else>Finalizar e Acessar Sistema</span>
+            <ArrowRight v-if="!isLoading" class="w-5 h-5" />
+          </button>
+        </div>
 
-      <button
-        @click="pularOnboarding"
-        :disabled="isLoading"
-        class="text-[#757575] text-sm font-bold hover:text-[#757575] transition-colors mt-4 underline underline-offset-4 disabled:opacity-40"
-      >
-        Pular por agora
-      </button>
+        <p v-if="!isSelectionValid" class="text-xs md:text-sm text-[#757575] font-bold uppercase tracking-widest animate-pulse">
+          Selecione ao menos uma opção para prosseguir
+        </p>
+
+        <button
+          @click="pularOnboarding"
+          :disabled="isLoading"
+          class="text-[#757575] text-sm font-bold hover:text-[#757575] transition-colors underline underline-offset-4 disabled:opacity-40"
+        >
+          Pular por agora
+        </button>
+      </div>
 
     </div>
     </div>

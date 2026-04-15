@@ -1,8 +1,8 @@
-<script setup>
+<script setup lang="ts">
 import { ref, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useOnboardingStore } from '@/stores/onboarding';
-import { Store, ArrowRight, Building2 } from 'lucide-vue-next';
+import { Store, ArrowRight, ArrowLeft, Building2 } from 'lucide-vue-next';
 import { isValidCNPJ, maskCNPJ } from '@/utils/validator';
 import LandingHeader from '@/components/LandingHeader.vue';
 import imgOndas from '@/assets/ondas.png';
@@ -14,8 +14,18 @@ const cnpj = ref('');
 const cnpjError = ref('');
 
 onMounted(() => {
-  nomeEstabelecimento.value = onboardingStore.estabelecimentoData?.nome_estabelecimento ?? '';
-  cnpj.value = onboardingStore.estabelecimentoData?.cnpj ?? '';
+  // Restaura do localStorage (tem precedência sobre store in-memory)
+  try {
+    const personal = JSON.parse(localStorage.getItem('onboarding_personal') || '{}');
+    if (personal.nome_estabelecimento) nomeEstabelecimento.value = personal.nome_estabelecimento;
+    if (personal.cnpj) cnpj.value = personal.cnpj;
+  } catch { /* ignora */ }
+
+  // Fallback: store Pinia (caso o localStorage não tenha)
+  if (!nomeEstabelecimento.value)
+    nomeEstabelecimento.value = onboardingStore.estabelecimentoData?.nome_estabelecimento ?? '';
+  if (!cnpj.value)
+    cnpj.value = (onboardingStore.estabelecimentoData as any)?.cnpj ?? '';
 });
 
 watch(cnpj, (value) => {
@@ -42,9 +52,12 @@ const handleSubmit = () => {
   onboardingStore.setEstabelecimentoData('nome_estabelecimento', nomeEstabelecimento.value.trim());
   onboardingStore.setEstabelecimentoData('cnpj', cnpj.value);
 
-  // Mescla o CNPJ no onboarding_personal para que AtendimentoType possa lê-lo
   const personal = JSON.parse(localStorage.getItem('onboarding_personal') || '{}');
-  localStorage.setItem('onboarding_personal', JSON.stringify({ ...personal, cnpj: cnpj.value }));
+  localStorage.setItem('onboarding_personal', JSON.stringify({
+    ...personal,
+    nome_estabelecimento: nomeEstabelecimento.value.trim(),
+    cnpj: cnpj.value,
+  }));
 
   router.push('/onboarding/type');
 };
@@ -108,14 +121,24 @@ const handleSubmit = () => {
             <p v-if="cnpjError" class="text-red-500 text-xs font-bold text-left mt-1 ml-1">{{ cnpjError }}</p>
           </div>
 
-          <button
-            type="submit"
-            :disabled="!nomeEstabelecimento.trim() || nomeEstabelecimento.length < 3"
-            class="mt-8 py-4 px-10 bg-primary text-white font-bold rounded text-xl hover:bg-primary-dark shadow-lg shadow-primary/40 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none flex items-center gap-3 group active:scale-[0.98]"
-          >
-            <span>Continuar</span>
-            <ArrowRight class="w-6 h-6 transition-transform group-hover:translate-x-1" />
-          </button>
+          <div class="mt-8 flex gap-3 w-full max-w-lg">
+            <button
+              type="button"
+              @click="router.push('/register')"
+              class="flex items-center gap-2 px-5 py-4 rounded border border-[#E0E0E0] text-[#757575] font-semibold hover:border-[#212121] hover:text-[#212121] transition-colors"
+            >
+              <ArrowLeft class="w-5 h-5" />
+              Voltar
+            </button>
+            <button
+              type="submit"
+              :disabled="!nomeEstabelecimento.trim() || nomeEstabelecimento.length < 3"
+              class="flex-1 py-4 px-10 bg-primary text-white font-bold rounded text-xl hover:bg-primary-dark shadow-lg shadow-primary/40 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-3 group active:scale-[0.98]"
+            >
+              <span>Continuar</span>
+              <ArrowRight class="w-6 h-6 transition-transform group-hover:translate-x-1" />
+            </button>
+          </div>
 
         </form>
       </div>

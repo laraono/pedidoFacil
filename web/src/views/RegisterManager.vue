@@ -1,11 +1,10 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { UserPlus, Eye, EyeOff } from 'lucide-vue-next';
+import { UserPlus, Eye, EyeOff, ArrowLeft } from 'lucide-vue-next';
 import { useAuthStore } from '@/stores/auth';
 import { BaseInput, BaseButton } from '@/components/ui';
 import { isValidCPF, maskCPF } from '@/utils/validator';
-// watch não é mais necessário — filtro é feito no handler @input
 import LandingHeader from '@/components/LandingHeader.vue';
 import imgOndas from '@/assets/ondas.png';
 
@@ -27,12 +26,22 @@ const serverError = ref(null);
 
 if (authStore.isAuthenticated) router.push('/app/dashboard');
 
-onMounted(() => window.scrollTo(0, 0));
+onMounted(() => {
+  window.scrollTo(0, 0);
+  try {
+    const saved = JSON.parse(localStorage.getItem('onboarding_personal') || '{}');
+    if (saved.nome) nome.value = saved.nome;
+    if (saved.email) email.value = saved.email;
+    if (saved.cpf) cpf.value = saved.cpf;
+    if (saved.senha) senha.value = saved.senha;
+    if (saved.confirmarSenha) confirmarSenha.value = saved.confirmarSenha;
+  } catch {}
+});
 
 function onCpfInput(event) {
   const filtered = maskCPF(event.target.value);
   cpf.value = filtered;
-  event.target.value = filtered; // evita flicker no DOM
+  event.target.value = filtered;
   if (errors.value.cpf && isValidCPF(filtered)) errors.value.cpf = null;
 }
 
@@ -67,18 +76,24 @@ function validate() {
   return Object.keys(errors.value).length === 0;
 }
 
+function saveToStorage() {
+  const existing = JSON.parse(localStorage.getItem('onboarding_personal') || '{}');
+  localStorage.setItem('onboarding_personal', JSON.stringify({
+    ...existing,
+    nome: nome.value,
+    email: email.value.trim(),
+    cpf: cpf.value,
+    senha: senha.value,
+    confirmarSenha: confirmarSenha.value,
+  }));
+}
+
 async function handleSubmit() {
   serverError.value = null;
   if (!validate()) return;
 
   isLoading.value = true;
-
-  localStorage.setItem('onboarding_personal', JSON.stringify({
-    nome: nome.value,
-    email: email.value.trim(),
-    cpf: cpf.value,
-    senha: senha.value
-  }));
+  saveToStorage();
 
   setTimeout(() => {
     router.push('/onboarding/name');
@@ -98,6 +113,9 @@ async function handleSubmit() {
 
       <div class="z-10 w-full max-w-xl bg-white border border-[#E0E0E0] p-8 sm:p-12 rounded shadow-2xl">
         <div class="mb-10 text-center">
+          <div class="inline-flex items-center justify-center px-4 py-1.5 rounded bg-gray-50 border border-[#E0E0E0] mb-4">
+            <span class="text-accent text-xs font-bold uppercase tracking-widest">Etapa 1 de 3</span>
+          </div>
           <h2 class="text-3xl font-black text-[#212121] mb-2">Crie a sua conta</h2>
           <p class="text-[#757575]">Preencha os dados do gestor principal</p>
         </div>
@@ -127,8 +145,16 @@ async function handleSubmit() {
             </template>
           </BaseInput>
 
-          <div class="pt-6">
-            <BaseButton type="submit" variant="brand" size="lg" class="w-full" :isLoading="isLoading" :icon="UserPlus">
+          <div class="pt-6 flex gap-3">
+            <button
+              type="button"
+              @click="router.push('/login')"
+              class="flex items-center gap-2 px-5 py-3 rounded border border-[#E0E0E0] text-[#757575] font-semibold hover:border-[#212121] hover:text-[#212121] transition-colors"
+            >
+              <ArrowLeft class="w-4 h-4" />
+              Voltar
+            </button>
+            <BaseButton type="submit" variant="brand" size="lg" class="flex-1" :isLoading="isLoading" :icon="UserPlus">
               Continuar
             </BaseButton>
           </div>

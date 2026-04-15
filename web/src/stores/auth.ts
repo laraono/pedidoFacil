@@ -23,10 +23,10 @@ export interface ConfigStatus {
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    // user: { id, name, email, cargo: { id, name, permissoes: string[] } }
     user: null as AuthUser | null,
-    roles: [] as unknown[],   // mantido para compatibilidade com telas de gestão de cargos
+    roles: [] as unknown[],
     isAuthenticated: false,
+    sessionValidated: false,
     configStatus: {
       info: false,
       roles: false,
@@ -81,6 +81,37 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    async validateSession(): Promise<boolean> {
+      if (this.sessionValidated) return this.isAuthenticated;
+      this.sessionValidated = true;
+
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        this.isAuthenticated = false;
+        return false;
+      }
+
+      try {
+        const perfil = await authApi.me();
+        const permissoes: string[] = typeof perfil.cargo.permissoes === 'string'
+          ? JSON.parse(perfil.cargo.permissoes)
+          : perfil.cargo.permissoes;
+
+        this.user = {
+          id: perfil.usuario.id,
+          name: perfil.usuario.nome,
+          email: perfil.usuario.email,
+          estabelecimentoId: perfil.estabelecimentoId ?? null,
+          cargo: { id: perfil.cargo.id, name: perfil.cargo.nome, permissoes },
+        };
+        this.isAuthenticated = true;
+        localStorage.setItem('user', JSON.stringify(this.user));
+        return true;
+      } catch {
+        return false;
+      }
+    },
+
     hasPermission(permission: string): boolean {
       const permissoes = this.user?.cargo?.permissoes;
       if (!permissoes) return false;
@@ -91,7 +122,6 @@ export const useAuthStore = defineStore('auth', {
       try {
         await authApi.logout();
       } catch {
-        // ignora erros de rede no logout
       }
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');

@@ -24,26 +24,29 @@ async function request<T = unknown>(path: string, options: RequestInit = {}): Pr
 
   if (res.status === 401 && path !== '/refresh' && path !== '/login') {
     // Tenta renovar o token e repetir
+    let newAccessToken: string;
     try {
       const refreshed = await request<{ accessToken: string }>('/refresh', { method: 'POST' });
-      localStorage.setItem('accessToken', refreshed.accessToken);
-      headers['Authorization'] = `Bearer ${refreshed.accessToken}`;
-      const retry = await fetch(`${BASE_URL}${path}`, {
-        ...options,
-        headers,
-        credentials: 'include',
-      });
-      if (!retry.ok) {
-        const retryData = await retry.json().catch(() => ({}));
-        throw new Error((retryData as { error?: string }).error || `Erro ${retry.status}`);
-      }
-      return retry.status === 204 ? null as T : retry.json() as Promise<T>;
+      newAccessToken = refreshed.accessToken;
+      localStorage.setItem('accessToken', newAccessToken);
     } catch {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
       window.location.href = '/login';
       throw new Error('Sessão expirada.');
     }
+
+    headers['Authorization'] = `Bearer ${newAccessToken}`;
+    const retry = await fetch(`${BASE_URL}${path}`, {
+      ...options,
+      headers,
+      credentials: 'include',
+    });
+    if (!retry.ok) {
+      const retryData = await retry.json().catch(() => ({}));
+      throw new Error((retryData as { error?: string }).error || `Erro ${retry.status}`);
+    }
+    return retry.status === 204 ? null as T : retry.json() as Promise<T>;
   }
 
   if (!res.ok) {

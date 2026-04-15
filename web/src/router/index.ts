@@ -100,7 +100,6 @@ const router = createRouter({
   }
 });
 
-// Rotas de estabelecimento — admin não deve acessá-las
 const ESTABLISHMENT_PREFIXES = [
   '/app/settings', '/app/kitchen', '/app/menu',
   '/app/cashier', '/app/closed', '/app/reports', '/app/subscription'
@@ -110,8 +109,9 @@ router.beforeEach(async (to, _from, next) => {
   const auth = useAuthStore();
   auth.loadSession();
 
-  if (to.meta.requiresAuth && !auth.isAuthenticated) {
-    return next('/login');
+  if (to.meta.requiresAuth) {
+    const valid = await auth.validateSession();
+    if (!valid) return next('/login');
   }
 
   // Admin só acessa rotas /app/admin/*
