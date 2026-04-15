@@ -5,12 +5,7 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router/index'
 
-import { initMockUsers } from '@/mock/authmock'
-import { initMockRoles } from '@/mock/authmock'
 import { useAuthStore } from '@/stores/auth'
-
-initMockUsers();
-initMockRoles();
 
 const app = createApp(App)
 const pinia = createPinia();
