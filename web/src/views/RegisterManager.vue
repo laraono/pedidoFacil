@@ -60,6 +60,8 @@ function validate() {
 
 async function handleSubmit() {
   serverError.value = null;
+  errors.value = {}; 
+
   if (!validate()) return;
 
   isLoading.value = true;
@@ -73,18 +75,36 @@ async function handleSubmit() {
 
     localStorage.setItem("accessToken", response.accessToken);
     localStorage.setItem("user", JSON.stringify(response.usuario));
-
     authStore.user = response.usuario;
 
     router.push("/onboarding/name");
+    
   } catch (error) {
-    console.error(error);
-    serverError.value =
-      error.message || "Ocorreu um erro ao criar sua conta. Tente novamente.";
+    const data = error.response?.data || error.data || error;
+
+    if (data?.errors && Array.isArray(data.errors)) {
+      data.errors.forEach((err) => {
+        let field = err.campo.replace("body.", "");
+        
+        if (field === "nome_usuario") field = "nome";
+
+        errors.value[field] = err.mensagem;
+      });
+
+      serverError.value = data.errors[0].mensagem;
+      
+    } else {
+      serverError.value =
+        data?.message || 
+        error.message || 
+        "Ocorreu um erro ao criar sua conta. Tente novamente.";
+    }
+    
   } finally {
     isLoading.value = false;
   }
 }
+
 </script>
 
 <template>

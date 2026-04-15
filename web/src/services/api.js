@@ -41,7 +41,10 @@ export async function request(path, options = {}) {
 
       if (!retry.ok) {
         const retryData = await retry.json().catch(() => ({}));
-        throw new Error(retryData.error || `Erro ${retry.status}`);
+        const error = new Error(retryData.message || retryData.error || `Erro ${retry.status}`);
+        error.data = retryData;
+        error.status = retry.status;
+        throw error;
       }
 
       return retry.status === 204 ? null : retry.json();
@@ -53,7 +56,12 @@ export async function request(path, options = {}) {
     }
   }
 
-  if (!res.ok)
-    throw new Error(data.message || data.error || `Erro ${res.status}`);
+  if (!res.ok) {
+    const error = new Error(data.message || data.error || `Erro ${res.status}`);
+    error.data = data;
+    error.status = res.status;
+    throw error;
+  }
+
   return data;
 }

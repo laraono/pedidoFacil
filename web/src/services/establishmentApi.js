@@ -39,9 +39,7 @@ export const establishmentApi = {
       paymentMethods: JSON.stringify(data.paymentMethods || []),
       selfServiceEnabled: data.selfServiceEnabled,
       selfServiceCode: data.selfServiceCode,
-      configurations: {
-        logo: data.logo,
-      },
+      configurations: data.configurations || {}, 
     };
 
     return request("/estabelecimento/profile", {

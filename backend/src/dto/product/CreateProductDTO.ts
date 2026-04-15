@@ -1,29 +1,30 @@
-import { Product } from "../../database"
-import { ProductStatus } from "../../enum"
+import { z } from 'zod';
+import { safeString } from '../../utils/safeZod'; 
+import { ProductStatus } from '../../enum';
 
-export type ProductParams = {
-    name: string,
-    description?: string, 
-    isAvailable: boolean,
-    categoryId: number,
-    basePrice: number,
-    status: ProductStatus
-}
+const productStatusValues = Object.values(ProductStatus) as [string, ...string[]];
 
-export type ProductVariationParams = {
-    name: string,
-    addPrice: number,
-    status: ProductStatus
-}
+export const createProductSchema = z.object({
+  body: z.object({
+    product: z.object({
+      name: safeString(2, 100),
+      description: safeString(0, 500).optional().nullable(),
+      isAvailable: z.boolean(),
+      categoryId: z.number().int().positive(),
+      basePrice: z.coerce.number().nonnegative(),
+      status: z.enum(productStatusValues)
+    }).strict(),
+    
+    productVariations: z.array(
+      z.object({
+        name: safeString(1, 100),
+        addPrice: z.coerce.number().nonnegative(),
+        status: z.enum(productStatusValues)
+      }).strict()
+    ).optional()
+  }).strict()
+});
 
-export type CreateProduct = {
-    product: ProductParams,
-    productVariations: Array<ProductVariationParams>
-}
+export type CreateProductDTO = z.infer<typeof createProductSchema>['body'];
 
-export type CreateProductVariation = {
-    name: string,
-    addPrice: number,
-    status: ProductStatus,
-    product: Product
-}
+export type CreateProductVariationDTO = NonNullable<z.infer<typeof createProductSchema>['body']['productVariations']>[number];

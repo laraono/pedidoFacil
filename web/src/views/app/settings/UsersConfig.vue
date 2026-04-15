@@ -145,13 +145,15 @@ function validateForm() {
 }
 
 const saveUser = async () => {
+  errors.value = {};
+
   if (!validateForm()) {
     showToast("Corrija os erros no formulário.", "error");
     return;
   }
 
   isLoading.value = true;
-
+  
   try {
     const payload = {
       name: form.value.name,
@@ -169,15 +171,23 @@ const saveUser = async () => {
       await employeeApi.create(payload);
       showToast("Usuário criado com sucesso!", "success");
     }
-
+    
     closeForm();
     await fetchUsers();
+    
   } catch (error) {
-    const msg =
-      error.response?.data?.message ||
-      error.message ||
-      "Erro ao salvar usuário.";
-    showToast(msg, "error");
+    const data = error.response?.data || error.data || error;
+    
+    if (data?.errors && Array.isArray(data.errors)) {
+      data.errors.forEach((err) => {
+        let field = err.campo.replace("body.", "");
+        
+        errors.value[field] = err.mensagem;
+      });
+      showToast("Verifique os campos destacados em vermelho.", "error");
+    } else {
+      showToast(data?.message || "Erro ao salvar usuário.", "error");
+    }
   } finally {
     isLoading.value = false;
   }
@@ -191,8 +201,7 @@ const confirmAndDeleteUser = async () => {
     confirmDeleteUser.value = null;
     await fetchUsers();
   } catch (error) {
-    const msg = error.response?.data?.message || "Erro ao excluir usuário.";
-    showToast(msg, "error");
+    showToast(error.response?.data?.message || "Erro ao desativar usuário.", "error");
   }
 };
 
@@ -202,8 +211,7 @@ const handleReactivate = async (user) => {
     showToast(`${user.name} reativado com sucesso!`, "success");
     await fetchUsers();
   } catch (error) {
-    const msg = error.response?.data?.message || "Erro ao reativar usuário.";
-    showToast(msg, "error");
+    showToast(error.response?.data?.message || "Erro ao reativar usuário.", "error");
   }
 };
 

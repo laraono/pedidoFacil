@@ -10,7 +10,6 @@ import { RoleRepository } from '../repository/RoleRepository';
 
 import { SaveOnboardingStepDTO } from '../dto/establishment/SaveOnboardingStepDTO';
 import { FinalizeOnboardingDTO } from '../dto/establishment/FinalizeOnboardingDTO';
-import { UpdateEstablishmentDTO } from '../dto/establishment/UpdateEstablishmentDTO';
 
 export class EstablishmentService {
   
@@ -44,7 +43,6 @@ export class EstablishmentService {
 
   async saveOnboardingStep(userId: number, stepData: SaveOnboardingStepDTO) {
     const user = await this.userRepository.findByIdWithEstablishment(userId);
-
     if (!user) throw new AppError('User not found.', 404);
 
     let establishment = await this.establishmentRepository.findByManagerId(userId);
@@ -54,7 +52,6 @@ export class EstablishmentService {
         const cnpjExists = await this.establishmentRepository.findByCnpj(stepData.cnpj);
         if (cnpjExists) throw new AppError('This CNPJ is already registered.', 400);
       }
-
       establishment = this.establishmentRepository.create({
         ...stepData,
         manager: user,
@@ -75,7 +72,6 @@ export class EstablishmentService {
 
   async finalizeOnboarding(userId: number, data: FinalizeOnboardingDTO) {
     const { roles: rolesToCreate, hasTotem } = data;
-      
     const user = await this.userRepository.findByIdWithEstablishment(userId);
 
     if (!user || !user.establishment) {
@@ -91,7 +87,6 @@ export class EstablishmentService {
       establishment: { id: establishmentId } as any,
     });
     const savedManagerRole = await this.roleRepository.save(managerRole);
-
     await this.userRepository.updateRoleId(userId, savedManagerRole.id);
 
     if (rolesToCreate && rolesToCreate.length > 0) {
@@ -105,7 +100,6 @@ export class EstablishmentService {
 
     if (hasTotem) {
       const currentTypes = this.parseServiceTypes(establishment.serviceTypes);
-      
       if (!currentTypes.includes(ServiceType.AUTOATENDIMENTO)) {
         currentTypes.push(ServiceType.AUTOATENDIMENTO);
         establishment.serviceTypes = JSON.stringify(currentTypes);
@@ -138,7 +132,7 @@ export class EstablishmentService {
     return establishment;
   }
 
-  async updateEstablishment(establishmentId: number, updateData: UpdateEstablishmentDTO) {
+  async updateEstablishment(establishmentId: number, updateData: any) {
     const establishment = await this.getEstablishmentProfile(establishmentId);
     
     const paymentMethods = typeof updateData.paymentMethods !== 'string' 
@@ -161,11 +155,16 @@ export class EstablishmentService {
         const config = await this.configRepository.findByEstablishmentId(establishmentId);
         if (config) {
             this.configRepository.merge(config, {
-                logo: updateData.configurations.logo ?? config.logo,
+                logo: updateData.configurations.logo !== undefined ? updateData.configurations.logo : config.logo,
                 backgroundColor: updateData.configurations.backgroundColor ?? config.backgroundColor,
                 cardsColor: updateData.configurations.cardsColor ?? config.cardsColor,
                 buttonsColor: updateData.configurations.buttonsColor ?? config.buttonsColor,
-                comandaLabel: updateData.configurations.comandaLabel ?? config.comandaLabel
+                comandaLabel: updateData.configurations.comandaLabel ?? config.comandaLabel,
+                textsColor: updateData.configurations.textsColor ?? config.textsColor,
+                buttonsTextColor: updateData.configurations.buttonsTextColor ?? config.buttonsTextColor,
+                activeCateogryColor: updateData.configurations.activeCateogryColor ?? config.activeCateogryColor,
+                fontFamily: updateData.configurations.fontFamily ?? config.fontFamily,
+                allowObservations: updateData.configurations.allowObservations ?? config.allowObservations
             });
             await this.configRepository.save(config);
         }

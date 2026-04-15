@@ -85,6 +85,8 @@ const openEdit = (c) => {
 };
 
 const save = async () => {
+  errors.value = {};
+
   if (!validate()) { 
     const firstErrorMsg = Object.values(errors.value)[0];
     showToast(firstErrorMsg || 'Corrija os erros no formulário.', 'error'); 
@@ -110,12 +112,23 @@ const save = async () => {
     showToast(isEditing.value ? 'Cupom atualizado!' : 'Cupom criado!', 'success');
     showModal.value = false;
   } catch (error) { 
-    showToast(error.message || 'Erro ao salvar cupom.', 'error'); 
+    const data = error.response?.data || error.data || error;
+    
+    if (data?.errors && Array.isArray(data.errors)) {
+      data.errors.forEach((err) => {
+        let field = err.campo.replace("body.", "");
+        
+        errors.value[field] = err.mensagem;
+      });
+      
+      showToast("Verifique os campos destacados em vermelho.", "error"); 
+    } else {
+      showToast(data?.message || "Erro ao salvar cupom.", "error"); 
+    }
   } finally { 
     isLoading.value = false; 
   }
 };
-
 const toggleActive = (c) => {
   store.updateCoupon({ ...c, active: !c.active });
   showToast(c.active !== false ? `${c.code} desativado.` : `${c.code} ativado.`, 'success');

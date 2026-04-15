@@ -1,13 +1,11 @@
 import { Router } from 'express';
 import { EstablishmentController } from '../controller/EstablishmentController';
 import authenticate from '../middleware/authenticate';
-import { checkPermission } from '../middleware/roleAccessControl';
+const { checkPermission } = require('../middleware/roleAccessControl'); 
 import { establishmentService } from '../service'; 
-import { 
-    validateSaveOnboarding, 
-    validateFinalizeOnboarding, 
-    validateUpdateEstablishment 
-} from '../validator/establishment/establishmentSchema';
+
+import { validateRequest } from '../middleware/validateRequest';
+import { UpdateEstablishmentDTO } from '../dto/establishment/UpdateEstablishmentDTO';
 
 const establishmentRouter = Router();
 const establishmentController = new EstablishmentController(establishmentService);
@@ -20,14 +18,12 @@ establishmentRouter.get(
 establishmentRouter.post(
   '/onboarding',
   authenticate,
-  validateSaveOnboarding,
   establishmentController.onboarding
 );
 
 establishmentRouter.post(
   '/finalize',
   authenticate,
-  validateFinalizeOnboarding,
   establishmentController.finalize
 );
 
@@ -42,7 +38,7 @@ establishmentRouter.put(
   '/profile',
   authenticate,
   checkPermission('ESTABELECIMENTO_EDIT', 'ALL'),
-  validateUpdateEstablishment,
+  validateRequest(UpdateEstablishmentDTO), 
   establishmentController.update
 );
 

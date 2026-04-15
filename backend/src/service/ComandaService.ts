@@ -4,6 +4,9 @@ import { OrderStatus, ComandaStatus } from '../enum';
 import { AppError } from '../middleware/error/AppError';
 import { PaymentService } from './PaymentService';
 import { ReceiptService } from './ReceiptService';
+import { CreateComandaDTO } from '../dto/comanda/CreateComandaDTO';
+import { CancelComandaDTO } from '../dto/comanda/CancelComandaDTO';
+
 
 export class ComandaService {
   constructor(
@@ -19,11 +22,11 @@ export class ComandaService {
     });
   }
 
-  async createComanda(comandaData: any): Promise<Comanda> {
+  async createComanda(comandaData: CreateComandaDTO): Promise<Comanda> {
     const novaComanda = this.comandaRepository.create({
       ...comandaData,
       status: ComandaStatus.ABERTA,
-      total: 0,
+      total: 0, 
     } as Partial<Comanda>);
 
     return await this.comandaRepository.save(novaComanda);
@@ -63,11 +66,7 @@ export class ComandaService {
     await this.comandaRepository.save(comanda);
   }
 
-  async cancelComanda(data: {
-    comandaId: number;
-    userId: number;
-    reason: string;
-  }): Promise<void> {
+  async cancelComanda(data: CancelComandaDTO): Promise<void> {
     const comanda = await this.comandaRepository.findOne({
       where: { id: data.comandaId },
     });

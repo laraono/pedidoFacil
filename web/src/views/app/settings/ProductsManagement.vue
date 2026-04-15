@@ -213,20 +213,50 @@ const onPriceInput = (e) => { form.value.price = applyPriceMask(e.target.value);
 const onSizePriceInput = (e, i) => { form.value.sizes[i].price = applyPriceMask(e.target.value); };
 
 const save = async () => {
-  if (!validate()) { showToast("Corrija os erros no formulário.", "error"); return; }
+  errors.value = {};
+
+  if (!validate()) { 
+    showToast("Corrija os erros no formulário.", "error"); 
+    return; 
+  }
+  
   isLoading.value = true;
   try {
     const parsedSizes = form.value.sizes
       .filter(s => s.name.trim())
       .map(s => ({ name: s.name.trim(), price: parseFloat(String(s.price).replace(',', '.')) || 0 }));
-    const payload = { id: form.value.id, name: form.value.name, description: form.value.description, price: parseFloat(String(form.value.price).replace(",", ".")), categoryId: form.value.categoryId, image: form.value.image, available: form.value.available, sizes: parsedSizes };
+    
+    const payload = { 
+      id: form.value.id, 
+      name: form.value.name, 
+      description: form.value.description, 
+      price: parseFloat(String(form.value.price).replace(",", ".")), 
+      categoryId: form.value.categoryId, 
+      image: form.value.image, 
+      available: form.value.available, 
+      sizes: parsedSizes 
+    };
     
     if (isEditing.value) await menuStore.updateProduct(payload); 
     else await menuStore.addProduct(payload);
     
     showToast(isEditing.value ? "Produto atualizado!" : "Produto criado!", "success");
     showModal.value = false;
-  } catch { showToast("Erro ao salvar produto.", "error"); } finally { isLoading.value = false; }
+  } catch (error) { 
+    const data = error.response?.data || error.data || error;
+    
+    if (data?.errors && Array.isArray(data.errors)) {
+      data.errors.forEach((err) => {
+        let field = err.campo.replace("body.", "");
+        errors.value[field] = err.mensagem;
+      });
+      showToast("Verifique os campos destacados em vermelho.", "error");
+    } else {
+      showToast(data?.message || "Erro ao salvar produto.", "error");
+    }
+  } finally { 
+    isLoading.value = false; 
+  }
 };
 
 const handleDelete = (p) => showConfirm({ title: "Arquivar Produto", message: "Arquivar " + p.name + "?", onConfirm: async () => { await menuStore.softDeleteProduct(p.id); showToast(p.name + " arquivado.", "success"); } });
@@ -414,7 +444,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
           </label>
         </div>
         <BaseInput v-model="form.name" label="Nome do Produto" placeholder="Ex: X-Burguer Especial" :maxlength="60" :error="errors.name" />
-        <BaseInput v-model="form.description" label="Descrição (opcional)" placeholder="Ingredientes, detalhes..." :maxlength="120" />
+        <BaseInput v-model="form.description" label="Descrição (opcional)" placeholder="Ingredientes, detalhes..." :maxlength="120" :error="errors.description" />
         <div class="flex flex-col gap-1">
           <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-2">Preço base (R$)</label>
           <input

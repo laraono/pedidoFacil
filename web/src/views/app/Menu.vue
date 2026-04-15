@@ -182,14 +182,17 @@ const confirmAndSendToKitchen = async () => {
   isSubmitting.value = true;
   try {
     let comandaIdParaEnviar = selectedComandaId.value;
+    
     if (comandaIdParaEnviar === "new") {
       const label = `${comandaUnitLabel.value} ${newComandaNumber.value.trim()}`;
-      comandaIdParaEnviar = await comandaApi.create({ description: label, status: "Aberta", total: 0 });
+      const novaComanda = await comandaApi.create({ description: label, status: "Aberta", total: 0 });
+      comandaIdParaEnviar = novaComanda.id || novaComanda; 
     }
 
     const orderPayload = {
       status: "Aguardando_Preparo",
       serviceType: "Autoatendimento",
+      comandaId: comandaIdParaEnviar, 
       itens: cart.value.map(item => ({
         productId: item.productId,
         quantity: item.quantity,
@@ -200,12 +203,18 @@ const confirmAndSendToKitchen = async () => {
 
     await comandaApi.addOrder(comandaIdParaEnviar, orderPayload);
     await comandaStore.loadComandas();
+    
     cart.value = [];
     isComandaModalOpen.value = false;
     isCartModalOpen.value = false;
     showToast("Pedido enviado para a cozinha!", "success");
   } catch (error) {
-    showToast("Erro ao enviar pedido.", "error");
+    const data = error.response?.data || error.data || error;
+    if (data?.errors && Array.isArray(data.errors)) {
+      showToast(data.errors[0].mensagem, "error");
+    } else {
+      showToast(data?.message || "Erro ao enviar pedido para a cozinha.", "error");
+    }
   } finally {
     isSubmitting.value = false;
   }
@@ -241,8 +250,12 @@ const saveVisuals = async () => {
 
     showToast("Aparência salva com sucesso!", "success");
   } catch (error) {
-    console.error("Erro ao salvar no servidor:", error);
-    showToast("Erro ao salvar no servidor.", "error");
+    const data = error.response?.data || error.data || error;
+    if (data?.errors && Array.isArray(data.errors)) {
+      showToast(data.errors[0].mensagem, "error");
+    } else {
+      showToast(data?.message || "Erro ao salvar configurações no servidor.", "error");
+    }
   } finally {
     isSubmitting.value = false;
   }

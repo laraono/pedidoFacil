@@ -1,14 +1,17 @@
 import { Router } from 'express';
 import { profileController } from '../controller'; 
 import authenticate from '../middleware/authenticate';
-import { validateUpdateProfile, validateChangePassword } from '../validator/profile/profileSchema';
+
+import { validateRequest } from '../middleware/validateRequest';
+import { updateProfileSchema, changePasswordSchema } from '../dto/profile/ProfileDTO'; // Confirme o nome do arquivo
 
 const profileRouter = Router();
 
 profileRouter.use(authenticate);
 
 profileRouter.get('/', profileController.get);
-profileRouter.put('/', validateUpdateProfile, profileController.update);
-profileRouter.patch('/senha', validateChangePassword, profileController.changePassword);
+
+profileRouter.put('/', validateRequest(updateProfileSchema), profileController.update);
+profileRouter.patch('/senha', validateRequest(changePasswordSchema), profileController.changePassword);
 
 export { profileRouter };

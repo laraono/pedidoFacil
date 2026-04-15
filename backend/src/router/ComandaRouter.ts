@@ -1,7 +1,12 @@
 import express, { Request, Response } from 'express';
 import { comandaController } from '../controller';
-import { validateCancelComanda, validateCreateComanda } from '../validator';
 import { catchAsync } from '../middleware';
+
+import { validateRequest } from '../middleware/validateRequest';
+import { createComandaSchema } from '../dto/comanda/CreateComandaDTO'; 
+import { cancelComandaSchema } from '../dto/comanda/CancelComandaDTO'; 
+
+
 const authenticate = require('../middleware/authenticate');
 const tenant = require('../middleware/tenant');
 const roleAccessControl = require('../middleware/roleAccessControl');
@@ -33,7 +38,7 @@ comandaRouter.post(
   '/commands',
   authenticate,
   roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO'),
-  validateCreateComanda,
+  validateRequest(createComandaSchema), 
   catchAsync((req: Request, res: Response) => comandaController.createComanda(req, res)),
 );
 
@@ -42,7 +47,7 @@ comandaRouter.post(
   authenticate,
   tenant.verifyTenancy('COMANDA', 'comandaId'),
   roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'),
-  validateCancelComanda,
+  validateRequest(cancelComandaSchema), 
   catchAsync((req: Request, res: Response) => comandaController.cancelComanda(req, res)),
 );
 

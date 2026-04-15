@@ -104,9 +104,7 @@ const saveProfile = async () => {
     showToast("Corrija os erros antes de salvar.", "error");
     return;
   }
-
   isLoadingProfile.value = true;
-
   try {
     const payload = {
       name: form.value.fullName,
@@ -118,15 +116,22 @@ const saveProfile = async () => {
       state: form.value.state,
       zip: form.value.zip ? form.value.zip.replace(/\D/g, "") : "",
     };
-
     const updatedUser = await profileApi.update(payload);
-
     authStore.user.name = updatedUser.name;
     authStore.user.email = updatedUser.email;
-
     showToast("Dados salvos com sucesso!", "success");
   } catch (error) {
-    showToast(error.message || "Erro ao salvar perfil.", "error");
+    const data = error.response?.data || error.data || error;
+    if (data?.errors && Array.isArray(data.errors)) {
+      data.errors.forEach((err) => {
+        let field = err.campo.replace("body.", "");
+        if (field === "name") field = "fullName";
+        errors.value[field] = err.mensagem;
+      });
+      showToast("Verifique os campos destacados em vermelho.", "error");
+    } else {
+      showToast(data?.message || "Erro ao salvar perfil.", "error");
+    }
   } finally {
     isLoadingProfile.value = false;
   }
@@ -137,23 +142,26 @@ const savePassword = async () => {
     showToast("Corrija os erros no formulário de senha.", "error");
     return;
   }
-
   isLoadingPassword.value = true;
-
   try {
     await profileApi.changePassword({
       oldPassword: passwordForm.value.oldPassword,
       newPassword: passwordForm.value.newPassword,
     });
-
     showToast("Senha alterada com sucesso!", "success");
-    passwordForm.value = {
-      oldPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    };
+    passwordForm.value = { oldPassword: "", newPassword: "", confirmPassword: "" };
   } catch (error) {
-    showToast(error.message || "Erro ao alterar senha.", "error");
+    // 🔥 Captura Robusta de Erros Zod
+    const data = error.response?.data || error.data || error;
+    if (data?.errors && Array.isArray(data.errors)) {
+      data.errors.forEach((err) => {
+        let field = err.campo.replace("body.", "");
+        errors.value[field] = err.mensagem;
+      });
+      showToast("Verifique os erros no formulário de senha.", "error");
+    } else {
+      showToast(data?.message || "Erro ao alterar senha.", "error");
+    }
   } finally {
     isLoadingPassword.value = false;
   }

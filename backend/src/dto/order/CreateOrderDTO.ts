@@ -1,38 +1,31 @@
-import { Comanda, Order, Product, ProductVariation } from "../../database"
-import { OrderStatus } from "../../enum"
+import { z } from 'zod';
+import { OrderStatus } from '../../enum';
+import { safeString } from '../../utils/safeZod';
 
-export type CreateOrder = {
-    status: OrderStatus,
-    comandaId: number,
-    itens: Array<ItensArray>
-}
+const orderStatusValues = Object.values(OrderStatus) as [string, ...string[]];
 
-export type ItensArray = {
-    productId: number,
-    quantity: number,
-    productVariationId?: number,
-    observation?: string
-}
+export const createOrderSchema = z.object({
+  body: z.object({
+    status: z.enum(orderStatusValues),
+    serviceType: z.string().optional(),
+    establishmentId: z.number().int().positive().optional(), 
+    comandaId: z.number().int().positive(),
+    itens: z.array(
+      z.object({
+        productId: z.number().int().positive(),
+        quantity: z.number().int().positive(),
+        productVariationId: z.number().int().positive().optional().nullable(),
+        observation: safeString(0, 255).optional().nullable()
+      }).strict()
+    ).min(1, "O pedido deve ter pelo menos um item")
+  }).strict()
+});
 
-export type OrderParams = {
-    status: OrderStatus,
-    comanda: Comanda
-}
+export const updateOrderStatusSchema = z.object({
+  body: z.object({
+    status: z.enum(orderStatusValues)
+  }).strict()
+});
 
-export type ProductOrderParams = {
-    order: Order,
-    observation?: string,
-    quantity: number,
-    price: number,
-    product: Product,
-    productVariation?: ProductVariation,
-}
-
-export type ProductVariationOrderParams = {
-    productId: number,
-    orderId: number,
-    productVariationid: number,
-    price: number
-}
-
-
+export type CreateOrderDTO = z.infer<typeof createOrderSchema>['body'];
+export type UpdateOrderStatusDTO = z.infer<typeof updateOrderStatusSchema>['body'];

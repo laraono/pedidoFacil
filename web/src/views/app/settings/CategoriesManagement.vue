@@ -98,6 +98,13 @@ const handleImageUpload = (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
+  const maxSize = 2 * 1024 * 1024; 
+  if (file.size > maxSize) {
+    showToast("Arquivo muito grande! O limite é 2MB antes da compressão.", "error");
+    event.target.value = ""; 
+    return;
+  }
+
   const reader = new FileReader();
   reader.onload = (e) => {
     const img = new Image();
@@ -147,22 +154,29 @@ const saveCategory = async () => {
       image: form.value.image, 
     };
 
-    if (isEditing.value) {
-      await menuStore.updateCategory(payload);
-    } else {
-      await menuStore.addCategory(payload);
-    }
+    if (isEditing.value) await menuStore.updateCategory(payload);
+    else await menuStore.addCategory(payload);
     
     showToast(`Categoria "${form.value.name}" salva com sucesso!`, "success");
     showModal.value = false;
   } catch (error) {
-    console.error("Erro ao salvar categoria:", error);
-    showToast("Erro ao salvar categoria no banco.", "error");
+    const data = error.response?.data || error.data || error;
+    
+    if (data?.errors && Array.isArray(data.errors)) {
+      data.errors.forEach((err) => {
+        let field = err.campo.replace("body.", "");
+        
+        errors.value[field] = err.mensagem;
+      });
+      
+      showToast("Verifique os campos destacados em vermelho.", "error");
+    } else {
+      showToast(data?.message || "Erro ao salvar categoria.", "error");
+    }
   } finally {
     isLoading.value = false;
   }
 };
-
 const handleDelete = (category) => {
   const hasProducts = menuStore.activeProducts?.some(
     (p) => String(p.categoryId) === String(category.id),

@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { DataSource } from 'typeorm';
 import { Admin } from '../database/entity/Admin';
-import { LoginDTO } from '../dto';
+import { LoginDTO, RegisterDTO } from '../dto/auth/';
 import { UserStatus } from '../enum';
 import { AppError } from '../middleware';
 import { UserRepository } from '../repository';
@@ -24,7 +24,7 @@ export class AuthService {
     private userRepository: UserRepository
   ) {}
 
-  async registerManager(data: { nome_usuario: string; email: string; senha: string; }) {
+  async registerManager(data: RegisterDTO) {
     if (!data.nome_usuario?.trim()) throw new AppError('Nome do usuário é obrigatório.', 400);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new AppError('E-mail inválido.', 400);
 

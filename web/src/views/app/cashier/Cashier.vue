@@ -1208,8 +1208,13 @@ async function finishPaymentFlow() {
 
     showToast("Comanda finalizada e NF emitida no servidor!", "success");
   } catch (error) {
-    console.error(error);
-    showToast("Erro ao processar o pagamento no servidor.", "error");
+    const data = error.response?.data || error.data || error;
+    
+    if (data?.errors && Array.isArray(data.errors)) {
+      showToast(data.errors[0].mensagem, "error");
+    } else {
+      showToast(data?.message || "Erro ao processar o pagamento no servidor.", "error");
+    }
   }
 }
 
