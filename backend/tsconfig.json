@@ -1,0 +1,22 @@
+{
+   "compilerOptions": {
+      "lib": ["ESNext", "dom"],
+      "target": "es2021",
+      "module": "node16",
+      "moduleResolution": "node16",
+      "rootDir": "./src",
+      "types": ["node"],
+      "outDir": "./build",
+      "emitDecoratorMetadata": true,
+      "experimentalDecorators": true,
+      "sourceMap": true,
+      "esModuleInterop": true,
+   },
+   "include": [
+      "src/**/*"
+   ],
+   "exclude": [
+      "node_modules",
+      "build"
+   ]
+}

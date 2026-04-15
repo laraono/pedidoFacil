@@ -1,7 +1,6 @@
 export const PERMISSIONS = {
   RELATORIOS: 'RELATORIOS',
   COZINHA: 'COZINHA',
-  ESTOQUE: 'ESTOQUE',
   CARDAPIO: 'CARDAPIO',
   FUNCIONARIOS: 'FUNCIONARIOS',
   CONFIGURACAO: 'CONFIGURACAO',
@@ -17,8 +16,7 @@ export const PERMISSIONS = {
 export const AVAILABLE_PERMISSIONS = [
   { id: PERMISSIONS.RELATORIOS, label: 'Relatórios', desc: 'Acesso a métricas e desempenho.' },
   { id: PERMISSIONS.COZINHA, label: 'Cozinha', desc: 'Gestão e preparo de pedidos.' },
-  { id: PERMISSIONS.ESTOQUE, label: 'Estoque', desc: 'Controle de insumos e produtos.' },
-  { id: PERMISSIONS.CARDAPIO, label: 'Cardápio', desc: 'Edição de itens e categorias.' },
+  { id: PERMISSIONS.CARDAPIO, label: 'Cardápio', desc: 'Edição de produtos e categorias.' },
   { id: PERMISSIONS.FUNCIONARIOS, label: 'Funcionários', desc: 'Gestão de usuários e cargos.' },
   { id: PERMISSIONS.CONFIGURACAO, label: 'Configuração', desc: 'Ajustes gerais do sistema.' },
   { id: PERMISSIONS.ASSINATURA, label: 'Assinatura', desc: 'Gestão de pagamentos e planos.' },
