@@ -78,7 +78,7 @@ onMounted(() => {
         });
       });
     }
-  } catch { /* ignora */ }
+  } catch {}
 });
 
 function saveRolesToStorage() {
@@ -303,7 +303,6 @@ const finalizeRegistration = async () => {
           </Transition>
         </div>
 
-        <!-- Autoatendimento — selectable, no expand -->
         <div
           @click="totens = !totens; saveRolesToStorage()"
           class="bg-white  rounded border-2 transition-all duration-300 cursor-pointer select-none"

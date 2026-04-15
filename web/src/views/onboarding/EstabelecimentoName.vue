@@ -14,14 +14,12 @@ const cnpj = ref('');
 const cnpjError = ref('');
 
 onMounted(() => {
-  // Restaura do localStorage (tem precedência sobre store in-memory)
   try {
     const personal = JSON.parse(localStorage.getItem('onboarding_personal') || '{}');
     if (personal.nome_estabelecimento) nomeEstabelecimento.value = personal.nome_estabelecimento;
     if (personal.cnpj) cnpj.value = personal.cnpj;
-  } catch { /* ignora */ }
+  } catch {}
 
-  // Fallback: store Pinia (caso o localStorage não tenha)
   if (!nomeEstabelecimento.value)
     nomeEstabelecimento.value = onboardingStore.estabelecimentoData?.nome_estabelecimento ?? '';
   if (!cnpj.value)

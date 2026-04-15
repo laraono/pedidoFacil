@@ -23,7 +23,6 @@ async function request<T = unknown>(path: string, options: RequestInit = {}): Pr
   const data = await res.json().catch(() => ({}));
 
   if (res.status === 401 && path !== '/refresh' && path !== '/login') {
-    // Tenta renovar o token e repetir
     let newAccessToken: string;
     try {
       const refreshed = await request<{ accessToken: string }>('/refresh', { method: 'POST' });
