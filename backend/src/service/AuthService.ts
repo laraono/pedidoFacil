@@ -183,6 +183,7 @@ export class AuthService {
         }
 
         await this.refreshTokenRepository.revokeByHash(hash)
+        return null
     }
 
     async perfil(userId: number, isAdmin = false) {

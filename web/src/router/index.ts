@@ -116,7 +116,7 @@ router.beforeEach(async (to, _from, next) => {
 
   // Admin só acessa rotas /app/admin/*
   if (auth.isAdmin && ESTABLISHMENT_PREFIXES.some(p => to.path.startsWith(p))) {
-    return next({ name: 'admin-subscriptions' });
+    return next({ name: 'dashboard' });
   }
 
   if (to.meta.requiresAdmin && !auth.isAdmin) {
