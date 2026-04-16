@@ -26,6 +26,28 @@ export class Plan {
         nullable: false
     })
     price!: number
+
+    @Column({
+        type: 'varchar',
+        name: 'Frequencia',
+        nullable: false,
+        length: 100
+    })
+    frequency!: string
+
+    @Column({
+        type: 'int',
+        name: 'Dia_Pagamento',
+        nullable: false
+    })
+    billingDay!: number
+
+    @Column({
+        name: 'Mercado_Pago_Id',
+        type: "varchar",
+        nullable: true
+    })
+    mercadoPagoId?: number
     
     @OneToMany(() => Subscription, (subscription) => subscription.establishment)
     subscriptions?: Subscription[]
