@@ -4,6 +4,10 @@ export const errorHandler = (err: any, req, res: Response, next: NextFunction) =
     const statusCode = err.statusCode || 500;
     const message = err.isOperational ? err.message : 'Erro interno. Tente novamente mais tarde.';
 
+    if (!err.isOperational) {
+        console.error('[ERROR]', err);
+    }
+
     res.status(statusCode).json({
         error: message,
     });

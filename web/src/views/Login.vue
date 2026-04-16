@@ -16,6 +16,8 @@ const senha = ref('');
 const isLoading = ref(false);
 const serverError = ref(null);
 
+if (authStore.isAuthenticated) router.push('/app/dashboard');
+
 onMounted(() => window.scrollTo(0, 0));
 
 const handleLogin = async () => {
@@ -26,7 +28,7 @@ const handleLogin = async () => {
     await authStore.login({ username: email.value, senha: senha.value });
 
     if (authStore.isAdmin) {
-      router.push({ name: 'admin-subscriptions' });
+      router.push({ name: 'dashboard' });
       return;
     }
 

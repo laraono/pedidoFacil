@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { AVAILABLE_PERMISSIONS } from '@/utils/permissions';
-import { getRolesMock, saveRolesMock } from '@/mock/authmock';
 import { useToast } from '@/composables/useToast';
 import { useFormValidation } from '@/composables/useFormValidation';
 import BaseInput from '@/components/ui/BaseInput.vue';
@@ -36,8 +35,17 @@ const { errors, validateAll, validateField } = useFormValidation(validationRules
 const PROTECTED_ROLE_NAMES = ['Admin', 'Gerente'];
 const HIDDEN_ROLE_NAMES = ['Admin'];
 
+function getRolesFromStorage() {
+  return JSON.parse(localStorage.getItem('roles') ?? '[]');
+}
+
+function saveRolesToStorage(data) {
+  localStorage.setItem('roles', JSON.stringify(data));
+  return Promise.resolve();
+}
+
 onMounted(() => {
-  roles.value = getRolesMock().filter(r => !HIDDEN_ROLE_NAMES.includes(r.name));
+  roles.value = getRolesFromStorage().filter(r => !HIDDEN_ROLE_NAMES.includes(r.name));
 });
 
 const saveRole = async () => {
@@ -52,7 +60,7 @@ const saveRole = async () => {
   isLoading.value = true;
   try {
     // Preserve hidden roles (Admin) when saving
-    const allRoles = getRolesMock();
+    const allRoles = getRolesFromStorage();
     const hiddenRoles = allRoles.filter(r => HIDDEN_ROLE_NAMES.includes(r.name));
 
     if (isEditing.value) {
@@ -62,7 +70,7 @@ const saveRole = async () => {
       roles.value.push({ ...currentRole.value, id: Date.now() });
     }
 
-    await saveRolesMock([...hiddenRoles, ...roles.value]);
+    await saveRolesToStorage([...hiddenRoles, ...roles.value]);
     showToast(`Cargo "${currentRole.value.name}" salvo com sucesso!`, 'success');
     isModalOpen.value = false;
   } catch {
@@ -92,9 +100,9 @@ const deleteRole = async () => {
     return;
   }
   // Remove from full stored list (including hidden roles like Admin)
-  const allRoles = getRolesMock();
+  const allRoles = getRolesFromStorage();
   const updated = allRoles.filter(r => r.id !== role.id);
-  await saveRolesMock(updated);
+  await saveRolesToStorage(updated);
   roles.value = roles.value.filter(r => r.id !== role.id);
   showToast(`Cargo "${role.name}" excluído.`, 'success');
   confirmDeleteRole.value = null;

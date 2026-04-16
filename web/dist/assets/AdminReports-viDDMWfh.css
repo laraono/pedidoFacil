@@ -1,0 +1,1 @@
+@media screen{.admin-print-root{display:none}}@media print{body *{visibility:hidden}.admin-print-root,.admin-print-root *{visibility:visible}.admin-print-root{position:fixed;top:0;left:0;width:100%;background:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}@page{size:A4;margin:10mm 14mm}}
