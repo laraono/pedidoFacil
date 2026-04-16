@@ -2,46 +2,65 @@ import FormData from 'form-data';
 
 const BASE_URL = 'http://localhost:3000/api/v1';
 
-export interface LoginData {
-  email: string;
-  password: string;
+export function getToken() {
+    return localStorage.getItem('accessToken');
 }
 
-export interface OnboardingData {
-  [key: string]: unknown;
-}
+export async function request(path: string, options: RequestInit & { headers?: Record<string, string> } = {}) {
+    const isFormData = options.body instanceof FormData;
 
-export default {
-  async login(data: LoginData) {
-    const user = storage.findUser(data.email, data.password);
-
-    if (!user) {
-      throw new Error("Usuário ou senha inválidos");
+    const headers: Record<string, string> = { ...options.headers };
+    if (!isFormData && !headers['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
     }
 
-    storage.setSession(user);
-    return { data: user };
-  },
+    const token = getToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  async register(data: unknown) {
-    storage.saveUser(data as import('./localStorageService').StoredUser);
-    return { data };
-  },
+    const body = options.body;
 
-  async logout(): Promise<void> {
-    storage.clearSession();
-  },
+    const res = await fetch(`${BASE_URL}${path}`, {
+        ...options,
+        body,
+        headers,
+        credentials: 'include',
+    });
 
-  async saveOnboarding(data: OnboardingData) {
-    storage.saveOnboarding(data);
-    return { data };
-  },
+    if (res.status === 204) return null;
 
-  async getOnboarding() {
-    return { data: storage.getOnboarding() };
-  },
+    const data = await res.json().catch(() => ({}));
 
-  async getSession() {
-    return { data: storage.getSession() };
-  }
-};
+    if (res.status === 401 && path !== '/refresh' && path !== '/login') {
+        try {
+            const refreshed = await request('/refresh', { method: 'POST' });
+            localStorage.setItem('accessToken', refreshed.accessToken);
+            headers['Authorization'] = `Bearer ${refreshed.accessToken}`;
+
+            const retryBody = options.body;
+
+            const retry = await fetch(`${BASE_URL}${path}`, {
+                ...options,
+                body: retryBody,
+                headers,
+                credentials: 'include',
+            });
+
+            if (!retry.ok) {
+                const retryData = await retry.json().catch(() => ({}));
+                throw new Error(retryData.error || `Erro ${retry.status}`);
+            }
+            return retry.status === 204 ? null : retry.json();
+        } catch {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+            throw new Error('Sessão expirada.');
+        }
+    }
+
+    if (!res.ok) {
+        throw new Error(data.error || `Erro ${res.status}`);
+    }
+
+    return data;
+}
