@@ -28,7 +28,9 @@ export class PlanService {
             frequency_type: params.frequency
         }
 
-        await this.mercadoPagoService.createPlan(mercadoPagoParams)
+        const answer = await this.mercadoPagoService.createPlan(mercadoPagoParams)
+
+        await this.planRepository.addMercadoPagoPlanId(plan.id, answer.id)
 
         return plan
     }

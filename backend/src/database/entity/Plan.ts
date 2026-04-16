@@ -47,7 +47,7 @@ export class Plan {
         type: "varchar",
         nullable: true
     })
-    mercadoPagoId?: number
+    mercadoPagoId?: string
     
     @OneToMany(() => Subscription, (subscription) => subscription.establishment)
     subscriptions?: Subscription[]

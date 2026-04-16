@@ -1,7 +1,7 @@
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { CreatePlanMercadoPago } from '../dto';
 import { AppError } from '../middleware';
-
+import axios from 'axios'
 
 export class MercadoPagoService {
 
@@ -20,12 +20,20 @@ export class MercadoPagoService {
             const answer = await axios({
                 method: "post",
                 url: "https://api.mercadopago.com/preapproval_plan",
-                data: params
+                data: params,
+                headers
             })
-            return answer
+            return answer.data
         } catch(error) {
             throw new AppError('Erro criando plano', 500)
         }
+    }
+
+    async createSubscription() {
+        next_payment_date
+        card_token_id
+        back_url
+        payer_email
     }
 }
 

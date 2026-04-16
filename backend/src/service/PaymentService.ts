@@ -3,6 +3,8 @@ import { Payment, PaymentOrder, Order } from '../database/entity';
 import { PaymentStatus } from '../database/entity/Payment';
 import { AppError } from '../middleware/error/AppError';
 
+pagamento por pix ou dinheiro
+
 export class PaymentService {
     constructor(private dataSource: DataSource) {}
 
