@@ -11,27 +11,6 @@ import { hashToken, gerarTokens, gerarTokenAdmin } from '../config/crypto'
 // Hash dummy para manter tempo constante quando e-mail não existe (evita timing attack)
 const DUMMY_HASH = '$2b$12$eImiTXuWVxfM37uY4JANjQev3nHN.SBuNFa5UPSmKUVgwjBiCXhHu'
 
-function validarCNPJ(cnpj: string): boolean {
-    const c = cnpj.replace(/[^\d]/g, '')
-    if (c.length !== 14 || /^(\d)\1{13}$/.test(c)) return false
-    let sum = 0, pos = 5
-    for (let i = 0; i < 12; i++) { sum += parseInt(c[i]) * pos--; if (pos < 2) pos = 9 }
-    let r = sum % 11 < 2 ? 0 : 11 - (sum % 11)
-    if (r !== parseInt(c[12])) return false
-    sum = 0; pos = 6
-    for (let i = 0; i < 13; i++) { sum += parseInt(c[i]) * pos--; if (pos < 2) pos = 9 }
-    r = sum % 11 < 2 ? 0 : 11 - (sum % 11)
-    return r === parseInt(c[13])
-}
-
-function validarSenhaForte(senha: string): string | null {
-    if (senha.length < 8) return 'A senha deve ter pelo menos 8 caracteres.'
-    if (!/[A-Z]/.test(senha)) return 'A senha deve conter pelo menos uma letra maiúscula.'
-    if (!/[0-9]/.test(senha)) return 'A senha deve conter pelo menos um número.'
-    if (!/[^A-Za-z0-9]/.test(senha)) return 'A senha deve conter pelo menos um caractere especial.'
-    return null
-}
-
 export class AuthService {
 
     constructor(
@@ -41,19 +20,6 @@ export class AuthService {
     ) {}
 
     async register(data: RegisterDTO) {
-        // --- Validações de formato ---
-        if (!data.nome_usuario?.trim()) {
-            throw new AppError('Nome do usuário é obrigatório.', 400)
-        }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-            throw new AppError('E-mail inválido.', 400)
-        }
-        if (!validarCNPJ(data.cnpj)) {
-            throw new AppError('CNPJ inválido.', 400)
-        }
-        const senhaErro = validarSenhaForte(data.senha)
-        if (senhaErro) throw new AppError(senhaErro, 400)
-
         // --- Validações de unicidade ---
         const emailExiste = await this.userRepository.findOne({ where: { email: data.email } })
         if (emailExiste) throw new AppError('Este e-mail já está cadastrado.', 409)
@@ -183,6 +149,7 @@ export class AuthService {
         }
 
         await this.refreshTokenRepository.revokeByHash(hash)
+        return null
     }
 
     async perfil(userId: number, isAdmin = false) {

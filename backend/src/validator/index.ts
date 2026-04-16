@@ -1,3 +1,4 @@
+export {validateLogin, validateRegister} from './auth'
 export {validateCreateCategory, validateListCategories, validateDeleteCategory, validateUpdateCategory} from './category'
 export {validateCreateComanda, validateCancelComanda, validateListComandas, validateListComandasByStatus} from './comanda'
 export {validateCreateOrder, validateListOrders, validateCancelOrders} from './order'

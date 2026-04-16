@@ -8,7 +8,6 @@ import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { ArrowLeft, PlusCircle, Trash, Pencil, X } from 'lucide-vue-next';
-import { getRolesMock, initMockRoles } from '@/mock/authmock';
 
 const USERS_KEY = 'users';
 
@@ -67,13 +66,12 @@ function canDeleteUser(user) {
 
 
 onMounted(() => {
-  initMockRoles();
   loadUsers();
-  roles.value = getRolesMock();
+  roles.value = JSON.parse(localStorage.getItem('roles') ?? '[]');
 });
 
 function reloadRoles() {
-  roles.value = getRolesMock();
+  roles.value = JSON.parse(localStorage.getItem('roles') ?? '[]');
 }
 
 function loadUsers() {
