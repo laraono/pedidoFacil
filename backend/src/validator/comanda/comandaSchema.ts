@@ -31,7 +31,6 @@ export const validateCreateComanda =
         try {
             req.body = createComandaSchema.parse(req.body)
 
-            next();
         } catch (error) {
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);
@@ -49,7 +48,6 @@ export const validateCancelComanda =
             req.params = validation.params as any;
             req.body = validation.body
 
-            next();
         } catch (error) {
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);
