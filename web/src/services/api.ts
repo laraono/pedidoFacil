@@ -1,34 +1,23 @@
 import FormData from 'form-data';
 
-export interface LoginData {
-  email: string;
-  password: string;
-}
-
-export interface OnboardingData {
-  [key: string]: unknown;
-}
-
-export default {
-  async login(data: LoginData) {
-    const user = storage.findUser(data.email, data.password);
+const BASE_URL = 'http://localhost:3000/api/v1';
 
 export function getToken() {
     return localStorage.getItem('accessToken');
 }
 
-export async function request(path, options = {}) {
+export async function request(path: string, options: RequestInit & { headers?: Record<string, string> } = {}) {
     const isFormData = options.body instanceof FormData;
-    
-    const headers = { ...options.headers };
-    if (!isFormData && !options.headers?.['Content-Type']) {
+
+    const headers: Record<string, string> = { ...options.headers };
+    if (!isFormData && !headers['Content-Type']) {
         headers['Content-Type'] = 'application/json';
     }
-    
+
     const token = getToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    let body = options.body;
+    const body = options.body;
 
     const res = await fetch(`${BASE_URL}${path}`, {
         ...options,
@@ -46,19 +35,16 @@ export async function request(path, options = {}) {
             const refreshed = await request('/refresh', { method: 'POST' });
             localStorage.setItem('accessToken', refreshed.accessToken);
             headers['Authorization'] = `Bearer ${refreshed.accessToken}`;
-            
-            let retryBody = options.body;
-            if (!isFormData && retryBody && typeof retryBody === 'object' && !(retryBody instanceof FormData)) {
-                retryBody = JSON.stringify(retryBody);
-            }
-            
+
+            const retryBody = options.body;
+
             const retry = await fetch(`${BASE_URL}${path}`, {
                 ...options,
                 body: retryBody,
                 headers,
                 credentials: 'include',
             });
-            
+
             if (!retry.ok) {
                 const retryData = await retry.json().catch(() => ({}));
                 throw new Error(retryData.error || `Erro ${retry.status}`);
@@ -78,25 +64,3 @@ export async function request(path, options = {}) {
 
     return data;
 }
-  async register(data: unknown) {
-    storage.saveUser(data as import('./localStorageService').StoredUser);
-    return { data };
-  },
-
-  async logout(): Promise<void> {
-    storage.clearSession();
-  },
-
-  async saveOnboarding(data: OnboardingData) {
-    storage.saveOnboarding(data);
-    return { data };
-  },
-
-  async getOnboarding() {
-    return { data: storage.getOnboarding() };
-  },
-
-  async getSession() {
-    return { data: storage.getSession() };
-  }
-};
