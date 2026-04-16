@@ -52,14 +52,15 @@ const deleteCategorySchema = z.object({
 export const validateCreateCategory = 
     (req, res: Response, next: NextFunction) => {
         try {
+            const file = req.file ? req.file : undefined
+
             const {image, ...body} = createCategorySchema.parse({
                 name: req.body.name, 
-                image: req.file,
+                image: file,
                 establishmentId: req.usuario.estabelecimento
             })
 
             req.body = body
-            console.log()
 
             next()
         } catch (error) {
@@ -89,7 +90,9 @@ export const validateListCategories =
 export const validateUpdateCategory = 
     (req, res: Response, next: NextFunction) => {
         try {
-            const validation = updateCategorySchema.parse({categoryId: req.params.categoryId, body: req.body, image: req.file})
+            const image = req.file ? req.file : undefined
+
+            const validation = updateCategorySchema.parse({categoryId: req.params.categoryId, body: req.body, image})
 
             req.body = validation.body
             req.params = validation.categoryId

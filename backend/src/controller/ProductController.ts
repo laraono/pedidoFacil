@@ -10,18 +10,23 @@ export class ProductController {
     }
 
     async createProduct(req: Request, res: Response) {
-        const productId = await this.productService.createProduct({...req.body, image: req.file.buffer})
+
+        const image = req.file ? 
+            req.file.buffer ? req.file.buffer : undefined
+            : undefined
+        
+        const productId = await this.productService.createProduct({...req.body, image})
 
         res.status(201).send(productId)
     }
 
-    async listProducts(req, res: Response) {
+    async listProducts(req: Request, res: Response) {
         const products = await this.productService.listProducts(req.body)
 
         res.status(200).send(products)
     }
 
-    async listProductsByCategory(req, res: Response) {
+    async listProductsByCategory(req: Request, res: Response) {
         const {categoryId, establishmentId} = req.body
 
         const products = await this.productService.listProductsByCategory(categoryId, establishmentId)
@@ -29,7 +34,7 @@ export class ProductController {
         res.status(200).send(products)
     }
 
-    async listActiveProductsByCategory(req, res: Response) {
+    async listActiveProductsByCategory(req: Request, res: Response) {
         const {categoryId, establishmentId} = req.body
 
         const products = await this.productService.listActiveProductsByCategory(categoryId, establishmentId)

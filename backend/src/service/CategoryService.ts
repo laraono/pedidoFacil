@@ -113,6 +113,10 @@ export class CategoryService {
 
         const category = await this.categoryRepository.getCategory(categoryId)
 
+        if(!category) {
+            throw new AppError('Categoria não existe', 400)
+        }
+
         category.products.forEach(async(product) => {
             const productStatus = params.status === CategoryStatus.ATIVA 
             ? ProductStatus.ATIVO 
@@ -124,6 +128,10 @@ export class CategoryService {
 
     async deleteCategory(categoryId: number) {
         const category = await this.categoryRepository.getCategory(categoryId)
+
+        if(!category) {
+            throw new AppError('Categoria não existe', 400)
+        }
 
         if(category.products) {
             throw new AppError('Categoria possui produtos ligados a ela e não pode ser deletada', 409)
@@ -159,7 +167,7 @@ export class CategoryService {
             return imageKey
 
         } catch(error) {
-            throw new AppError(`Erro ao salvar imagem: ${error.message}`, 500)
+            throw new AppError(`Erro ao salvar imagem: ${error}`, 500)
         }
     }  
 }

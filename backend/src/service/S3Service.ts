@@ -5,14 +5,21 @@ import { AppError } from "../middleware";
 import crypto from 'crypto';
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
+import { PutBucketCorsCommand } from "@aws-sdk/client-s3";
+
+
+
 export interface UploadFileParams {
     bucket: string;
     key: string;
     body: Buffer | Uint8Array | Blob | string | Readable;
     contentType?: string;
+
+    
 }
 
 export async function uploadToS3({ bucket, key, body, contentType }: UploadFileParams) {
+    
     const command = new PutObjectCommand({
         Bucket: bucket,
         Key: key,
@@ -47,8 +54,21 @@ export async function getFromS3(bucket: string, key: string) {
 }
 
 export async function createBucket(bucketName: string) {
-    const command = new CreateBucketCommand({
+    const corsConfiguration = {
+        CORSRules: [
+            {
+                AllowedHeaders: ["*"],
+                AllowedMethods: ["GET", "PUT", "POST", "DELETE", "HEAD"],
+                AllowedOrigins: ["*"], // In production, use your specific domain
+                ExposeHeaders: [],
+            },
+        ],
+    };
+
+    const command = new PutBucketCorsCommand({
         Bucket: bucketName,
+        CORSConfiguration: corsConfiguration,
+
     });
 
     try {
@@ -66,7 +86,7 @@ export async function doesBucketExist(bucketName: string): Promise<boolean> {
         await s3Client.send(command);
         return true; 
     } catch (error) {
-        if (error instanceof NotFound || error.name === 'NotFound') {
+        if (error instanceof NotFound) {
             return false; 
         }
         console.error('Error checking bucket:', error);

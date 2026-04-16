@@ -10,18 +10,22 @@ export class CategoryController {
     }
 
     async createCategory(req: Request, res: Response) {
-        const categoryId = await this.categoryService.createCategory({...req.body, image: req.file.buffer})
+        const image = req.file ? 
+            req.file.buffer ? req.file.buffer : undefined
+            : undefined
+
+        const categoryId = await this.categoryService.createCategory({...req.body, image})
 
         res.status(201).send(categoryId)
     }
 
-    async listCategories(req, res: Response) {
+    async listCategories(req: Request, res: Response) {
         const categories = await this.categoryService.listCategories(req.body)
         
         res.status(200).send(categories)
     }
 
-    async listActivieCategories(req, res: Response) {
+    async listActivieCategories(req: Request, res: Response) {
         const categories = await this.categoryService.listCategories(req.body)
         
         res.status(200).send(categories)

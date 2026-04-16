@@ -138,7 +138,7 @@ export class ProductService {
 
         const category = await this.categoryService.getCategory(params.product.categoryId)
 
-        if(!product) {
+        if(!category) {
             throw new AppError('Categoria não existe', 400)
         }
 
@@ -195,7 +195,6 @@ export class ProductService {
     async saveImage(product: ProductParams, name: string) {
         if(!product.image) return ''
 
-        console.log('nome da empresa', name)
         const bucketName = name.toLocaleLowerCase()
 
         await ensureBucketExists(bucketName)
@@ -216,7 +215,7 @@ export class ProductService {
             return imageKey
 
         } catch(error) {
-            throw new AppError(`Erro ao salvar imagem: ${error.message}`, 500)
+            throw new AppError(`Erro ao salvar imagem: ${error}`, 500)
         }
     }
 }
