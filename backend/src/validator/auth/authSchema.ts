@@ -43,7 +43,7 @@ export const validateLogin =
             next();
         } catch (error) {
             if (error instanceof ZodError) {
-                return res.status(400).json({ error: error.errors[0].message });
+                return res.status(400).json({ error: error.issues[0].message });
             }
             return res.status(500).send('Internal Server Error');
         }
@@ -56,7 +56,7 @@ export const validateRegister =
             next();
         } catch (error) {
             if (error instanceof ZodError) {
-                return res.status(400).json({ error: error.errors[0].message });
+                return res.status(400).json({ error: error.issues[0].message });
             }
             return res.status(500).send('Internal Server Error');
         }
