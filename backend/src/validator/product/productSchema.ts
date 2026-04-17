@@ -81,9 +81,11 @@ const deleteProductSchema = z.object({
 export const validateCreateProduct = 
     (req, res: Response, next: NextFunction) => {
         try {
-            const product = {...req.body.product, establishmentId: req.usuario.estabelecimento}
+            const productData = typeof req.body.product === 'string' ? JSON.parse(req.body.product) : req.body.product
+            const product = {...productData, establishmentId: req.usuario.estabelecimento}
+            const productVariations = typeof req.body.productVariations === 'string' ? JSON.parse(req.body.productVariations) : req.body.productVariations
 
-            req.body = createProductSchema.parse({product, productVariations: req.body.productVariations, image: req.file})
+            req.body = createProductSchema.parse({product, productVariations, image: req.file})
 
             next()
         } catch (error) {
@@ -126,8 +128,9 @@ export const validateListProductsByCategories =
 export const validateUpdateProduct = 
     (req, res: Response, next: NextFunction) => {
         try {
-            const product = {...req.body.product, establishmentId: req.usuario.estabelecimento}
-            const productVariations = req.body.productVariations
+            const productData = typeof req.body.product === 'string' ? JSON.parse(req.body.product) : req.body.product
+            const product = {...productData, establishmentId: req.usuario.estabelecimento}
+            const productVariations = typeof req.body.productVariations === 'string' ? JSON.parse(req.body.productVariations) : req.body.productVariations
 
             const validation = updateProductSchema.parse({params: req.params, body: {product, productVariations, image: req.file}})
 
