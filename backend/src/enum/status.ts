@@ -30,8 +30,8 @@ export enum UserStatus {
 
 export enum SubscriptionStatus {
     PENDENTE = 'Pendente',
-    PAGO = 'Pago',
+    PAGA = 'Paga',
     EXPIRADA = 'Expirada',
-    CACNELADA = 'Cancelada'
+    CANCELADA = 'Cancelada'
 }
 
