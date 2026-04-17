@@ -1,4 +1,3 @@
-import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { CreatePlanMercadoPago } from '../dto';
 import { AppError } from '../middleware';
 import axios from 'axios'
@@ -29,11 +28,34 @@ export class MercadoPagoService {
         }
     }
 
-    async createSubscription() {
-        next_payment_date
-        card_token_id
-        back_url
-        payer_email
+    async createSubscription(
+        params: {
+            payer_email: string,
+            card_token_id: string,
+            back_url: string
+        }
+    ) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+            return
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN 
+        }
+
+        try {
+            const answer = await axios({
+                method: "post",
+                url: "https://api.mercadopago.com/preapproval",
+                data: params,
+                headers
+            })
+
+            return answer.data
+        } catch(error) {
+            throw new AppError('Erro criando plano', 500)
+        }
     }
 }
 

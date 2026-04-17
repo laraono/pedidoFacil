@@ -15,6 +15,7 @@ import { ConfigurationRepository } from './ConfigurationRepository';
 import { ReceiptRepository } from './ReceiptRepository';
 import { PaymentRepository } from './PaymentRepository'; 
 import { PlanRepository } from './PlanRepository';
+import { SubscriptionRepository } from './SubscriptionRepository';
 
 const categoryRepository = new CategoryRepository(AppDataSource);
 const comandaRepository = new ComandaRepository(AppDataSource);
@@ -36,6 +37,7 @@ const configurationRepository = new ConfigurationRepository(AppDataSource);
 const receiptRepository = new ReceiptRepository(AppDataSource);
 const paymentRepository = new PaymentRepository(AppDataSource); 
 const planRepository = new PlanRepository(AppDataSource)
+const subscriptionRepository = new SubscriptionRepository(AppDataSource)
 
 export {
     categoryRepository,
@@ -53,7 +55,8 @@ export {
     configurationRepository,
     receiptRepository, 
     paymentRepository,
-    planRepository
+    planRepository,
+    subscriptionRepository
 };
 
 export {
@@ -72,5 +75,6 @@ export {
     ConfigurationRepository,
     ReceiptRepository,
     PaymentRepository,
-    PlanRepository
+    PlanRepository,
+    SubscriptionRepository
 };
