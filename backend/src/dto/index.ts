@@ -30,6 +30,9 @@ export {
     CreatePlanMercadoPago, CreatePlanParams,
     CreatePlan
 } from './plan'
+export {
+    CreateSubscription
+} from './subscription'
 export * from './establishment/SaveOnboardingStepDTO';
 export * from './establishment/FinalizeOnboardingDTO';
 export * from './establishment/UpdateEstablishmentDTO';
