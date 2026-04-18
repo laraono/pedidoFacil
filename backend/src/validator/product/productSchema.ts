@@ -2,9 +2,6 @@ import { z } from 'zod';
 import express, { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 
-const fileSizeLimit = 5 * 1024 * 1024; // 5MB
-const ACCEPTED_IMAGE_MIME_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
-
 const createProductSchema = z.object({
     product: z.object({
         name: z.string().min(1).max(20),
@@ -12,23 +9,13 @@ const createProductSchema = z.object({
         estocavel: z.coerce.boolean(),
         categoryId: z.coerce.number().int().positive(),
         establishmentId: z.coerce.number().int().positive(),
-        basePrice: z.coerce.number().positive(),
-        image: z
-            .instanceof(File)
-            .refine(
-                (file) => ACCEPTED_IMAGE_MIME_TYPES.includes(file.type),
-                { message: "Tipo de imagem inválido" }
-            )
-            .refine(
-                (file) => file.size <= fileSizeLimit,
-                { message: "Tamanho do arquivo não deve exceder 5MB" }
-            )
-            .optional()
+        basePrice: z.coerce.number().positive()
     }),
-    productVariations: z.object({
+
+    productVariations: z.array(z.object({
         name: z.string().min(1).max(20),
-        addPrice: z.coerce.number().positive(),
-    }).array().optional()
+        addPrice: z.coerce.number(),
+    })),
     
 });
 
@@ -50,18 +37,7 @@ const updateProductSchema = z.object({
             name: z.string().min(1).max(20),
             addPrice: z.coerce.number().positive(),
         }).array().optional()
-    }),
-        image: z
-            .object({
-                mimetype: z.string().refine((type) => ACCEPTED_IMAGE_MIME_TYPES.includes(type), {
-                    message: "Tipo de imagem inválido",
-                }),
-                size: z.number().max(fileSizeLimit, {
-                    message: "Tamanho do arquivo não deve exceder 5MB",
-                }),
-                buffer: z.instanceof(Buffer), // Ensure it has the actual data
-            })
-            .optional(),
+    })
 });
 
 const listProductsSchema = z.object({
@@ -78,21 +54,41 @@ const deleteProductSchema = z.object({
     categoryId: z.coerce.number().int().positive()
 })
 
-export const validateCreateProduct = 
-    (req, res: Response, next: NextFunction) => {
-        try {
-            const product = {...req.body.product, establishmentId: req.usuario.estabelecimento}
+export const validateCreateProduct = (req: any, res: Response, next: NextFunction) => {
+    try {
 
-            req.body = createProductSchema.parse({product, productVariations: req.body.productVariations, image: req.file})
+        const rawProduct = typeof req.body.product === 'string' 
+            ? JSON.parse(req.body.product) 
+            : req.body.product;
 
-            next()
-        } catch (error) {
-            if (error instanceof ZodError) {
-                return res.status(400).send(error.message);
-            }
-            return res.status(500).send("Internal Server Error");
+        const rawVariations = typeof req.body.productVariations === 'string'
+            ? JSON.parse(req.body.productVariations)
+            : req.body.productVariations;
+
+            console.log(rawProduct)
+
+        const dataToValidate = {
+            product: {
+                ...rawProduct,
+                establishmentId: req.usuario.estabelecimento,
+            },
+            productVariations: rawVariations
+        };
+
+        req.body = createProductSchema.parse(dataToValidate);
+
+        console.log('post parse')
+
+        next();
+    } catch (error) {
+        if (error instanceof ZodError) {
+            // It's better to return error.flatten() or error.errors for a cleaner UI response
+            return res.status(400).json({ errors: error });
         }
-    };
+        console.error(error);
+        return res.status(500).send("Internal Server Error");
+    }
+};
 
 export const validateListProducts = 
     (req, res: Response, next: NextFunction) => {
@@ -129,7 +125,7 @@ export const validateUpdateProduct =
             const product = {...req.body.product, establishmentId: req.usuario.estabelecimento}
             const productVariations = req.body.productVariations
 
-            const validation = updateProductSchema.parse({params: req.params, body: {product, productVariations, image: req.file}})
+            const validation = updateProductSchema.parse({params: req.params, body: {product, productVariations}})
 
             req.params = validation.params
             req.body = validation.body
