@@ -151,8 +151,8 @@ export class CategoryService {
             const imageKey = generateUniqueImageKey(category.image);
 
             const doesImageExist = await checkFileExists(bucketName, imageKey)
-            
-            if(!doesImageExist) return imageKey
+
+            if(doesImageExist) return imageKey
 
             const result = await uploadToS3({
                 bucket: bucketName, 

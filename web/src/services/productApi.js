@@ -4,11 +4,11 @@ export const productApi = {
     post: async (product, productVariations, image) =>{
         const formData = new FormData()
 
-        formData.append('product', JSON.stringify(product));
-        formData.append('productVariations', JSON.stringify(productVariations));
+        formData.append('product', JSON.stringify(JSON.stringify(product)));
+        formData.append('productVariations', JSON.stringify(JSON.stringify(productVariations)));
         
         if (image) {
-            formData.append('image', image);
+            if (image) formData.append('image', image);
         }
         await request('/products', { method: 'POST', body: formData })
     },
@@ -26,9 +26,9 @@ export const productApi = {
 
     putProduct: async (categoryId, productId, product, productVariations, image) =>{
         const formData = new FormData()
-        formData.append('product', product)
-        formData.append('productVariations', productVariations)
-        formData.append('image', image)
+        formData.append('product', JSON.stringify(product))
+        formData.append('productVariations', JSON.stringify(productVariations))
+        if (image) formData.append('image', image)
 
         await request(`/categories/${categoryId}/products/${productId}`, { method: 'PUT', body: formData})
     },

@@ -173,7 +173,7 @@ const openEdit = (p) => {
 
 const addSize = () => form.value.productVariations.push({ name: '', addPrice: '' });
 const removeSize = (i) => form.value.productVariations.splice(i, 1);
-const handleImageUpload = (e) => { const file = e.target.files[0]; if (!file) return; const url = URL.createObjectURL(file); form.value.imagePreview = url; form.value.image = url; };
+const handleImageUpload = (e) => { const file = e.target.files[0]; if (!file) return; form.value.imagePreview = URL.createObjectURL(file); form.value.image = file; };
 
 const applyPriceMask = (raw) => {
     let val = String(raw).replace(/[^\d,]/g, '');

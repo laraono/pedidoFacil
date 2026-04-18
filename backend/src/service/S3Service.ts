@@ -54,26 +54,22 @@ export async function getFromS3(bucket: string, key: string) {
 }
 
 export async function createBucket(bucketName: string) {
-    const corsConfiguration = {
-        CORSRules: [
-            {
-                AllowedHeaders: ["*"],
-                AllowedMethods: ["GET", "PUT", "POST", "DELETE", "HEAD"],
-                AllowedOrigins: ["*"], // In production, use your specific domain
-                ExposeHeaders: [],
-            },
-        ],
-    };
-
-    const command = new PutBucketCorsCommand({
-        Bucket: bucketName,
-        CORSConfiguration: corsConfiguration,
-
-    });
-
     try {
-        const result = await s3Client.send(command);
-        return result;
+        await s3Client.send(new CreateBucketCommand({ Bucket: bucketName }));
+
+        await s3Client.send(new PutBucketCorsCommand({
+            Bucket: bucketName,
+            CORSConfiguration: {
+                CORSRules: [
+                    {
+                        AllowedHeaders: ["*"],
+                        AllowedMethods: ["GET", "PUT", "POST", "DELETE", "HEAD"],
+                        AllowedOrigins: ["*"],
+                        ExposeHeaders: [],
+                    },
+                ],
+            },
+        }));
     } catch (error) {
         console.error('Error creating bucket:', error);
         throw new AppError('Erro fazendo upload da imagem', 500);
@@ -95,7 +91,7 @@ export async function doesBucketExist(bucketName: string): Promise<boolean> {
 }
 
 export function generateUniqueImageKey(image: Buffer) {
-    const hash = crypto.createHash('sha-256');
+    const hash = crypto.createHash('sha256');
     hash.update(image);
     return hash.digest('hex');
 }
