@@ -3,10 +3,13 @@ import { request } from "./api";
 export const productApi = {
     post: async (product, productVariations, image) =>{
         const formData = new FormData()
-        formData.append('product', product)
-        formData.append('productVariations', productVariations)
-        formData.append('image', image)
 
+        formData.append('product', JSON.stringify(product));
+        formData.append('productVariations', JSON.stringify(productVariations));
+        
+        if (image) {
+            formData.append('image', image);
+        }
         await request('/products', { method: 'POST', body: formData })
     },
     listByCategory: async (categoryId) =>
