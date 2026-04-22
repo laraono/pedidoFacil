@@ -10,12 +10,7 @@ export class CategoryService {
         this.categoryRepository = categoryRepository
     }
 
-    /**
-     * Cria uma nova categoria. 
-     * Certifique-se de que o DTO CreateCategory agora aceite o campo 'image'.
-     */
     async createCategory(category: CreateCategory) {
-        // Ao passar o objeto 'category' completo, o Repository receberá o Base64 da imagem
         const { id } = await this.categoryRepository.createCategory(category) 
         return id
     }
@@ -32,15 +27,17 @@ export class CategoryService {
         return await this.categoryRepository.listDeletedCategories()
     }
 
-    /**
-     * Atualiza uma categoria existente.
-     * CORREÇÃO: Agora o campo 'image' é enviado para o repositório.
-     */
     async updateCategory(categoryId: number, data: any) {
-        await this.categoryRepository.updateCategory(categoryId, { 
-            name: data.name, 
-            image: data.image // Adicionado para persistir o Base64 no banco
-        });
+        const updateData: any = {};
+
+        if (data.name !== undefined) updateData.name = data.name;
+        if (data.image !== undefined) updateData.image = data.image;
+
+        if (Object.keys(updateData).length === 0) {
+            return; 
+        }
+
+        await this.categoryRepository.updateCategory(categoryId, updateData);
     }
 
     async softDeleteCategory(categoryId: number) {

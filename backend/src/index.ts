@@ -23,6 +23,7 @@ import {
 import { AppDataSource } from './database';
 import { errorHandler } from './middleware';
 import { initSocket } from './socket';
+import path from 'path'; 
 
 dotenv.config();
 
@@ -61,7 +62,8 @@ AppDataSource.initialize().then(async () => {
     app.use('/api/v1/cupons', couponRouter)
     app.use('/api/v1', configRouter)
     app.use('/api/v1/contato', contactRouter)
-
+    app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
+    
     app.use(errorHandler)
 
     const PORT = 3000;

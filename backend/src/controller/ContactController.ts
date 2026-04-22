@@ -18,8 +18,8 @@ export class ContactController {
 
       await transporter.sendMail({
         from: `"${nome}" <${email}>`,
-        to: 'pedidofacilcontato@gmail.com', // O email que vai receber a notificação
-        replyTo: email, // Permite que você responda direto para o cliente
+        to: 'pedidofacilcontato@gmail.com', 
+        replyTo: email, 
         subject: 'Novo Contato pelo Site - PedidoFácil',
         text: `Nome: ${nome}\nE-mail: ${email}\n\nMensagem:\n${mensagem}`,
         html: `

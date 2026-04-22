@@ -1,12 +1,17 @@
 import { z } from 'zod';
-import { safeString, safeBase64Image } from '../../utils/safeZod';
+import { safeString } from '../../utils/safeZod';
 
 export const createCategorySchema = z.object({
   body: z.object({
     name: safeString(2, 50),
-    image: safeBase64Image(2).optional().nullable(),
-    establishment: z.object({ id: z.number().int().positive() }).optional()
-  }).strict()
+    
+    establishment: z.preprocess((val) => {
+      if (typeof val === 'string') {
+        try { return JSON.parse(val); } catch { return val; }
+      }
+      return val;
+    }, z.object({ id: z.coerce.number().int().positive() }).optional())
+  }) 
 });
 
 export type CreateCategoryDTO = z.infer<typeof createCategorySchema>['body'];
