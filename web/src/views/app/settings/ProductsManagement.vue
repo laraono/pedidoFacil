@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { useMenuStore } from "@/stores/productsManagement.js";
 import { useToast } from "@/composables/useToast";
 import { useConfirm } from "@/composables/useConfirm";
@@ -16,12 +17,16 @@ const menuStore = useMenuStore();
 const { showToast } = useToast();
 const { confirmState, showConfirm } = useConfirm();
 
+onMounted(() => {
+  menuStore.loadData();
+});
+
 const showDeleted = ref(false);
 const showModal = ref(false);
 const isEditing = ref(false);
 const isLoading = ref(false);
 const errors = ref({});
-const form = ref({ id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true, sizes: [] });
+const form = ref({ id: null, name: "", description: "", price: "", categoryId: "", imageFile: null, imagePreview: null, available: true, sizes: [] });
 
 const displayedProducts = computed(() => showDeleted.value ? menuStore.deletedProducts : menuStore.activeProducts);
 const sortedProducts = computed(() => {
@@ -37,13 +42,12 @@ const sortedProducts = computed(() => {
 });
 const categoryOptions = computed(() => menuStore.activeCategories.map(c => ({ label: c.name, value: c.id })));
 
-// ── Bulk edition ──────────────────────────────────────────────────────────────
 const bulkMode = ref(false);
-const sortMode = ref('none'); // 'none' | 'alpha' | 'category-alpha'
+const sortMode = ref('none');
 const selectedIds = ref([]);
-const bulkAction = ref('');       // 'price_increase' | 'price_decrease' | 'availability' | 'category' | 'delete'
+const bulkAction = ref('');
 const bulkPriceValue = ref('');
-const bulkPriceType = ref('percent');  // 'percent' | 'fixed'
+const bulkPriceType = ref('percent');
 const bulkAvailability = ref(true);
 const bulkCategoryId = ref('');
 const showBulkConfirm = ref(false);
@@ -52,6 +56,14 @@ const bulkConfirmMessage = ref('');
 const allSelected = computed(() =>
   displayedProducts.value.length > 0 && displayedProducts.value.every(p => selectedIds.value.includes(p.id))
 );
+
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return '';
+  if (imagePath.startsWith('http') || imagePath.startsWith('data:image')) return imagePath;
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+  const host = BASE_URL.replace('/api/v1', '');
+  return `${host}/uploads/${imagePath}`;
+};
 
 const toggleBulkMode = () => {
   bulkMode.value = !bulkMode.value;
@@ -107,9 +119,10 @@ const applyBulk = () => {
   showBulkConfirm.value = true;
 };
 
-const executeBulk = () => {
+const executeBulk = async () => {
   const ids = [...selectedIds.value];
   const prods = displayedProducts.value.filter(p => ids.includes(p.id));
+  
   for (const p of prods) {
     if (bulkAction.value === 'price_increase' || bulkAction.value === 'price_decrease') {
       const val = parseFloat(String(bulkPriceValue.value).replace(',', '.')) || 0;
@@ -121,22 +134,22 @@ const executeBulk = () => {
         newPrice = bulkAction.value === 'price_increase' ? basePrice + val : basePrice - val;
       }
       newPrice = Math.max(0, parseFloat(newPrice.toFixed(2)));
-      menuStore.updateProduct({ ...p, price: newPrice });
+      await menuStore.updateProduct({ ...p, price: newPrice });
     } else if (bulkAction.value === 'availability') {
-      menuStore.updateProduct({ ...p, available: bulkAvailability.value });
+      await menuStore.updateProduct({ ...p, available: bulkAvailability.value });
     } else if (bulkAction.value === 'category') {
-      menuStore.updateProduct({ ...p, categoryId: bulkCategoryId.value });
+      await menuStore.updateProduct({ ...p, categoryId: bulkCategoryId.value });
     } else if (bulkAction.value === 'delete') {
-      menuStore.softDeleteProduct(p.id);
+      await menuStore.softDeleteProduct(p.id);
     }
   }
+  
   showToast(`${ids.length} produto(s) atualizado(s) com sucesso!`, 'success');
   showBulkConfirm.value = false;
   selectedIds.value = [];
   bulkMode.value = false;
 };
 
-// ── Individual actions ────────────────────────────────────────────────────────
 const validate = () => {
   const e = {};
   if (!form.value.name?.trim()) e.name = "Nome do produto é obrigatório.";
@@ -149,12 +162,26 @@ const validate = () => {
   return Object.keys(e).length === 0;
 };
 
-const openAdd = () => { isEditing.value = false; form.value = { id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true, sizes: [] }; errors.value = {}; showModal.value = true; };
-const openEdit = (p) => { isEditing.value = true; form.value = { id: p.id, name: p.name, description: p.description || "", price: p.price != null ? String(p.price).replace('.', ',') : "", categoryId: p.categoryId, image: p.image, imagePreview: p.image, available: p.available !== false, sizes: p.sizes ? p.sizes.map(s => ({ name: s.name, price: String(s.price).replace('.', ',') })) : [] }; errors.value = {}; showModal.value = true; };
+const openAdd = () => { isEditing.value = false; form.value = { id: null, name: "", description: "", price: "", categoryId: "", imageFile: null, imagePreview: null, available: true, sizes: [] }; errors.value = {}; showModal.value = true; };
+const openEdit = (p) => { isEditing.value = true; form.value = { id: p.id, name: p.name, description: p.description || "", price: p.price != null ? String(p.price).replace('.', ',') : "", categoryId: p.categoryId, imageFile: null, imagePreview: getImageUrl(p.image), available: p.available !== false, sizes: p.sizes ? p.sizes.map(s => ({ name: s.name, price: String(s.price).replace('.', ',') })) : [] }; errors.value = {}; showModal.value = true; };
 
 const addSize = () => form.value.sizes.push({ name: '', price: '' });
 const removeSize = (i) => form.value.sizes.splice(i, 1);
-const handleImageUpload = (e) => { const file = e.target.files[0]; if (!file) return; const url = URL.createObjectURL(file); form.value.imagePreview = url; form.value.image = url; };
+
+const handleImageUpload = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const maxSize = 2 * 1024 * 1024; 
+  if (file.size > maxSize) {
+    showToast("Arquivo muito grande! O limite é 2MB.", "error");
+    e.target.value = "";
+    return;
+  }
+
+  form.value.imageFile = file;
+  form.value.imagePreview = URL.createObjectURL(file);
+};
 
 const applyPriceMask = (raw) => {
   let val = String(raw).replace(/[^\d,]/g, '');
@@ -171,23 +198,63 @@ const applyPriceMask = (raw) => {
 const onPriceInput = (e) => { form.value.price = applyPriceMask(e.target.value); };
 const onSizePriceInput = (e, i) => { form.value.sizes[i].price = applyPriceMask(e.target.value); };
 
-const save = () => {
-  if (!validate()) { showToast("Corrija os erros no formulário.", "error"); return; }
+const save = async () => {
+  errors.value = {};
+
+  if (!validate()) { 
+    showToast("Corrija os erros no formulário.", "error"); 
+    return; 
+  }
+  
   isLoading.value = true;
   try {
     const parsedSizes = form.value.sizes
       .filter(s => s.name.trim())
       .map(s => ({ name: s.name.trim(), price: parseFloat(String(s.price).replace(',', '.')) || 0 }));
-    const payload = { id: form.value.id, name: form.value.name, description: form.value.description, price: parseFloat(String(form.value.price).replace(",", ".")), categoryId: form.value.categoryId, image: form.value.image, available: form.value.available, sizes: parsedSizes };
-    if (isEditing.value) menuStore.updateProduct(payload); else menuStore.addProduct(payload);
+    
+    const formData = new FormData();
+    
+    if (form.value.id) {
+      formData.append('id', form.value.id);
+      formData.id = form.value.id; 
+    }
+    
+    formData.append('name', form.value.name);
+    formData.append('description', form.value.description || "");
+    formData.append('price', parseFloat(String(form.value.price).replace(",", ".")));
+    formData.append('categoryId', form.value.categoryId);
+    formData.append('available', form.value.available);
+    formData.append('sizes', JSON.stringify(parsedSizes));
+    
+    if (form.value.imageFile) {
+      formData.append('imagem', form.value.imageFile);
+    }
+    
+    if (isEditing.value) await menuStore.updateProduct(formData); 
+    else await menuStore.addProduct(formData);
+    
     showToast(isEditing.value ? "Produto atualizado!" : "Produto criado!", "success");
     showModal.value = false;
-  } catch { showToast("Erro ao salvar produto.", "error"); } finally { isLoading.value = false; }
+  } catch (error) { 
+    const data = error.response?.data || error.data || error;
+    
+    if (data?.errors && Array.isArray(data.errors)) {
+      data.errors.forEach((err) => {
+        let field = err.campo.replace("body.", "");
+        errors.value[field] = err.mensagem;
+      });
+      showToast("Verifique os campos destacados em vermelho.", "error");
+    } else {
+      showToast(data?.message || "Erro ao salvar produto.", "error");
+    }
+  } finally { 
+    isLoading.value = false; 
+  }
 };
 
-const handleDelete = (p) => showConfirm({ title: "Arquivar Produto", message: "Arquivar " + p.name + "?", onConfirm: () => { menuStore.softDeleteProduct(p.id); showToast(p.name + " arquivado.", "success"); } });
-const handleRestore = (p) => showConfirm({ title: "Restaurar Produto", message: "Restaurar " + p.name + "?", onConfirm: () => { menuStore.restoreProduct(p.id); showToast(p.name + " restaurado.", "success"); } });
-const handlePermanentDelete = (p) => showConfirm({ title: "Excluir Permanentemente", message: "Excluir " + p.name + " para sempre?", onConfirm: () => { menuStore.permanentlyDeleteProduct(p.id); showToast(p.name + " excluído.", "success"); } });
+const handleDelete = (p) => showConfirm({ title: "Arquivar Produto", message: "Arquivar " + p.name + "?", onConfirm: async () => { await menuStore.softDeleteProduct(p.id); showToast(p.name + " arquivado.", "success"); } });
+const handleRestore = (p) => showConfirm({ title: "Restaurar Produto", message: "Restaurar " + p.name + "?", onConfirm: async () => { await menuStore.restoreProduct(p.id); showToast(p.name + " restaurado.", "success"); } });
+const handlePermanentDelete = (p) => showConfirm({ title: "Excluir Permanentemente", message: "Excluir " + p.name + " para sempre?", onConfirm: () => { menuStore.permanentlyDeleteProduct(p.id); showToast(p.name + " removido localmente.", "success"); } });
 
 const tableColumns = computed(() => {
   const base = [ { key: "image", label: "Foto" }, { key: "name", label: "Produto", sortable: true }, { key: "category", label: "Categoria" }, { key: "price", label: "Preço" }, { key: "status", label: "Status" } ];
@@ -227,9 +294,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
       <button @click="showDeleted = false" class="text-orange-300 hover:text-orange-100 text-sm font-bold underline">Voltar para ativos</button>
     </div>
 
-    <!-- Bulk action bar -->
     <div v-if="bulkMode" class="mb-5 bg-white border border-accent/30 rounded p-5 flex flex-col gap-4">
-      <!-- Selection controls -->
       <div class="flex items-center justify-between flex-wrap gap-3">
         <div class="flex items-center gap-3">
           <button @click="toggleSelectAll" class="flex items-center gap-2 text-sm font-bold transition-colors" :class="allSelected ? 'text-accent' : 'text-[#757575] hover:text-[#212121]'">
@@ -245,7 +310,6 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         </button>
       </div>
 
-      <!-- Action chooser -->
       <div class="flex flex-wrap gap-2">
         <button v-for="opt in [
           { key: 'price_increase', icon: TrendingUp, label: 'Aumentar Preço' },
@@ -263,7 +327,6 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         </button>
       </div>
 
-      <!-- Action parameters -->
       <div v-if="bulkAction === 'price_increase' || bulkAction === 'price_decrease'" class="flex items-end gap-3 flex-wrap">
         <div class="flex flex-col gap-1">
           <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-1">Tipo</label>
@@ -325,7 +388,6 @@ const tableActions = computed(() => bulkMode.value ? [] : [
       </div>
     </div>
 
-    <!-- Sort controls -->
     <div class="flex items-center gap-2 mb-4 flex-wrap">
       <span class="text-xs font-black text-[#757575] uppercase tracking-widest mr-1">Ordenar:</span>
       <button v-for="opt in [{ v: 'none', l: 'Padrão' }, { v: 'alpha', l: 'A → Z' }, { v: 'category-alpha', l: 'Categoria + A → Z' }]"
@@ -346,7 +408,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
       </template>
       <template #cell-image="{ item }">
         <div class="w-12 h-12 bg-gray-50 rounded flex items-center justify-center overflow-hidden border border-[#E0E0E0]">
-          <img v-if="item.image" :src="item.image" class="w-full h-full object-cover" />
+          <img v-if="item.image" :src="getImageUrl(item.image)" class="w-full h-full object-cover" />
           <ImageIcon v-else class="text-[#757575]" :size="18" />
         </div>
       </template>
@@ -375,7 +437,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
           </label>
         </div>
         <BaseInput v-model="form.name" label="Nome do Produto" placeholder="Ex: X-Burguer Especial" :maxlength="60" :error="errors.name" />
-        <BaseInput v-model="form.description" label="Descrição (opcional)" placeholder="Ingredientes, detalhes..." :maxlength="120" />
+        <BaseInput v-model="form.description" label="Descrição (opcional)" placeholder="Ingredientes, detalhes..." :maxlength="120" :error="errors.description" />
         <div class="flex flex-col gap-1">
           <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-2">Preço base (R$)</label>
           <input
@@ -404,7 +466,6 @@ const tableActions = computed(() => bulkMode.value ? [] : [
           </button>
         </div>
 
-        <!-- Tamanhos / Variações -->
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <div>
@@ -439,7 +500,6 @@ const tableActions = computed(() => bulkMode.value ? [] : [
 
     <ConfirmModal :confirmModal="confirmState" @close="confirmState.show = false" />
 
-    <!-- Bulk confirmation modal -->
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="showBulkConfirm" class="fixed inset-0 bg-black/50  z-[110] flex items-center justify-center p-4">

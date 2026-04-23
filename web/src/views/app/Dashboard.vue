@@ -19,7 +19,7 @@ const dashboardCards = computed(() => {
 
 const firstName = computed(() => {
   const name = authStore.user?.name || '';
-  return name.split(' ')[0] || '';
+  return name ? name.split(' ')[0] : 'Admin';
 });
 </script>
 

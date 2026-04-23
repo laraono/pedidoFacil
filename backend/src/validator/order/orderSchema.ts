@@ -1,46 +1,36 @@
 import { z } from 'zod';
-import express, { Request, Response, NextFunction } from 'express';
-import { ZodError } from 'zod';
 import { OrderStatus, ServiceType } from '../../enum';
+import { safeString } from '../../utils/safeZod'; 
 
+const orderStatusValues = Object.values(OrderStatus) as [string, ...string[]];
+const serviceTypeValues = Object.values(ServiceType) as [string, ...string[]];
 
-const app = express();
-app.use(express.json());
-
-export const createOrderchema = z.object({
+export const createOrderSchema = z.object({
+  params: z.object({
+    comandaId: z.coerce.number().int().positive()
+  }),
+  body: z.object({
+    status: z.enum(orderStatusValues),
+    serviceType: z.enum(serviceTypeValues),
+    tripPrice: z.coerce.number().positive().optional(),
     
-    params: z.object({
-        comandaId: z.coerce.number().int().positive()
-    }),
-    body: z.object({
-        status: z.enum(OrderStatus),
-        serviceType: z.enum(ServiceType),
-        tripPrice: z.coerce.number().positive().optional(),
-        itens: z.object({
-            productId: z.coerce.number().int().positive(),
-            quantity: z.coerce.number().int().positive(),
-            productVariationId: z.coerce.number().int().positive().optional(),
-            observation: z.string().optional()
-        }).array()
-    })
-    
+    itens: z.array(
+      z.object({
+        productId: z.coerce.number().int().positive(),
+        quantity: z.coerce.number().int().positive(),
+        productVariationId: z.coerce.number().int().positive().optional(),
+        observation: safeString(0, 255).optional().nullable()
+      }).strict()
+    )
+  }).strict() 
 });
 
-
-export const validateCreateOrder = 
-    (req: Request<{comandaId: number}>, res: Response, next: NextFunction) => {
-        try {
-            const {params, body} = createOrderchema.parse({params: req.params, body: req.body})
-
-            req.params = params
-            req.body = body
-
-        } catch (error) {
-            if (error instanceof ZodError) {
-                return res.status(400).send(error.message);
-            }
-            return res.status(500).send("Internal Server Error");
-        }
-    };
-
-
+export const updateOrderStatusSchema = z.object({
+  params: z.object({
+    comandaId: z.coerce.number().int().positive(),
+    orderId: z.coerce.number().int().positive()
+  }),
+  body: z.object({
+    status: z.enum(orderStatusValues)
+  }).strict()
+});

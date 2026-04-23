@@ -1,0 +1,21 @@
+import { Router } from 'express';
+import { CouponController } from '../controller/CouponController';
+import { couponService } from '../service'; 
+import authenticate from '../middleware/authenticate';
+import { checkPermission } from '../middleware/roleAccessControl';
+
+import { validateRequest } from '../middleware/validateRequest';
+import { createCouponSchema } from '../dto/coupon/CreateCouponDTO';
+
+const couponRouter = Router();
+const couponController = new CouponController(couponService);
+
+couponRouter.use(authenticate);
+
+couponRouter.get('/', checkPermission('CUPOM_VIEW', 'ALL'), couponController.list.bind(couponController));
+couponRouter.post('/', checkPermission('CUPOM_CREATE', 'ALL'), validateRequest(createCouponSchema), couponController.create.bind(couponController));
+couponRouter.put('/:id', checkPermission('CUPOM_EDIT', 'ALL'), validateRequest(createCouponSchema), couponController.update.bind(couponController));
+couponRouter.delete('/:id', checkPermission('CUPOM_DELETE', 'ALL'), couponController.delete.bind(couponController));
+couponRouter.get('/validate/:code', checkPermission('CUPOM_VIEW', 'ALL'), couponController.validate.bind(couponController));
+
+export { couponRouter };
