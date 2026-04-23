@@ -31,6 +31,7 @@ export const validateCreateComanda =
         try {
             req.body = createComandaSchema.parse(req.body)
 
+            next();
         } catch (error) {
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);
@@ -41,13 +42,14 @@ export const validateCreateComanda =
 
 
 export const validateCancelComanda = 
-    (req, res: Response, next: NextFunction) => {
+    (req: Request, res: Response, next: NextFunction) => {
         try {
             const validation =  cancelComandaSchema.parse({ params: req.params, body: req.body })
 
-            req.params = validation.params
+            req.params = validation.params as any;
             req.body = validation.body
 
+            next();
         } catch (error) {
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);
@@ -55,4 +57,3 @@ export const validateCancelComanda =
             return res.status(500).send("Internal Server Error");
         }
     };
-

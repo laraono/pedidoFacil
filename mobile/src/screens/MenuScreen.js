@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   FlatList,
@@ -8,6 +8,7 @@ import {
   Image,
   useWindowDimensions,
   Text,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -18,18 +19,21 @@ import { useIdleTimer } from "../hooks/useIdleTimer";
 import CartBottomBar from "../components/CartBottomBar";
 import BrandHeader from "../components/ui/BrandHeader";
 import ProductModal from "../components/ProductModal";
-import { CATEGORIES, PRODUCTS } from "../mocks";
+
+import { fetchFullMenu } from "../stores/menuStore";
+import { connectMobileSocket } from "../services/socketService";
 
 export default function MenuScreen() {
-  const [categories] = useState(CATEGORIES);
-  const [products] = useState(PRODUCTS);
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const { addToCart } = useCart();
-  const { theme } = useTheme();
+  const { theme, loadTheme } = useTheme();
   const { width } = useWindowDimensions();
   const panHandlers = useIdleTimer(45);
 
-  const [selectedCategory, setSelectedCategory] = useState(1);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -42,14 +46,71 @@ export default function MenuScreen() {
     [theme, width, cardWidth],
   );
 
+  const loadMenuData = async () => {
+    try {
+      const data = await fetchFullMenu();
+      if (data) {
+        setCategories(data.categories || []);
+        setProducts(data.products || []);
+
+        if (
+          !selectedCategory &&
+          data.categories &&
+          data.categories.length > 0
+        ) {
+          setSelectedCategory(data.categories[0].id);
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao carregar cardápio:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadMenuData();
+
+    const socket = connectMobileSocket();
+
+    socket.on("menu_updated", () => {
+      console.log("[Socket] Cardápio atualizado no servidor. Recarregando...");
+      loadMenuData();
+    });
+
+    socket.on("theme_updated", () => {
+      console.log("[Socket] Tema atualizado no servidor.");
+      loadTheme();
+    });
+
+    return () => {
+      socket.off("menu_updated");
+      socket.off("theme_updated");
+    };
+  }, []);
+
   const filteredProducts = products.filter(
-    (p) => p.categoryId === selectedCategory,
+    (p) =>
+      p.categoryId === selectedCategory || p.category?.id === selectedCategory,
   );
 
   const handleConfirmAdd = (selectedSize, quantity, obs) => {
     addToCart(selectedProduct, selectedSize, quantity, obs);
     setModalVisible(false);
   };
+
+  if (isLoading) {
+    return (
+      <View
+        style={[
+          styles.container,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
+      >
+        <ActivityIndicator size="large" color={theme.corBotoes} />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} {...panHandlers}>
@@ -61,6 +122,9 @@ export default function MenuScreen() {
           <Text style={styles.sidebarTitle}>Cardápio</Text>
           {categories.map((item) => {
             const isSelected = selectedCategory === item.id;
+            const imageSource =
+              typeof item.image === "string" ? { uri: item.image } : item.image;
+
             return (
               <TouchableOpacity
                 key={item.id}
@@ -78,7 +142,7 @@ export default function MenuScreen() {
                   ]}
                 >
                   <Image
-                    source={item.image}
+                    source={imageSource}
                     style={styles.sidebarImage}
                     resizeMode="cover"
                   />
@@ -101,7 +165,7 @@ export default function MenuScreen() {
 
         <View style={styles.contentArea}>
           <Text style={styles.categoryHeaderTitle}>
-            {categories.find((c) => c.id === selectedCategory)?.name}
+            {categories.find((c) => c.id === selectedCategory)?.name || ""}
           </Text>
 
           <View style={styles.gridContainer}>
@@ -112,56 +176,79 @@ export default function MenuScreen() {
               keyExtractor={(item) => item.id.toString()}
               contentContainerStyle={styles.listContainer}
               showsVerticalScrollIndicator={false}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.productCard}
-                  onPress={() => {
-                    setSelectedProduct(item);
-                    setModalVisible(true);
-                  }}
-                  activeOpacity={0.9}
-                >
-                  <Image
-                    source={item.image}
-                    style={styles.productImage}
-                    resizeMode="cover"
-                  />
-                  <View style={styles.productInfo}>
-                    <Text style={styles.productTitle} numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    <Text style={styles.productDescription} numberOfLines={2}>
-                      {item.description}
-                    </Text>
+              renderItem={({ item }) => {
+                const imageSource =
+                  typeof item.image === "string"
+                    ? { uri: item.image }
+                    : item.image;
 
-                    <View style={styles.productFooter}>
-                      <View style={styles.priceBlock}>
-                        {item.sizes && item.sizes.length > 1 && (
-                          <Text style={styles.startingFrom}>A partir de</Text>
-                        )}
-                        <Text
-                          style={styles.productPrice}
-                          numberOfLines={1}
-                          adjustsFontSizeToFit
-                        >
-                          R${" "}
-                          {item.sizes && item.sizes.length > 0
-                            ? item.sizes[0].price.toFixed(2).replace(".", ",")
-                            : "0,00"}
-                        </Text>
-                      </View>
+                return (
+                  <TouchableOpacity
+                    style={styles.productCard}
+                    onPress={() => {
+                      setSelectedProduct(item);
+                      setModalVisible(true);
+                    }}
+                    activeOpacity={0.9}
+                  >
+                    <Image
+                      source={imageSource}
+                      style={styles.productImage}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.productInfo}>
+                      <Text style={styles.productTitle} numberOfLines={1}>
+                        {item.name}
+                      </Text>
+                      <Text style={styles.productDescription} numberOfLines={2}>
+                        {item.description}
+                      </Text>
 
-                      <View style={styles.addBtnIcon}>
-                        <Feather
-                          name="plus"
-                          size={20}
-                          color={theme.textoBotoes}
-                        />
+                      <View style={styles.productFooter}>
+                        {/* 🎯 CORREÇÃO DO BLOCO DE PREÇOS AQUI */}
+                        <View style={styles.priceBlock}>
+                          {((item.productVariations &&
+                            item.productVariations.length > 1) ||
+                            (item.sizes && item.sizes.length > 1)) && (
+                            <Text style={styles.startingFrom}>A partir de</Text>
+                          )}
+                          <Text
+                            style={styles.productPrice}
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                          >
+                            R${" "}
+                            {item.productVariations &&
+                            item.productVariations.length > 0 &&
+                            item.productVariations[0].price !== undefined
+                              ? Number(item.productVariations[0].price)
+                                  .toFixed(2)
+                                  .replace(".", ",")
+                              : item.basePrice !== undefined &&
+                                  item.basePrice !== null
+                                ? Number(item.basePrice)
+                                    .toFixed(2)
+                                    .replace(".", ",")
+                                : item.sizes && item.sizes.length > 0
+                                  ? Number(item.sizes[0].price)
+                                      .toFixed(2)
+                                      .replace(".", ",")
+                                  : "0,00"}
+                          </Text>
+                        </View>
+
+                        <View style={styles.addBtnIcon}>
+                          <Feather
+                            name="plus"
+                            size={20}
+                            color={theme.textoBotoes}
+                          />
+                        </View>
                       </View>
                     </View>
-                  </View>
-                </TouchableOpacity>
-              )}
+                  </TouchableOpacity>
+                );
+              }}
             />
           </View>
         </View>
@@ -181,15 +268,26 @@ export default function MenuScreen() {
 
 const getStyles = (theme, width, cardWidth) =>
   StyleSheet.create({
-    container: { flex: 1, backgroundColor: theme.fundoGeral },
-    mainContent: { flex: 1, flexDirection: "row" },
+    container: {
+      flex: 1,
+      backgroundColor: theme.fundoGeral,
+    },
+    mainContent: {
+      flex: 1,
+      flexDirection: "row",
+    },
     sidebar: {
       backgroundColor: theme.fundoProdutos,
-      borderRightWidth: 1,
-      borderRightColor: theme.borda,
+      borderRightWidth: 0,
       paddingTop: 24,
       alignItems: "center",
       width: 90,
+      elevation: 10,
+      shadowColor: "#000",
+      shadowOffset: { width: 4, height: 0 },
+      shadowOpacity: 0.2,
+      shadowRadius: 5,
+      zIndex: 10, 
     },
     sidebarTitle: {
       fontSize: 10,
@@ -253,18 +351,20 @@ const getStyles = (theme, width, cardWidth) =>
       backgroundColor: theme.fundoProdutos,
       margin: 6,
       borderRadius: 16,
-      overflow: "hidden",
-      borderWidth: 1,
-      borderColor: theme.borda,
-      elevation: 2,
+      overflow: "visible", 
+      borderWidth: 0,
+
+      elevation: 6, 
       shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.05,
-      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
     },
     productImage: {
       width: "100%",
       height: 120,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
     },
     productInfo: {
       padding: 12,

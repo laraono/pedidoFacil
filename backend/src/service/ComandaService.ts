@@ -1,90 +1,163 @@
-import { EntityManager } from "typeorm";
-import { Comanda } from "../database";
-import { CancelComanda, CreateComanda } from "../dto";
-import { ComandaStatus } from "../enum";
-import { AppError } from "../middleware";
-import { ComandaRepository, UserRepository } from "../repository";
+import { DataSource, EntityManager, Repository } from 'typeorm';
+import { Comanda } from '../database/entity/Comanda';
+import { OrderStatus, ComandaStatus } from '../enum';
+import { AppError } from '../middleware/error/AppError';
+import { PaymentService } from './PaymentService';
+import { ReceiptService } from './ReceiptService';
 
 export class ComandaService {
+  constructor(
+    private dataSource: DataSource,
+    private comandaRepository: Repository<Comanda>,
+    private paymentService: PaymentService,
+    private receiptService: ReceiptService,
+  ) {}
 
-    private comandaRepository: ComandaRepository
-    private userRepository: UserRepository
+  async getComanda(comandaId: number): Promise<Comanda | null> {
+    return await this.comandaRepository.findOne({
+      where: { id: comandaId },
+    });
+  }
 
-    constructor(comandaRepository: ComandaRepository, userRepository: UserRepository) {
-        this.comandaRepository = comandaRepository
-        this.userRepository = userRepository
+  async createComanda(comandaData: any): Promise<Comanda> {
+    const novaComanda = this.comandaRepository.create({
+      ...comandaData,
+      status: ComandaStatus.ABERTA,
+      total: 0,
+    } as Partial<Comanda>);
+
+    return await this.comandaRepository.save(novaComanda);
+  }
+
+  async listComandas(): Promise<Comanda[]> {
+    return await this.comandaRepository.find({
+      relations: [
+        'pedidos',
+        'pedidos.productOrders',
+        'pedidos.productOrders.product',
+      ],
+    });
+  }
+
+  async listComandasByStatus(status: ComandaStatus): Promise<Comanda[]> {
+    return await this.comandaRepository.find({
+      where: { status },
+      relations: [
+        'pedidos',
+        'pedidos.productOrders',
+        'pedidos.productOrders.product',
+      ],
+    });
+  }
+
+  async updateComandaStatus(
+    comandaId: number,
+    status: ComandaStatus,
+  ): Promise<void> {
+    const comanda = await this.comandaRepository.findOne({
+      where: { id: comandaId },
+    });
+    if (!comanda) throw new AppError('Comanda não encontrada', 404);
+
+    comanda.status = status;
+    await this.comandaRepository.save(comanda);
+  }
+
+  async cancelComanda(data: {
+    comandaId: number;
+    userId: number;
+    reason: string;
+  }): Promise<void> {
+    const comanda = await this.comandaRepository.findOne({
+      where: { id: data.comandaId },
+    });
+    if (!comanda) throw new AppError('Comanda não encontrada', 404);
+
+    comanda.status = ComandaStatus.CANCELADA;
+    await this.comandaRepository.save(comanda);
+  }
+
+  async updateComandaTotalTransaction(
+    comanda: Comanda,
+    valorAdicional: number,
+    manager: EntityManager,
+  ): Promise<void> {
+    comanda.total = Number(comanda.total) + Number(valorAdicional);
+    await manager.save(Comanda, comanda);
+  }
+
+  async checkoutComanda(
+    comandaId: number,
+    userId: number,
+    establishmentId: number,
+    checkoutData: any,
+  ) {
+    let firstPaymentId: number | null = null;
+
+    const result = await this.dataSource.transaction(async (manager) => {
+      const comanda = await manager.findOne(Comanda, {
+        where: { id: comandaId, establishment: { id: establishmentId } },
+        relations: ['pedidos'],
+      });
+
+      if (!comanda) throw new AppError('Comanda não encontrada.', 404);
+      if (comanda.status === ComandaStatus.FECHADA)
+        throw new AppError('Esta comanda já está fechada.', 400);
+
+      const pedidos = comanda.pedidos || [];
+      const validOrders = pedidos.filter(
+        (p) => p.status !== OrderStatus.CANCELADO,
+      );
+
+      comanda.discountType = checkoutData.discountType || null;
+      comanda.discountValue = checkoutData.discountValue || 0;
+      comanda.total = checkoutData.totalValue;
+      comanda.status = ComandaStatus.FECHADA;
+
+      await manager.save(Comanda, comanda);
+
+      const paymentsArray = Array.isArray(checkoutData.payments)
+        ? checkoutData.payments
+        : [{ type: checkoutData.paymentType, amount: checkoutData.totalValue }];
+
+      const registeredPayments =
+        await this.paymentService.processCheckoutPayments(
+          comandaId,
+          validOrders,
+          paymentsArray,
+          checkoutData.change || 0,
+          establishmentId,
+          userId,
+          manager,
+        );
+
+      if (registeredPayments.length > 0) {
+        firstPaymentId = registeredPayments[0].id;
+      }
+
+      return {
+        success: true,
+        message: 'Comanda finalizada com sucesso.',
+        comanda,
+        payments: registeredPayments,
+      };
+    });
+
+    if (firstPaymentId) {
+      try {
+        await this.receiptService.generateReceipt(
+          firstPaymentId,
+          establishmentId,
+          checkoutData.cpfcnpj || null,
+        );
+      } catch (error: any) {
+        console.error(
+          '⚠️ [ComandaService] Erro ao gerar Nota Fiscal:',
+          error.message,
+        );
+      }
     }
 
-    async createComanda(comanda: CreateComanda) {
-
-        const checkDescription = await this.checkComandaDescription(comanda.description)
-
-        if(!checkDescription) {
-            const {id} = await this.comandaRepository.createComanda(comanda) 
-
-            return id
-        } else {
-            throw new AppError('Duas comandas abertas não podem ter o mesmo nome', 400)
-        }
-        
-    }
-
-    async listComandas() {
-        return await this.comandaRepository.listComandas()
-    }
-
-    async listComandasByStatus(status: ComandaStatus) {
-        return await this.comandaRepository.listComandasByStatus(status)
-    }
-
-    async getComanda(comandaId: number) {
-        return await this.comandaRepository.getComanda(comandaId)
-    }
-
-    async checkComandaDescription(description: string) {
-        const [comanda] = await this.comandaRepository.getComandaByDesc(description)
-
-        if(comanda) {
-            return true
-        }
-
-        return false
-
-    }
-
-    async updateComandaTotal(comanda: Comanda, total: number) {
-        total += Number(comanda.total)
-        await this.comandaRepository.updateComandaTotal(comanda.id, total)
-    }
-
-    async updateComandaTotalTransaction(
-        comanda: Comanda, 
-        total: number,
-        manager: EntityManager
-    ) {
-        total += Number(comanda.total)
-        await manager.update(Comanda, comanda.id, { total })
-    }    
-
-    async updateComandaStatus(comandaId: number, status: ComandaStatus) {
-        await this.comandaRepository.updateComandaStatus(comandaId, status)
-    }
-
-    async cancelComanda(params: CancelComanda) {
-
-        const user = await this.userRepository.getUser(params.userId)
-
-        if(!user) {
-            throw new AppError('Usuário não existe', 409)
-        }
-
-        await this.comandaRepository.cancelComanda(
-            params.comandaId, 
-            {
-                user, 
-                reason: params.reason, 
-                status: ComandaStatus.CANCELADA
-            }
-        )
-    }
+    return result;
+  }
 }
