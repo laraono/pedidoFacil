@@ -1,0 +1,34 @@
+# --- DEPENDÊNCIAS ---
+# Ignora todas as pastas node_modules do projeto
+node_modules/
+**/node_modules/
+
+# --- SEGURANÇA (CRÍTICO) ---
+# Ignora arquivos de configuração sensíveis (senhas, chaves de API)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# --- UPLOADS (O QUE CONVERSAMOS) ---
+# Ignora as imagens enviadas, mas mantém a pasta através do .gitkeep
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# --- BUILDS E SAÍDAS ---
+# Pastas geradas automaticamente
+dist/
+build/
+backend/build/
+web/dist/
+.expo/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- SISTEMA E IDE ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
