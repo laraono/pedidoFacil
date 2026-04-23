@@ -35,8 +35,8 @@ const visibleMenuItems = computed(() => {
   });
 });
 
-const logout = () => {
-  authStore.logout();
+const logout = async () => {
+  await authStore.logout();
   router.push('/login');
 };
 
@@ -62,13 +62,13 @@ const handleNavigation = (path) => {
         <Menu class="w-7 h-7"/>
       </button>
 
-      <div class="flex items-center cursor-pointer hover:opacity-80 transition-opacity" @click="router.push('/app/dashboard')">
+      <div class="flex items-center cursor-pointer hover:opacity-80 transition-opacity" @click="router.push(isAdmin ? '/app/admin/subscriptions' : '/app/dashboard')">
         <img :src="isAdmin ? imgLogo : imgLightLogo" alt="PedidoFácil" class="h-9 sm:h-12 object-contain" />
       </div>
     </div>
 
     <!-- Establishment name + logo -->
-    <div v-if="establishmentName" class="hidden md:flex items-center gap-2.5 px-4 py-1.5 bg-gray-50 border border-[#E0E0E0] rounded">
+    <div v-if="establishmentName && !isAdmin" class="hidden md:flex items-center gap-2.5 px-4 py-1.5 bg-gray-50 border border-[#E0E0E0] rounded">
       <div class="w-10 h-10 rounded overflow-hidden bg-gray-100 flex items-center justify-center shrink-0">
         <img v-if="establishmentLogo" :src="establishmentLogo" class="w-full h-full object-contain p-0.5" />
         <div v-else class="w-3 h-3 rounded-sm bg-accent/40" />

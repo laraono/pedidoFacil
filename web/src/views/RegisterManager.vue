@@ -1,17 +1,17 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { UserPlus, AlertCircle, Eye, EyeOff } from 'lucide-vue-next';
+import { UserPlus, Eye, EyeOff, ArrowLeft } from 'lucide-vue-next';
 import { useAuthStore } from '@/stores/auth';
 import { BaseInput, BaseButton } from '@/components/ui';
 import { isValidCPF, maskCPF } from '@/utils/validator';
+import LandingHeader from '@/components/LandingHeader.vue';
 import imgOndas from '@/assets/ondas.png';
 
 const router = useRouter();
 const authStore = useAuthStore();
 
 const nome = ref('');
-const username = ref('');
 const email = ref('');
 const cpf = ref('');
 const senha = ref('');
@@ -21,61 +21,79 @@ const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 
 const isLoading = ref(false);
-const localError = ref(null);
+const errors = ref({});
 const serverError = ref(null);
 
 if (authStore.isAuthenticated) router.push('/app/dashboard');
 
-watch(cpf, (value) => {
-  if (!value) return;
-  const masked = maskCPF(value);
-  if (masked !== value) cpf.value = masked;
-  if (isValidCPF(masked)) localError.value = null;
+onMounted(() => {
+  window.scrollTo(0, 0);
+  try {
+    const saved = JSON.parse(localStorage.getItem('onboarding_personal') || '{}');
+    if (saved.nome) nome.value = saved.nome;
+    if (saved.email) email.value = saved.email;
+    if (saved.cpf) cpf.value = saved.cpf;
+    if (saved.senha) senha.value = saved.senha;
+    if (saved.confirmarSenha) confirmarSenha.value = saved.confirmarSenha;
+  } catch {}
 });
 
-async function handleSubmit() {
-  isLoading.value = true;
-  localError.value = null;
-  serverError.value = null;
+function onCpfInput(event) {
+  const filtered = maskCPF(event.target.value);
+  cpf.value = filtered;
+  event.target.value = filtered;
+  if (errors.value.cpf && isValidCPF(filtered)) errors.value.cpf = null;
+}
 
-  if (!nome.value.trim().includes(' ')) {
-    localError.value = 'Por favor, insira seu nome e sobrenome.';
-    isLoading.value = false;
-    return;
-  }
-  if (!username.value.trim() || username.value.trim().length < 3) {
-    localError.value = 'Nome de usuário deve ter pelo menos 3 caracteres.';
-    isLoading.value = false;
-    return;
-  }
-  if (!/^[a-z0-9_]+$/.test(username.value.trim())) {
-    localError.value = 'Nome de usuário: use apenas letras minúsculas, números e _.';
-    isLoading.value = false;
-    return;
-  }
-  if (senha.value !== confirmarSenha.value) {
-    localError.value = 'As senhas não coincidem.';
-    isLoading.value = false;
-    return;
-  }
-  if (senha.value.length < 6) {
-    localError.value = 'A senha deve ter pelo menos 6 caracteres.';
-    isLoading.value = false;
-    return;
-  }
-  if (!isValidCPF(cpf.value)) {
-    localError.value = 'O CPF inserido é inválido.';
-    isLoading.value = false;
-    return;
-  }
+function validate() {
+  errors.value = {};
 
+  if (!nome.value.trim().includes(' '))
+    errors.value.nome = 'Por favor, insira seu nome e sobrenome.';
+
+  if (!email.value.trim())
+    errors.value.email = 'O e-mail é obrigatório.';
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim()))
+    errors.value.email = 'Insira um e-mail válido.';
+
+  if (!cpf.value.trim())
+    errors.value.cpf = 'O CPF é obrigatório.';
+  else if (!isValidCPF(cpf.value))
+    errors.value.cpf = 'O CPF inserido é inválido.';
+
+  if (senha.value.length < 8)
+    errors.value.senha = 'A senha deve ter pelo menos 8 caracteres.';
+  else if (!/[A-Z]/.test(senha.value))
+    errors.value.senha = 'A senha deve conter pelo menos uma letra maiúscula.';
+  else if (!/[0-9]/.test(senha.value))
+    errors.value.senha = 'A senha deve conter pelo menos um número.';
+  else if (!/[^A-Za-z0-9]/.test(senha.value))
+    errors.value.senha = 'A senha deve conter pelo menos um caractere especial.';
+
+  if (senha.value !== confirmarSenha.value)
+    errors.value.confirmarSenha = 'As senhas não coincidem.';
+
+  return Object.keys(errors.value).length === 0;
+}
+
+function saveToStorage() {
+  const existing = JSON.parse(localStorage.getItem('onboarding_personal') || '{}');
   localStorage.setItem('onboarding_personal', JSON.stringify({
+    ...existing,
     nome: nome.value,
-    username: username.value.trim(),
-    email: email.value,
+    email: email.value.trim(),
     cpf: cpf.value,
-    senha: senha.value
+    senha: senha.value,
+    confirmarSenha: confirmarSenha.value,
   }));
+}
+
+async function handleSubmit() {
+  serverError.value = null;
+  if (!validate()) return;
+
+  isLoading.value = true;
+  saveToStorage();
 
   setTimeout(() => {
     router.push('/onboarding/name');
@@ -85,54 +103,67 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-page font-inter relative flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <div class="absolute top-0 left-0 w-full h-full z-0 pointer-events-none opacity-40"
-         :style="{ backgroundImage: `url(${imgOndas})`, backgroundSize: 'cover', backgroundPosition: 'center' }">
-    </div>
+  <div class="min-h-screen bg-page font-inter flex flex-col">
+    <LandingHeader />
 
-    <div class="z-10 w-full max-w-xl bg-white border border-[#E0E0E0] p-8 sm:p-12 rounded shadow-2xl">
-      <div class="mb-10 text-center">
-        <h2 class="text-3xl font-black text-[#212121] mb-2">Crie a sua conta</h2>
-        <p class="text-[#757575]">Preencha os dados do gestor principal</p>
+    <div class="flex-1 relative flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div class="absolute top-0 left-0 w-full h-full z-0 pointer-events-none opacity-40"
+           :style="{ backgroundImage: `url(${imgOndas})`, backgroundSize: 'cover', backgroundPosition: 'center' }">
       </div>
 
-      <div v-if="localError || serverError" class="mb-6 p-4 bg-danger-light border border-danger rounded flex items-center gap-3 text-danger text-sm">
-        <AlertCircle class="w-5 h-5 shrink-0" />
-        <p>{{ localError || serverError }}</p>
-      </div>
-
-      <form @submit.prevent="handleSubmit" class="space-y-5">
-        <BaseInput v-model="nome" placeholder="Nome completo" dark required />
-        <BaseInput v-model="username" placeholder="Nome de usuário (ex: joao_silva)" dark required />
-        <BaseInput v-model="email" type="email" placeholder="E-mail de contato" dark required />
-        <BaseInput v-model="cpf" placeholder="000.000.000-00" dark required maxlength="14" />
-
-        <BaseInput v-model="senha" :type="showPassword ? 'text' : 'password'" placeholder="Senha (mín. 6 caracteres)" dark required minlength="6">
-          <template #suffix>
-            <button type="button" @click="showPassword = !showPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-[#757575] hover:text-accent">
-              <component :is="showPassword ? EyeOff : Eye" class="w-5 h-5" />
-            </button>
-          </template>
-        </BaseInput>
-
-        <BaseInput v-model="confirmarSenha" :type="showConfirmPassword ? 'text' : 'password'" placeholder="Confirme a senha" dark required minlength="6">
-          <template #suffix>
-            <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-[#757575] hover:text-accent">
-              <component :is="showConfirmPassword ? EyeOff : Eye" class="w-5 h-5" />
-            </button>
-          </template>
-        </BaseInput>
-
-        <div class="pt-6">
-          <BaseButton type="submit" variant="brand" size="lg" class="w-full" :isLoading="isLoading" :icon="UserPlus">
-            Finalizar registo
-          </BaseButton>
+      <div class="z-10 w-full max-w-xl bg-white border border-[#E0E0E0] p-8 sm:p-12 rounded shadow-2xl">
+        <div class="mb-10 text-center">
+          <div class="inline-flex items-center justify-center px-4 py-1.5 rounded bg-gray-50 border border-[#E0E0E0] mb-4">
+            <span class="text-accent text-xs font-bold uppercase tracking-widest">Etapa 1 de 3</span>
+          </div>
+          <h2 class="text-3xl font-black text-[#212121] mb-2">Crie a sua conta</h2>
+          <p class="text-[#757575]">Preencha os dados do gestor principal</p>
         </div>
-      </form>
 
-      <p class="text-center text-[#757575] font-medium text-sm mt-8">
-        Já tem uma conta? <a href="#" @click.prevent="router.push('/login')" class="text-accent hover:text-[#212121] transition-colors cursor-pointer">Faça login aqui</a>
-      </p>
+        <div v-if="serverError" class="mb-6 p-4 bg-danger-light border border-danger rounded text-danger text-sm">
+          {{ serverError }}
+        </div>
+
+        <form @submit.prevent="handleSubmit" class="space-y-5">
+          <BaseInput v-model="nome" placeholder="Nome completo" dark :error="errors.nome" />
+          <BaseInput v-model="email" type="email" placeholder="E-mail de contato" dark :error="errors.email" />
+          <BaseInput v-model="cpf" placeholder="000.000.000-00" dark maxlength="14" :error="errors.cpf" @input="onCpfInput" />
+
+          <BaseInput v-model="senha" :type="showPassword ? 'text' : 'password'" placeholder="Senha (mín. 8 car., maiúscula, número, especial)" dark :error="errors.senha">
+            <template #suffix>
+              <button type="button" @click="showPassword = !showPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-[#757575] hover:text-accent">
+                <component :is="showPassword ? EyeOff : Eye" class="w-5 h-5" />
+              </button>
+            </template>
+          </BaseInput>
+
+          <BaseInput v-model="confirmarSenha" :type="showConfirmPassword ? 'text' : 'password'" placeholder="Confirme a senha" dark :error="errors.confirmarSenha">
+            <template #suffix>
+              <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-[#757575] hover:text-accent">
+                <component :is="showConfirmPassword ? EyeOff : Eye" class="w-5 h-5" />
+              </button>
+            </template>
+          </BaseInput>
+
+          <div class="pt-6 flex gap-3">
+            <button
+              type="button"
+              @click="router.push('/login')"
+              class="flex items-center gap-2 px-5 py-3 rounded border border-[#E0E0E0] text-[#757575] font-semibold hover:border-[#212121] hover:text-[#212121] transition-colors"
+            >
+              <ArrowLeft class="w-4 h-4" />
+              Voltar
+            </button>
+            <BaseButton type="submit" variant="brand" size="lg" class="flex-1" :isLoading="isLoading" :icon="UserPlus">
+              Continuar
+            </BaseButton>
+          </div>
+        </form>
+
+        <p class="text-center text-[#757575] font-medium text-sm mt-8">
+          Já tem uma conta? <a href="#" @click.prevent="router.push('/login')" class="text-accent hover:text-[#212121] transition-colors cursor-pointer">Faça login aqui</a>
+        </p>
+      </div>
     </div>
   </div>
 </template>

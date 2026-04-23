@@ -1,20 +1,26 @@
 const express = require('express');
-const db = require('./config/db'); // ajuste o caminho se necessário
+const cors = require('cors');
+const cookieParser = require('cookie-parser')
+const pool = require('./config/db');
+require('dotenv').config();
+
+// 1. Importando o arquivo de rotas que criamos
+const authRoutes = require('./src/router/AuthRouter');
+app.use(cookieParser())
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 
-// Rota de teste de conexão
-app.get('/test-db', async (req, res) => {
-  try {
-    const [rows] = await db.query('SELECT 1 + 1 AS result');
-    res.json({ message: "Conectado ao MySQL com sucesso!", result: rows[0].result });
-  } catch (error) {
-    res.status(500).json({ error: "Erro ao conectar no banco", details: error.message });
-  }
-});
+app.use('/api/auth', authRoutes);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Servidor rodando na porta ${PORT}`);
+  try {
+    await pool.query('SELECT 1');
+    console.log('Conectado ao banco de dados MySQL!');
+  } catch (error) {
+    console.log('Erro ao conectar no banco de dados:', error.message);
+  }
 });

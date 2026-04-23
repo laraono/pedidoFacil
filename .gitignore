@@ -1,0 +1,6 @@
+web/node_modules
+api/node_modules
+api/build
+mobile/node_modules
+backend/node_modules
+backend/build

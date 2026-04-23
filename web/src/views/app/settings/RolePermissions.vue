@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { AVAILABLE_PERMISSIONS } from '@/utils/permissions';
-import { getRolesMock, saveRolesMock } from '@/mock/authmock';
 import { useToast } from '@/composables/useToast';
 import { useFormValidation } from '@/composables/useFormValidation';
 import BaseInput from '@/components/ui/BaseInput.vue';
@@ -33,8 +32,20 @@ const validationRules = {
 
 const { errors, validateAll, validateField } = useFormValidation(validationRules);
 
+const PROTECTED_ROLE_NAMES = ['Admin', 'Gerente'];
+const HIDDEN_ROLE_NAMES = ['Admin'];
+
+function getRolesFromStorage() {
+  return JSON.parse(localStorage.getItem('roles') ?? '[]');
+}
+
+function saveRolesToStorage(data) {
+  localStorage.setItem('roles', JSON.stringify(data));
+  return Promise.resolve();
+}
+
 onMounted(() => {
-  roles.value = getRolesMock();
+  roles.value = getRolesFromStorage().filter(r => !HIDDEN_ROLE_NAMES.includes(r.name));
 });
 
 const saveRole = async () => {
@@ -48,6 +59,10 @@ const saveRole = async () => {
 
   isLoading.value = true;
   try {
+    // Preserve hidden roles (Admin) when saving
+    const allRoles = getRolesFromStorage();
+    const hiddenRoles = allRoles.filter(r => HIDDEN_ROLE_NAMES.includes(r.name));
+
     if (isEditing.value) {
       const idx = roles.value.findIndex(r => r.id === currentRole.value.id);
       roles.value[idx] = { ...currentRole.value };
@@ -55,7 +70,7 @@ const saveRole = async () => {
       roles.value.push({ ...currentRole.value, id: Date.now() });
     }
 
-    await saveRolesMock(roles.value);
+    await saveRolesToStorage([...hiddenRoles, ...roles.value]);
     showToast(`Cargo "${currentRole.value.name}" salvo com sucesso!`, 'success');
     isModalOpen.value = false;
   } catch {
@@ -79,8 +94,16 @@ const openModal = (role = null) => {
 const deleteRole = async () => {
   const role = confirmDeleteRole.value;
   if (!role) return;
+  if (PROTECTED_ROLE_NAMES.includes(role.name)) {
+    showToast(`O cargo "${role.name}" não pode ser excluído.`, 'error');
+    confirmDeleteRole.value = null;
+    return;
+  }
+  // Remove from full stored list (including hidden roles like Admin)
+  const allRoles = getRolesFromStorage();
+  const updated = allRoles.filter(r => r.id !== role.id);
+  await saveRolesToStorage(updated);
   roles.value = roles.value.filter(r => r.id !== role.id);
-  await saveRolesMock(roles.value);
   showToast(`Cargo "${role.name}" excluído.`, 'success');
   confirmDeleteRole.value = null;
 };
@@ -129,12 +152,18 @@ const togglePermission = (id) => {
         <div class="flex justify-between items-start mb-6">
           <ShieldCheck class="text-accent" :size="24" />
           <button
+            v-if="!PROTECTED_ROLE_NAMES.includes(role.name)"
             @click.stop="confirmDeleteRole = role"
             class="p-1.5 text-[#757575] hover:text-red-500 hover:bg-danger-light rounded transition-all"
             title="Excluir cargo"
           >
             <Trash2 :size="16" />
           </button>
+          <span
+            v-else
+            class="text-[9px] font-black uppercase tracking-widest text-[#757575] px-2 py-1 bg-gray-50 rounded border border-[#E0E0E0]"
+            title="Cargo protegido"
+          >Fixo</span>
         </div>
         <h3 class="text-xl font-bold text-[#212121]">{{ role.name }}</h3>
         <p class="text-[10px] font-black uppercase tracking-widest text-[#757575] mt-2">

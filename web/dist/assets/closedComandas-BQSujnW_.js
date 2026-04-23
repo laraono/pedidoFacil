@@ -1,0 +1,1 @@
+import{ac as n,r as d}from"./index-s56UGXyT.js";const t=n("closedComandas",()=>{const o=d([]);function a(s){o.value.push(s)}function e(){return o.value}return{closedComandas:o,addClosedComanda:a,getClosedComandas:e}});export{t as u};

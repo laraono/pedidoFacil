@@ -8,7 +8,6 @@ import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { ArrowLeft, PlusCircle, Trash, Pencil, X } from 'lucide-vue-next';
-import { getRolesMock, initMockRoles } from '@/mock/authmock';
 
 const USERS_KEY = 'users';
 
@@ -36,19 +35,43 @@ const form = ref({
   roleId: '',
 });
 
+const HIDDEN_ROLE_NAMES = ['Admin'];
+const PROTECTED_ROLE_NAMES = ['Gerente'];
+
+// Roles available in dropdowns: exclude Admin
 const roleOptions = computed(() =>
-  roles.value.map(r => ({ label: r.name, value: r.id }))
+  roles.value
+    .filter(r => !HIDDEN_ROLE_NAMES.includes(r.name))
+    .map(r => ({ label: r.name, value: r.id }))
 );
+
+// Visible users: exclude users with Admin role
+const visibleUsers = computed(() => {
+  const adminRoleIds = roles.value
+    .filter(r => HIDDEN_ROLE_NAMES.includes(r.name))
+    .map(r => r.id);
+  return users.value.filter(u => !adminRoleIds.includes(Number(u.roleId)));
+});
+
+function isProtectedRole(user) {
+  const role = roles.value.find(r => Number(r.id) === Number(user.roleId));
+  return role && PROTECTED_ROLE_NAMES.includes(role.name);
+}
+
+function canDeleteUser(user) {
+  if (user.id === currentUser.value?.id) return false;
+  if (isProtectedRole(user)) return false;
+  return true;
+}
 
 
 onMounted(() => {
-  initMockRoles();
   loadUsers();
-  roles.value = getRolesMock();
+  roles.value = JSON.parse(localStorage.getItem('roles') ?? '[]');
 });
 
 function reloadRoles() {
-  roles.value = getRolesMock();
+  roles.value = JSON.parse(localStorage.getItem('roles') ?? '[]');
 }
 
 function loadUsers() {
@@ -246,7 +269,7 @@ function isActive(status) {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50 border-b border-[#E0E0E0] last:border-0 transition-colors">
+          <tr v-for="user in visibleUsers" :key="user.id" class="hover:bg-gray-50 border-b border-[#E0E0E0] last:border-0 transition-colors">
             <td class="p-6 font-bold text-[#212121]">{{ user.name }}</td>
             <td class="p-6 text-[#757575] text-sm">{{ user.username || user.email }}</td>
             <td class="p-6 text-center">
@@ -266,7 +289,7 @@ function isActive(status) {
                   <Pencil :size="18" />
                 </button>
                 <button
-                  v-if="user.id !== currentUser?.id"
+                  v-if="canDeleteUser(user)"
                   @click="confirmDeleteUser = user"
                   class="p-2 text-[#757575] hover:text-red-500 hover:bg-danger-light rounded transition-all"
                 >
@@ -275,7 +298,7 @@ function isActive(status) {
               </div>
             </td>
           </tr>
-          <tr v-if="users.length === 0">
+          <tr v-if="visibleUsers.length === 0">
             <td colspan="5" class="p-12 text-center text-[#757575] text-sm font-bold">Nenhum usuário cadastrado.</td>
           </tr>
         </tbody>
@@ -283,7 +306,7 @@ function isActive(status) {
     </div>
 
     <div class="md:hidden space-y-4">
-      <div v-for="user in users" :key="user.id" class="bg-white border border-[#E0E0E0] p-6 rounded shadow-xl">
+      <div v-for="user in visibleUsers" :key="user.id" class="bg-white border border-[#E0E0E0] p-6 rounded shadow-xl">
         <div class="flex justify-between items-start mb-4">
           <div>
             <p class="font-bold text-[#212121] text-lg">{{ user.name }}</p>
@@ -305,7 +328,7 @@ function isActive(status) {
             <button @click="openForm(user)" class="p-2 text-[#757575] hover:text-[#212121] bg-gray-50 rounded">
               <Pencil :size="18" />
             </button>
-            <button v-if="user.id !== currentUser?.id" @click="confirmDeleteUser = user" class="p-2 text-red-500 bg-danger-light rounded">
+            <button v-if="canDeleteUser(user)" @click="confirmDeleteUser = user" class="p-2 text-red-500 bg-danger-light rounded">
               <Trash :size="18" />
             </button>
           </div>

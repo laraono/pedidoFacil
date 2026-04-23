@@ -60,19 +60,21 @@ const route = useRoute();
         <div class="h-px bg-accent-light my-3" />
       </template>
 
-      <!-- Regular menu items -->
-      <a
-        v-for="item in menuItems"
-        :key="item.label"
-        @click.prevent="$emit('navigate', item.route)"
-        class="flex items-center gap-3 px-4 py-3 rounded cursor-pointer transition-all hover:translate-x-1"
-        :class="route.path === item.route
-          ? 'bg-primary-light text-primary font-bold'
-          : 'text-[#757575] hover:bg-gray-100 hover:text-[#212121]'"
-      >
-        <component :is="item.icon" class="w-5 h-5" :class="route.path === item.route ? 'text-primary' : 'text-[#9E9E9E]'" />
-        {{ item.label }}
-      </a>
+      <!-- Regular menu items (only for establishment users) -->
+      <template v-if="!isAdmin">
+        <a
+          v-for="item in menuItems"
+          :key="item.label"
+          @click.prevent="$emit('navigate', item.route)"
+          class="flex items-center gap-3 px-4 py-3 rounded cursor-pointer transition-all hover:translate-x-1"
+          :class="route.path === item.route
+            ? 'bg-primary-light text-primary font-bold'
+            : 'text-[#757575] hover:bg-gray-100 hover:text-[#212121]'"
+        >
+          <component :is="item.icon" class="w-5 h-5" :class="route.path === item.route ? 'text-primary' : 'text-[#9E9E9E]'" />
+          {{ item.label }}
+        </a>
+      </template>
     </nav>
   </aside>
 </template>
