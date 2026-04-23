@@ -1,9 +1,10 @@
 import express, { Request, Response } from 'express';
 import { productController } from '../controller';
 import { catchAsync } from '../middleware';
-
+import { validateUpload } from '../middleware/validateUpload'; 
 import { validateRequest } from '../middleware/validateRequest';
 import { createProductSchema } from '../dto/product/CreateProductDTO';
+import { updateProductSchema } from '../dto/product/UpdateProductDTO'; 
 
 const authenticate = require('../middleware/authenticate');
 const tenant = require('../middleware/tenant');
@@ -15,6 +16,7 @@ productRouter.post(
   '/products', 
   authenticate, 
   roleAccessControl.checkPermission('CARDAPIO'), 
+  validateUpload.single('imagem'), 
   validateRequest(createProductSchema), 
   catchAsync((req: Request, res: Response) => productController.createProduct(req, res))
 );
@@ -38,7 +40,8 @@ productRouter.put(
   '/products/:id', 
   authenticate, 
   roleAccessControl.checkPermission('CARDAPIO'), 
-  validateRequest(createProductSchema), 
+  validateUpload.single('imagem'), 
+  validateRequest(updateProductSchema), 
   catchAsync((req: Request, res: Response) => productController.updateProduct(req, res))
 );
 

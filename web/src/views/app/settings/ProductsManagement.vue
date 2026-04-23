@@ -26,7 +26,7 @@ const showModal = ref(false);
 const isEditing = ref(false);
 const isLoading = ref(false);
 const errors = ref({});
-const form = ref({ id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true, sizes: [] });
+const form = ref({ id: null, name: "", description: "", price: "", categoryId: "", imageFile: null, imagePreview: null, available: true, sizes: [] });
 
 const displayedProducts = computed(() => showDeleted.value ? menuStore.deletedProducts : menuStore.activeProducts);
 const sortedProducts = computed(() => {
@@ -56,6 +56,14 @@ const bulkConfirmMessage = ref('');
 const allSelected = computed(() =>
   displayedProducts.value.length > 0 && displayedProducts.value.every(p => selectedIds.value.includes(p.id))
 );
+
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return '';
+  if (imagePath.startsWith('http') || imagePath.startsWith('data:image')) return imagePath;
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+  const host = BASE_URL.replace('/api/v1', '');
+  return `${host}/uploads/${imagePath}`;
+};
 
 const toggleBulkMode = () => {
   bulkMode.value = !bulkMode.value;
@@ -154,8 +162,8 @@ const validate = () => {
   return Object.keys(e).length === 0;
 };
 
-const openAdd = () => { isEditing.value = false; form.value = { id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true, sizes: [] }; errors.value = {}; showModal.value = true; };
-const openEdit = (p) => { isEditing.value = true; form.value = { id: p.id, name: p.name, description: p.description || "", price: p.price != null ? String(p.price).replace('.', ',') : "", categoryId: p.categoryId, image: p.image, imagePreview: p.image, available: p.available !== false, sizes: p.sizes ? p.sizes.map(s => ({ name: s.name, price: String(s.price).replace('.', ',') })) : [] }; errors.value = {}; showModal.value = true; };
+const openAdd = () => { isEditing.value = false; form.value = { id: null, name: "", description: "", price: "", categoryId: "", imageFile: null, imagePreview: null, available: true, sizes: [] }; errors.value = {}; showModal.value = true; };
+const openEdit = (p) => { isEditing.value = true; form.value = { id: p.id, name: p.name, description: p.description || "", price: p.price != null ? String(p.price).replace('.', ',') : "", categoryId: p.categoryId, imageFile: null, imagePreview: getImageUrl(p.image), available: p.available !== false, sizes: p.sizes ? p.sizes.map(s => ({ name: s.name, price: String(s.price).replace('.', ',') })) : [] }; errors.value = {}; showModal.value = true; };
 
 const addSize = () => form.value.sizes.push({ name: '', price: '' });
 const removeSize = (i) => form.value.sizes.splice(i, 1);
@@ -164,37 +172,15 @@ const handleImageUpload = (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX_WIDTH = 600;
-      const MAX_HEIGHT = 600;
-      let width = img.width;
-      let height = img.height;
+  const maxSize = 2 * 1024 * 1024; 
+  if (file.size > maxSize) {
+    showToast("Arquivo muito grande! O limite é 2MB.", "error");
+    e.target.value = "";
+    return;
+  }
 
-      if (width > height && width > MAX_WIDTH) {
-        height *= MAX_WIDTH / width;
-        width = MAX_WIDTH;
-      } else if (height > MAX_HEIGHT) {
-        width *= MAX_HEIGHT / height;
-        height = MAX_HEIGHT;
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-
-      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-
-      form.value.imagePreview = compressedBase64;
-      form.value.image = compressedBase64;
-    };
-    img.src = event.target.result;
-  };
-  reader.readAsDataURL(file);
+  form.value.imageFile = file;
+  form.value.imagePreview = URL.createObjectURL(file);
 };
 
 const applyPriceMask = (raw) => {
@@ -226,19 +212,26 @@ const save = async () => {
       .filter(s => s.name.trim())
       .map(s => ({ name: s.name.trim(), price: parseFloat(String(s.price).replace(',', '.')) || 0 }));
     
-    const payload = { 
-      id: form.value.id, 
-      name: form.value.name, 
-      description: form.value.description, 
-      price: parseFloat(String(form.value.price).replace(",", ".")), 
-      categoryId: form.value.categoryId, 
-      image: form.value.image, 
-      available: form.value.available, 
-      sizes: parsedSizes 
-    };
+    const formData = new FormData();
     
-    if (isEditing.value) await menuStore.updateProduct(payload); 
-    else await menuStore.addProduct(payload);
+    if (form.value.id) {
+      formData.append('id', form.value.id);
+      formData.id = form.value.id; 
+    }
+    
+    formData.append('name', form.value.name);
+    formData.append('description', form.value.description || "");
+    formData.append('price', parseFloat(String(form.value.price).replace(",", ".")));
+    formData.append('categoryId', form.value.categoryId);
+    formData.append('available', form.value.available);
+    formData.append('sizes', JSON.stringify(parsedSizes));
+    
+    if (form.value.imageFile) {
+      formData.append('imagem', form.value.imageFile);
+    }
+    
+    if (isEditing.value) await menuStore.updateProduct(formData); 
+    else await menuStore.addProduct(formData);
     
     showToast(isEditing.value ? "Produto atualizado!" : "Produto criado!", "success");
     showModal.value = false;
@@ -415,7 +408,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
       </template>
       <template #cell-image="{ item }">
         <div class="w-12 h-12 bg-gray-50 rounded flex items-center justify-center overflow-hidden border border-[#E0E0E0]">
-          <img v-if="item.image" :src="item.image" class="w-full h-full object-cover" />
+          <img v-if="item.image" :src="getImageUrl(item.image)" class="w-full h-full object-cover" />
           <ImageIcon v-else class="text-[#757575]" :size="18" />
         </div>
       </template>

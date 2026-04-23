@@ -3,9 +3,9 @@ import { EstablishmentController } from '../controller/EstablishmentController';
 import authenticate from '../middleware/authenticate';
 const { checkPermission } = require('../middleware/roleAccessControl'); 
 import { establishmentService } from '../service'; 
-
 import { validateRequest } from '../middleware/validateRequest';
 import { UpdateEstablishmentDTO } from '../dto/establishment/UpdateEstablishmentDTO';
+import { validateUpload } from '../middleware/validateUpload';
 
 const establishmentRouter = Router();
 const establishmentController = new EstablishmentController(establishmentService);
@@ -38,8 +38,9 @@ establishmentRouter.put(
   '/profile',
   authenticate,
   checkPermission('ESTABELECIMENTO_EDIT', 'ALL'),
+  validateUpload.single('logo'),   
   validateRequest(UpdateEstablishmentDTO), 
-  establishmentController.update
+  establishmentController.update   
 );
 
 establishmentRouter.delete(

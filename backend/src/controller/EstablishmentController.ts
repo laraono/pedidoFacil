@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { EstablishmentService } from '../service/EstablishmentService';
 import { catchAsync } from '../middleware';
 import { getIO } from '../socket';
+import { deleteFile } from '../utils/fileHelper';
 
 export class EstablishmentController {
   
@@ -42,7 +43,28 @@ export class EstablishmentController {
 
   update = catchAsync(async (req: Request, res: Response) => {
     const establishmentId = (req as any).usuario.estabelecimento;
-    const updated = await this.establishmentService.updateEstablishment(establishmentId, req.body);
+    let updateData = { ...req.body };
+
+    if (typeof updateData.paymentMethods === 'string') {
+      updateData.paymentMethods = JSON.parse(updateData.paymentMethods);
+    }
+    if (updateData.selfServiceEnabled === 'true' || updateData.selfServiceEnabled === 'false') {
+      updateData.selfServiceEnabled = updateData.selfServiceEnabled === 'true';
+    }
+
+    if (req.file) {
+      const oldProfile = await this.establishmentService.getEstablishmentProfile(establishmentId);
+      
+      if (oldProfile && oldProfile.configurations && oldProfile.configurations.logo) {
+        deleteFile(oldProfile.configurations.logo);
+      }
+      updateData.configurations = {
+        ...updateData.configurations,
+        logo: req.file.filename
+      };
+    }
+
+    const updated = await this.establishmentService.updateEstablishment(establishmentId, updateData);
     
     getIO().emit('profile_updated');
 

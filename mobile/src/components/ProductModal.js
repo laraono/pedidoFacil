@@ -20,28 +20,17 @@ export default function ProductModal({ visible, product, onClose, onConfirm }) {
   const [observation, setObservation] = useState("");
   const [selectedSize, setSelectedSize] = useState(null);
 
-  const variations = product?.productVariations || product?.sizes || [];
-  const isSingleSize = variations.length === 0;
-
   useEffect(() => {
     if (visible && product) {
       setQuantity(1);
       setObservation("");
-
-      if (variations.length > 0) {
-        setSelectedSize(null);
-      } else {
-        const price = Number(product.basePrice || product.price || 0);
-        setSelectedSize({ name: "Único", price: price });
-      }
+      setSelectedSize(product.sizes?.length > 0 ? product.sizes[0] : null);
     }
   }, [visible, product]);
 
   if (!product) return null;
 
-  const currentTotal = selectedSize
-    ? Number(selectedSize.price || selectedSize.Preco_Adicional || 0) * quantity
-    : 0;
+  const currentTotal = selectedSize ? selectedSize.price * quantity : 0;
 
   const handleAdd = () => {
     if (!selectedSize) return;
@@ -72,29 +61,19 @@ export default function ProductModal({ visible, product, onClose, onConfirm }) {
           >
             {product.image && (
               <Image
-                source={
-                  typeof product.image === "string"
-                    ? { uri: product.image }
-                    : product.image
-                }
+                source={product.image}
                 style={styles.productImage}
                 resizeMode="cover"
               />
             )}
 
-            {product.description ? (
-              <Text style={styles.description}>{product.description}</Text>
-            ) : null}
+            <Text style={styles.description}>{product.description}</Text>
 
-            {!isSingleSize && (
+            {product.sizes && product.sizes.length > 0 && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Escolha o Tamanho</Text>
-                {variations.map((size, index) => {
+                {product.sizes.map((size, index) => {
                   const isSelected = selectedSize?.name === size.name;
-                  const priceValue = Number(
-                    size.Preco_Adicional || size.addPrice || size.price || 0,
-                  );
-
                   return (
                     <TouchableOpacity
                       key={index}
@@ -102,9 +81,8 @@ export default function ProductModal({ visible, product, onClose, onConfirm }) {
                         styles.sizeOption,
                         isSelected && styles.sizeOptionSelected,
                       ]}
-                      onPress={() =>
-                        setSelectedSize({ ...size, price: priceValue })
-                      }
+                      onPress={() => setSelectedSize(size)}
+                      activeOpacity={0.7}
                     >
                       <View style={styles.radioContainer}>
                         <View
@@ -123,7 +101,7 @@ export default function ProductModal({ visible, product, onClose, onConfirm }) {
                           isSelected && styles.sizePriceSelected,
                         ]}
                       >
-                        R$ {priceValue.toFixed(2).replace(".", ",")}
+                        R$ {size.price.toFixed(2)}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -131,20 +109,18 @@ export default function ProductModal({ visible, product, onClose, onConfirm }) {
               </View>
             )}
 
-            {/* 🔥 OBSERVAÇÃO CONDICIONAL */}
-            {theme.permitirObservacoes && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Alguma observação?</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Ex: Tirar cebola, sem gelo..."
-                  placeholderTextColor="#999"
-                  value={observation}
-                  onChangeText={setObservation}
-                  multiline
-                />
-              </View>
-            )}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Alguma observação?</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ex: Tirar cebola, sem gelo..."
+                placeholderTextColor={theme.textoSecundario}
+                value={observation}
+                onChangeText={setObservation}
+                multiline
+                maxLength={100}
+              />
+            </View>
 
             <View style={styles.quantityContainer}>
               <Text style={styles.quantityLabel}>Quantidade</Text>
@@ -183,11 +159,9 @@ export default function ProductModal({ visible, product, onClose, onConfirm }) {
               <Text style={styles.addBtnText}>
                 {selectedSize ? "Adicionar" : "Selecione um tamanho"}
               </Text>
-              {selectedSize && (
-                <Text style={styles.addBtnPrice}>
-                  R$ {currentTotal.toFixed(2).replace(".", ",")}
-                </Text>
-              )}
+              <Text style={styles.addBtnPrice}>
+                R$ {currentTotal.toFixed(2)}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -202,9 +176,12 @@ const getStyles = (theme) =>
       flex: 1,
       backgroundColor: "rgba(0,0,0,0.6)",
       justifyContent: "flex-end",
+      alignItems: "center",
     },
     content: {
       backgroundColor: theme.fundoProdutos,
+      width: "100%",
+      maxWidth: 600,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       maxHeight: "90%",
@@ -212,12 +189,22 @@ const getStyles = (theme) =>
     header: {
       flexDirection: "row",
       justifyContent: "space-between",
+      alignItems: "center",
       padding: 20,
       borderBottomWidth: 1,
       borderBottomColor: theme.borda,
     },
-    title: { fontSize: 22, fontWeight: "900", color: theme.corTextoPrincipal },
-    closeBtn: { padding: 8 },
+    title: {
+      fontSize: 24,
+      fontWeight: "900",
+      color: theme.corTextoPrincipal,
+      flex: 1,
+    },
+    closeBtn: {
+      padding: 8,
+      backgroundColor: theme.fundoGeral,
+      borderRadius: 8,
+    },
     scrollArea: { padding: 20 },
     productImage: {
       width: "100%",
@@ -228,39 +215,43 @@ const getStyles = (theme) =>
     description: {
       fontSize: 16,
       color: theme.textoSecundario,
-      marginBottom: 20,
+      lineHeight: 24,
+      marginBottom: 24,
     },
     section: { marginBottom: 24 },
     sectionTitle: {
       fontSize: 14,
       fontWeight: "900",
-      color: theme.textoSecundario,
-      marginBottom: 12,
       textTransform: "uppercase",
+      color: theme.textoSecundario,
+      letterSpacing: 1,
+      marginBottom: 12,
     },
     sizeOption: {
       flexDirection: "row",
       justifyContent: "space-between",
+      alignItems: "center",
       padding: 16,
       borderWidth: 1,
       borderColor: theme.borda,
       borderRadius: 12,
       marginBottom: 8,
+      backgroundColor: theme.fundoGeral,
     },
     sizeOptionSelected: {
       borderColor: theme.corBotoes,
-      backgroundColor: theme.corBotoes + "10",
+      backgroundColor: `${theme.corBotoes}15`,
     },
     radioContainer: { flexDirection: "row", alignItems: "center" },
     radioOuter: {
-      width: 20,
-      height: 20,
-      borderRadius: 10,
+      width: 22,
+      height: 22,
+      borderRadius: 11,
       borderWidth: 2,
-      borderColor: theme.borda,
-      marginRight: 10,
+      borderColor: theme.textoSecundario,
       justifyContent: "center",
       alignItems: "center",
+      marginRight: 12,
     },
     radioOuterSelected: { borderColor: theme.corBotoes },
     radioInner: {
@@ -282,8 +273,11 @@ const getStyles = (theme) =>
     sizePriceSelected: { color: theme.corBotoes },
     input: {
       backgroundColor: theme.fundoGeral,
+      borderWidth: 1,
+      borderColor: theme.borda,
       borderRadius: 12,
-      padding: 15,
+      padding: 16,
+      fontSize: 16,
       color: theme.corTextoPrincipal,
       minHeight: 80,
       textAlignVertical: "top",
@@ -292,7 +286,12 @@ const getStyles = (theme) =>
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 30,
+      padding: 16,
+      backgroundColor: theme.fundoGeral,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.borda,
+      marginBottom: 40,
     },
     quantityLabel: {
       fontSize: 18,
@@ -301,28 +300,45 @@ const getStyles = (theme) =>
     },
     quantityControls: { flexDirection: "row", alignItems: "center" },
     qtyBtn: {
-      width: 40,
-      height: 40,
-      backgroundColor: theme.fundoGeral,
+      width: 44,
+      height: 44,
+      backgroundColor: theme.fundoProdutos,
       borderRadius: 8,
       justifyContent: "center",
       alignItems: "center",
+      elevation: 2,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
     },
     qtyValue: {
       width: 40,
       textAlign: "center",
-      fontSize: 20,
+      fontSize: 24,
       fontWeight: "900",
+      color: theme.corTextoPrincipal,
     },
-    footer: { padding: 20, borderTopWidth: 1, borderTopColor: theme.borda },
+    footer: {
+      padding: 20,
+      borderTopWidth: 1,
+      borderTopColor: theme.borda,
+      backgroundColor: theme.fundoProdutos,
+    },
     addBtn: {
       flexDirection: "row",
       justifyContent: "space-between",
+      alignItems: "center",
       backgroundColor: theme.corBotoes,
       padding: 20,
       borderRadius: 16,
     },
     addBtnDisabled: { backgroundColor: theme.borda },
-    addBtnText: { color: theme.textoBotoes, fontSize: 18, fontWeight: "900" },
-    addBtnPrice: { color: theme.textoBotoes, fontSize: 18, fontWeight: "900" },
+    addBtnText: {
+      color: theme.textoBotoes,
+      fontSize: 18,
+      fontWeight: "900",
+      textTransform: "uppercase",
+    },
+    addBtnPrice: { color: theme.textoBotoes, fontSize: 20, fontWeight: "900" },
   });

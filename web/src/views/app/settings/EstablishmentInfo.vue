@@ -21,6 +21,7 @@ const { showToast } = useToast();
 const isLoading = ref(false);
 const isFetching = ref(true);
 const logoPreview = ref(null);
+const logoFile = ref(null); 
 const errors = ref({});
 const touched = ref({});
 
@@ -91,6 +92,14 @@ const maskPhone = (v) => {
   return d.replace(/^(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2");
 };
 
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return '';
+  if (imagePath.startsWith('http') || imagePath.startsWith('data:image') || imagePath.startsWith('blob:')) return imagePath;
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+  const host = BASE_URL.replace('/api/v1', '');
+  return `${host}/uploads/${imagePath}`;
+};
+
 onMounted(async () => {
   isFetching.value = true;
   try {
@@ -102,7 +111,7 @@ onMounted(async () => {
       phone: data.phone || "",
     };
 
-    logoPreview.value = data.configurations?.logo || null;
+    logoPreview.value = getImageUrl(data.configurations?.logo);
 
     if (data.paymentMethods && data.paymentMethods.length > 0) {
       paymentMethods.value = [...data.paymentMethods];
@@ -148,11 +157,16 @@ const validateAll = () => {
 const handleLogoUpload = (event) => {
   const file = event.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    logoPreview.value = e.target.result;
-  };
-  reader.readAsDataURL(file);
+
+  const maxSize = 2 * 1024 * 1024; 
+  if (file.size > maxSize) {
+    showToast("Arquivo muito grande! O limite é 2MB.", "error");
+    event.target.value = ""; 
+    return;
+  }
+
+  logoFile.value = file;
+  logoPreview.value = URL.createObjectURL(file);
 };
 
 const saveSettings = async () => {
@@ -164,20 +178,24 @@ const saveSettings = async () => {
   isLoading.value = true;
 
   try {
-    await establishmentApi.updateProfile({
-      name: form.value.name,
-      cnpj: form.value.cnpj,
-      phone: form.value.phone,
-      paymentMethods: paymentMethods.value,
-      selfServiceEnabled: selfService.value,
-      selfServiceCode: selfServiceCode.value,
-      configurations: {
-        logo: logoPreview.value,
-      },
-    });
+    const formData = new FormData();
+    formData.append('name', form.value.name);
+    formData.append('cnpj', form.value.cnpj);
+    formData.append('phone', form.value.phone);
+    
+    formData.append('paymentMethods', JSON.stringify(paymentMethods.value));
+    formData.append('selfServiceEnabled', selfService.value);
+    formData.append('selfServiceCode', selfServiceCode.value);
+    
+    if (logoFile.value) {
+      formData.append('logo', logoFile.value);
+    }
+
+    await establishmentApi.updateProfile(formData);
 
     originalForm.value = { ...form.value };
     originalLogo.value = logoPreview.value;
+    logoFile.value = null; 
     originalPaymentMethods.value = [...paymentMethods.value];
     originalSelfService.value = selfService.value;
     originalSelfServiceCode.value = selfServiceCode.value;

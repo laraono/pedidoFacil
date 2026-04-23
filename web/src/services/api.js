@@ -4,8 +4,28 @@ export function getToken() {
   return localStorage.getItem("accessToken");
 }
 
+function isFormDataObj(data) {
+  if (!data) return false;
+  if (data instanceof FormData) return true;
+  if (data.constructor && data.constructor.name === 'FormData') return true;
+  if (typeof data.append === 'function') return true;
+  return false;
+}
+
 export async function request(path, options = {}) {
-  const headers = { "Content-Type": "application/json", ...options.headers };
+  const isFormData = options.isMultipart === true || isFormDataObj(options.body);
+  
+  const headers = { ...options.headers };
+  
+  if (options.body) {
+    if (isFormData) {
+      delete headers["Content-Type"];
+    } else if (typeof options.body === 'object') {
+      headers["Content-Type"] = "application/json";
+      options.body = JSON.stringify(options.body); 
+    }
+  }
+
   const token = getToken();
 
   if (token) headers["Authorization"] = `Bearer ${token}`;
