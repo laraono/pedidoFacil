@@ -6,15 +6,13 @@ import {
   Target, Download, PackageOpen, ArrowLeft, Tag
 } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
-import {
-  getKpisMock, getRevenueChartMock, getSalesByChannelMock,
-  getPeakHoursMock, getTopWaitersMock, getCancellationsMock,
-  getPaymentMethodsMock, getTopProductsMock, getCouponUsageMock
-} from '@/mock/reportsmock';
-import ReportPrintLayout from '@/components/reports/ReportPrintLayout.vue';
+import { metricsApi } from '@/services/metricsApi';
 import localStorageService from '@/services/localStorageService';
+import { useToast } from '@/composables/useToast';
+import ReportPrintLayout from '@/components/reports/ReportPrintLayout.vue';
 
 const router = useRouter();
+const { showToast } = useToast();
 
 const activeTab = ref('geral');
 const dateFilter = ref('7d');
@@ -30,18 +28,50 @@ const paymentMethods = ref([]);
 const topProducts = ref([]);
 const couponUsage = ref([]);
 
-const loadData = () => {
+const getDateRange = (filter) => {
+  const end = new Date();
+  const start = new Date();
+  
+  if (filter === '24h') {
+    start.setHours(0, 0, 0, 0); 
+  } else if (filter === '7d') {
+    start.setDate(end.getDate() - 7);
+  } else if (filter === '30d') {
+    start.setDate(end.getDate() - 30);
+  } else {
+    start.setFullYear(2020); 
+  }
+  
+  return { 
+    startDate: start.toISOString(), 
+    endDate: end.toISOString() 
+  };
+};
+
+const loadData = async () => {
   isLoaded.value = false;
-  kpis.value = getKpisMock(dateFilter.value);
-  revenueData.value = getRevenueChartMock(dateFilter.value);
-  salesByChannel.value = getSalesByChannelMock(dateFilter.value);
-  peakHours.value = getPeakHoursMock(dateFilter.value);
-  topWaiters.value = getTopWaitersMock(dateFilter.value);
-  cancellations.value = getCancellationsMock(dateFilter.value);
-  paymentMethods.value = getPaymentMethodsMock(dateFilter.value);
-  topProducts.value = getTopProductsMock(dateFilter.value);
-  couponUsage.value = getCouponUsageMock(dateFilter.value);
-  setTimeout(() => { isLoaded.value = true; }, 50);
+  
+  try {
+    const { startDate, endDate } = getDateRange(dateFilter.value);
+    
+    const overview = await metricsApi.getDashboardOverview(startDate, endDate, dateFilter.value);
+    
+    kpis.value = overview.kpis || {};
+    revenueData.value = overview.revenueData || [];
+    salesByChannel.value = overview.salesByChannel || [];
+    peakHours.value = overview.peakHours || [];
+    topWaiters.value = overview.topWaiters || [];
+    cancellations.value = overview.cancellations || [];
+    paymentMethods.value = overview.paymentMethods || [];
+    topProducts.value = overview.topProducts || [];
+    couponUsage.value = overview.couponUsage || [];
+
+  } catch (error) {
+    console.error("Erro ao carregar relatórios", error);
+    showToast("Erro ao processar métricas. Tente novamente.", "error");
+  } finally {
+    setTimeout(() => { isLoaded.value = true; }, 50);
+  }
 };
 
 const maxCouponUses = () => Math.max(...couponUsage.value.map(c => c.uses), 1);
@@ -65,12 +95,11 @@ const currentDate = computed(() =>
   new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
 );
 
-
 const totalCancellationsCount = computed(() => cancellations.value.reduce((acc, curr) => acc + curr.count, 0));
 
 const financialImpact = computed(() => {
   const tmStr = kpis.value.ticketMedio || '0';
-  const ticketMedio = parseFloat(tmStr.replace('R$', '').replace(/\./g, '').replace(',', '.')) || 85.25;
+  const ticketMedio = parseFloat(tmStr.replace('R$', '').replace(/\./g, '').replace(',', '.')) || 0;
   const loss = totalCancellationsCount.value * ticketMedio;
   return loss.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 });
@@ -307,7 +336,6 @@ const exportToPDF = () => { window.print(); };
               </tbody>
             </table>
           </div>
-          <p class="text-[10px] text-[#757575] mt-6 text-center italic">* A margem de lucro é uma estimativa calculada com base no CMV.</p>
         </div>
       </div>
 

@@ -90,6 +90,7 @@ const getStyles = (theme) =>
       paddingBottom: 30,
       paddingHorizontal: 24,
       maxHeight: 340,
+      zIndex: 100,
       elevation: 15,
       shadowColor: "#000",
       shadowOffset: { width: 0, height: -5 },

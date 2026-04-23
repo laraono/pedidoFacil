@@ -1,8 +1,7 @@
 import { ComandaService } from "../service";
-import {Request, Response} from 'express';
+import { Request, Response } from 'express';
 
 export class ComandaController {
-
     private comandaService: ComandaService
 
     constructor(comandaService: ComandaService) {
@@ -10,37 +9,87 @@ export class ComandaController {
     }
 
     async createComanda(req: Request, res: Response) {
-        const comandaId = await this.comandaService.createComanda(req.body)
+        try {
+            const usuario = (req as any).usuario;
 
-        res.status(201).send(comandaId)
+            if (!usuario || !usuario.estabelecimento) {
+                return res.status(401).json({ message: "Estabelecimento não identificado." });
+            }
+
+            const comandaData = {
+                ...req.body,
+                establishment: { id: usuario.estabelecimento } 
+            };
+
+            const novaComanda = await this.comandaService.createComanda(comandaData);
+            
+            return res.status(201).json(novaComanda); 
+        } catch (error) {
+            console.error("Erro ao criar comanda:", error);
+            return res.status(500).json({ error: "Erro interno ao criar comanda" });
+        }
     }
 
     async listComandas(req: Request, res: Response) {
         const comandas = await this.comandaService.listComandas()
-
         res.status(200).send(comandas)
     }
 
-    async listComandasByStatus(req, res: Response) {
-        const {status} = req.query
-
-        const comandas = await this.comandaService.listComandasByStatus(status)
-
-        res.status(200).send(comandas)
+    async listComandasByStatus(req: Request, res: Response) {
+        const { status } = req.query;
+        const comandas = await this.comandaService.listComandasByStatus(status as any);
+        res.status(200).send(comandas);
     }
     
-    async updateComandaStatus(req, res: Response) {
-        await this.comandaService.updateComandaStatus(req.params, req.body)
+    async updateComandaStatus(req: Request, res: Response) {
+        const { id } = req.params;
+        const idNumero = Number(id || req.params.comandaId); 
+
+        await this.comandaService.updateComandaStatus(idNumero, req.body.status);
         
-        res.sendStatus(204)
+        res.sendStatus(204);
     }
 
-    async cancelComanda(req, res: Response) {
-        const { comandaId} = req.params
+    async cancelComanda(req: Request, res: Response) {
+        const { comandaId } = req.params;
 
-        await this.comandaService.cancelComanda({comandaId, ...req.body})
+        await this.comandaService.cancelComanda({
+            comandaId: Number(comandaId), 
+            ...req.body
+        });
         
-        res.sendStatus(204)
+        res.sendStatus(204);
     }
-    
+
+    async checkout(req: Request, res: Response) {
+        try {
+            const { comandaId } = req.params;
+            const user = (req as any).user || (req as any).usuario; 
+            
+            if (!user) {
+                return res.status(401).json({ error: "Sessão inválida: Usuário não encontrado no request." });
+            }
+
+            const userId = user.id || user.ID_Usuario;
+            const estabelecimentoId = user.estabelecimento || user.ID_Estabelecimento;
+
+            if (!userId || !estabelecimentoId) {
+                console.error("🔥 Token JWT sem ID ou Estabelecimento:", user);
+                return res.status(400).json({ error: "Token inválido ou incompleto." });
+            }
+
+            const payment = await this.comandaService.checkoutComanda(
+                Number(comandaId),
+                Number(userId),
+                Number(estabelecimentoId),
+                req.body
+            );
+
+            return res.status(200).json(payment);
+
+        } catch (error: any) {
+            console.error("🔥 ERRO FATAL NO BACKEND (Checkout):", error);
+            return res.status(500).json({ error: "Erro interno ao processar o pagamento." });
+        }
+    }
 }

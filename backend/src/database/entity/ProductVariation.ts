@@ -8,7 +8,7 @@ import { ProductVariationOrder } from "./ProductVariationOrder"
 export class ProductVariation {
 
     @PrimaryGeneratedColumn({
-        name: 'ID_Variacao '
+        name: 'ID_Variacao'
     })
     id: number
 
@@ -21,7 +21,7 @@ export class ProductVariation {
     name: string
 
     @Column({
-        name: 'preco_adicional',
+        name: 'Preco_Adicional',
         type: "decimal",
         precision: 10,
         scale: 2,
@@ -37,14 +37,8 @@ export class ProductVariation {
     })
     status: ProductStatus
 
-    @CreateDateColumn({ 
-        type: "timestamp", 
-        default: () => "CURRENT_TIMESTAMP(6)"
-        })
-    created_at: Date;
-
     @DeleteDateColumn({
-        name: 'deleted_at',
+        name: 'Data_Exclusao',
         type: 'datetime',
         nullable: true
     })
@@ -52,7 +46,7 @@ export class ProductVariation {
 
     @ManyToOne(() => Product, (product) => product.productVariations)
     @JoinColumn({
-        name: 'ID_Produto '
+        name: 'ID_Produto'
     })
     product: Product
 

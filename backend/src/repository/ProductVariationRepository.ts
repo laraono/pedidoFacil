@@ -29,5 +29,11 @@ export class ProductVariationRepository extends Repository<ProductVariation>{
             }
         })
     }
-    
+
+    async softDeleteVariationsByProduct(productId: number) {
+        await this.createQueryBuilder()
+            .softDelete()
+            .where("ID_Produto = :productId", { productId })
+            .execute();
+    }
 }
