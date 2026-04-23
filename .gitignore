@@ -1,6 +1,5 @@
-web/node_modules
-api/node_modules
-api/build
-mobile/node_modules
-backend/node_modules
-backend/build
+web/node_modules/*
+api/*
+mobile/node_modules/*
+backend/node_modules/*
+backend/build/*
