@@ -1,5 +1,5 @@
-node_modules/
-dist/
-.env
-backend/uploads/*
-!backend/uploads/.gitkeep
+web/node_modules/*
+api/*
+mobile/node_modules/*
+backend/node_modules/*
+backend/build/*
