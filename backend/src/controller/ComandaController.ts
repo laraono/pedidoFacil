@@ -1,6 +1,7 @@
 import { ComandaStatus } from "../enum";
 import { ComandaService } from "../service";
 import { Request, Response } from 'express';
+import { getIO } from "../socket";
 
 export class ComandaController {
     private comandaService: ComandaService
@@ -55,7 +56,7 @@ export class ComandaController {
         const idNumero = Number(id || req.params.comandaId); 
 
         await this.comandaService.updateComandaStatus(idNumero, req.body.status);
-        
+        getIO().to(`comanda-${id}`).emit('comanda_status_updated', {status})
         res.sendStatus(204);
     }
 
@@ -66,6 +67,8 @@ export class ComandaController {
             comandaId: Number(comandaId), 
             ...req.body
         });
+
+        getIO().to(`comanda-${comandaId}`).emit('comanda_status_updated', {status: ComandaStatus.CANCELADA})
         
         res.sendStatus(204);
     }
@@ -101,6 +104,8 @@ export class ComandaController {
                 Number(estabelecimentoId),
                 req.body
             );
+
+            getIO().to(`comanda-${comandaId}`).emit('comanda_status_updated', {status: ComandaStatus.FECHADA})
 
             return res.status(200).json(payment);
 
