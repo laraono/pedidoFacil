@@ -36,6 +36,13 @@ export class Plan {
     frequency!: string
 
     @Column({
+        type: 'varchar',
+        name: 'Features',
+        nullable: false
+    })
+    features!: string
+
+    @Column({
         type: 'int',
         name: 'Dia_Pagamento',
         nullable: false

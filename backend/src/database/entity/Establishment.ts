@@ -17,6 +17,7 @@ import { Comanda } from "./Comanda"
 import { Order } from "./Order"
 import { Payment } from "./Payment"
 import { Configuration } from "./Configuration" 
+import { Register } from "./Register"
 
 @Entity({ name: 'ESTABELECIMENTO' })
 export class Establishment {
@@ -97,6 +98,14 @@ export class Establishment {
     })
     serviceTypes?: string
 
+
+    @Column({
+        type: 'varchar',
+        name: 'Mercado_Pago_Id',
+        nullable: true
+    })
+    mercadoPagoId?: string
+
     @DeleteDateColumn({
         name: 'Data_Exclusao',
         nullable: true
@@ -138,4 +147,7 @@ export class Establishment {
 
     @OneToMany(() => Payment, (payment) => payment.establishment)
     payments?: Payment[]
+
+    @OneToMany(() => Register, (register) => register.establishment)
+    registers?: Register[]
 }

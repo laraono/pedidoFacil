@@ -83,6 +83,20 @@ export class Payment {
     })
     deletedAt?: Date
 
+    @Column({
+        name: 'Mercado_Pago_Order_Id',
+        type: "varchar",
+        nullable: true
+    })
+    mercadoPagoOrderId?: string
+
+    @Column({
+        name: 'Mercado_Pago_Payment_Id',
+        type: "varchar",
+        nullable: true
+    })
+    mercadoPagoPaymentId?: string
+
     @ManyToOne(() => Establishment)
     @JoinColumn({ name: 'ID_Estabelecimento' })
     establishment?: Establishment

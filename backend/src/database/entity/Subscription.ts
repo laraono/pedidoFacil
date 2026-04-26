@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, DeleteDateColumn } from "typeorm"
 import { SubscriptionStatus, UserStatus } from "../../enum"
 import { Plan } from "./Plan"
 import { Establishment } from "./Establishment"
@@ -46,6 +46,27 @@ export class Subscription {
         nullable: true
     })
     receipt?: string
+
+    @Column({
+        type: 'varchar',
+        name: 'Mercado_Pago_Id',
+        nullable: false,
+    })
+    mercadoPagoId!: string
+
+    @CreateDateColumn({ 
+        name:  'Data_Hora_Criacao',
+        type: "timestamp", 
+        default: () => "CURRENT_TIMESTAMP(6)"
+        })
+    created_at!: Date;
+
+    @DeleteDateColumn({
+        name: 'Data_Hora_Delecao',
+        type: 'datetime',
+        nullable: true
+    })
+        deletedAt?: Date
 
     @ManyToOne(() => Establishment, (establishment) => establishment.subscriptions)
     @JoinColumn({
