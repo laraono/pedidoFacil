@@ -1,3 +1,3 @@
 export {
-    CreateSubscription
+    CreateSubscription, CreateSubscriptionParams
 } from './CreateSubscriptionDTO'

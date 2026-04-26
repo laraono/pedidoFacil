@@ -31,8 +31,15 @@ export {
     CreatePlan
 } from './plan'
 export {
-    CreateSubscription
+    CreateSubscription, CreateSubscriptionParams
 } from './subscription'
+export {
+    CreateStore as CreateStoreMP, CreateStoreParams as CreateStoreParamsMP,
+    CreateRegisterParams as CreateRegisterParamsMP,
+    CreateOrderPayment as CreateOrderPaymentMP,
+    CreateOrderSubscription as CreateOrderSubscriptionMP,
+    UpdateSubscription as UpdateSubscriptionMP
+} from './mercadoPago'
 export * from './establishment/SaveOnboardingStepDTO';
 export * from './establishment/FinalizeOnboardingDTO';
 export * from './establishment/UpdateEstablishmentDTO';

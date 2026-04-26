@@ -7,3 +7,9 @@ export type CreateSubscription = {
     lastPayment: Date
     plan: Plan
 }
+
+export type CreateSubscriptionParams = {
+    email: string, 
+    planId: number, 
+    establishmentId: number
+}
