@@ -3,10 +3,12 @@ import { employeeController } from '../controller';
 import authenticate from '../middleware/authenticate';
 import { checkPermission } from '../middleware/roleAccessControl';
 import { validateCreateEmployee, validateUpdateEmployee } from '../validator/employee/employeeSchema';
+import { subscriptionMiddleware } from '../middleware';
 
 const employeeRouter = Router();
 
 employeeRouter.use(authenticate);
+employeeRouter.use(subscriptionMiddleware)
 
 employeeRouter.get('/', checkPermission('USUARIO_VIEW', 'ALL'), employeeController.list);
 employeeRouter.get('/inactive', checkPermission('USUARIO_VIEW', 'ALL'), employeeController.listInactive);
