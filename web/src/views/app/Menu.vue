@@ -2,7 +2,6 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { useMenuStore } from "@/stores/menu";
 import { useComandaStore } from "@/stores/comandaManagement";
-import { comandaApi } from "@/services/comandaApi";
 import { request } from "@/services/api";
 import SubscriptionGuard from "@/components/SubscriptionGuard.vue";
 import { useToast } from "@/composables/useToast";
@@ -16,7 +15,6 @@ import {
   Utensils, X, Plus, Minus, ShoppingBag,
   Trash2, ChefHat, CheckCircle2, Palette, ArrowLeft,
 } from 'lucide-vue-next';
-import { useRoute, useRouter } from 'vue-router';
 import { comandaApi } from "@/services/comandaApi";
 import { productApi } from "@/services/productApi";
 import { orderApi } from "@/services/orderApi";
@@ -173,7 +171,6 @@ const openComandaModal = () => {
 };
 
 const confirmAndSendToKitchen = async () => {
-const confirmAndSendToKitchen = async () => {
   if (!selectedComandaId.value) return;
   if (selectedComandaId.value === 'new' && !newComandaNumber.value.trim()) return;
 
@@ -217,7 +214,6 @@ const confirmAndSendToKitchen = async () => {
   };
 
   comandaStore.updateComanda(comandaId, finalOrder);
-  kitchenStore.addOrder(kitchenOrder);
 
   cart.value = [];
   isComandaModalOpen.value = false;

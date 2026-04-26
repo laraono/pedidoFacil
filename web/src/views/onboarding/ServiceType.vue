@@ -134,7 +134,7 @@ const finalizeRegistration = async () => {
     authStore.user = finalUser;
     authStore.isAuthenticated = true;
 
-    router.push("/app/dashboard");
+    router.push("/onboarding/subscription");
   } catch (err) {
     console.error(err);
     serverError.value =
@@ -353,7 +353,7 @@ const finalizeRegistration = async () => {
           class="py-4 px-10 md:py-5 md:px-14 bg-primary text-white font-extrabold rounded text-lg md:text-xl hover:bg-primary-dark transition-all duration-300 disabled:opacity-30 flex items-center justify-center gap-3 mx-auto w-full md:w-auto shadow-xl"
         >
           <Loader2 v-if="isLoading" class="w-5 h-5 animate-spin" />
-          <span v-else>Finalizar e Acessar Sistema</span>
+          <span v-else>Finalizar Cadastro e Criar Assinatura</span>
           <ArrowRight v-if="!isLoading" class="w-5 h-5" />
         </button>
 

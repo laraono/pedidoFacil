@@ -8,6 +8,7 @@ import RegisterManager from "@/views/RegisterManager.vue";
 
 import EstablishmentName from "@/views/onboarding/EstablishmentName.vue";
 import ServiceType from "@/views/onboarding/ServiceType.vue";
+import SubscriptionPage from "@/views/onboarding/SubscriptionPage.vue";
 
 import Header from "@/views/app/Header.vue";
 
@@ -42,6 +43,11 @@ const routes = [
     component: EstablishmentName,
   },
   { path: "/onboarding/type", name: "OnboardingType", component: ServiceType },
+  {
+    path: '/onboarding/subscription',
+    name: 'create-subscription',
+    component: SubscriptionPage
+  },
 
   {
     path: "/app",
@@ -154,7 +160,7 @@ const routes = [
         name: "manager-profile",
         component: () => import("@/views/app/settings/ManagerProfile.vue"),
         meta: { requiresAuth: true },
-      },
+      }
     ],
   },
 ];

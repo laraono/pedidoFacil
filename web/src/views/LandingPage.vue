@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSubscriptionStore } from '@/stores/subscriptions';
 import { User, Menu, X, Check } from 'lucide-vue-next';
@@ -10,15 +10,23 @@ import imgTotem from '@/assets/totem.png';
 import imgGraficos from '@/assets/graficos.png';
 import imgInterface from '@/assets/pedidos.png'; 
 
+import {planApi} from '@/services/planApi'
+
 const router = useRouter();
 const isMenuOpen = ref(false);
 const subscriptionStore = useSubscriptionStore();
 const planPrices = computed(() => subscriptionStore.planPrices);
+const plans = ref([])
+
+onMounted(async() => {
+  plans.value = await planApi.list()
+})
 
 const navigateToLogin = () => { router.push('/login'); };
 const toggleMenu = () => { isMenuOpen.value = !isMenuOpen.value; };
 
-const navigateToRegister = () => {
+const navigateToRegister = (id) => {
+  if(id)  subscriptionStore.setPlanToBeSubscribed(id)
   router.push('/register'); 
 };
 
@@ -195,56 +203,33 @@ const scrollToSection = (sectionId) => {
         <section id="planos" class="w-full max-w-[1000px] px-5 lg:px-0 py-24 text-center">
            <h2 class="text-[#212121] text-3xl lg:text-[42px] font-bold mb-16 tracking-tight">Escolha seu plano</h2>
            
-           <div class="flex flex-col lg:flex-row gap-8 justify-center items-stretch">
-              
-              <div class="flex-1 bg-white px-8 py-12 rounded border border-[#E0E0E0] flex flex-col items-center hover:border-primary/30 transition-all max-w-md mx-auto w-full h-full hover:shadow-md">
-                 <h3 class="text-[#212121] text-3xl font-black mb-4">Mensal</h3>
-                 <div class="text-[#212121] text-5xl lg:text-6xl font-black mb-1 tracking-tighter">R${{ planPrices.monthly.toFixed(2).replace('.',',') }}<span class="text-xl font-normal text-[#757575] tracking-normal">/mês</span></div>
-                 <p class="text-xs text-[#757575] mb-2">cobrado mensalmente</p>
+          <div class="flex flex-row flex-nowrap gap-6 mb-10 w-full px-4 overflow-x-auto pb-6">
+   
+   <div v-for="plan in plans" :key="plan.id" class="flex-none bg-white px-6 py-10 rounded-xl border border-[#E0E0E0] flex flex-col items-center hover:border-primary/40 transition-all w-full max-w-[320px] hover:shadow-lg">
+      
+      <h3 class="text-[#212121] text-2xl font-black mb-3 tracking-tight">
+         {{ plan.name }}
+      </h3>
 
-                 <div class="w-full h-px bg-[#E0E0E0] my-8"></div>
+      <div class="text-[#212121] text-4xl lg:text-5xl font-black mb-1 tracking-tighter">
+         R${{ plan.price }}<span class="text-lg font-medium text-[#757575] tracking-normal">/mês</span>
+      </div>
 
-                 <div class="flex flex-col gap-5 mb-10 w-full px-2 text-left">
-                    <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Suporte ao Usuário</div>
-                    <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Relatórios de Desempenho</div>
-                    <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Automação do Sistema</div>
-                    <div class="flex items-center gap-4 text-transparent opacity-0 select-none">
-                      <Check class="w-5 h-5 flex-shrink-0" /> Maior Estabilidade
-                    </div>
-                 </div>
+      <div class="w-full h-px bg-[#E0E0E0] my-6"></div>
 
-                 <button @click="navigateToRegister" class="bg-primary text-white font-black py-4 px-12 rounded w-full hover:bg-primary-dark transition-colors mt-auto text-base active:scale-95">
-                    Contratar Mensal
-                 </button>
-              </div>
+      <div class="flex flex-col gap-4 mb-8 w-full px-2 text-left">
+         <div class="flex items-center gap-3 text-[#616161] text-sm font-semibold">
+            <Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> 
+            {{ plan.frequency.toUpperCase() }}
+         </div>
+      </div>
 
-              <div class="flex-1 bg-primary-light px-8 py-12 rounded border-2 border-primary/30 flex flex-col items-center hover:border-primary/60 transition-all max-w-md mx-auto w-full h-full hover:shadow-lg relative">
-
-                 <div class="absolute top-0 right-0 bg-primary text-white font-black text-[10px] px-4 py-2 rounded uppercase tracking-wider">RECOMENDADO</div>
-
-                 <h3 class="text-primary text-3xl font-black mb-4">Anual</h3>
-                 <div class="text-[#212121] text-5xl lg:text-6xl font-black mb-1 tracking-tighter">R${{ planPrices.annual.toFixed(2).replace('.',',') }}<span class="text-xl font-normal text-[#757575] tracking-normal">/mês</span></div>
-                 <div class="flex items-center gap-2 mb-1">
-                   <span class="text-xs line-through text-[#757575]">R${{ (planPrices.monthly * 12).toFixed(2).replace('.',',') }}/ano</span>
-                   <span class="text-[10px] font-black text-white bg-accent px-2 py-0.5 rounded uppercase tracking-wide">Promoção</span>
-                 </div>
-                 <p class="text-xs text-primary font-bold mb-2">Total anual: R${{ (planPrices.annual * 12).toFixed(2).replace('.',',') }}</p>
-
-                 <div class="w-full h-px bg-primary/20 my-8"></div>
-
-                 <div class="flex flex-col gap-5 mb-10 w-full px-2 text-left">
-                    <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Suporte ao Usuário</div>
-                    <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Relatórios de Desempenho</div>
-                    <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Automação do Sistema</div>
-                    <div class="flex items-center gap-4 text-[#212121] font-bold"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Maior Estabilidade</div>
-                 </div>
-
-                 <button @click="navigateToRegister" class="bg-primary text-white font-black py-4 px-12 rounded w-full hover:bg-primary-dark transition-colors mt-auto text-base shadow-md shadow-primary/20 active:scale-95">
-                    Contratar Anual
-                 </button>
-              </div>
-
-           </div>
+      <button @click="navigateToRegister(plan.id)" class="bg-primary text-white font-bold py-3.5 px-6 rounded-lg w-full hover:bg-primary-dark transition-all mt-auto text-sm uppercase tracking-wider active:scale-95">
+         Contratar Mensal
+      </button>
+      
+   </div>
+</div>
         </section>
         
         <section id="contato" class="w-full max-w-[700px] px-5 lg:px-0 mt-20 mb-32 text-center">

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 
 const SUBSCRIPTION_KEY = 'subscription';
+const PLAN_KEY = 'plan';
 
 export const useSubscriptionStore = defineStore('subscription', () => {
   const subscription = ref(null);
@@ -67,6 +68,14 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     }
   }
 
+  function setPlanToBeSubscribed(id) {
+    localStorage.setItem(PLAN_KEY, id)
+  }
+
+  function getPlanToBeSubscribed(id) {
+    localStorage.getItem(PLAN_KEY)
+  }
+
   function recordPayment(method) {
     if (!subscription.value) return;
     const today = new Date().toISOString().split('T')[0];
@@ -122,6 +131,8 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     updatePlan,
     setPendingPlan,
     updatePlanPrices,
+    setPlanToBeSubscribed,
+    getPlanToBeSubscribed,
     recordPayment
   };
 });
