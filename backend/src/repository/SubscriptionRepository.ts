@@ -1,5 +1,5 @@
 import { DataSource, Repository } from "typeorm";
-import { Subscription } from "../database";
+import { Plan, Subscription } from "../database";
 import { CreateSubscription } from "../dto";
 import { SubscriptionStatus } from "../enum";
 
@@ -17,6 +17,34 @@ export class SubscriptionRepository extends Repository<Subscription>{
         return await this.findOne({
             where: {
                 id: subscriptionId
+            }
+        })
+    }
+
+    async listSubscriptions() {
+        return await this.find()
+    }
+
+    async listSubscriptionsByPlan(plan: Plan) {
+        return await this.find({
+            where: {
+                plan
+            }
+        })
+    }
+
+    async getSubscriptionByEstablishment(establishmentId: number) {
+        return await this.find({
+            where: {
+                establishment: {
+                    id: establishmentId
+                }
+            },
+            order: {
+                id: 'DESC'
+            },
+            relations: {
+                establishment: true
             }
         })
     }

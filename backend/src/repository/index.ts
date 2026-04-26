@@ -16,6 +16,7 @@ import { ReceiptRepository } from './ReceiptRepository';
 import { PaymentRepository } from './PaymentRepository'; 
 import { PlanRepository } from './PlanRepository';
 import { SubscriptionRepository } from './SubscriptionRepository';
+import { RegisterRepository } from './RegisterRepository';
 
 const categoryRepository = new CategoryRepository(AppDataSource);
 const comandaRepository = new ComandaRepository(AppDataSource);
@@ -24,10 +25,10 @@ const orderRepository = new OrderRepository(AppDataSource);
 const productRepository = new ProductRepository(AppDataSource);
 const productOrderRepository = new ProductOrderRepository(AppDataSource);
 const productVariationRepository = new ProductVariationRepository(
-  AppDataSource,
+    AppDataSource,
 );
 const productVariationOrderRepository = new ProductVariationOrderRepository(
-  AppDataSource,
+    AppDataSource,
 );
 const refreshTokenRepository = new RefreshTokenRepository(AppDataSource);
 const roleRepository = new RoleRepository(AppDataSource);
@@ -38,6 +39,7 @@ const receiptRepository = new ReceiptRepository(AppDataSource);
 const paymentRepository = new PaymentRepository(AppDataSource); 
 const planRepository = new PlanRepository(AppDataSource)
 const subscriptionRepository = new SubscriptionRepository(AppDataSource)
+const registerRepository = new RegisterRepository(AppDataSource)
 
 export {
     categoryRepository,
@@ -56,7 +58,8 @@ export {
     receiptRepository, 
     paymentRepository,
     planRepository,
-    subscriptionRepository
+    subscriptionRepository,
+    registerRepository
 };
 
 export {
@@ -76,5 +79,6 @@ export {
     ReceiptRepository,
     PaymentRepository,
     PlanRepository,
-    SubscriptionRepository
+    SubscriptionRepository,
+    RegisterRepository
 };

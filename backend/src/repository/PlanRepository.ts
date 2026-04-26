@@ -28,4 +28,8 @@ export class PlanRepository extends Repository<Plan>{
         await this.update(planId, {mercadoPagoId})
     }
 
+    async listPlans() {
+        return await this.find()
+    }
+
 }

@@ -30,4 +30,8 @@ export class EstablishmentRepository extends Repository<Establishment> {
         })
     }
 
+    async addMercadoPagoId(establishmentId: number, mercadoPagoId: string) {
+        await this.update(establishmentId, {mercadoPagoId})
+    }
+
 }
