@@ -2,16 +2,23 @@ import { DataSource, EntityManager } from 'typeorm';
 import { Payment, PaymentOrder, Order } from '../database/entity';
 import { PaymentStatus } from '../database/entity/Payment';
 import { AppError } from '../middleware/error/AppError';
-
-pagamento por pix ou dinheiro
+import { MercadoPagoService } from './MercadoPagoService';
+import { OrderRepository, PaymentRepository } from '../repository';
+import { OrderStatus } from '../enum';
+import { getIO } from '../socket';
 
 export class PaymentService {
-    constructor(private dataSource: DataSource) {}
+    constructor(
+        private dataSource: DataSource,
+        private mercadoPagoService: MercadoPagoService,
+        private paymentRepository: PaymentRepository,
+        private orderRepository: OrderRepository
+    ) {}
 
     async processCheckoutPayments(
         comandaId: number,
         orders: Order[],
-        paymentsData: Array<{ type: string, amount: number }>,
+        paymentsData: Array<{ type: string, amount: number, terminal?: string }>,
         change: number,
         establishmentId: number,
         userId: number,
@@ -21,22 +28,41 @@ export class PaymentService {
             throw new AppError('Não há pedidos válidos para pagamento nesta comanda.', 400);
         }
 
-        const registeredPayments: Payment[] = [];
+        const registeredPayments: Payment[] = []; 
         let remainingChange = change;
 
         for (const paymentInput of paymentsData) {
-            
+
             const payment = manager.create(Payment, {
                 paymentType: paymentInput.type,
                 totalValue: paymentInput.amount,
                 serviceTax: 0, 
                 change: paymentInput.type === 'Dinheiro' ? remainingChange : 0,
-                status: PaymentStatus.PAID,
+                status: PaymentStatus.PENDING,
                 establishment: { id: establishmentId },
                 user: { id: userId }
             });
 
             const savedPayment = await manager.save(Payment, payment);
+
+            if(paymentInput.type !== 'Dinheiro') {
+                if(!paymentInput.terminal) {
+                    throw new AppError('Escolha um terminal', 400)
+                }
+
+                const answer = await this.processTerminalPayment({
+                    terminal: paymentInput.terminal, 
+                    amount: paymentInput.amount,
+                    orderId: savedPayment.id
+                })
+
+                await this.paymentRepository.saveMercadoPagoInfo(
+                    savedPayment.id,
+                    answer.id,
+                    answer.transactions.payments[0].id
+                )
+            }
+
             registeredPayments.push(savedPayment);
 
             if (paymentInput.type === 'Dinheiro') remainingChange = 0; 
@@ -52,6 +78,9 @@ export class PaymentService {
                     quantity: 1, 
                     price: amountToDistribute 
                 });
+
+                await this.orderRepository.updateOrderStatus(order.id, OrderStatus.FINALIZADO)
+                getIO().to(`order-${order.id}`).emit('order_status_updated', {status: OrderStatus.FINALIZADO})
 
                 await manager.save(PaymentOrder, paymentOrder);
             }
@@ -103,11 +132,22 @@ export class PaymentService {
             });
 
             if (!payment) throw new AppError('Pagamento não encontrado.', 404);
+
+            if(payment.mercadoPagoOrderId) await this.mercadoPagoService.refundOrder(payment.mercadoPagoOrderId)
+
             if (payment.status === PaymentStatus.REFUNDED) throw new AppError('Pagamento já está estornado.', 400);
 
             payment.status = PaymentStatus.REFUNDED;
                         
             return await manager.save(Payment, payment);
         });
+    }
+
+    async processTerminalPayment({amount, orderId, terminal}: {amount: number, orderId: number, terminal: string}) {
+        const answer = await this.mercadoPagoService.createOrder({
+            amount, orderId, terminal 
+        })
+
+        return answer
     }
 }

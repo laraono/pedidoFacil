@@ -20,6 +20,7 @@ import {
 } from '../repository';
 import { ComandaService } from './ComandaService';
 import { ProductService } from './ProductService';
+import { getIO } from '../socket';
 
 export class OrderService {
 
@@ -82,6 +83,7 @@ export class OrderService {
 
     async updateOrderStatus(orderId: number, status: OrderStatus) {
         await this.orderRepository.updateOrderStatus(orderId, status)
+        getIO().to(`order-${orderId}`).emit('order_status_updated', {status})
     }
 
     async cancelOrder(orderId: number, params: CancelOrder) {

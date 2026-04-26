@@ -1,4 +1,3 @@
-import { Establishment } from '../database/entity/Establishment';
 import { AppError } from '../middleware/error/AppError';
 import { ServiceType } from '../enum';
 import { gerarTokens } from '../config/crypto';
@@ -11,6 +10,9 @@ import { RoleRepository } from '../repository/RoleRepository';
 import { SaveOnboardingStepDTO } from '../dto/establishment/SaveOnboardingStepDTO';
 import { FinalizeOnboardingDTO } from '../dto/establishment/FinalizeOnboardingDTO';
 import { UpdateEstablishmentDTO } from '../dto/establishment/UpdateEstablishmentDTO';
+import { CreateStoreMP } from '../dto';
+import { MercadoPagoService } from './MercadoPagoService';
+import { RegisterRepository } from '../repository/RegisterRepository';
 
 export class EstablishmentService {
   
@@ -18,7 +20,9 @@ export class EstablishmentService {
       private establishmentRepository: EstablishmentRepository,
       private userRepository: UserRepository,
       private configRepository: ConfigurationRepository,
-      private roleRepository: RoleRepository
+      private registerRepository: RegisterRepository,
+      private roleRepository: RoleRepository,
+      private mercadoPagoService: MercadoPagoService
   ) {}
 
   private parsePermissions(permissions: any): string[] {
@@ -192,5 +196,59 @@ export class EstablishmentService {
       });
       await this.configRepository.save(defaultConfig);
     }
+  }
+
+   async createStore(params: CreateStoreMP) {
+    const establishment = await this.establishmentRepository.getEstablishment(params.establishmentId)
+
+    if(!establishment) {
+      throw new AppError('Estabelecimento não encontrado', 404)
+    }
+
+    const store = await this.mercadoPagoService.createStore(params)
+    await this.establishmentRepository.addMercadoPagoId(params.establishmentId, store)
+
+  }
+
+  async createRegister(name: string, establishmentId: number) {
+    const establishment = await this.establishmentRepository.getEstablishment(establishmentId)
+
+    if(!establishment) {
+        throw new AppError('', 400)
+    }
+
+    if(!establishment.mercadoPagoId) {
+        throw new AppError('Termine de configurar seu estabelecimento', 400)
+    }
+
+    const register = await this.mercadoPagoService.createRegister({
+        mercadoPagoId: establishment.mercadoPagoId,
+        name
+    })
+
+    await this.registerRepository.createRegister({
+      mercadoPagoId: register,
+      name
+    })
+
+    await this.mercadoPagoService.getTerminals({store: establishment.mercadoPagoId, pos: register })
+  }
+
+  async getTerminals({ establishmentId, pos }: { establishmentId: number; pos?: string }) {
+    const establishment = await this.establishmentRepository.getEstablishment(establishmentId)
+
+    if(!establishment) {
+      throw new AppError('', 404)
+    }
+    return await this.mercadoPagoService.getTerminals({store: establishment.mercadoPagoId, pos})
+  }
+
+  async getRegisters({ establishmentId }: { establishmentId: number }) {
+    const establishment = await this.establishmentRepository.getEstablishment(establishmentId)
+
+    if(!establishment) {
+      throw new AppError('', 404)
+    }
+    return await this.registerRepository.listRegistersByEstablishment(establishment)
   }
 }

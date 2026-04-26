@@ -2,6 +2,7 @@ import { UserRepository } from '../repository/UserRepository';
 import { AppError } from '../middleware/error/AppError';
 import * as bcrypt from 'bcrypt';
 import { UpdateProfileDTO, ChangePasswordDTO } from '../dto/profile/ProfileDTO';
+import { CreateStoreMP } from '../dto';
 
 export class ProfileService {
   constructor(private userRepository: UserRepository) {}
