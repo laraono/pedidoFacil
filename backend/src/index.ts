@@ -17,7 +17,9 @@ import {
     profileRouter, 
     couponRouter,
     menuRouter,
-    configRouter 
+    configRouter, 
+    planRouter,
+    subscriptionRouter
 } from './router';
 import { AppDataSource } from './database';
 import { errorHandler } from './middleware';
@@ -59,6 +61,8 @@ AppDataSource.initialize().then(async () => {
     app.use('/api/v1/conta', profileRouter)
     app.use('/api/v1/cupons', couponRouter)
     app.use('/api/v1', configRouter)
+    app.use('/api/v1', planRouter)
+    app.use('/api/v1', subscriptionRouter)
 
     app.use(errorHandler)
 
