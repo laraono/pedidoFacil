@@ -51,7 +51,7 @@ const deleteCategorySchema = z.object({
 })
 
 export const validateCreateCategory = 
-    (req: Request, res: Response, next: NextFunction) => {
+    (req, res: Response, next: NextFunction) => {
         try {
             if(!req.usuario) {
                 throw new AppError('unauthorized', 401)
@@ -76,7 +76,7 @@ export const validateCreateCategory =
     };
 
 export const validateListCategories = 
-    (req: Request, res: Response, next: NextFunction) => {
+    (req, res: Response, next: NextFunction) => {
         try {
             if(!req.usuario) {
                 throw new AppError('unauthorized', 401)

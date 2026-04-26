@@ -4,3 +4,4 @@ export { validateCreateOrder , validateListOrders, validateCancelOrders} from '.
 export { validateCreateProduct , validateListProducts, validateListProductsByCategories, validateDeleteProduct, validateUpdateProduct} from './product';
 export * from './establishment/establishmentSchema';
 export * from './role/roleSchema';
+export * from './subscription/subscriptionSchema';
