@@ -1,20 +1,22 @@
 <script setup>
-import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
-import { UserPlus, Eye, EyeOff } from "lucide-vue-next";
-import { useAuthStore } from "@/stores/auth";
-import { BaseInput, BaseButton } from "@/components/ui";
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { UserPlus, Eye, EyeOff, ArrowLeft } from 'lucide-vue-next';
+import { useAuthStore } from '@/stores/auth';
+import { BaseInput, BaseButton } from '@/components/ui';
+import { isValidCPF, maskCPF } from '@/utils/validator';
+import LandingHeader from '@/components/LandingHeader.vue';
+import imgOndas from '@/assets/ondas.png';
 import { authApi } from "@/services/authApi";
-import LandingHeader from "@/components/LandingHeader.vue";
-import imgOndas from "@/assets/ondas.png";
 
 const router = useRouter();
 const authStore = useAuthStore();
 
-const nome = ref("");
-const email = ref("");
-const senha = ref("");
-const confirmarSenha = ref("");
+const nome = ref('');
+const email = ref('');
+const cpf = ref('');
+const senha = ref('');
+const confirmarSenha = ref('');
 
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
@@ -25,37 +27,67 @@ const serverError = ref(null);
 
 if (authStore.isAuthenticated) router.push("/app/dashboard");
 
-onMounted(() => window.scrollTo(0, 0));
+onMounted(() => {
+  window.scrollTo(0, 0);
+  try {
+    const saved = JSON.parse(localStorage.getItem('onboarding_personal') || '{}');
+    if (saved.nome) nome.value = saved.nome;
+    if (saved.email) email.value = saved.email;
+    if (saved.cpf) cpf.value = saved.cpf;
+    if (saved.senha) senha.value = saved.senha;
+    if (saved.confirmarSenha) confirmarSenha.value = saved.confirmarSenha;
+  } catch {}
+});
+
+function onCpfInput(event) {
+  const filtered = maskCPF(event.target.value);
+  cpf.value = filtered;
+  event.target.value = filtered;
+  if (errors.value.cpf && isValidCPF(filtered)) errors.value.cpf = null;
+}
 
 function validate() {
   errors.value = {};
 
-  if (!nome.value.trim().includes(" ")) {
-    errors.value.nome = "Por favor, insira seu nome e sobrenome.";
-  }
+  if (!nome.value.trim().includes(' '))
+    errors.value.nome = 'Por favor, insira seu nome e sobrenome.';
 
-  if (!email.value.trim()) {
-    errors.value.email = "O e-mail é obrigatório.";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
-    errors.value.email = "Insira um e-mail válido.";
-  }
+  if (!email.value.trim())
+    errors.value.email = 'O e-mail é obrigatório.';
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim()))
+    errors.value.email = 'Insira um e-mail válido.';
 
-  const passErrors = [];
-  if (senha.value.length < 8) passErrors.push("8 caracteres");
-  if (!/[A-Z]/.test(senha.value)) passErrors.push("uma letra maiúscula");
-  if (!/[0-9]/.test(senha.value)) passErrors.push("um número");
-  if (!/[^A-Za-z0-9]/.test(senha.value))
-    passErrors.push("um caractere especial");
+  if (!cpf.value.trim())
+    errors.value.cpf = 'O CPF é obrigatório.';
+  else if (!isValidCPF(cpf.value))
+    errors.value.cpf = 'O CPF inserido é inválido.';
 
-  if (passErrors.length > 0) {
-    errors.value.senha = `Falta: ${passErrors.join(", ")}.`;
-  }
+  if (senha.value.length < 8)
+    errors.value.senha = 'A senha deve ter pelo menos 8 caracteres.';
+  else if (!/[A-Z]/.test(senha.value))
+    errors.value.senha = 'A senha deve conter pelo menos uma letra maiúscula.';
+  else if (!/[0-9]/.test(senha.value))
+    errors.value.senha = 'A senha deve conter pelo menos um número.';
+  else if (!/[^A-Za-z0-9]/.test(senha.value))
+    errors.value.senha = 'A senha deve conter pelo menos um caractere especial.';
 
   if (senha.value !== confirmarSenha.value) {
     errors.value.confirmarSenha = "As senhas não coincidem.";
   }
 
   return Object.keys(errors.value).length === 0;
+}
+
+function saveToStorage() {
+  const existing = JSON.parse(localStorage.getItem('onboarding_personal') || '{}');
+  localStorage.setItem('onboarding_personal', JSON.stringify({
+    ...existing,
+    nome: nome.value,
+    email: email.value.trim(),
+    cpf: cpf.value,
+    senha: senha.value,
+    confirmarSenha: confirmarSenha.value,
+  }));
 }
 
 async function handleSubmit() {
@@ -107,9 +139,10 @@ async function handleSubmit() {
         class="z-10 w-full max-w-xl bg-white border border-[#E0E0E0] p-8 sm:p-12 rounded shadow-2xl"
       >
         <div class="mb-10 text-center">
-          <h2 class="text-3xl font-black text-[#212121] mb-2">
-            Crie a sua conta
-          </h2>
+          <div class="inline-flex items-center justify-center px-4 py-1.5 rounded bg-gray-50 border border-[#E0E0E0] mb-4">
+            <span class="text-accent text-xs font-bold uppercase tracking-widest">Etapa 1 de 3</span>
+          </div>
+          <h2 class="text-3xl font-black text-[#212121] mb-2">Crie a sua conta</h2>
           <p class="text-[#757575]">Preencha os dados do gestor principal</p>
         </div>
 
@@ -127,22 +160,9 @@ async function handleSubmit() {
         </transition>
 
         <form @submit.prevent="handleSubmit" class="space-y-5">
-          <BaseInput
-            v-model="nome"
-            label="Nome Completo"
-            placeholder="Ex: João da Silva"
-            dark
-            :error="errors.nome"
-          />
-
-          <BaseInput
-            v-model="email"
-            label="E-mail de Acesso"
-            type="email"
-            placeholder="Ex: joao@restaurante.com"
-            dark
-            :error="errors.email"
-          />
+          <BaseInput v-model="nome" placeholder="Nome completo" dark :error="errors.nome" />
+          <BaseInput v-model="email" type="email" placeholder="E-mail de contato" dark :error="errors.email" />
+          <BaseInput v-model="cpf" placeholder="000.000.000-00" dark maxlength="14" :error="errors.cpf" @input="onCpfInput" />
 
           <BaseInput
             v-model="senha"
@@ -185,15 +205,16 @@ async function handleSubmit() {
             </template>
           </BaseInput>
 
-          <div class="pt-6">
-            <BaseButton
-              type="submit"
-              variant="brand"
-              size="lg"
-              class="w-full"
-              :isLoading="isLoading"
-              :icon="UserPlus"
+          <div class="pt-6 flex gap-3">
+            <button
+              type="button"
+              @click="router.push('/login')"
+              class="flex items-center gap-2 px-5 py-3 rounded border border-[#E0E0E0] text-[#757575] font-semibold hover:border-[#212121] hover:text-[#212121] transition-colors"
             >
+              <ArrowLeft class="w-4 h-4" />
+              Voltar
+            </button>
+            <BaseButton type="submit" variant="brand" size="lg" class="flex-1" :isLoading="isLoading" :icon="UserPlus">
               Continuar
             </BaseButton>
           </div>

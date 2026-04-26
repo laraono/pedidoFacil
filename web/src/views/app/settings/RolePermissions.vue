@@ -1,12 +1,11 @@
 <script setup>
-import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
-import { AVAILABLE_PERMISSIONS } from "@/utils/permissions";
-import { roleApi } from "@/services/roleApi";
-import { useToast } from "@/composables/useToast";
-import { useFormValidation } from "@/composables/useFormValidation";
-import BaseInput from "@/components/ui/BaseInput.vue";
-import BaseButton from "@/components/ui/BaseButton.vue";
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { AVAILABLE_PERMISSIONS } from '@/utils/permissions';
+import { useToast } from '@/composables/useToast';
+import { useFormValidation } from '@/composables/useFormValidation';
+import BaseInput from '@/components/ui/BaseInput.vue';
+import BaseButton from '@/components/ui/BaseButton.vue';
 import {
   ShieldCheck,
   Plus,
@@ -47,52 +46,20 @@ const validationRules = {
 const { errors, validateAll, validateField } =
   useFormValidation(validationRules);
 
-const PROTECTED_ROLE_NAMES = ["Admin", "Gerente"];
-const HIDDEN_ROLE_NAMES = ["Admin"];
+const PROTECTED_ROLE_NAMES = ['Admin', 'Gerente'];
+const HIDDEN_ROLE_NAMES = ['Admin'];
 
-const fetchRoles = async () => {
-  try {
-    isLoading.value = true;
-    const data = await roleApi.list();
-    
-    // Interceptamos os dados assim que chegam da API para arrumar as permissões
-    roles.value = data
-      .filter((r) => !HIDDEN_ROLE_NAMES.includes(r.name))
-      .map((role) => {
-        let perms = role.permissions;
+function getRolesFromStorage() {
+  return JSON.parse(localStorage.getItem('roles') ?? '[]');
+}
 
-        // 1. Se o banco devolveu como String JSON (ex: '["CAIXA"]')
-        if (typeof perms === "string") {
-          try {
-            perms = JSON.parse(perms);
-          } catch (e) {
-            perms = [];
-          }
-        }
+function saveRolesToStorage(data) {
+  localStorage.setItem('roles', JSON.stringify(data));
+  return Promise.resolve();
+}
 
-        // 2. Se veio null, undefined ou algo bizarro, força virar Array vazio
-        if (!Array.isArray(perms)) {
-          perms = [];
-        }
-
-        // 3. Se o TypeORM enviou como Array de Objetos (ex: [{ id: 'CAIXA' }])
-        if (perms.length > 0 && typeof perms[0] === "object") {
-          perms = perms.map((p) => p.id || p.name || p.value || p);
-        }
-
-        // Retorna o cargo com as permissões limpas e transformadas num Array de verdade
-        return { ...role, permissions: perms };
-      });
-      
-  } catch (error) {
-    showToast("Erro ao carregar os cargos.", "error");
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-onMounted(async () => {
-  await fetchRoles();
+onMounted(() => {
+  roles.value = getRolesFromStorage().filter(r => !HIDDEN_ROLE_NAMES.includes(r.name));
 });
 
 const saveRole = async () => {
@@ -111,17 +78,18 @@ const saveRole = async () => {
 
   isLoading.value = true;
   try {
+    // Preserve hidden roles (Admin) when saving
+    const allRoles = getRolesFromStorage();
+    const hiddenRoles = allRoles.filter(r => HIDDEN_ROLE_NAMES.includes(r.name));
+
     if (isEditing.value) {
       await roleApi.update(currentRole.value.id, currentRole.value);
     } else {
       await roleApi.create(currentRole.value);
     }
 
-    await fetchRoles();
-    showToast(
-      `Cargo "${currentRole.value.name}" salvo com sucesso!`,
-      "success",
-    );
+    await saveRolesToStorage([...hiddenRoles, ...roles.value]);
+    showToast(`Cargo "${currentRole.value.name}" salvo com sucesso!`, 'success');
     isModalOpen.value = false;
   } catch (error) {
     const msg = error.response?.data?.message || "Erro ao salvar cargo.";
@@ -155,18 +123,13 @@ const deleteRole = async () => {
     confirmDeleteRole.value = null;
     return;
   }
-
-  try {
-    await roleApi.delete(role.id);
-    await fetchRoles();
-    showToast(`Cargo "${role.name}" excluído.`, "success");
-  } catch (error) {
-    const msg =
-      error.response?.data?.message || "Não é possível excluir este cargo.";
-    showToast(msg, "error");
-  } finally {
-    confirmDeleteRole.value = null;
-  }
+  // Remove from full stored list (including hidden roles like Admin)
+  const allRoles = getRolesFromStorage();
+  const updated = allRoles.filter(r => r.id !== role.id);
+  await saveRolesToStorage(updated);
+  roles.value = roles.value.filter(r => r.id !== role.id);
+  showToast(`Cargo "${role.name}" excluído.`, 'success');
+  confirmDeleteRole.value = null;
 };
 
 const togglePermission = (id) => {
