@@ -15,6 +15,7 @@ import {
     planRepository,
     subscriptionRepository,
     registerRepository,
+    refreshTokenRepository,
 } from '../repository';
 
 import { AuthService } from './AuthService';
@@ -35,7 +36,7 @@ import { SubscriptionService } from './SubscriptionService';
 import { MercadoPagoService } from './MercadoPagoService';
 import { PlanService } from './PlanService';
 
-const authService = new AuthService(AppDataSource, userRepository);
+const authService = new AuthService(AppDataSource, userRepository, refreshTokenRepository);
 const mercadoPagoService = new MercadoPagoService()
 
 const categoryService = new CategoryService(categoryRepository, establishmentRepository, productRepository);
@@ -78,7 +79,9 @@ const establishmentService = new EstablishmentService(
   configurationRepository,
   registerRepository,
   roleRepository,
-  mercadoPagoService
+  mercadoPagoService,
+  refreshTokenRepository,
+  AppDataSource
 );
 
 const employeeService = new EmployeeService(userRepository, roleRepository);
@@ -89,9 +92,15 @@ const subscriptionService = new SubscriptionService(
     planRepository,
     establishmentRepository,
     subscriptionRepository,
-    mercadoPagoService
+    mercadoPagoService,
+    AppDataSource
 )
-const planService = new PlanService(planRepository, subscriptionService, mercadoPagoService)
+const planService = new PlanService(
+    planRepository, 
+    subscriptionService, 
+    mercadoPagoService,
+    AppDataSource
+)
 
 export {
     authService,

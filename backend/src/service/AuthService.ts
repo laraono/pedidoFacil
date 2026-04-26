@@ -66,92 +66,74 @@ export class AuthService {
                 name: data.nome_usuario,
                 email: data.email,
                 password: passwordHash,
-                status: UserStatus.ATIVA
+                status: UserStatus.ATIVO
             })
             const savedUser = await tx.save(User, user)
 
-    const savedUser = await this.userRepository.save(user);
+            await tx.update(Establishment, savedEstablishment.id, { manager: savedUser })
 
-    const { accessToken, refreshToken } = await gerarTokens(savedUser);
+            return savedUser
+        })
 
-    return { accessToken, refreshToken, usuario: { id: savedUser.id, nome: savedUser.name, email: savedUser.email } };
-  }
+        const { accessToken, refreshToken } = await gerarTokens(savedUser, this.refreshTokenRepository)
 
-  async login(data: LoginDTO) {
-    const user = await this.userRepository.findOne({
-      where: { email: data.email },
-      relations: { establishment: true, role: true },
-    });
-
-    if (user) {
-      if (user.status !== UserStatus.ATIVO) throw new AppError('Esta conta foi desativada.', 403);
-
-      const senhaValida = await bcrypt.compare(data.senha, user.password);
-      if (!senhaValida) throw new AppError('Credenciais inválidas.', 401);
-
-      const { accessToken, refreshToken } = await gerarTokens(user);
-      
-      return {
-        accessToken, refreshToken,
-        usuario: { id: user.id, nome: user.name, email: user.email, status: user.status },
-        cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions } : null,
-        estabelecimentoId: user.establishment?.id ?? null,
-      };
+        return { accessToken, refreshToken, usuario: { id: savedUser.id, nome: savedUser.name, email: savedUser.email } }
     }
 
-    const admin = await this.dataSource.getRepository(Admin).findOne({ where: { email: data.email } });
-      
-    if (!admin) {
-      await bcrypt.compare(data.senha, DUMMY_HASH);
-      throw new AppError('Credenciais inválidas.', 401);
+    async login(data: LoginDTO) {
+        const user = await this.userRepository.findOne({
+            where: { email: data.email, status: UserStatus.ATIVO },
+            relations: { establishment: true, role: true }
+        })
+
+        if (user) {
+            const senhaValida = await bcrypt.compare(data.senha, user.password)
+            if (!senhaValida) throw new AppError('Credenciais inválidas.', 401)
+
+            const { accessToken, refreshToken } = await gerarTokens(user, this.refreshTokenRepository)
+            return { accessToken, refreshToken, usuario: { id: user.id, nome: user.name, email: user.email } }
+        }
+
+        // Fallback: verifica tabela de admins
+        const admin = await this.dataSource.getRepository(Admin).findOne({ where: { email: data.email } })
+        if (!admin) {
+            await bcrypt.compare(data.senha, DUMMY_HASH)
+            throw new AppError('Credenciais inválidas ou usuário inativo.', 401)
+        }
+
+        const senhaAdminValida = await bcrypt.compare(data.senha, admin.password)
+        if (!senhaAdminValida) throw new AppError('Credenciais inválidas.', 401)
+
+        const { accessToken, refreshToken } = await gerarTokenAdmin(admin, this.refreshTokenRepository)
+        return { accessToken, refreshToken, usuario: { id: admin.id, nome: admin.name, email: admin.email } }
     }
 
-    const senhaAdminValida = await bcrypt.compare(data.senha, admin.password);
-    if (!senhaAdminValida) throw new AppError('Credenciais inválidas.', 401);
+    async refresh(tokenStr: string) {
+        const hash = hashToken(tokenStr)
+        const tokenEntity = await this.refreshTokenRepository.findByHash(hash)
 
-    const { accessToken, refreshToken } = await gerarTokenAdmin(admin);
-    
-    return {
-      accessToken, refreshToken,
-      usuario: { id: admin.id, nome: admin.name, email: admin.email },
-      cargo: { id: 0, nome: 'Admin', permissoes: ['ALL'] },
-      estabelecimentoId: null,
-    };
-  }
+        if (!tokenEntity) {
+            throw new AppError('Refresh token inválido.', 403)
+        }
 
-  async refresh(tokenStr: string) {
-    let decoded: any;
-    try {
-      decoded = jwt.verify(tokenStr, process.env.JWT_SECRET!);
-    } catch (error) {
-      throw new AppError('Refresh token inválido ou expirado.', 403);
-    }
+        await this.refreshTokenRepository.revokeByHash(hash)
 
-    if (!decoded.isRefresh) {
-      throw new AppError('Token fornecido não é válido para esta operação.', 403);
-    }
+        if (tokenEntity.admin) {
+            const admin = await this.dataSource.getRepository(Admin).findOne({ where: { id: tokenEntity.admin.id } })
+            if (!admin) throw new AppError('Admin inválido.', 403)
 
-    if (decoded.isAdmin) {
-      const admin = await this.dataSource.getRepository(Admin).findOne({ where: { id: decoded.id } });
-      if (!admin) throw new AppError('Admin inválido.', 403);
+            const { accessToken, refreshToken } = await gerarTokenAdmin(admin, this.refreshTokenRepository)
+            return { accessToken, refreshToken, usuario: { id: admin.id, nome: admin.name, email: admin.email } }
+        }
 
-      const { accessToken, refreshToken } = await gerarTokenAdmin(admin);
-      return {
-        accessToken, refreshToken,
-        usuario: { id: admin.id, nome: admin.name, email: admin.email },
-        cargo: { id: 0, nome: 'Admin', permissoes: ['ALL'] },
-        estabelecimentoId: null,
-      };
-    }
+        const user = await this.userRepository.findOne({
+            where: { id: tokenEntity.user!.id },
+            relations: { establishment: true, role: true }
+        })
 
-    const user = await this.userRepository.findOne({
-      where: { id: decoded.id, status: UserStatus.ATIVO },
-      relations: { establishment: true, role: true },
-    });
-
-    if (!user) {
-      throw new AppError('Usuário inválido ou desativado.', 403);
-    }
+        if (!user) {
+            throw new AppError('Usuário inválido.', 403)
+        }
 
         const { accessToken, refreshToken } = await gerarTokens(user, this.refreshTokenRepository)
 
@@ -170,28 +152,34 @@ export class AuthService {
         return null
     }
 
-  async perfil(userId: number, isAdmin = false) {
-    if (isAdmin) {
-      const admin = await this.dataSource.getRepository(Admin).findOne({ where: { id: userId } });
-      if (!admin) throw new AppError('Admin não encontrado.', 401);
-      return {
-        usuario: { id: admin.id, nome: admin.name, email: admin.email },
-        cargo: { id: 0, nome: 'Admin', permissoes: ['ALL'] },
-        estabelecimentoId: null,
-      };
+    async perfil(userId: number, isAdmin = false) {
+        if (isAdmin) {
+            const admin = await this.dataSource.getRepository(Admin).findOne({ where: { id: userId } })
+            if (!admin) throw new AppError('Admin não encontrado.', 401)
+            return {
+                usuario: { id: admin.id, nome: admin.name, email: admin.email },
+                cargo: { id: 0, nome: 'Admin', permissoes: ['ALL'] },
+                estabelecimentoId: null
+            }
+        }
+
+        const user = await this.userRepository.findOne({
+            where: { id: userId, status: UserStatus.ATIVO },
+            relations: { role: true, establishment: true }
+        })
+
+        if (!user) {
+            throw new AppError('Credenciais inválidas ou usuário inativo.', 401)
+        }
+
+        return {
+            usuario: { id: user.id, nome: user.name, email: user.email },
+            cargo: {
+                id: user.role.id,
+                nome: user.role.name,
+                permissoes: user.role.permissions
+            },
+            estabelecimentoId: user.establishment?.id ?? null
+        }
     }
-
-    const user = await this.userRepository.findOne({
-      where: { id: userId, status: UserStatus.ATIVO },
-      relations: { role: true, establishment: true },
-    });
-
-    if (!user) throw new AppError('Credenciais inválidas ou usuário inativo.', 401);
-
-    return {
-      usuario: { id: user.id, nome: user.name, email: user.email, status: user.status },
-      cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions } : null,
-      estabelecimentoId: user.establishment?.id ?? null,
-    };
-  }
 }

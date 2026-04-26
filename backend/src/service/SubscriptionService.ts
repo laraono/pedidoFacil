@@ -3,6 +3,8 @@ import { EstablishmentRepository, PlanRepository, SubscriptionRepository } from 
 import { AppError } from "../middleware"
 import { MercadoPagoService } from "./MercadoPagoService"
 import { CreateOrderSubscriptionMP, CreateSubscriptionParams } from "../dto"
+import { DataSource, EntityManager } from "typeorm"
+import { Establishment, Plan, Subscription } from "../database"
 
 export class SubscriptionService {
 
@@ -10,10 +12,11 @@ export class SubscriptionService {
         private planRepository: PlanRepository,
         private establishmentRepository: EstablishmentRepository,
         private subscriptionRepository: SubscriptionRepository,
-        private mercadoPagoService: MercadoPagoService
+        private mercadoPagoService: MercadoPagoService,
+        private dataSource: DataSource
     ) {}
 
-    async createSubscription(params: CreateSubscriptionParams, cardToken: string) {
+    async createSubscription(params: CreateSubscriptionParams, cardToken: string, transactionManager: EntityManager) {
 
         const plan = await this.planRepository.getPlan(params.planId)
 
@@ -21,7 +24,11 @@ export class SubscriptionService {
             throw new AppError('Plano não encontrado', 404)
         }
 
-        const establishment = await this.establishmentRepository.getEstablishment(params.establishmentId)
+        const establishment = await transactionManager.findOne(Establishment, {
+            where: {
+                id: params.establishmentId
+            }
+        })
 
         if(!establishment) {
             throw new AppError('Estabelecimento não encontrado', 404)
@@ -43,7 +50,7 @@ export class SubscriptionService {
             plan
         }
 
-        const subscription = await this.subscriptionRepository.createSubscription(intialSubscription)
+        const subscription = await transactionManager.save(Subscription, intialSubscription)
 
         return subscription
     }
@@ -96,26 +103,33 @@ export class SubscriptionService {
         mercadoPagoParams: CreateOrderSubscriptionMP,
         {planId, establishmentId}: {planId: number, establishmentId: number}
     ) {
-        const plan = await this.planRepository.getPlan(planId)
+        return await this.dataSource.transaction(async (transactionalEntityManager) => {
+            const plan = await transactionalEntityManager.findOne(Plan, {
+                where: {
+                    id: planId
+                }
+            })
 
-        if(!plan || !plan.mercadoPagoId) {
-            throw new AppError('Plano não encontrado', 404)
-        }
+            if(!plan || !plan.mercadoPagoId) {
+                throw new AppError('Plano não encontrado', 404)
+            }
 
-        mercadoPagoParams.preapproval_plan_id = plan.mercadoPagoId
+            mercadoPagoParams.preapproval_plan_id = plan.mercadoPagoId
 
-        const answer = await this.mercadoPagoService.createSubscriptionOrder(mercadoPagoParams)
+            const answer = await this.mercadoPagoService.createSubscriptionOrder(mercadoPagoParams)
 
-        const subscription = await this.createSubscription(
-            {
-                email: mercadoPagoParams.payer.email,
-                establishmentId,
-                planId
-            },
-            answer.transactions.payments[0].payment_method.token
-        )
+            const subscription = await this.createSubscription(
+                {
+                    email: mercadoPagoParams.payer.email,
+                    establishmentId,
+                    planId
+                },
+                answer.transactions.payments[0].payment_method.token,
+                transactionalEntityManager
+            )
 
-        return subscription
+            return subscription
+        })
     }
 
     async getEstablishmentSubscription(establishmentId: number) {

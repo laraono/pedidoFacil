@@ -117,17 +117,23 @@ export class CategoryService {
 
         const category = await this.categoryRepository.getCategory(categoryId)
 
-        category.products.forEach(async(product) => {
-            const productStatus = params.status === CategoryStatus.ATIVA 
-            ? ProductStatus.ATIVO 
-            : ProductStatus.ARQUIVADO
+        if(category && category.products) {
+            category.products.forEach(async(product) => {
+                const productStatus = params.status === CategoryStatus.ATIVA 
+                ? ProductStatus.ATIVO 
+                : ProductStatus.ARQUIVADO
 
-            await this.productRepository.updateProductStatus(product.id, productStatus)
-        })
+                await this.productRepository.updateProductStatus(product.id, productStatus)
+            })
+        }         
     }
 
     async deleteCategory(categoryId: number) {
         const category = await this.categoryRepository.getCategory(categoryId)
+
+        if(!category) {
+            throw new AppError('Categoria não encontrada', 404)
+        }
 
         if(category.products) {
             throw new AppError('Categoria possui produtos ligados a ela e não pode ser deletada', 409)
@@ -163,7 +169,7 @@ export class CategoryService {
             return imageKey
 
         } catch(error) {
-            throw new AppError(`Erro ao salvar imagem: ${error.message}`, 500)
+            throw new AppError(`Erro ao salvar imagem: ${error}`, 500)
         }
     }  
 }
