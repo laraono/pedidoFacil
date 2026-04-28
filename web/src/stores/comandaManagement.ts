@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { comandaApi } from '@/services/comandaApi';
+import { comandaApi } from '@/services/comandaApi.js';
 
 export interface ComandaOrder {
   price: number;

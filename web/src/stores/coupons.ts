@@ -1,9 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { couponApi } from "@/services/couponApi";
-
-export const useCouponStore = defineStore("coupons", () => {
-  const coupons = ref([]);
+import { couponApi } from "@/services/couponApi.js";
 
 export type CouponType = 'percent' | 'fixed';
 
@@ -49,10 +46,6 @@ export const useCouponStore = defineStore('coupons', () => {
     if (idx !== -1) { coupons.value[idx] = { ...updated }; save(coupons.value); }
   };
 
-  const removeCoupon = (id: number): void => {
-    coupons.value = coupons.value.filter(c => c.id !== id);
-    save(coupons.value);
-  };
 
   const findByCode = (code: string): Coupon | undefined => {
     return coupons.value.find(

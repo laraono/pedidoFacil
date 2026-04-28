@@ -10,12 +10,8 @@ export interface OnboardingData {
   [key: string]: unknown;
 }
 
-export default {
-  async login(data: LoginData) {
-    const user = storage.findUser(data.email, data.password);
-
-export function getToken() {
-    return localStorage.getItem('accessToken');
+function getToken(): string | null {
+  return localStorage.getItem('accessToken');
 }
 
 export async function request(path, options = {}) {
@@ -79,25 +75,4 @@ export async function request(path, options = {}) {
 
     return data;
 }
-  async register(data: unknown) {
-    storage.saveUser(data as import('./localStorageService').StoredUser);
-    return { data };
-  },
 
-  async logout(): Promise<void> {
-    storage.clearSession();
-  },
-
-  async saveOnboarding(data: OnboardingData) {
-    storage.saveOnboarding(data);
-    return { data };
-  },
-
-  async getOnboarding() {
-    return { data: storage.getOnboarding() };
-  },
-
-  async getSession() {
-    return { data: storage.getSession() };
-  }
-};

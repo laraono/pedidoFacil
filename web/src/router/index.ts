@@ -29,8 +29,8 @@ const routes: RouteRecordRaw[] = [
   { path: '/forgot-password', name: 'forgot-password', component: () => import('@/views/ForgotPassword.vue') },
   { path: '/reset-password', name: 'reset-password', component: () => import('@/views/ResetPassword.vue') },
   { path: '/register', name: 'register', component: RegisterManager },
-  { path: '/onboarding/name', name: 'OnboardingName', component: EstabelecimentoName },
-  { path: '/onboarding/type', name: 'OnboardingType', component: AtendimentoType },
+  { path: '/onboarding/name', name: 'OnboardingName', component: EstablishmentName },
+  { path: '/onboarding/type', name: 'OnboardingType', component: ServiceType },
 
   {
     path: "/app",
@@ -172,7 +172,7 @@ const ESTABLISHMENT_PREFIXES = [
   "/app/subscription",
 ];
 
-router.beforeEach(async (to, _from) => {
+router.beforeEach(async (to, _from, next) => {
   const auth = useAuthStore();
   auth.loadSession();
 
@@ -181,20 +181,19 @@ router.beforeEach(async (to, _from) => {
     if (!valid) return next('/login');
   }
 
-  // Admin só acessa rotas /app/admin/*
   if (auth.isAdmin && ESTABLISHMENT_PREFIXES.some(p => to.path.startsWith(p))) {
     return next({ name: 'dashboard' });
   }
 
   if (to.meta.requiresAdmin && !auth.isAdmin) {
-    return { name: "dashboard" };
+    return next({ name: "dashboard" });  // ✅ Added next()
   }
 
   if (to.meta.permission && !auth.hasPermission(to.meta.permission as string)) {
     return next({ name: 'dashboard' });
   }
 
-  return true;
+  next();  // ✅ Always call next() at the end
 });
 
 export default router;

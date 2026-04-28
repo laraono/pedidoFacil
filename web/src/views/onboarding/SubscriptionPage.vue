@@ -17,6 +17,7 @@ const selectedPlan = ref(null);
 const router = useRouter();
 const showPayment = ref(false);
 const error = ref(null);
+const serverError = ref(null);
 
 let mp = null;
 let cardPaymentBrickController = null;
@@ -66,8 +67,8 @@ const renderCardPaymentBrick = async () => {
                             }
                         },
                         paymentMethods: {
-                            minInstallments: 6,
-                            maxInstallments: 6,
+                            minInstallments: 2,
+                            maxInstallments: 12,
                         },
                     },
                     callbacks: {
@@ -75,7 +76,8 @@ const renderCardPaymentBrick = async () => {
                         },
                         onSubmit: async (formData, additionalData) => {
                             try {
-                            console.log(planId.value)
+                                serverError.value = null;
+
                                 const submitData = {
                                     preapproval_plan_id: planId.value,
                                     type: "online",
@@ -108,6 +110,7 @@ const renderCardPaymentBrick = async () => {
                             } catch (err) {
                                 console.error("Payment error:", err);
                                 error.value = "Payment failed";
+                                serverError.value = err.message || "Erro ao registrar o estabelecimento. Tente novamente.";
                             }
                         },
                         onError: (error) => {
@@ -177,8 +180,20 @@ onUnmounted(() => {
 </script>
 
 <template>
-     <div class="min-h-screen bg-page font-inter flex flex-col">
-            <LandingHeader />
+    <div class="min-h-screen bg-page font-inter flex flex-col">
+        <LandingHeader />
+        <transition
+            enter-active-class="transition duration-300"
+            enter-from-class="opacity-0 -translate-y-2"
+            enter-to-class="opacity-100 translate-y-0"
+        >
+            <div
+                v-if="serverError"
+                class="mb-6 p-4 bg-danger-light border border-danger rounded text-danger font-bold text-sm text-left"
+            >
+                {{ serverError }}
+            </div>
+        </transition>
         
         <div v-if="planId == 0" class="flex flex-wrap justify-center gap-6 items-center">
             <div v-for="plan in plans" :key="plan.id" 

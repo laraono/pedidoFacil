@@ -21,7 +21,7 @@ const router = useRouter();
 const { showToast } = useToast();
 
 onMounted(() => {
-  menuStore.loadData();
+  categories.value = categoryApi.list();
 });
 
 const showModal = ref(false);
