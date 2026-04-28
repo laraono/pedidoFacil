@@ -1,8 +1,10 @@
 import http from 'http';
 import express from 'express';
 import dotenv from 'dotenv';
+import path from 'path';
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
+import rateLimit from 'express-rate-limit'
 import { 
     categoryRouter, 
     comandaRouter, 
@@ -23,7 +25,11 @@ import { AppDataSource } from './database';
 import { errorHandler } from './middleware';
 import { initSocket } from './socket';
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET não está definido. Verifique o arquivo .env');
+}
 
 const app = express();
 
@@ -42,23 +48,39 @@ app.use(cookieParser());
 
 const httpServer = http.createServer(app);
 
-AppDataSource.initialize().then(async () => {
-    app.use('/api/v1', authRouter)
-    app.use('/api/v1', categoryRouter)
-    app.use('/api/v1', comandaRouter)
-    app.use('/api/v1', orderRouter)
-    app.use('/api/v1', productRouter)
-    
-    app.use('/api/v1', menuRouter)
+const publicLimiter = rateLimit({
+    windowMs: 60 * 1000,        // janela de 1 minuto
+    max: 100,                    // 100 req por IP por janela
+    standardHeaders: true,       // responde com headers X-RateLimit-*
+    legacyHeaders: false,
+    message: { error: 'Muitas requisições. Aguarde um momento.' }
+})
 
-    app.use('/api/v1/estabelecimento', establishmentRouter)
-    app.use('/api/v1/metrics', metricsRouter)
-    app.use('/api/v1/receipts', receiptRouter)
-    app.use('/api/v1/roles', roleRouter)
-    app.use('/api/v1/funcionario', employeeRouter)
-    app.use('/api/v1/conta', profileRouter)
-    app.use('/api/v1/cupons', couponRouter)
-    app.use('/api/v1', configRouter)
+const authenticatedLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 300,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Muitas requisições. Aguarde um momento.' }
+})
+
+AppDataSource.initialize().then(async () => {
+    app.use('/api/v1', publicLimiter, authRouter)
+    app.use('/api/v1', authenticatedLimiter, categoryRouter)
+    app.use('/api/v1', authenticatedLimiter, comandaRouter)
+    app.use('/api/v1', authenticatedLimiter, orderRouter)
+    app.use('/api/v1', authenticatedLimiter, productRouter)
+    
+    app.use('/api/v1', authenticatedLimiter, menuRouter)
+
+    app.use('/api/v1/estabelecimento', authenticatedLimiter, establishmentRouter)
+    app.use('/api/v1/metrics', authenticatedLimiter, metricsRouter)
+    app.use('/api/v1/receipts', authenticatedLimiter, receiptRouter)
+    app.use('/api/v1/roles', authenticatedLimiter, roleRouter)
+    app.use('/api/v1/funcionario', authenticatedLimiter, employeeRouter)
+    app.use('/api/v1/conta', authenticatedLimiter, profileRouter)
+    app.use('/api/v1/cupons', authenticatedLimiter, couponRouter)
+    app.use('/api/v1', authenticatedLimiter, configRouter)
 
     app.use(errorHandler)
 

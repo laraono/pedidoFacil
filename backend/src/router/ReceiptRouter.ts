@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { receiptController } from '../controller';
+import { receiptController, receiptLimiter } from '../controller';
 import authenticate from '../middleware/authenticate';
 import { checkPermission } from '../middleware/roleAccessControl';
 
@@ -7,21 +7,21 @@ const receiptRouter = Router();
 
 receiptRouter.post(
   '/',
-  authenticate,
+  authenticate, receiptLimiter,
   checkPermission('RECEIPTS_MANAGE', 'ALL'),
   receiptController.create,
 );
 
 receiptRouter.get(
   '/',
-  authenticate,
+  authenticate, receiptLimiter,
   checkPermission('RECEIPTS_VIEW', 'ALL'),
   receiptController.list,
 );
 
 receiptRouter.delete(
   '/:id',
-  authenticate,
+  authenticate, receiptLimiter,
   checkPermission('RECEIPTS_MANAGE', 'ALL'),
   receiptController.delete,
 );

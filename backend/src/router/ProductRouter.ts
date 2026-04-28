@@ -34,6 +34,7 @@ productRouter.post(
 productRouter.put(
   '/products/:id', 
   authenticate, 
+  tenant.verifyTenancy('CATEGORIA', 'categoryId'), 
   roleAccessControl.checkPermission('CARDAPIO'), 
   catchAsync((req: Request, res: Response) => productController.updateProduct(req, res))
 );
@@ -41,6 +42,7 @@ productRouter.put(
 productRouter.delete(
   '/products/:id', 
   authenticate, 
+  tenant.verifyTenancy('CATEGORIA', 'categoryId'), 
   roleAccessControl.checkPermission('CARDAPIO'), 
   catchAsync((req: Request, res: Response) => productController.deleteProduct(req, res))
 );
@@ -48,6 +50,7 @@ productRouter.delete(
 productRouter.patch(
   '/products/:id/restore', 
   authenticate, 
+  tenant.verifyTenancy('CATEGORIA', 'categoryId'), 
   roleAccessControl.checkPermission('CARDAPIO'), 
   catchAsync((req: Request, res: Response) => productController.restoreProduct(req, res))
 );

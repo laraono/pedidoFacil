@@ -1,5 +1,18 @@
 import { Request, Response } from 'express';
 import { CouponService } from "../service/CouponService";
+import rateLimit from 'express-rate-limit'
+
+export const couponLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 20,
+    handler: (req: Request, res: Response) => {
+        res.status(429).json({
+            error: 'Muitas tentativas. Tente novamente mais tarde.',
+            retryAfter: Math.ceil((req as any).rateLimit.resetTime / 1000)
+        })
+    }
+})
+
 
 export class CouponController {
 

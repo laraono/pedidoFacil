@@ -8,12 +8,12 @@ const employeeRouter = Router();
 
 employeeRouter.use(authenticate);
 
-employeeRouter.get('/', checkPermission('USUARIO_VIEW', 'ALL'), employeeController.list);
-employeeRouter.get('/inactive', checkPermission('USUARIO_VIEW', 'ALL'), employeeController.listInactive);
+employeeRouter.get('/', authenticate, checkPermission('USUARIO_VIEW', 'ALL'), employeeController.list);
+employeeRouter.get('/inactive', authenticate, checkPermission('USUARIO_VIEW', 'ALL'), employeeController.listInactive);
 
-employeeRouter.post('/', checkPermission('USUARIO_CREATE', 'ALL'), validateCreateEmployee, employeeController.create);
-employeeRouter.put('/:id', checkPermission('USUARIO_EDIT', 'ALL'), validateUpdateEmployee, employeeController.update);
-employeeRouter.delete('/:id', checkPermission('USUARIO_DELETE', 'ALL'), employeeController.delete);
-employeeRouter.patch('/:id/reactivate', checkPermission('USUARIO_EDIT', 'ALL'), employeeController.reactivate);
+employeeRouter.post('/', authenticate, checkPermission('USUARIO_CREATE', 'ALL'), validateCreateEmployee, employeeController.create);
+employeeRouter.put('/:id', authenticate, checkPermission('USUARIO_EDIT', 'ALL'), validateUpdateEmployee, employeeController.update);
+employeeRouter.delete('/:id', authenticate, checkPermission('USUARIO_DELETE', 'ALL'), employeeController.delete);
+employeeRouter.patch('/:id/reactivate', authenticate, checkPermission('USUARIO_EDIT', 'ALL'), employeeController.reactivate);
 
 export { employeeRouter };

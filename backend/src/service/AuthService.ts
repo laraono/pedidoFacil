@@ -32,7 +32,7 @@ export class AuthService {
     if (senhaErro) throw new AppError(senhaErro, 400);
 
     const emailExiste = await this.userRepository.findOne({ where: { email: data.email } });
-    if (emailExiste) throw new AppError('Este e-mail já está cadastrado.', 409);
+    if (emailExiste) throw new AppError('Este e-mail está inválido ou já está em uso.', 409);
 
     const salt = await bcrypt.genSalt(12);
     const passwordHash = await bcrypt.hash(data.senha, salt);
@@ -124,7 +124,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new AppError('Usuário inválido ou desativado.', 403);
+      throw new AppError('Credenciais inválidas ou usuário inativo.', 403);
     }
 
     const { accessToken, refreshToken } = await gerarTokens(user);

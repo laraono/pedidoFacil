@@ -2,7 +2,7 @@ import { Request, Response } from 'express'
 import rateLimit from 'express-rate-limit'
 import { AuthService } from '../service'
 
-export const loginLimiter = rateLimit({
+export const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 10,
     handler: (req: Request, res: Response) => {
