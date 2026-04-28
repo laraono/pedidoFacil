@@ -1,7 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, PrimaryColumn, JoinColumn, CreateDateColumn, DeleteDateColumn, ManyToOne, OneToOne } from "typeorm"
+import { Entity, Column, PrimaryColumn, JoinColumn, CreateDateColumn, DeleteDateColumn, ManyToOne } from "typeorm"
 import { ProductVariation } from "./ProductVariation"
-import { Product } from "./Product"
-import { Order } from "./Order"
 import { ProductOrder } from "./ProductOrder"
 
 @Entity({name: 'ItemPedidoVariacao'})
@@ -12,6 +10,12 @@ export class ProductVariationOrder {
         type: 'int'
     })
     orderId: number
+
+    @PrimaryColumn({
+        name: 'ID_Produto',
+        type: 'int'
+    })
+    productId: number
 
     @PrimaryColumn({
         name: 'ID_Variacao',
@@ -31,7 +35,7 @@ export class ProductVariationOrder {
     @CreateDateColumn({ 
         type: "timestamp", 
         default: () => "CURRENT_TIMESTAMP(6)"
-        })
+    })
     created_at: Date;
 
     @DeleteDateColumn({
@@ -45,8 +49,11 @@ export class ProductVariationOrder {
     @JoinColumn({name: 'ID_Variacao'})
     productVariation: ProductVariation
 
-    @OneToOne(() => ProductOrder)
-    @JoinColumn({name: 'ID_Item_Pedido'})
-    order: ProductOrder
+    @ManyToOne(() => ProductOrder, (productOrder) => productOrder.variations)
+    @JoinColumn([
+        { name: 'ID_Item_Pedido', referencedColumnName: 'orderId' },
+        { name: 'ID_Produto', referencedColumnName: 'productId' }
+    ])
+    productOrder: ProductOrder
 
 }

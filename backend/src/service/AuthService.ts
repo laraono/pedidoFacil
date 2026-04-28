@@ -2,11 +2,11 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { DataSource } from 'typeorm';
 import { Admin } from '../database/entity/Admin';
-import { LoginDTO } from '../dto';
+import { LoginDTO, RegisterDTO } from '../dto';
 import { UserStatus } from '../enum';
-import { AppError } from '../middleware';
-import { UserRepository } from '../repository';
-import { gerarTokens, gerarTokenAdmin } from '../config/crypto';
+import { AppError } from '../middleware/error/AppError';
+import { UserRepository, RefreshTokenRepository } from '../repository';
+import { gerarTokens, gerarTokenAdmin, hashToken } from '../config/crypto';
 
 const DUMMY_HASH = '$2b$12$eImiTXuWVxfM37uY4JANjQev3nHN.SBuNFa5UPSmKUVgwjBiCXhHu';
 
@@ -21,10 +21,11 @@ function validarSenhaForte(senha: string): string | null {
 export class AuthService {
   constructor(
     private dataSource: DataSource,
-    private userRepository: UserRepository
+    private userRepository: UserRepository,
+    private refreshTokenRepository: RefreshTokenRepository
   ) {}
 
-  async registerManager(data: { nome_usuario: string; email: string; senha: string; }) {
+  async registerManager(data: RegisterDTO) {
     if (!data.nome_usuario?.trim()) throw new AppError('Nome do usuário é obrigatório.', 400);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new AppError('E-mail inválido.', 400);
 
@@ -137,7 +138,17 @@ export class AuthService {
     };
   }
 
-  async logout() {
+  async logout(tokenStr: string) {
+    if (!tokenStr) return { message: 'Logout realizado com sucesso.' };
+    
+    const hash = hashToken(tokenStr);
+    const tokenEntity = await this.refreshTokenRepository.findByHash(hash);
+
+    if (!tokenEntity) {
+        throw new AppError('Refresh token inválido.', 403);
+    }
+
+    await this.refreshTokenRepository.revokeByHash(hash);
     return { message: 'Logout realizado com sucesso.' };
   }
 

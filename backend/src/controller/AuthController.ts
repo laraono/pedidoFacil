@@ -53,6 +53,7 @@ export class AuthController {
 
     async refresh(req: Request, res: Response) {
         const token = req.cookies.refreshToken
+
         if (!token) {
             return res.status(401).json({ error: 'Token não fornecido.' })
         }
