@@ -1,6 +1,4 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, DeleteDateColumn, CreateDateColumn } from "typeorm"
-import { SubscriptionStatus, UserStatus } from "../../enum"
-import { Plan } from "./Plan"
 import { Establishment } from "./Establishment"
 
 @Entity({name: 'CAIXA'})
@@ -24,6 +22,13 @@ export class Register {
         nullable: false,
     })
     mercadoPagoId!: string
+
+    @Column({
+        type: 'varchar',
+        name: 'ID_Terminal',
+        nullable: true,
+    })
+    terminalId?: string
 
     @CreateDateColumn({ 
         name:  'Data_Hora_Criacao',

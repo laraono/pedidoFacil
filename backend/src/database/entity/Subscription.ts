@@ -54,6 +54,15 @@ export class Subscription {
     })
     mercadoPagoId!: string
 
+    @Column({
+        name: 'Valor_Assinatura',
+        type: "decimal",
+        precision: 10,
+        scale: 2,
+        nullable: false
+    })
+    price!: number
+
     @CreateDateColumn({ 
         name:  'Data_Hora_Criacao',
         type: "timestamp", 
@@ -66,7 +75,7 @@ export class Subscription {
         type: 'datetime',
         nullable: true
     })
-        deletedAt?: Date
+    deletedAt?: Date
 
     @ManyToOne(() => Establishment, (establishment) => establishment.subscriptions)
     @JoinColumn({
