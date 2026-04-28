@@ -32,14 +32,40 @@ export class ComandaRepository extends Repository<Comanda>{
                 }
             },
             relations: {
-                orders: true
+                orders: {
+                    productOrders: {
+                        product: true
+                    },
+                    paymentOrders: {
+                        payment: true
+                    }
+                },
             },
             select: {
                 description: true,
                 id: true,
                 total: true,
                 orders: {
-                    id: true
+                    id: true,
+                    productOrders: {
+                        id: true,
+                        quantity: true,
+                        price: true,
+                        product: {
+                            id: true,
+                            name: true
+                        }
+                    },
+                    paymentOrders: {
+                        orderId: true,
+                        paymentId: true,
+                        payment: {
+                            paymentType: true,
+                            serviceTAx: true,
+                            total: true,
+                            change: true
+                        }
+                    }
                 }
             }
         })

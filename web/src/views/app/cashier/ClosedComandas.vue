@@ -1,22 +1,22 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useClosedComandaStore } from '@/stores/closedComandas';
 import SubscriptionGuard from '@/components/SubscriptionGuard.vue';
 import {
   ArrowLeft, Receipt, ChevronDown, ChevronUp,
   CheckCircle, CreditCard, Tag, Clock, PackageOpen
 } from 'lucide-vue-next';
+import {comandaApi} from '@/services/comandaApi'
 
 const router = useRouter();
-const closedStore = useClosedComandaStore();
 
 const search = ref('');
 const expandedId = ref(null);
 
-const filtered = computed(() => {
+const filtered = computed(async () => {
   const q = search.value.toLowerCase();
-  return closedStore.closedComandas
+  const comandas = await comandaApi.listClosed()
+  return comandas
     .slice()
     .reverse()
     .filter(c =>
@@ -42,12 +42,10 @@ function formatCurrency(v) {
   return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-// Total de itens de uma comanda
 function totalItems(comanda) {
-  return comanda.orders?.reduce((acc, o) => acc + (o.items?.reduce((a, i) => a + (i.amount || 1), 0) || 0), 0) || 0;
+  return comanda.orders?.reduce((acc, o) => acc + (o.productOrders?.reduce((a, i) => a + (i.quantity || 1), 0) || 0), 0) || 0;
 }
 
-// Total final com desconto aplicado (salvo no paymentDetails)
 function finalTotal(comanda) {
   const pd = comanda.paymentDetails;
   if (!pd) return comanda.total || 0;
@@ -57,9 +55,8 @@ function finalTotal(comanda) {
   return Math.max(0, sub - pd.discountValue);
 }
 
-// Métodos de pagamento usados na comanda
 function paymentSummary(comanda) {
-  return comanda.paymentDetails?.payments || [];
+  return comanda.orders.paymentOrders || [];
 }
 </script>
 
@@ -183,21 +180,21 @@ function paymentSummary(comanda) {
 
                     <!-- Itens do pedido -->
                     <div class="px-5 py-4 space-y-2">
-                      <div v-if="!order.items || order.items.length === 0"
+                      <div v-if="!order.productOrders || order.productOrders.length === 0"
                         class="text-[#757575] text-xs font-bold">
                         Sem itens registrados.
                       </div>
-                      <div v-else v-for="item in order.items" :key="item.name + item.amount"
+                      <div v-else v-for="item in order.productOrders" :key="item.product.name + item.quantity"
                         class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
                           <span class="w-6 h-6 rounded bg-gray-50 border border-[#E0E0E0]
                                        flex items-center justify-center text-[10px] font-black text-[#757575]">
-                            {{ item.amount || 1 }}x
+                            {{ item.quantity || 1 }}x
                           </span>
-                          <span class="text-[#212121] text-sm font-bold">{{ item.name }}</span>
+                          <span class="text-[#212121] text-sm font-bold">{{ item.product.name }}</span>
                         </div>
                         <span class="text-[#757575] text-sm font-bold">
-                          {{ formatCurrency((item.price || 0) * (item.amount || 1)) }}
+                          {{ formatCurrency((item.price || 0) * (item.quantity || 1)) }}
                         </span>
                       </div>
                     </div>
@@ -248,9 +245,9 @@ function paymentSummary(comanda) {
                       class="flex items-center justify-between">
                       <div class="flex items-center gap-2">
                         <CreditCard :size="14" class="text-[#757575]" />
-                        <span class="text-[#212121] text-sm font-bold">{{ p.type }}</span>
+                        <span class="text-[#212121] text-sm font-bold">{{ p.payment.paymentType }}</span>
                       </div>
-                      <span class="text-accent font-black text-sm">{{ formatCurrency(p.amount) }}</span>
+                      <span class="text-accent font-black text-sm">{{ formatCurrency(p.payment.total) }}</span>
                     </div>
                   </div>
                 </div>
