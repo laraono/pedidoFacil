@@ -1,49 +1,50 @@
-import jwt from 'jsonwebtoken';
-import { User } from '../database';
-import { Admin } from '../database/entity/Admin';
+import crypto from 'crypto'
+import jwt from 'jsonwebtoken'
+import { User } from '../database'
+import { Admin } from '../database/entity/Admin'
+import { RefreshTokenRepository } from '../repository/RefreshTokenRepository'
+import ms from 'ms'
 
-export async function gerarTokens(usuario: User) {
-    const payload = { 
-        id: usuario.id, 
-        estabelecimento: usuario.establishment?.id || null, 
-        cargo: usuario.role?.id || null 
-    };
-
-    const accessToken = jwt.sign(
-        payload,
-        process.env.JWT_SECRET as string,
-        { 
-            expiresIn: (process.env.JWT_EXPIRES_IN || '1h') as any
-        }
-    );
-
-    const refreshToken = jwt.sign(
-        { id: usuario.id, isRefresh: true },
-        process.env.JWT_SECRET as string,
-        { 
-            expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '7d') as any 
-        }
-    );
-
-    return { accessToken, refreshToken };
+export function hashToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex')
 }
 
-export async function gerarTokenAdmin(admin: Admin) {
+export async function gerarTokens(usuario: User, refreshTokenRepository: RefreshTokenRepository) {
+    if(!process.env.JWT_EXPIRES_IN ){
+        return
+    }
+
+    const accessToken = jwt.sign(
+        { id: usuario.id, estabelecimento: usuario.establishment.id, cargo: usuario.role.id },
+        process.env.JWT_SECRET!,
+        { expiresIn: process.env.JWT_EXPIRES_IN as  ms.StringValue }
+    )
+
+    const refreshToken = crypto.randomBytes(64).toString('hex')
+    const hash = hashToken(refreshToken)
+
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + parseInt(process.env.JWT_REFRESH_EXPIRES_IN!))
+
+    await refreshTokenRepository.createToken(usuario, hash, expiresAt)
+
+    return { accessToken, refreshToken }
+}
+
+export async function gerarTokenAdmin(admin: Admin, refreshTokenRepository: RefreshTokenRepository) {
     const accessToken = jwt.sign(
         { id: admin.id, isAdmin: true },
-        process.env.JWT_SECRET as string,
-        { 
-            expiresIn: '15m' as any 
-        }
-    );
+        process.env.JWT_SECRET!,
+        { expiresIn: '15m' }
+    )
 
-    const refreshToken = jwt.sign(
-        { id: admin.id, isAdmin: true, isRefresh: true },
-        process.env.JWT_SECRET as string,
-        { 
-            expiresIn: '7d' as any 
-        }
-    );
+    const refreshToken = crypto.randomBytes(64).toString('hex')
+    const hash = hashToken(refreshToken)
 
-    return { accessToken, refreshToken };
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + parseInt(process.env.JWT_REFRESH_EXPIRES_IN!))
+
+    await refreshTokenRepository.createAdminToken(admin, hash, expiresAt)
+
+    return { accessToken, refreshToken }
 }
