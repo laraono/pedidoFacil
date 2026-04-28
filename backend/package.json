@@ -22,6 +22,7 @@
         "@aws-sdk/s3-request-presigner": "^3.1024.0",
         "@reduxjs/toolkit": "^2.11.2",
         "@types/aws-sdk": "^0.0.42",
+        "@types/ms": "^2.1.0",
         "aws-sdk": "^1.18.0",
         "axios": "^1.15.0",
         "bcrypt": "^6.0.0",
