@@ -1,10 +1,10 @@
 
 export type CreatePlanParams = {
-    reason: string,
+    name: string,
     frequency: 'days' | 'months' | 'anual',
     repetitions: number,
-    billing_day: number,
-    billing_day_proportional: boolean,
+    billingDay: number,
+    billingDayProportional: boolean,
     price: number,
 }
 
@@ -24,6 +24,37 @@ export type CreatePlanMercadoPago = {
 }
 
 export type CreatePlan = {
+    name: string,
+    billingDay: number,
+    price: number,
+    frequency: string
+}
+
+export type UpdatePlanParams = {
+    name: string,
+    frequency: 'days' | 'months' | 'anual',
+    repetitions: number,
+    billingDay: number,
+    billingDayProportional: boolean,
+    price: number,
+}
+
+export type UpdatePlanMercadoPago = {
+    reason: string,
+    back_url: string,
+    auto_recurring: {
+        frequency: number,
+        frequency_type: 'days' | 'months',
+        repetitions: number,
+        billing_day: number,
+        billing_day_proportional: boolean,
+        transaction_amount: number,
+        currency_id: string
+    }
+    
+}
+
+export type UpdatePlan = {
     name: string,
     billingDay: number,
     price: number,

@@ -28,7 +28,8 @@ export {
 } from './product';
 export {
     CreatePlanMercadoPago, CreatePlanParams,
-    CreatePlan
+    CreatePlan, UpdatePlan, UpdatePlanMercadoPago,
+    UpdatePlanParams
 } from './plan'
 export {
     CreateSubscription, CreateSubscriptionParams

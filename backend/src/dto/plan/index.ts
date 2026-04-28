@@ -1,1 +1,4 @@
-export {CreatePlanMercadoPago, CreatePlanParams, CreatePlan} from './CreatePlanDTO'
+export {
+    CreatePlanMercadoPago, CreatePlanParams, CreatePlan,
+    UpdatePlan, UpdatePlanMercadoPago, UpdatePlanParams
+} from './CreatePlanDTO'
