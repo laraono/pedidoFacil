@@ -80,7 +80,10 @@ export class PaymentService {
                 });
 
                 await this.orderRepository.updateOrderStatus(order.id, OrderStatus.FINALIZADO)
-                getIO().to(`order-${order.id}`).emit('order_status_updated', {status: OrderStatus.FINALIZADO})
+                getIO().to('cashier').emit('order_status_updated', {
+                    orderId: order.id,
+                    status: OrderStatus.FINALIZADO
+                })
 
                 await manager.save(PaymentOrder, paymentOrder);
             }

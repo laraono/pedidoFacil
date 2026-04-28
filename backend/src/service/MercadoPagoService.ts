@@ -1,4 +1,4 @@
-import { CreateOrderPaymentMP, CreateOrderSubscriptionMP, CreatePlanMercadoPago, CreateRegisterParamsMP, CreateStoreParamsMP, UpdateSubscriptionMP } from '../dto';
+import { CreateOrderPaymentMP, CreateOrderSubscriptionMP, CreatePlanMercadoPago, CreateRegisterParamsMP, CreateStoreParamsMP, UpdatePlanMercadoPago, UpdateSubscriptionMP } from '../dto';
 import { AppError } from '../middleware';
 import axios from 'axios'
 import opencage from 'opencage-api-client';
@@ -65,6 +65,30 @@ export class MercadoPagoService {
             const answer = await axios({
                 method: "post",
                 url: "https://api.mercadopago.com/preapproval_plan",
+                data: params,
+                headers
+            })
+            return answer.data
+        } catch(error) {
+            console.log(error)
+            throw new AppError('Erro criando plano', 500)
+        }
+    }
+
+    async updatePlan(mercadoPagoId: string, params: UpdatePlanMercadoPago) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+            throw new AppError('', 500)
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN 
+        }
+
+        try {
+            const answer = await axios({
+                method: "put",
+                url: `https://api.mercadopago.com/preapproval_plan/${mercadoPagoId}`,
                 data: params,
                 headers
             })
@@ -290,6 +314,33 @@ export class MercadoPagoService {
             return response.data.terminals;
         } catch (error) {
             throw new AppError('Erro ao buscar terminais', 500);
+        }
+    }
+
+    async activeTerminal(terminalId: string) {
+        if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+            throw new AppError('Missing API Credentials', 500);
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`
+        };
+
+        try {
+            const response = await axios({
+                method: "patch",
+                url: `https://api.mercadopago.com/terminals/v1/setup`,
+                headers,
+                data: {
+                    id: terminalId,
+                    operating_mode: "PDV"
+                }
+            });
+
+            return response.data.terminals;
+        } catch (error) {
+            throw new AppError('Erro ao ativar terminal', 500);
         }
     }
 

@@ -81,8 +81,15 @@ export class SubscriptionService {
         await this.subscriptionRepository.updateSubscriptionStatus(subscriptionId, SubscriptionStatus.CANCELADA)
     }
 
-    async updateSubscription() {
+    async updateSubscriptionPrice(subscriptionId: number, amount: number) {
+        const subscription = await this.subscriptionRepository.getSubscription(subscriptionId)
 
+        if(!subscription) {
+            throw new AppError('Assinatura não encontrada', 404)
+        }
+
+        await this.mercadoPagoService.updateSubscriptionValue({subscriptionId: subscription.mercadoPagoId, amount})
+        await this.subscriptionRepository.updateSubscriptionPrice(subscriptionId, amount)
     }
 
     async listSubscriptions() {

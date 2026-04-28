@@ -246,12 +246,31 @@ export class EstablishmentService {
     })
   }
 
-  async getTerminals({ establishmentId, pos }: { establishmentId: number; pos?: string }) {
+  async associateRegisterToTerminal({ establishmentId, registerId }: { establishmentId: number; registerId: number }) {
     const establishment = await this.establishmentRepository.getEstablishment(establishmentId)
 
     if(!establishment) {
       throw new AppError('', 404)
     }
+
+    const register = await this.registerRepository.getRegister(registerId)
+
+    if(!register) {
+      throw new AppError('Caixa não encontrado', 404)
+    }
+
+    const [terminal] = await this.mercadoPagoService.getTerminals({store: establishment.mercadoPagoId, pos: register.mercadoPagoId})
+
+    await this.registerRepository.associateToTerminal(registerId, terminal.id)
+  }
+
+  async getTerminals({ establishmentId, pos }: { establishmentId: number; pos: string }) {
+    const establishment = await this.establishmentRepository.getEstablishment(establishmentId)
+
+    if(!establishment) {
+      throw new AppError('Estabelecimento não encontrado', 404)
+    }
+
     return await this.mercadoPagoService.getTerminals({store: establishment.mercadoPagoId, pos})
   }
 

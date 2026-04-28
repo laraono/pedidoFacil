@@ -1,5 +1,5 @@
 import { DataSource } from "typeorm";
-import { CreatePlan, CreatePlanMercadoPago, CreatePlanParams } from "../dto";
+import { CreatePlan, CreatePlanMercadoPago, CreatePlanParams, UpdatePlan, UpdatePlanParams } from "../dto";
 import { AppError } from "../middleware";
 import { PlanRepository } from "../repository";
 import { MercadoPagoService } from "./MercadoPagoService";
@@ -18,9 +18,9 @@ export class PlanService {
     async createPlan(params: CreatePlanParams) {
         return await this.dataSource.transaction(async (transactionalEntityManager) => {
             const localRepositoryParams: CreatePlan = {
-                name: params.reason,
+                name: params.name,
                 frequency: params.frequency,
-                billingDay: params.billing_day,
+                billingDay: params.billingDay,
                 price: params.price
             }
 
@@ -32,15 +32,15 @@ export class PlanService {
             }
 
             const mercadoPagoParams: CreatePlanMercadoPago = {
-                ...params,
+                reason: params.name,
                 back_url: 'https://docs.google.com/document/d/10MVs5bBpUX5oQAb1YSolBP5eFK67gVC3wU-iOzTH0y4/edit?tab=t.kdyeobkwb0n4', //TODO
                 auto_recurring: {
                     currency_id: 'BRL',
                     transaction_amount: plan.price / params.repetitions,
                     frequency: 1,
                     frequency_type: params.frequency,
-                    billing_day:  params.billing_day,
-                    billing_day_proportional: params.billing_day_proportional,
+                    billing_day:  params.billingDay,
+                    billing_day_proportional: params.billingDayProportional,
                     repetitions: params.repetitions
                 }
                 
@@ -70,5 +70,53 @@ export class PlanService {
         }
 
         await this.planRepository.deletePlan(planId)
+    }
+
+    async updatePlan(planId: number, params: UpdatePlanParams) {
+        return await this.dataSource.transaction(async (transactionalEntityManager) => {
+
+            const plan = await transactionalEntityManager.findOne(Plan, {
+                where: {
+                    id: planId
+                }
+            })
+
+            if(!plan || !plan.mercadoPagoId) {
+                throw new AppError('Plano não encontrado', 404)
+            }
+
+            const localRepositoryParams: UpdatePlan = {
+                name: params.name,
+                frequency: params.frequency,
+                billingDay: params.billingDay,
+                price: params.price
+            }
+
+            await transactionalEntityManager.update(Plan, planId, localRepositoryParams)
+
+            if(params.frequency === 'anual') {
+                params.frequency = 'months'
+                params.repetitions = 12
+            }
+
+            const mercadoPagoParams: CreatePlanMercadoPago = {
+                reason: params.name,
+                back_url: 'https://docs.google.com/document/d/10MVs5bBpUX5oQAb1YSolBP5eFK67gVC3wU-iOzTH0y4/edit?tab=t.kdyeobkwb0n4', //TODO
+                auto_recurring: {
+                    currency_id: 'BRL',
+                    transaction_amount: plan.price / params.repetitions,
+                    frequency: 1,
+                    frequency_type: params.frequency,
+                    billing_day:  params.billingDay,
+                    billing_day_proportional: params.billingDayProportional,
+                    repetitions: params.repetitions
+                }
+                
+            }
+
+            await this.mercadoPagoService.updatePlan(plan.mercadoPagoId, mercadoPagoParams)
+
+            return plan
+        })
     }
 }

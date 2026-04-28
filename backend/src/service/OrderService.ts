@@ -83,7 +83,10 @@ export class OrderService {
 
     async updateOrderStatus(orderId: number, status: OrderStatus) {
         await this.orderRepository.updateOrderStatus(orderId, status)
-        getIO().to(`order-${orderId}`).emit('order_status_updated', {status})
+        getIO().to('kitchen').to('cashier').emit('order_status_updated', {
+            orderId,
+            status
+        })
     }
 
     async cancelOrder(orderId: number, params: CancelOrder) {
