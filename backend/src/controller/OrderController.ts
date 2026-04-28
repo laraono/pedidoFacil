@@ -72,7 +72,7 @@ export class OrderController {
         getIO().to('cashier').to('waiter').emit('order_status_updated', {
             orderId:   Number(orderId),
             comandaId: req.params.comandaId ? Number(req.params.comandaId) : null,
-            status,
+            status: req.body.status,
         });
 
         res.sendStatus(204);

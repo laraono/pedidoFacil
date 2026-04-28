@@ -56,7 +56,10 @@ export class ComandaController {
         const idNumero = Number(id || req.params.comandaId); 
 
         await this.comandaService.updateComandaStatus(idNumero, req.body.status);
-        getIO().to(`comanda-${id}`).emit('comanda_status_updated', {status})
+        getIO().to('kitchen').to('cashier').emit('comanda_status_updated', {
+            comandaId: idNumero,
+            status: req.body.status
+        })
         res.sendStatus(204);
     }
 
@@ -68,8 +71,11 @@ export class ComandaController {
             ...req.body
         });
 
-        getIO().to(`comanda-${comandaId}`).emit('comanda_status_updated', {status: ComandaStatus.CANCELADA})
-        
+        getIO().to('kitchen').to('cashier').emit('comanda_status_updated', {
+            comandaId: comandaId,
+            status: ComandaStatus.CANCELADA
+        })
+
         res.sendStatus(204);
     }
 
@@ -105,7 +111,10 @@ export class ComandaController {
                 req.body
             );
 
-            getIO().to(`comanda-${comandaId}`).emit('comanda_status_updated', {status: ComandaStatus.FECHADA})
+            getIO().to('kitchen').to('cashier').emit('comanda_status_updated', {
+                comandaId,
+                status: ComandaStatus.FECHADA
+            })
 
             return res.status(200).json(payment);
 

@@ -21,8 +21,41 @@ export class SubscriptionRepository extends Repository<Subscription>{
         })
     }
 
-    async listSubscriptions() {
-        return await this.find()
+    async listSubscriptions(status?: SubscriptionStatus, name?: string) {
+
+        return await this.find({
+            relations: {
+                establishment: {
+                    users: {
+                        role: true
+                    }
+                },
+                plan: true,
+            },
+            select: {
+                expirationDate: true,
+                id: true,
+                status: true,
+                plan: {
+                    id: true,
+                    name: true,
+                    price: true
+                },
+                establishment: {
+                    id: true,
+                    name: true,
+                    users: {
+                        id: true,
+                        name: true,
+                        role: true
+                    }
+                }
+            },
+            where: {
+                ...(status && { status }),
+                ...(name && { plan: { name } }),
+            }
+        })
     }
 
     async listSubscriptionsByPlan(plan: Plan) {
@@ -55,6 +88,10 @@ export class SubscriptionRepository extends Repository<Subscription>{
 
     async updateSubscriptionStatus(subscriptionId: number, status: SubscriptionStatus) {
         await this.update(subscriptionId, {status})
+    }
+
+    async updateSubscriptionPrice(subscriptionId: number, price: number) {
+        await this.update(subscriptionId, {price})
     }
 
 }

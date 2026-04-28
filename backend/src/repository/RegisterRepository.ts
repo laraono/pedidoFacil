@@ -36,4 +36,8 @@ export class RegisterRepository extends Repository<Register>{
         await this.softDelete(registerId)
     }
 
+    async associateToTerminal(registerId: number, terminalId: string) {
+        await this.update(registerId, {terminalId})
+    }
+
 }

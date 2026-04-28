@@ -43,7 +43,12 @@ export class SubscriptionController {
     processCardInfo  = catchAsync(async (req: Request, res: Response) => {
         const {data, params} = req.body
         const result = await this.subscriptionService.processCardInfo(data, params);
-        return res.status(200).json(result);
+        return res.sendStatus(204);
+    });
+
+    updateSubscriptionPrice =  catchAsync(async (req, res: Response) => {
+        const result = await this.subscriptionService.updateSubscriptionPrice(req.params.subscriptionId, req.body.amount);
+        return res.sendStatus(204);
     });
 
 }

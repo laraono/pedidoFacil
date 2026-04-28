@@ -10,9 +10,14 @@ export class PlanController {
     }
 
     createPlan = catchAsync(async (req: Request, res: Response) => { 
-        console.log(req.body)       
         const plan = await this.planService.createPlan(req.body)
-        return res.status(200).json(plan);
+        return res.status(201).json(plan);
+    });
+
+    updatePlan = catchAsync(async (req, res: Response) => { 
+        const {planId} = req.params
+        await this.planService.updatePlan(planId, req.body)
+        return res.sendStatus(204);
     });
 
     listPlans = catchAsync(async (req: Request, res: Response) => {
@@ -26,7 +31,7 @@ export class PlanController {
     });
 
     deletePlan = catchAsync(async (req, res: Response) => {
-        const result = await this.planService.deletePlan(req.params.planId);
-        return res.status(200).json(result);
+        await this.planService.deletePlan(req.params.planId);
+        return res.sendStatus(204);
     });
 }
