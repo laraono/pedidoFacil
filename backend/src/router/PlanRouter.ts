@@ -7,6 +7,7 @@ const planRouter = Router();
 
 planRouter.get('/plans', planController.listPlans);
 planRouter.get('/plans/:planId', planController.getPlan);
+planRouter.put('/plans/:planId', planController.updatePlan);
 planRouter.post('/plans', planController.createPlan);
 planRouter.delete('/plans', planController.deletePlan);
 

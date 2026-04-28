@@ -53,4 +53,23 @@ establishmentRouter.delete(
   establishmentController.disable
 );
 
+establishmentRouter.post(
+  '/registers',
+  authenticate,
+  establishmentController.postRegister
+);
+
+establishmentRouter.post(
+  '/registers/associate',
+  authenticate,
+  establishmentController.associateRegisterToTerminal 
+);
+
+establishmentRouter.get(
+  '/registers',
+  authenticate,
+  establishmentController.getRegisters
+);
+
+
 export { establishmentRouter };
