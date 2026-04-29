@@ -3,3 +3,4 @@ api/*
 mobile/node_modules/*
 backend/node_modules/*
 backend/build/*
+web/dist/*
