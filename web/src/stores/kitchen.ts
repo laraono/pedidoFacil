@@ -4,6 +4,8 @@ import { request } from '@/services/api';
 import { comandaApi } from '@/services/comandaApi';
 import { connectSocket, disconnectSocket, getSocket } from '@/services/socket';
 
+export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'finished' | 'cancelled';
+
 const dbToFrontMap: Record<string, OrderStatus> = {
   'Aguardando_Preparo': 'pending',
   'Em_Preparo': 'preparing',
@@ -19,8 +21,6 @@ const frontToDbMap: Record<string, string> = {
   'finished': 'Finalizado',
   'cancelled': 'Cancelado'
 };
-
-export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'finished' | 'cancelled';
 
 export interface KitchenOrderItem {
   name: string;
@@ -102,9 +102,8 @@ export const useKitchenStore = defineStore('kitchen', () => {
       order.status = targetFrontendCol;
 
       if (targetFrontendCol === 'finished' || targetFrontendCol === 'cancelled') {
-        finishOrder(id); 
+        orders.value = orders.value.filter(o => o.id !== id);
       }
-
     } catch (error) {
       console.error("Erro ao mover pedido:", error);
       order.status = previousStatus; 
@@ -135,7 +134,6 @@ export const useKitchenStore = defineStore('kitchen', () => {
   function initKitchenSocket(onNewOrder?: (order: KitchenOrder) => void) {
     connectSocket('kitchen');
     const socket = getSocket();
-
     if (!socket) return;
 
     socket.on('new_order', (data: any) => {
@@ -156,7 +154,6 @@ export const useKitchenStore = defineStore('kitchen', () => {
       };
 
       addOrder(newOrder);
-
       if (typeof onNewOrder === 'function') onNewOrder(newOrder);
     });
   }

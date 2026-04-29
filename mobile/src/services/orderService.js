@@ -26,7 +26,7 @@ export async function submitOrder({ comandaId, comandaLabel, cartItems, authToke
     }
 
     const response = await fetch(
-        `${API_URL}/commands/${comandaId}/orders`,
+        `${API_URL}/api/v1/commands/${comandaId}/orders`,
         {
             method: 'POST',
             headers,

@@ -1,5 +1,5 @@
 import { io } from "socket.io-client";
-import { SOCKET_URL } from "./apiConfig";
+import { SOCKET_URL } from "./apiConfig"; 
 
 let socket = null;
 
@@ -18,6 +18,10 @@ export function connectMobileSocket() {
     socket.emit("join_room", "waiter");
   });
 
+  socket.on("disconnect", (reason) => {
+    console.log("[Mobile Socket] Desconectado:", reason);
+  });
+
   socket.on("connect_error", (err) => {
     console.warn("[Mobile Socket] Erro de conexão:", err.message);
   });
@@ -27,14 +31,13 @@ export function connectMobileSocket() {
 
 export function listenOrderStatus(orderId, onUpdate) {
   if (!socket) {
-    console.warn(
-      "[Mobile Socket] Tentativa de ouvir status sem conexão ativa.",
-    );
+    console.warn("[Mobile Socket] Socket não conectado. Chame connectMobileSocket() primeiro.");
     return;
   }
 
   socket.on("order_status_updated", (data) => {
     if (data.orderId === orderId) {
+      console.log("[Mobile Socket] Status do meu pedido atualizado:", data);
       if (typeof onUpdate === "function") onUpdate(data);
     }
   });

@@ -29,8 +29,16 @@ export default function WelcomeScreen() {
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.05, duration: 800, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulseAnim, {
+          toValue: 1.05,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
       ]),
     ).start();
   }, []);
@@ -45,7 +53,11 @@ export default function WelcomeScreen() {
       activeOpacity={1}
       onPress={handleStart}
     >
-      <StatusBar barStyle="light-content" backgroundColor={theme.fundoGeral || C.background} />
+      {/* StatusBar mantido da feature-104 */}
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor={theme.fundoGeral || C.background} 
+      />
       
       <Image
         source={patternOndas}
@@ -55,9 +67,15 @@ export default function WelcomeScreen() {
 
       <SafeAreaView style={styles.container}>
         <View style={styles.centerContent}>
-          <Animated.View style={[styles.logoWrapper, { transform: [{ scale: pulseAnim }] }]}>
+          <Animated.View
+            style={[styles.logoWrapper, { transform: [{ scale: pulseAnim }] }]}
+          >
             <View style={styles.logoCircle}>
-              <Image source={imgLogo} style={styles.logoImage} resizeMode="contain" />
+              <Image
+                source={imgLogo}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
             </View>
           </Animated.View>
 
@@ -68,9 +86,19 @@ export default function WelcomeScreen() {
         </View>
 
         <View style={styles.bottomContent}>
-          <Animated.View style={[styles.touchIndicator, { transform: [{ scale: pulseAnim }] }]}>
+          <Animated.View
+            style={[
+              styles.touchIndicator,
+              { transform: [{ scale: pulseAnim }] },
+            ]}
+          >
             <Text style={styles.touchText}>Toque para começar</Text>
-            <Feather name="arrow-right" size={24} color={theme.textoBotoes || "#FFFFFF"} style={styles.pointerIcon} />
+            <Feather
+              name="arrow-right"
+              size={24}
+              color={theme.textoBotoes || "#FFFFFF"}
+              style={styles.pointerIcon}
+            />
           </Animated.View>
         </View>
       </SafeAreaView>
