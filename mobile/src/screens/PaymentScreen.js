@@ -115,6 +115,31 @@ export default function PaymentScreen() {
     return () => stopListeningOrderStatus();
   }, [orderId]);
 
+  const [orderId, setOrderId] = useState(null);
+  const [orderTrackingStatus, setOrderTrackingStatus] = useState(null);
+
+  const STATUS_LABELS = {
+    Aguardando_Preparo: "Pedido recebido! Aguardando a cozinha...",
+    Em_Preparo: "Sua comida está sendo preparada!",
+    Pronto: "Pedido pronto! Retire no balcão.",
+    Finalizado: "Pedido finalizado. Obrigado!",
+    Cancelado: "Pedido cancelado. Fale com o atendente.",
+  };
+
+  useEffect(() => {
+    if (!orderId) return;
+
+    connectMobileSocket();
+
+    listenOrderStatus(orderId, (data) => {
+      setOrderTrackingStatus(data.status);
+    });
+
+    return () => {
+      stopListeningOrderStatus();
+    };
+  }, [orderId]);
+
   const styles = useMemo(() => getStyles(theme, width), [theme, width]);
 
   const handleConfirm = async () => {

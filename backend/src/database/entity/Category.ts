@@ -15,7 +15,7 @@ export class Category {
   @PrimaryGeneratedColumn({
     name: 'ID_Categoria',
   })
-  id: number;
+  id!: number;
 
   @Column({
     type: 'varchar',
@@ -23,7 +23,7 @@ export class Category {
     nullable: false,
     length: 50,
   })
-  name: string;
+  name!: string;
 
   @Column({
     type: 'longtext',
@@ -40,11 +40,11 @@ export class Category {
   deletedAt?: Date;
 
   @OneToMany(() => Product, (product) => product.category)
-  products: Product[];
+  products!: Product[];
 
   @ManyToOne(() => Establishment, (establishment) => establishment.categories)
   @JoinColumn({
     name: 'ID_Estabelecimento',
   })
-  establishment: Establishment;
+  establishment!: Establishment;
 }

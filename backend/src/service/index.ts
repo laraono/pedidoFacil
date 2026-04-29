@@ -12,6 +12,7 @@ import {
   roleRepository,
   receiptRepository,
   paymentRepository,
+  refreshTokenRepository, 
 } from '../repository';
 
 import { AuthService } from './AuthService';
@@ -29,7 +30,7 @@ import { MetricsService } from './MetricsService';
 import { MenuService } from './MenuService';
 import { PaymentService } from './PaymentService';
 
-const authService = new AuthService(AppDataSource, userRepository);
+const authService = new AuthService(AppDataSource, userRepository, refreshTokenRepository);
 const categoryService = new CategoryService(categoryRepository);
 
 const metricsService = new MetricsService(receiptRepository, AppDataSource);

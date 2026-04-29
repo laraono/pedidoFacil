@@ -10,7 +10,7 @@ export class ProductVariation {
     @PrimaryGeneratedColumn({
         name: 'ID_Variacao'
     })
-    id: number
+    id!: number
 
     @Column({
         type: 'varchar',
@@ -18,7 +18,7 @@ export class ProductVariation {
         nullable: false,
         length: 50
     })
-    name: string
+    name!: string
 
     @Column({
         name: 'Preco_Adicional',
@@ -27,7 +27,7 @@ export class ProductVariation {
         scale: 2,
         nullable: false
     })
-    addPrice: number
+    addPrice!: number
 
     @Column({
         type: 'varchar',
@@ -35,7 +35,7 @@ export class ProductVariation {
         nullable: false,
         length: 30
     })
-    status: ProductStatus
+    status!: ProductStatus
 
     @DeleteDateColumn({
         name: 'Data_Exclusao',
@@ -48,9 +48,9 @@ export class ProductVariation {
     @JoinColumn({
         name: 'ID_Produto'
     })
-    product: Product
+    product!: Product
 
     @OneToMany(() => ProductVariationOrder, (productVariationOrder) => productVariationOrder.productVariation)
-    productVariationOrders: ProductVariationOrder[]
+    productVariationOrders!: ProductVariationOrder[]
 
 }

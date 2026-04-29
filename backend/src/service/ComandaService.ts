@@ -29,8 +29,9 @@ export class ComandaService {
     return await this.comandaRepository.save(novaComanda);
   }
 
-  async listComandas(): Promise<Comanda[]> {
+  async listComandas(establishmentId: number): Promise<Comanda[]> { // 👈 Recebe o ID
     return await this.comandaRepository.find({
+      where: { establishment: { id: establishmentId } }, // 🛡️ BLINDAGEM AQUI
       relations: [
         'pedidos',
         'pedidos.productOrders',
@@ -39,9 +40,9 @@ export class ComandaService {
     });
   }
 
-  async listComandasByStatus(status: ComandaStatus): Promise<Comanda[]> {
+  async listComandasByStatus(status: ComandaStatus, establishmentId: number): Promise<Comanda[]> { // 👈 Recebe o ID
     return await this.comandaRepository.find({
-      where: { status },
+      where: { status, establishment: { id: establishmentId } }, // 🛡️ BLINDAGEM AQUI
       relations: [
         'pedidos',
         'pedidos.productOrders',
@@ -49,6 +50,7 @@ export class ComandaService {
       ],
     });
   }
+
 
   async updateComandaStatus(
     comandaId: number,

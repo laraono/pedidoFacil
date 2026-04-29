@@ -15,13 +15,13 @@ export enum ReceiptStatus {
 @Entity({ name: 'NOTA_FISCAL' })
 export class Receipt {
     @PrimaryGeneratedColumn({ name: 'ID_Nota' })
-    id: number;
+    id!: number;
 
     @Column({ type: 'varchar', name: 'Numero_Nota', length: 50, nullable: true })
     receiptNumber: string;
 
     @Column({ type: 'varchar', name: 'CPF_CNPJ_Cliente', nullable: true, length: 18 })
-    cpfcnpj: string;
+    cpfcnpj!: string;
 
     @Column({
         type: 'enum',
@@ -29,10 +29,10 @@ export class Receipt {
         default: ReceiptStatus.PENDENTE,
         name: 'Status'
     })
-    status: ReceiptStatus;
+    status!: ReceiptStatus;
 
     @Column({ type: 'decimal', precision: 10, scale: 2, name: 'Valor_Total' })
-    totalValue: number;
+    totalValue!: number;
 
     @Column({ type: 'varchar', name: 'Codigo_Retorno', nullable: true, length: 10 })
     codigoRetorno: string;
@@ -47,14 +47,14 @@ export class Receipt {
     providerNfId: string;
 
     @CreateDateColumn({ name: 'Data_Emissao' })
-    createdAt: Date;
+    createdAt!: Date;
 
     @DeleteDateColumn({ name: 'Data_Exclusao', nullable: true })
     deletedAt?: Date;
 
     @ManyToOne(() => Establishment)
     @JoinColumn({ name: 'ID_Estabelecimento' })
-    establishment: Establishment;
+    establishment!: Establishment;
 
     @OneToOne(() => Payment)
     @JoinColumn({ name: 'ID_Pagamento' })
