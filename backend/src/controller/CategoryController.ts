@@ -20,13 +20,15 @@ export class CategoryController {
     }
 
     async listCategories(req: Request, res: Response) {
+        const estabelecimentoId = (req as any).usuario.estabelecimento; 
+        
         if (req.query.deleted === 'true') {
-            const categories = await this.categoryService.listDeletedCategories()
-            return res.status(200).send(categories)
+            const categories = await this.categoryService.listDeletedCategories(estabelecimentoId);
+            return res.status(200).send(categories);
         }
 
-        const categories = await this.categoryService.listCategories()
-        return res.status(200).send(categories)
+        const categories = await this.categoryService.listCategories(estabelecimentoId);
+        return res.status(200).send(categories);
     }
 
     async updateCategory(req: Request, res: Response) {

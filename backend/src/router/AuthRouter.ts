@@ -18,6 +18,6 @@ authRouter.post('/register', validateRegister, catchAsync((req: Request, res: Re
 authRouter.post('/login', loginLimiter, validateLogin, catchAsync((req: Request, res: Response) => authController.login(req, res)));
 authRouter.post('/logout', authenticate, catchAsync((req: Request, res: Response) => authController.logout(req, res)));
 authRouter.post('/refresh', catchAsync((req: Request, res: Response) => authController.refresh(req, res)));
-authRouter.get('/perfil', authenticate, catchAsync((req: Request, res: Response) => authController.perfil(req, res)));
+authRouter.get('/me', authenticate, catchAsync((req: Request, res: Response) => authController.perfil(req, res)));
 
 export { authRouter };

@@ -23,20 +23,22 @@ export class ProductController {
   }
 
   async listProducts(req: Request, res: Response) {
+    const estabelecimentoId = (req as any).usuario.estabelecimento;
+
     if (req.query.deleted === 'true') {
-      const products = await this.productService.listDeletedProducts();
+      const products = await this.productService.listDeletedProducts(estabelecimentoId);
       return res.status(200).json(products);
     }
 
-    const products = await this.productService.listProducts();
+    const products = await this.productService.listProducts(estabelecimentoId);
     return res.status(200).json(products);
   }
 
   async listProductsByCategory(req: Request, res: Response) {
     const categoryId = Number(req.params.categoryId || req.params.id);
-    const products =
-      await this.productService.listProductsByCategory(categoryId);
-
+    const estabelecimentoId = (req as any).usuario.estabelecimento;
+    
+    const products = await this.productService.listProductsByCategory(categoryId, estabelecimentoId);
     res.status(200).json(products);
   }
 

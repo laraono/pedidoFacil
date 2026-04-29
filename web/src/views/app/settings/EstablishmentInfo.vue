@@ -89,7 +89,15 @@ onMounted(async () => {
       paymentMethods.value = [...ALL_PAYMENT_METHODS]; 
     }
 
-    selfService.value = !!data.selfServiceEnabled;
+    let isAuto = !!data.selfServiceEnabled;
+    if (data.serviceTypes) {
+      const typesStr = typeof data.serviceTypes === 'string' ? data.serviceTypes : JSON.stringify(data.serviceTypes);
+      if (typesStr.includes('Autoatendimento')) {
+        isAuto = true;
+      }
+    }
+
+    selfService.value = isAuto;
     selfServiceCode.value = data.selfServiceCode || Math.floor(100000 + Math.random() * 900000).toString();
 
     originalForm.value = { ...form.value };
@@ -100,7 +108,6 @@ onMounted(async () => {
 
   } catch (error) {
     console.error("🔎 ERRO CAPTURADO NO FRONT:", error);
-    console.error("Resposta do Back:", error.response?.data || error.message);
     showToast('Erro ao carregar dados do estabelecimento.', 'error');
   } finally {
     isFetching.value = false;

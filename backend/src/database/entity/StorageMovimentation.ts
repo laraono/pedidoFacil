@@ -12,7 +12,7 @@ export class StorageMovimentation {
     @PrimaryGeneratedColumn({
         name: 'ID_Movimentacao'
     })
-    id: number
+    id!: number
 
     @Column({
         type: 'varchar',
@@ -26,25 +26,25 @@ export class StorageMovimentation {
         name: 'Quantidade',
         nullable: false
     })
-    quantity: number
+    quantity!: number
 
     @Column({
         type: 'varchar',
         name: 'Tipo_Movimentacao',
         nullable: false,
     })
-    type: MovimentationType
+    type!: MovimentationType
 
     @ManyToOne(() => StorageIten, (iten) => iten.movimentations)
     @JoinColumn({
         name: 'ID_Estoque_Item'
     })
-    storageIten: StorageIten
+    storageIten!: StorageIten
 
     @ManyToOne(() => User, (user) => user.movimentations)
     @JoinColumn({
         name: 'ID_Usuario_Responsavel'
     })
-    user: User
+    user!: User
 
 }

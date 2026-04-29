@@ -46,21 +46,22 @@ export class ProductService {
         return createdProduct.id
     }
 
-    async listProducts() {
-        return await this.productRepository.listProducts()
+    async listProducts(establishmentId: number) {
+        return await this.productRepository.listProducts(establishmentId);
     }
 
-    async listProductsByCategory(categoryId: number) {
-        return await this.productRepository.listProductsByCategory(categoryId)
+    async listProductsByCategory(categoryId: number, establishmentId: number) {
+        return await this.productRepository.listProductsByCategory(categoryId, establishmentId);
+    }
+
+    async listDeletedProducts(establishmentId: number) {
+        return await this.productRepository.listDeletedProducts(establishmentId);
     }
  
     async getProduct(productId: number) {
         return await this.productRepository.getProduct(productId)
     }
 
-    async listDeletedProducts() {
-        return await this.productRepository.listDeletedProducts();
-    }
 
     async updateProduct(productId: number, data: any) {
         const updateData: any = {};

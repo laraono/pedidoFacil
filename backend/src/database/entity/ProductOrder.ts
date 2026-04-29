@@ -11,13 +11,13 @@ export class ProductOrder {
         name: 'ID_Pedido',
         type: 'int'
     })
-    orderId: number
+    orderId!: number
 
     @PrimaryColumn({
         name: 'ID_Produto',
         type: 'int'
     })
-    productId: number
+    productId!: number
 
     @Column({
         type: 'varchar',
@@ -31,7 +31,7 @@ export class ProductOrder {
         name: 'Quantidade',
         nullable: false
     })
-    quantity: number
+    quantity!: number
 
     @Column({
         name: 'Preco_Unitario_Momento',
@@ -40,13 +40,13 @@ export class ProductOrder {
         scale: 2,
         nullable: false
     })
-    price: number
+    price!: number
 
     @CreateDateColumn({ 
         type: "timestamp", 
         default: () => "CURRENT_TIMESTAMP(6)"
     })
-    created_at: Date;
+    created_at!: Date;
 
     @DeleteDateColumn({
         name: 'deleted_at',
@@ -57,13 +57,13 @@ export class ProductOrder {
 
     @ManyToOne(() => Product, (product) => product.productOrders)
     @JoinColumn({name: 'ID_Produto'})
-    product: Product
+    product!: Product
 
     @ManyToOne(() => Order, (order) => order.productOrders)
     @JoinColumn({name: 'ID_Pedido'})
-    order: Order
+    order!: Order
 
     @OneToMany(() => ProductVariationOrder, (variation) => variation.productOrder)
-    variations: ProductVariationOrder[]
+    variations!: ProductVariationOrder[]
 
 }

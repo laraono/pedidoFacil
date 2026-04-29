@@ -15,7 +15,6 @@ const STORAGE_KEYS = {
   COMANDA_UNIT_LABEL: 'comandaUnitLabel',
 } as const;
 
-// Chaves que devem ser isoladas por estabelecimento
 const ESTABLISHMENT_KEYS = new Set([
   'onboarding', 'logo', 'buttons', 'buttonTextColor',
   'backgroundColors', 'category', 'fontFamily', 'textColor',
@@ -27,7 +26,7 @@ function getScopedKey(key: string): string | null {
   try {
     const auth = useAuthStore();
     const estId = auth.user?.estabelecimentoId;
-    if (!estId) return null; // admin ou não autenticado: sem dados de estabelecimento
+    if (!estId) return null; 
     return `est_${estId}_${key}`;
   } catch {
     return null;

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import rateLimit from 'express-rate-limit'
 import { AuthService } from '../service'
+import { RefreshToken } from '../database'
 
 export const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -72,12 +73,13 @@ export class AuthController {
 
     async logout(req: Request, res: Response) {
         const token = req.cookies.refreshToken
+        const { refreshToken } = req.body;
 
         if (!token) {
             return res.status(204).send()
         }
 
-        await this.authService.logout()
+        await this.authService.logout(refreshToken)
 
         res.clearCookie('refreshToken')
         res.status(204).send()

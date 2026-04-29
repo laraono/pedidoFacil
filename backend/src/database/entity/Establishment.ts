@@ -24,7 +24,7 @@ export class Establishment {
     @PrimaryGeneratedColumn({
         name: 'ID_Estabelecimento'
     })
-    id: number
+    id!: number
 
     @Column({
         type: 'varchar',
@@ -32,7 +32,7 @@ export class Establishment {
         nullable: false,
         length: 100
     })
-    name: string
+    name!: string
 
     @Column({
         type: 'varchar',
@@ -41,7 +41,7 @@ export class Establishment {
         length: 18,
         unique: true
     })
-    cnpj: string
+    cnpj!: string
 
     @Column({
         type: 'varchar',
@@ -79,7 +79,7 @@ export class Establishment {
         default: 'Ativo',
         name: 'Status'
     })
-    status: string
+    status!: string
 
     @Column({
         type: 'varchar',
@@ -107,35 +107,35 @@ export class Establishment {
     @JoinColumn({
         name: 'ID_Gerente_Responsavel'
     })
-    manager: User
+    manager!: User
 
     @OneToOne(() => Configuration, (config) => config.establishment, { cascade: true, eager: true })
-    configurations: Configuration
+    configurations!: Configuration
 
     @OneToMany(() => Role, (role) => role.establishment)
-    roles: Role[]
+    roles!: Role[]
 
     @OneToMany(() => User, (user) => user.establishment)
-    users: User[]
+    users!: User[]
 
     @OneToMany(() => Subscription, (subscription) => subscription.establishment)
-    subscriptions: Subscription[]
+    subscriptions!: Subscription[]
 
     @OneToMany(() => Category, (category) => category.establishment)
-    categories: Category[]
+    categories!: Category[]
 
     @OneToMany(() => Product, (product) => product.establishment)
-    products: Product[]
+    products!: Product[]
 
     @OneToMany(() => Coupon, (coupon) => coupon.establishment)
-    coupons: Coupon[]
+    coupons!: Coupon[]
 
     @OneToMany(() => Comanda, (comanda) => comanda.establishment)
-    comandas: Comanda[]
+    comandas!: Comanda[]
 
     @OneToMany(() => Order, (order) => order.establishment)
-    orders: Order[]
+    orders!: Order[]
 
     @OneToMany(() => Payment, (payment) => payment.establishment)
-    payments: Payment[]
+    payments!: Payment[]
 }
