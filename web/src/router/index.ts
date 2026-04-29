@@ -143,6 +143,12 @@ const routes: RouteRecordRaw[] = [
         name: "manager-profile",
         component: () => import("@/views/app/settings/ManagerProfile.vue"),
         meta: { requiresAuth: true },
+      },
+      {
+        path: "settings/register",
+        name: "manager-register",
+        component: () => import("@/views/app/settings/RegisterManagement.vue"),
+        meta: { requiresAuth: true },
       }
     ],
   },
@@ -186,14 +192,14 @@ router.beforeEach(async (to, _from, next) => {
   }
 
   if (to.meta.requiresAdmin && !auth.isAdmin) {
-    return next({ name: "dashboard" });  // ✅ Added next()
+    return next({ name: "dashboard" });
   }
 
   if (to.meta.permission && !auth.hasPermission(to.meta.permission as string)) {
     return next({ name: 'dashboard' });
   }
 
-  next();  // ✅ Always call next() at the end
+  next();  
 });
 
 export default router;
