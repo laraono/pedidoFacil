@@ -76,6 +76,15 @@ export class Order {
     })
     deletedAt?: Date
 
+    @Column({
+        name: 'Valor_Total',
+        type: "decimal",
+        precision: 10,
+        scale: 2,
+        nullable: false
+    })
+    total: number
+
     @ManyToOne(() => Comanda, (comanda) => comanda.orders)
     @JoinColumn({
         name: 'ID_Comanda'

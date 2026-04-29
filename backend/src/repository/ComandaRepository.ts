@@ -47,6 +47,8 @@ export class ComandaRepository extends Repository<Comanda>{
                 total: true,
                 orders: {
                     id: true,
+                    status: true,
+                    total: true,
                     productOrders: {
                         id: true,
                         quantity: true,

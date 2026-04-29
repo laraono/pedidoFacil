@@ -1,5 +1,5 @@
 import { DataSource, EntityManager } from "typeorm";
-import { Order, Product, ProductOrder, ProductVariation, ProductVariationOrder } from "../database";
+import { Comanda, Establishment, Order, Product, ProductOrder, ProductVariation, ProductVariationOrder } from "../database";
 import { CancelOrder, CreateOrder, ItensArray, ProductOrderParams } from "../dto";
 import { OrderStatus, ServiceType } from "../enum";
 import { AppError } from "../middleware";
@@ -28,16 +28,30 @@ export class OrderService {
         this.comandaService = comandaService
     }
 
+    async getOrder(comandaId: number, orderId: number) {
+        const comanda = await this.comandaService.getComanda(comandaId)
+
+        if(!comanda) {
+            throw new AppError('Comanda não existe', 400)
+        }
+
+        return await this.orderRepository.getOrder(orderId)
+    }
+
     async createOrder(createOrder: CreateOrder) {
         return await this.dataSource.transaction(async (transactionalEntityManager) => {
             
-            const comanda = await this.comandaService.getComanda(createOrder.comandaId)
+            const comanda = await transactionalEntityManager.findOne(Comanda, {
+                where: {  id: createOrder.comandaId}
+            })
 
             if(!comanda) {
                 throw new AppError('Comanda não existe', 400)
             }
 
-            const establishment = await this.establishmentRepository.getEstablishment(createOrder.establishmentId)
+            const establishment = await transactionalEntityManager.findOne(Establishment, {
+                where: {  id: createOrder.establishmentId}
+            })
 
             if(!establishment) {
                 throw new AppError('Estabelecimento não encontrado', 400)
@@ -50,7 +64,9 @@ export class OrderService {
                 serviceType: ServiceType.AUTOATENDIMENTO
             });
 
-            await this.saveItens(createOrder.itens, order, transactionalEntityManager);
+            const total = await this.saveItens(createOrder.itens, order, transactionalEntityManager);
+
+            await transactionalEntityManager.update(Order, order.id, {total})
 
             return order;
         });
@@ -134,6 +150,8 @@ export class OrderService {
         }
 
         await this.comandaService.updateComandaTotalTransaction(order.comanda, total, manager);
+
+        return total
     }
 
     async validateItens(itens: ItensArray, manager: EntityManager) {
@@ -150,10 +168,16 @@ export class OrderService {
             where: { id: itens.productVariationId } 
         });
 
-        return {
-            product, 
-            productVariation
-        };
+        if(productVariation) {
+
+            return {
+                product, 
+                productVariation
+            };
+        } else {
+            return {product}
+        }
+
     }
     
 } 

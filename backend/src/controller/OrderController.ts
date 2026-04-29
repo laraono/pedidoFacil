@@ -18,7 +18,7 @@ export class OrderController {
         res.status(201).send(orderId)
     }
 
-    async updateOrderStatus(req, res) {
+    async updateOrderStatus(req, res: Response) {
         const { orderId } = req.params
         const { status } = req.body
         await this.orderService.updateOrderStatus(Number(orderId), status)
@@ -26,7 +26,7 @@ export class OrderController {
         res.sendStatus(204)
     }
 
-    async cancelOrder(req, res) {
+    async cancelOrder(req, res: Response) {
         const { comandaId} = req.params
         const { orderId } = req.params
 
@@ -35,13 +35,22 @@ export class OrderController {
         res.sendStatus(204)
     }
 
-    async listOrders(req, res) {
+    async getOrder(req, res: Response) {
+        const { comandaId} = req.params
+        const { orderId } = req.params
+
+        const order = await this.orderService.getOrder(orderId, {comandaId, ...req.body})
+        
+        res.status(200).send(order)
+    }
+
+    async listOrders(req, res: Response) {
         const orders = await this.orderService.listOrders(req.body)
 
         res.status(200).send(orders)
     }
 
-    async listOrdersByComanda(req, res) {
+    async listOrdersByComanda(req, res: Response) {
         const { comandaId } = req.params
         const orders = await this.orderService.listOrdersByComanda(Number(comandaId))
 

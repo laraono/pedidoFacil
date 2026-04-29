@@ -33,6 +33,7 @@ export class OrderRepository extends Repository<Order>{
                 observation: true,
                 created_at: true,
                 status: true,
+                total: true,
                 comanda: {
                     id: true,
                     description: true
@@ -41,6 +42,7 @@ export class OrderRepository extends Repository<Order>{
                     id: true,
                     quantity: true,
                     observation: true,
+                    price: true,
                     product: {
                         id: true,
                         name: true
@@ -83,6 +85,10 @@ export class OrderRepository extends Repository<Order>{
     
     async cancelOrder(orderId: number, params: CancelOrderParams) {
         await this.update(orderId, params)
+    }
+
+    async getOrder(id: number) {
+        return await this.findOne({ where: { id }})
     }
     
 }
