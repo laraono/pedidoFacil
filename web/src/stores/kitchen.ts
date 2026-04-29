@@ -102,7 +102,7 @@ export const useKitchenStore = defineStore('kitchen', () => {
       order.status = targetFrontendCol;
 
       if (targetFrontendCol === 'finished' || targetFrontendCol === 'cancelled') {
-        finishOrder(id);
+        finishOrder(id); 
       }
 
     } catch (error) {
