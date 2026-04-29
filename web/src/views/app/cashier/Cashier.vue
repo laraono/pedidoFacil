@@ -22,17 +22,17 @@
             <h2 class="font-black text-[#212121] text-base md:text-lg uppercase tracking-widest">Comandas Ativas</h2>
           </div>
           <span class="bg-blue-500 text-white font-black px-4 py-1 rounded text-xs shadow-lg border border-blue-400/30">
-            {{ comandaStore.comandas.length }}
+            {{ comandas.length }}
           </span>
         </header>
 
         <div class="flex-grow p-6 md:p-8 overflow-y-auto custom-scrollbar">
-          <div v-if="comandaStore.comandas.length === 0" class="flex flex-col items-center justify-center h-full text-[#757575] opacity-40 min-h-[200px]">
+          <div v-if="comandas.comandas.length === 0" class="flex flex-col items-center justify-center h-full text-[#757575] opacity-40 min-h-[200px]">
             <FileText :size="48" class="mb-4" />
             <p class="font-black uppercase tracking-widest text-sm">Nenhuma comanda ativa</p>
           </div>
           <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <div v-for="comanda in comandaStore.comandas" :key="comanda.id"
+            <div v-for="comanda in comandas" :key="comanda.id"
               class="bg-gray-50 rounded border border-[#E0E0E0] p-6 cursor-pointer hover:border-blue-500/50 hover:bg-gray-50 transition-all group"
               @click="openDetails(comanda)">
               <div class="flex justify-between items-start mb-4">
@@ -84,26 +84,26 @@
           <div class="space-y-4">
             <div v-for="order in ordersWithStatus" :key="order.id"
               class="rounded p-6"
-              :class="order.status === 'pending'
+              :class="order.status === 'Aguardando_Preparo'
                 ? 'border border-yellow-500/30 bg-yellow-500/5'
                 : 'border border-[#E0E0E0] bg-gray-50'">
               <div class="flex justify-between items-center mb-4">
                 <span class="font-black text-[#212121] text-sm uppercase tracking-widest">Pedido #{{ order.id }}</span>
                 <span class="px-4 py-1 rounded text-[10px] font-black uppercase tracking-widest border"
-                  :class="{'border-yellow-500/30 bg-yellow-500/10 text-yellow-500': order.status === 'pending',
-                           'border-blue-500/30 bg-blue-500/10 text-blue-500': order.status === 'preparing',
-                           'border-accent/40 bg-accent-light text-accent': order.status === 'ready'}">
-                  {{ order.status === 'pending' ? 'Aguardando' : order.status === 'preparing' ? 'Preparando' : 'Pronto' }}
+                  :class="{'border-yellow-500/30 bg-yellow-500/10 text-yellow-500': order.status === 'Aguardando_Preparo',
+                           'border-blue-500/30 bg-blue-500/10 text-blue-500': order.status === 'Em_Preparo',
+                           'border-accent/40 bg-accent-light text-accent': order.status === 'Pronto'}">
+                  {{ order.status === 'Aguardando_Preparo' ? 'Aguardando' : order.status === 'Em_Preparo' ? 'Preparando' : 'Pronto' }}
                 </span>
               </div>
               <div class="space-y-2 mb-4">
-                <div v-for="item in order.items" :key="item.name" class="flex justify-between text-xs font-bold text-[#757575]">
-                  <span>{{ item.amount }}x {{ item.name }}</span>
+                <div v-for="item in order.productOrders" :key="item.name" class="flex justify-between text-xs font-bold text-[#757575]">
+                  <span>{{ item.quantity }}x {{ item.name }}</span>
                   <span class="text-[#757575]">R$ {{ (item.price || 0).toFixed(2) }}</span>
                 </div>
               </div>
               <div class="text-right font-black text-[#212121] text-sm mt-3 pt-3 border-t border-[#E0E0E0] border-dashed">
-                Total Pedido: <span class="text-blue-400 ml-2">R$ {{ order.price.toFixed(2) }}</span>
+                Total Pedido: <span class="text-blue-400 ml-2">R$ {{ order.total.toFixed(2) }}</span>
               </div>
             </div>
           </div>
@@ -406,21 +406,24 @@
 
 <script setup>
 import SubscriptionGuard from '@/components/SubscriptionGuard.vue';
-import { ref, computed, watch } from 'vue';
-import { useComandaStore } from '@/stores/comandaManagement';
-import { useClosedComandaStore } from '@/stores/closedComandas';
-import { useKitchenStore } from '@/stores/kitchen';
+import { ref, computed, watch, onMounted } from 'vue';
+import {comandaApi} from '@/services/comandaApi'
+import {orderApi} from '@/services/orderApi'
 import { useCouponStore } from '@/stores/coupons';
 import { useToast } from '@/composables/useToast';
 import { useUtils } from '@/composables/useUtils.js';
 import { Monitor, Receipt, AlertTriangle, FileText, CheckCircle, X, AlertCircle, Tag, XCircle } from 'lucide-vue-next';
 
-const comandaStore = useComandaStore();
-const closedComandaStore = useClosedComandaStore();
-const kitchenStore = useKitchenStore();
 const couponStore = useCouponStore();
 const utils = useUtils();
 const { showToast } = useToast();
+const comandas = ref([])
+const closedComandas = ref([])
+
+onMounted(async () => {
+  comandas.value = await comandaApi.listOpen()
+  closedComandas.value = await comandaApi.listClosed()
+})
 
 const ALL_PAYMENT_METHODS = ['Dinheiro', 'Cartão Débito', 'Cartão Crédito', 'PIX'];
 const enabledPaymentMethods = computed(() => {
@@ -484,14 +487,14 @@ const currentChangeBreakdown = ref({});
 
 const ordersWithStatus = computed(() => {
   if (!selectedComanda.value) return [];
-  return selectedComanda.value.orders.map(order => {
-    const kitchenOrder = kitchenStore.orders.find(o => o.id === order.id);
-    return { ...order, status: kitchenOrder ? kitchenOrder.status : 'ready' };
+  return selectedComanda.value.orders.map(async order => {
+    const realOrder = await orderApi.getOrder(selectedComanda.value.id, order.id)
+    return { ...order, status: realOrder ? realOrder.status : 'Pronto' };
   });
 });
 
-const hasPreparing = computed(() => ordersWithStatus.value.some(o => o.status === 'preparing'));
-const hasPending = computed(() => ordersWithStatus.value.some(o => o.status === 'pending'));
+const hasPreparing = computed(() => ordersWithStatus.value.some(o => o.status === 'Em_Preparo'));
+const hasPending = computed(() => ordersWithStatus.value.some(o => o.status === 'Aguardando_Preparo'));
 const subtotal = computed(() => selectedComanda.value?.total || 0);
 
 const totalWithDiscount = computed(() => {
@@ -623,16 +626,16 @@ function handleFinalize() {
   }
 }
 
-function confirmRules(confirm) {
+async function confirmRules(confirm) {
   if (!confirm) { showRulesModal.value = false; return; }
   if (pendingCancel.value) {
     if (!cancelReason.value.trim()) return;
-    const pendingOrders = ordersWithStatus.value.filter(o => o.status === 'pending');
-    pendingOrders.forEach(order => {
-      kitchenStore.finishOrder(order.id);
+    const pendingOrders = ordersWithStatus.value.filter(o => o.status === 'Aguardando_Preparo');
+    pendingOrders.forEach(async order => {
+      await orderApi.putStatus(selectedComanda.value.id, order.id, 'Finalizado')
       selectedComanda.value.orders = selectedComanda.value.orders.filter(o => o.id !== order.id);
     });
-    selectedComanda.value.total = selectedComanda.value.orders.reduce((sum, o) => sum + o.price, 0);
+    selectedComanda.value.total = selectedComanda.value.orders.reduce((sum, o) => sum + o.total, 0);
   }
   showRulesModal.value = false;
   startPaymentFlow();
@@ -684,15 +687,14 @@ function nextPayment() {
   }
 }
 
-function finishPaymentFlow() {
+async function finishPaymentFlow() {
   const closedComanda = {
     ...selectedComanda.value,
     closedAt: new Date().toISOString(),
-    status: 'FINALIZADO',
+    status: 'Fechada',
     paymentDetails: { discountType: discountType.value, discountValue: discountValue.value, coupon: appliedCoupon.value ? appliedCoupon.value.code : null, couponDiscount: couponDiscount.value, payments: pendingPayments.value },
   };
-  closedComandaStore.addClosedComanda(closedComanda);
-  comandaStore.removeComanda(selectedComanda.value.id);
+  await comandaApi.putStatus(selectComanda.value.id, 'Fechada')
   paymentFlowActive.value = false;
   closeDetails();
   showToast('Comanda finalizada com sucesso!', 'success');
