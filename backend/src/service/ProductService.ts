@@ -199,6 +199,7 @@ export class ProductService {
 
         await ensureBucketExists(bucketName)
 
+
         const imageKey = generateUniqueImageKey(product.image);
 
         try {

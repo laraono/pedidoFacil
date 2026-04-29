@@ -141,11 +141,11 @@ export class CategoryService {
     }
 
     async saveImage(category: CreateCategory, name: string) {
+        if(!category.image) return ''
+
         const bucketName = name.toLocaleLowerCase()
 
         await ensureBucketExists(bucketName)
-
-        if(!category.image) return ''
 
         try {
             const imageKey = generateUniqueImageKey(category.image);

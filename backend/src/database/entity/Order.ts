@@ -81,7 +81,8 @@ export class Order {
         type: "decimal",
         precision: 10,
         scale: 2,
-        nullable: false
+        nullable: false,
+        default: 0
     })
     total: number
 

@@ -21,7 +21,8 @@ export class ProductController {
     }
 
     async listProducts(req: Request, res: Response) {
-        const products = await this.productService.listProducts(req.body)
+        const { estabelecimento: establishmentId } = (req as any).usuario
+        const products = await this.productService.listProducts({ establishmentId })
 
         res.status(200).send(products)
     }

@@ -61,7 +61,8 @@ export class OrderService {
                 status: createOrder.status,
                 comanda,
                 establishment,
-                serviceType: ServiceType.AUTOATENDIMENTO
+                serviceType: ServiceType.AUTOATENDIMENTO,
+                total: 0
             });
 
             const total = await this.saveItens(createOrder.itens, order, transactionalEntityManager);

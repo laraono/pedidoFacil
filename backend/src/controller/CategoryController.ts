@@ -20,8 +20,9 @@ export class CategoryController {
     }
 
     async listCategories(req: Request, res: Response) {
-        const categories = await this.categoryService.listCategories(req.body)
-        
+        const { estabelecimento: establishmentId } = (req as any).usuario
+        const categories = await this.categoryService.listCategories({ establishmentId })
+
         res.status(200).send(categories)
     }
 

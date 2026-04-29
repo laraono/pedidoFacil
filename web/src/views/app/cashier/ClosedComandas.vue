@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import SubscriptionGuard from '@/components/SubscriptionGuard.vue';
 import {
@@ -12,17 +12,21 @@ const router = useRouter();
 
 const search = ref('');
 const expandedId = ref(null);
+const allComandas = ref([]);
 
-const filtered = computed(async () => {
+onMounted(async () => {
+  allComandas.value = await comandaApi.listClosed();
+});
+
+const filtered = computed(() => {
   const q = search.value.toLowerCase();
-  const comandas = await comandaApi.listClosed()
-  return comandas
+  return allComandas.value
     .slice()
     .reverse()
     .filter(c =>
       !q ||
       String(c.id).includes(q) ||
-      c.orders?.some(o => o.items?.some(i => i.name?.toLowerCase().includes(q)))
+      c.orders?.some(o => o.productOrders?.some(i => i.product?.name?.toLowerCase().includes(q)))
     );
 });
 

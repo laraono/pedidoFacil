@@ -4,8 +4,8 @@ export const productApi = {
     post: async (product, productVariations, image) =>{
         const formData = new FormData()
 
-        formData.append('product', JSON.stringify(JSON.stringify(product)));
-        formData.append('productVariations', JSON.stringify(JSON.stringify(productVariations)));
+        formData.append('product', JSON.stringify(product));
+        formData.append('productVariations', JSON.stringify(productVariations));
         
         if (image) {
             if (image) formData.append('image', image);

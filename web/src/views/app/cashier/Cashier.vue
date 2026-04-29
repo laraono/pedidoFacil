@@ -27,7 +27,7 @@
         </header>
 
         <div class="flex-grow p-6 md:p-8 overflow-y-auto custom-scrollbar">
-          <div v-if="comandas.comandas.length === 0" class="flex flex-col items-center justify-center h-full text-[#757575] opacity-40 min-h-[200px]">
+          <div v-if="comandas.length === 0" class="flex flex-col items-center justify-center h-full text-[#757575] opacity-40 min-h-[200px]">
             <FileText :size="48" class="mb-4" />
             <p class="font-black uppercase tracking-widest text-sm">Nenhuma comanda ativa</p>
           </div>
@@ -40,7 +40,7 @@
                   <span class="text-[#757575] text-[10px] font-black uppercase tracking-widest block mb-1">Comanda</span>
                   <span class="font-black text-[#212121] text-xl tracking-tighter group-hover:text-blue-400 transition-colors">{{ comanda.label || '#' + comanda.id }}</span>
                 </div>
-                <span class="text-accent font-black text-lg tracking-tighter">R$ {{ comanda.total.toFixed(2) }}</span>
+                <span class="text-accent font-black text-lg tracking-tighter">R$ {{ Number(comanda.total).toFixed(2) }}</span>
               </div>
               <div class="flex items-center gap-2 text-[10px] font-bold text-[#757575] uppercase tracking-wider bg-page/40 p-3 rounded border border-[#E0E0E0]">
                 <Receipt :size="14" class="text-blue-500" />
@@ -103,7 +103,7 @@
                 </div>
               </div>
               <div class="text-right font-black text-[#212121] text-sm mt-3 pt-3 border-t border-[#E0E0E0] border-dashed">
-                Total Pedido: <span class="text-blue-400 ml-2">R$ {{ order.total.toFixed(2) }}</span>
+                Total Pedido: <span class="text-blue-400 ml-2">R$ {{ Number(order.total).toFixed(2) }}</span>
               </div>
             </div>
           </div>
@@ -495,7 +495,7 @@ const ordersWithStatus = computed(() => {
 
 const hasPreparing = computed(() => ordersWithStatus.value.some(o => o.status === 'Em_Preparo'));
 const hasPending = computed(() => ordersWithStatus.value.some(o => o.status === 'Aguardando_Preparo'));
-const subtotal = computed(() => selectedComanda.value?.total || 0);
+const subtotal = computed(() => Number(selectedComanda.value?.total) || 0);
 
 const totalWithDiscount = computed(() => {
   const sub = subtotal.value;
@@ -635,7 +635,7 @@ async function confirmRules(confirm) {
       await orderApi.putStatus(selectedComanda.value.id, order.id, 'Finalizado')
       selectedComanda.value.orders = selectedComanda.value.orders.filter(o => o.id !== order.id);
     });
-    selectedComanda.value.total = selectedComanda.value.orders.reduce((sum, o) => sum + o.total, 0);
+    selectedComanda.value.total = selectedComanda.value.orders.reduce((sum, o) => sum + Number(o.total), 0);
   }
   showRulesModal.value = false;
   startPaymentFlow();
@@ -694,7 +694,7 @@ async function finishPaymentFlow() {
     status: 'Fechada',
     paymentDetails: { discountType: discountType.value, discountValue: discountValue.value, coupon: appliedCoupon.value ? appliedCoupon.value.code : null, couponDiscount: couponDiscount.value, payments: pendingPayments.value },
   };
-  await comandaApi.putStatus(selectComanda.value.id, 'Fechada')
+  await comandaApi.putStatus(selectedComanda.value.id, 'Fechada')
   paymentFlowActive.value = false;
   closeDetails();
   showToast('Comanda finalizada com sucesso!', 'success');
