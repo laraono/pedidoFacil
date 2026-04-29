@@ -23,7 +23,14 @@ receiptRouter.delete(
   '/:id',
   authenticate,
   checkPermission('RECEIPTS_MANAGE', 'ALL'),
-  receiptController.delete,
+  receiptController.cancel,
+);
+
+receiptRouter.post(
+  '/:id/reissue',
+  authenticate,
+  checkPermission('RECEIPTS_MANAGE', 'ALL'),
+  receiptController.reissue,
 );
 
 export { receiptRouter };

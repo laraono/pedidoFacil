@@ -19,10 +19,17 @@ export class ReceiptController {
         return res.json(receipts);
     });
 
-    delete = catchAsync(async (req: Request, res: Response) => {
+    cancel = catchAsync(async (req: Request, res: Response) => {
         const establishmentId = (req as any).usuario.estabelecimento;
         const { id } = req.params;
         await this.receiptService.cancelReceipt(Number(id), establishmentId);
         return res.status(204).send();
+    });
+
+    reissue = catchAsync(async (req: Request, res: Response) => {
+        const establishmentId = (req as any).usuario.estabelecimento;
+        const { id } = req.params;
+        const receipt = await this.receiptService.reissueReceipt(Number(id), establishmentId);
+        return res.json(receipt);
     });
 }

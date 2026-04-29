@@ -17,7 +17,7 @@ export class Receipt {
     @PrimaryGeneratedColumn({ name: 'ID_Nota' })
     id: number;
 
-    @Column({ type: 'varchar', name: 'Numero_Nota', length: 50 })
+    @Column({ type: 'varchar', name: 'Numero_Nota', length: 50, nullable: true })
     receiptNumber: string;
 
     @Column({ type: 'varchar', name: 'CPF_CNPJ_Cliente', nullable: true, length: 18 })
@@ -26,13 +26,25 @@ export class Receipt {
     @Column({
         type: 'enum',
         enum: ReceiptStatus,
-        default: ReceiptStatus.AUTORIZADA,
+        default: ReceiptStatus.PENDENTE,
         name: 'Status'
     })
     status: ReceiptStatus;
 
     @Column({ type: 'decimal', precision: 10, scale: 2, name: 'Valor_Total' })
     totalValue: number;
+
+    @Column({ type: 'varchar', name: 'Codigo_Retorno', nullable: true, length: 10 })
+    codigoRetorno: string;
+
+    @Column({ type: 'text', name: 'Mensagem_Retorno', nullable: true })
+    mensagemRetorno: string;
+
+    @Column({ type: 'varchar', name: 'URL_DANFE', nullable: true, length: 500 })
+    urlDanfe: string;
+
+    @Column({ type: 'varchar', name: 'ID_NF_Provider', nullable: true, length: 100 })
+    providerNfId: string;
 
     @CreateDateColumn({ name: 'Data_Emissao' })
     createdAt: Date;
