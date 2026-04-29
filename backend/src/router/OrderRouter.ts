@@ -1,12 +1,14 @@
 import express, { Request, Response } from 'express';
 import { orderController } from '../controller';
 import { validateCancelOrders, validateCreateOrder, validateListOrders } from '../validator';
-import { catchAsync } from '../middleware';
+import { catchAsync, subscriptionMiddleware } from '../middleware';
 const authenticate = require('../middleware/authenticate');
 const tenant = require('../middleware/tenant');
 const roleAccessControl = require('../middleware/roleAccessControl');
 
 export const orderRouter = express.Router();
+
+orderRouter.use(subscriptionMiddleware)
 
 orderRouter.post(
 	'/commands/:comandaId/orders',

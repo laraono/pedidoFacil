@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import authenticate from '../middleware/authenticate';
 import { paymentController } from '../controller';
+import { subscriptionMiddleware } from '../middleware';
 
 const paymentRouter = Router();
+
+paymentRouter.use(subscriptionMiddleware)
 
 paymentRouter.get('/', authenticate, paymentController.listPayments);
 paymentRouter.get('/:paymentId', authenticate, paymentController.getPaymentDetails);

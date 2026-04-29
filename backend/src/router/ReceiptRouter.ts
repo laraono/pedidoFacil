@@ -2,8 +2,11 @@ import { Router } from 'express';
 import { receiptController } from '../controller';
 import authenticate from '../middleware/authenticate';
 import { checkPermission } from '../middleware/roleAccessControl';
+import { subscriptionMiddleware } from '../middleware';
 
 const receiptRouter = Router();
+
+receiptRouter.use(subscriptionMiddleware)
 
 receiptRouter.post(
   '/',

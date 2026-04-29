@@ -2,13 +2,15 @@ import express, { Request, Response } from 'express';
 import multer from 'multer';
 import { productController } from '../controller';
 import { validateCreateProduct, validateDeleteProduct, validateListProducts, validateListProductsByCategories, validateUpdateProduct } from '../validator/product';
-import { catchAsync } from '../middleware';
+import { catchAsync, subscriptionMiddleware } from '../middleware';
 const authenticate = require('../middleware/authenticate');
 const tenant = require('../middleware/tenant');
 const roleAccessControl = require('../middleware/roleAccessControl');
 
 export const productRouter = express.Router();
 const upload = multer()
+
+productRouter.use(subscriptionMiddleware)
 
 productRouter.post('/products', authenticate, roleAccessControl.checkPermission('CARDAPIO'), upload.single('image'), validateCreateProduct, catchAsync((req: Request, res: Response) => productController.createProduct(req, res)));
 
