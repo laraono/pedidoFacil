@@ -41,9 +41,12 @@ export interface KitchenOrder {
 export const useKitchenStore = defineStore('kitchen', () => {
   const orders = ref<KitchenOrder[]>([]);
 
-  const pendingOrders = computed(() => orders.value.filter(o => o.status === 'pending'));
-  const preparingOrders = computed(() => orders.value.filter(o => o.status === 'preparing'));
-  const readyOrders = computed(() => orders.value.filter(o => o.status === 'ready'));
+    function initKitchenSocket(onNewOrder) {
+        connectSocket('kitchen');
+        const socket = getSocket();
+
+        socket.on('new_order', (data) => {
+            console.log('[Kitchen Socket] Novo pedido recebido:', data);
 
   async function fetchOrders() {
     try {
