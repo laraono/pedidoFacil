@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import { useMenuStore } from "@/stores/productsManagement.js";
 import { useToast } from "@/composables/useToast";
@@ -354,7 +354,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
               :placeholder="bulkPriceType === 'percent' ? '0' : '0,00'"
               class="py-2.5 px-4 pr-10 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] text-sm focus:outline-none focus:border-primary/50 transition-all w-32"
             />
-            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-[#757575] pointer-events-none">
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-[#757575] pointer-none">
               {{ bulkPriceType === 'percent' ? '%' : 'R$' }}
             </span>
           </div>

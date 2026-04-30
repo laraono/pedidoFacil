@@ -117,10 +117,8 @@ const save = async () => {
     if (data?.errors && Array.isArray(data.errors)) {
       data.errors.forEach((err) => {
         let field = err.campo.replace("body.", "");
-        
         errors.value[field] = err.mensagem;
       });
-      
       showToast("Verifique os campos destacados em vermelho.", "error"); 
     } else {
       showToast(data?.message || "Erro ao salvar cupom.", "error"); 
@@ -129,6 +127,7 @@ const save = async () => {
     isLoading.value = false; 
   }
 };
+
 const toggleActive = (c) => {
   store.updateCoupon({ ...c, active: !c.active });
   showToast(c.active !== false ? `${c.code} desativado.` : `${c.code} ativado.`, 'success');

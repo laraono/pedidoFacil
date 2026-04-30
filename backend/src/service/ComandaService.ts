@@ -7,7 +7,6 @@ import { ReceiptService } from './ReceiptService';
 import { CreateComandaDTO } from '../dto/comanda/CreateComandaDTO';
 import { CancelComandaDTO } from '../dto/comanda/CancelComandaDTO';
 
-
 export class ComandaService {
   constructor(
     private dataSource: DataSource,
@@ -26,14 +25,15 @@ export class ComandaService {
     const novaComanda = this.comandaRepository.create({
       ...comandaData,
       status: ComandaStatus.ABERTA,
-      total: 0, 
+      total: 0,
     } as Partial<Comanda>);
 
     return await this.comandaRepository.save(novaComanda);
   }
 
-  async listComandas(): Promise<Comanda[]> {
+  async listComandas(establishmentId: number): Promise<Comanda[]> {
     return await this.comandaRepository.find({
+      where: { establishment: { id: establishmentId } }, 
       relations: [
         'pedidos',
         'pedidos.productOrders',
@@ -42,9 +42,9 @@ export class ComandaService {
     });
   }
 
-  async listComandasByStatus(status: ComandaStatus): Promise<Comanda[]> {
+  async listComandasByStatus(status: ComandaStatus, establishmentId: number): Promise<Comanda[]> {
     return await this.comandaRepository.find({
-      where: { status },
+      where: { status, establishment: { id: establishmentId } }, 
       relations: [
         'pedidos',
         'pedidos.productOrders',

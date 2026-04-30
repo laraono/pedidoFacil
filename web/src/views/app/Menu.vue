@@ -1177,7 +1177,6 @@ watch(() => route.query.editMode, checkEditMode);
   border-radius: 10px;
 }
 
-/* Placeholder dinâmico via CSS var --ph injetada pelo :style */
 .adaptive-placeholder::placeholder {
   color: var(--ph, rgba(0, 0, 0, 0.35));
 }
@@ -1209,4 +1208,4 @@ watch(() => route.query.editMode, checkEditMode);
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out forwards;
 }
-</style>
+</style>```

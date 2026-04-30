@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Animated,
   Image,
+  StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -14,6 +15,9 @@ import { useTheme } from "../contexts/ThemeContext";
 
 import imgLogo from "../../assets/logo.png";
 import patternOndas from "../../assets/ondas.png";
+import Colors from "../constants/Colors";
+
+const C = Colors.dark;
 
 export default function WelcomeScreen() {
   const { theme } = useTheme();
@@ -49,6 +53,12 @@ export default function WelcomeScreen() {
       activeOpacity={1}
       onPress={handleStart}
     >
+      {/* StatusBar mantido da feature-104 */}
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor={theme.fundoGeral || C.background} 
+      />
+      
       <Image
         source={patternOndas}
         style={styles.backgroundPattern}
@@ -72,7 +82,6 @@ export default function WelcomeScreen() {
           <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit>
             Peça aqui e{"\n"}evite filas
           </Text>
-
           <Text style={styles.subtitle}>Rápido, fácil e do seu jeito.</Text>
         </View>
 
@@ -87,7 +96,7 @@ export default function WelcomeScreen() {
             <Feather
               name="arrow-right"
               size={24}
-              color={theme.textoBotoes}
+              color={theme.textoBotoes || "#FFFFFF"}
               style={styles.pointerIcon}
             />
           </Animated.View>
@@ -101,7 +110,7 @@ const getStyles = (theme) =>
   StyleSheet.create({
     fullScreenBtn: {
       flex: 1,
-      backgroundColor: theme.fundoGeral,
+      backgroundColor: theme.fundoGeral || C.background,
     },
     backgroundPattern: {
       position: "absolute",
@@ -138,7 +147,7 @@ const getStyles = (theme) =>
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 3,
-      borderColor: theme.borda,
+      borderColor: theme.borda || 'rgba(255, 255, 255, 0.1)',
       elevation: 15,
       shadowColor: "#000",
       shadowOffset: { width: 0, height: 6 },
@@ -152,7 +161,7 @@ const getStyles = (theme) =>
     title: {
       fontSize: 42,
       fontWeight: "900",
-      color: theme.corTextoPrincipal,
+      color: theme.corTextoPrincipal || C.text,
       textAlign: "center",
       marginBottom: 16,
       letterSpacing: -1.5,
@@ -161,14 +170,14 @@ const getStyles = (theme) =>
     subtitle: {
       fontSize: 20,
       fontWeight: "700",
-      color: theme.textoSecundario,
+      color: theme.textoSecundario || C.textMuted,
       textAlign: "center",
     },
     touchIndicator: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.corBotoes,
+      backgroundColor: theme.corBotoes || C.tint,
       width: "100%",
       maxWidth: 350,
       paddingVertical: 20,
@@ -185,7 +194,7 @@ const getStyles = (theme) =>
     touchText: {
       fontSize: 20,
       fontWeight: "900",
-      color: theme.textoBotoes,
+      color: theme.textoBotoes || "#FFFFFF",
       textTransform: "uppercase",
       letterSpacing: 1,
     },

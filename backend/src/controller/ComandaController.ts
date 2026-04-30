@@ -31,13 +31,15 @@ export class ComandaController {
     }
 
     async listComandas(req: Request, res: Response) {
-        const comandas = await this.comandaService.listComandas()
-        res.status(200).send(comandas)
+        const estabelecimentoId = (req as any).usuario.estabelecimento; 
+        const comandas = await this.comandaService.listComandas(estabelecimentoId);
+        res.status(200).send(comandas);
     }
 
     async listComandasByStatus(req: Request, res: Response) {
+        const estabelecimentoId = (req as any).usuario.estabelecimento; 
         const { status } = req.query;
-        const comandas = await this.comandaService.listComandasByStatus(status as any);
+        const comandas = await this.comandaService.listComandasByStatus(status as any, estabelecimentoId);
         res.status(200).send(comandas);
     }
     
@@ -74,7 +76,7 @@ export class ComandaController {
             const estabelecimentoId = user.estabelecimento || user.ID_Estabelecimento;
 
             if (!userId || !estabelecimentoId) {
-                console.error("🔥 Token JWT sem ID ou Estabelecimento:", user);
+                console.error("Token JWT sem ID ou Estabelecimento:", user);
                 return res.status(400).json({ error: "Token inválido ou incompleto." });
             }
 

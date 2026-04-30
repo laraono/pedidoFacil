@@ -64,7 +64,6 @@ export class RoleService {
 
         if (!role) throw new AppError('Cargo não encontrado.', 404);
 
-        // Usamos o count nativo do repository
         const usersCount = await this.userRepository.count({
             where: { role: { id: roleId } }
         });

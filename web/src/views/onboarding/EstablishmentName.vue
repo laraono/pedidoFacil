@@ -214,3 +214,9 @@ const handleSubmit = async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+input::placeholder {
+  opacity: 1;
+}
+</style>

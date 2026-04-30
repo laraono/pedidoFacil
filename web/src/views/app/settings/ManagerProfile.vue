@@ -60,7 +60,6 @@ const maskZip = (v) => {
 onMounted(async () => {
   try {
     const data = await profileApi.get();
-    console.log("DADOS QUE CHEGARAM DO BACKEND:", data);
     form.value.fullName = data.name || "";
     form.value.email = data.email || "";
     form.value.cpf = data.cpf ? maskCPF(data.cpf) : "";
@@ -104,7 +103,9 @@ const saveProfile = async () => {
     showToast("Corrija os erros antes de salvar.", "error");
     return;
   }
+
   isLoadingProfile.value = true;
+
   try {
     const payload = {
       name: form.value.fullName,
@@ -116,6 +117,7 @@ const saveProfile = async () => {
       state: form.value.state,
       zip: form.value.zip ? form.value.zip.replace(/\D/g, "") : "",
     };
+
     const updatedUser = await profileApi.update(payload);
     authStore.user.name = updatedUser.name;
     authStore.user.email = updatedUser.email;
@@ -142,7 +144,9 @@ const savePassword = async () => {
     showToast("Corrija os erros no formulário de senha.", "error");
     return;
   }
+
   isLoadingPassword.value = true;
+
   try {
     await profileApi.changePassword({
       oldPassword: passwordForm.value.oldPassword,
@@ -151,7 +155,6 @@ const savePassword = async () => {
     showToast("Senha alterada com sucesso!", "success");
     passwordForm.value = { oldPassword: "", newPassword: "", confirmPassword: "" };
   } catch (error) {
-    // 🔥 Captura Robusta de Erros Zod
     const data = error.response?.data || error.data || error;
     if (data?.errors && Array.isArray(data.errors)) {
       data.errors.forEach((err) => {

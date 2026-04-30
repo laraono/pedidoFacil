@@ -20,17 +20,28 @@ export default function ProductModal({ visible, product, onClose, onConfirm }) {
   const [observation, setObservation] = useState("");
   const [selectedSize, setSelectedSize] = useState(null);
 
+  const variations = product?.productVariations || product?.sizes || [];
+  const isSingleSize = variations.length === 0;
+
   useEffect(() => {
     if (visible && product) {
       setQuantity(1);
       setObservation("");
-      setSelectedSize(product.sizes?.length > 0 ? product.sizes[0] : null);
+
+      if (variations.length > 0) {
+        setSelectedSize(null);
+      } else {
+        const price = Number(product.basePrice || product.price || 0);
+        setSelectedSize({ name: "Único", price: price });
+      }
     }
   }, [visible, product]);
 
   if (!product) return null;
 
-  const currentTotal = selectedSize ? selectedSize.price * quantity : 0;
+  const currentTotal = selectedSize
+    ? Number(selectedSize.price || selectedSize.Preco_Adicional || 0) * quantity
+    : 0;
 
   const handleAdd = () => {
     if (!selectedSize) return;
@@ -61,19 +72,29 @@ export default function ProductModal({ visible, product, onClose, onConfirm }) {
           >
             {product.image && (
               <Image
-                source={product.image}
+                source={
+                  typeof product.image === "string"
+                    ? { uri: product.image }
+                    : product.image
+                }
                 style={styles.productImage}
                 resizeMode="cover"
               />
             )}
 
-            <Text style={styles.description}>{product.description}</Text>
+            {product.description ? (
+              <Text style={styles.description}>{product.description}</Text>
+            ) : null}
 
-            {product.sizes && product.sizes.length > 0 && (
+            {!isSingleSize && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Escolha o Tamanho</Text>
-                {product.sizes.map((size, index) => {
+                {variations.map((size, index) => {
                   const isSelected = selectedSize?.name === size.name;
+                  const priceValue = Number(
+                    size.Preco_Adicional || size.addPrice || size.price || 0,
+                  );
+
                   return (
                     <TouchableOpacity
                       key={index}
@@ -81,8 +102,9 @@ export default function ProductModal({ visible, product, onClose, onConfirm }) {
                         styles.sizeOption,
                         isSelected && styles.sizeOptionSelected,
                       ]}
-                      onPress={() => setSelectedSize(size)}
-                      activeOpacity={0.7}
+                      onPress={() =>
+                        setSelectedSize({ ...size, price: priceValue })
+                      }
                     >
                       <View style={styles.radioContainer}>
                         <View
@@ -101,7 +123,7 @@ export default function ProductModal({ visible, product, onClose, onConfirm }) {
                           isSelected && styles.sizePriceSelected,
                         ]}
                       >
-                        R$ {size.price.toFixed(2)}
+                        R$ {priceValue.toFixed(2).replace(".", ",")}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -109,18 +131,20 @@ export default function ProductModal({ visible, product, onClose, onConfirm }) {
               </View>
             )}
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Alguma observação?</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Ex: Tirar cebola, sem gelo..."
-                placeholderTextColor={theme.textoSecundario}
-                value={observation}
-                onChangeText={setObservation}
-                multiline
-                maxLength={100}
-              />
-            </View>
+            {/* 🔥 OBSERVAÇÃO CONDICIONAL */}
+            {theme.permitirObservacoes && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Alguma observação?</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ex: Tirar cebola, sem gelo..."
+                  placeholderTextColor="#999"
+                  value={observation}
+                  onChangeText={setObservation}
+                  multiline
+                />
+              </View>
+            )}
 
             <View style={styles.quantityContainer}>
               <Text style={styles.quantityLabel}>Quantidade</Text>
@@ -159,9 +183,11 @@ export default function ProductModal({ visible, product, onClose, onConfirm }) {
               <Text style={styles.addBtnText}>
                 {selectedSize ? "Adicionar" : "Selecione um tamanho"}
               </Text>
-              <Text style={styles.addBtnPrice}>
-                R$ {currentTotal.toFixed(2)}
-              </Text>
+              {selectedSize && (
+                <Text style={styles.addBtnPrice}>
+                  R$ {currentTotal.toFixed(2).replace(".", ",")}
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -176,12 +202,9 @@ const getStyles = (theme) =>
       flex: 1,
       backgroundColor: "rgba(0,0,0,0.6)",
       justifyContent: "flex-end",
-      alignItems: "center",
     },
     content: {
       backgroundColor: theme.fundoProdutos,
-      width: "100%",
-      maxWidth: 600,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       maxHeight: "90%",
@@ -189,22 +212,12 @@ const getStyles = (theme) =>
     header: {
       flexDirection: "row",
       justifyContent: "space-between",
-      alignItems: "center",
       padding: 20,
       borderBottomWidth: 1,
       borderBottomColor: theme.borda,
     },
-    title: {
-      fontSize: 24,
-      fontWeight: "900",
-      color: theme.corTextoPrincipal,
-      flex: 1,
-    },
-    closeBtn: {
-      padding: 8,
-      backgroundColor: theme.fundoGeral,
-      borderRadius: 8,
-    },
+    title: { fontSize: 22, fontWeight: "900", color: theme.corTextoPrincipal },
+    closeBtn: { padding: 8 },
     scrollArea: { padding: 20 },
     productImage: {
       width: "100%",
@@ -215,43 +228,39 @@ const getStyles = (theme) =>
     description: {
       fontSize: 16,
       color: theme.textoSecundario,
-      lineHeight: 24,
-      marginBottom: 24,
+      marginBottom: 20,
     },
     section: { marginBottom: 24 },
     sectionTitle: {
       fontSize: 14,
       fontWeight: "900",
-      textTransform: "uppercase",
       color: theme.textoSecundario,
-      letterSpacing: 1,
       marginBottom: 12,
+      textTransform: "uppercase",
     },
     sizeOption: {
       flexDirection: "row",
       justifyContent: "space-between",
-      alignItems: "center",
       padding: 16,
       borderWidth: 1,
       borderColor: theme.borda,
       borderRadius: 12,
       marginBottom: 8,
-      backgroundColor: theme.fundoGeral,
     },
     sizeOptionSelected: {
       borderColor: theme.corBotoes,
-      backgroundColor: `${theme.corBotoes}15`,
+      backgroundColor: theme.corBotoes + "10",
     },
     radioContainer: { flexDirection: "row", alignItems: "center" },
     radioOuter: {
-      width: 22,
-      height: 22,
-      borderRadius: 11,
+      width: 20,
+      height: 20,
+      borderRadius: 10,
       borderWidth: 2,
-      borderColor: theme.textoSecundario,
+      borderColor: theme.borda,
+      marginRight: 10,
       justifyContent: "center",
       alignItems: "center",
-      marginRight: 12,
     },
     radioOuterSelected: { borderColor: theme.corBotoes },
     radioInner: {
@@ -273,11 +282,8 @@ const getStyles = (theme) =>
     sizePriceSelected: { color: theme.corBotoes },
     input: {
       backgroundColor: theme.fundoGeral,
-      borderWidth: 1,
-      borderColor: theme.borda,
       borderRadius: 12,
-      padding: 16,
-      fontSize: 16,
+      padding: 15,
       color: theme.corTextoPrincipal,
       minHeight: 80,
       textAlignVertical: "top",
@@ -286,12 +292,7 @@ const getStyles = (theme) =>
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      padding: 16,
-      backgroundColor: theme.fundoGeral,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: theme.borda,
-      marginBottom: 40,
+      marginBottom: 30,
     },
     quantityLabel: {
       fontSize: 18,
@@ -300,45 +301,28 @@ const getStyles = (theme) =>
     },
     quantityControls: { flexDirection: "row", alignItems: "center" },
     qtyBtn: {
-      width: 44,
-      height: 44,
-      backgroundColor: theme.fundoProdutos,
+      width: 40,
+      height: 40,
+      backgroundColor: theme.fundoGeral,
       borderRadius: 8,
       justifyContent: "center",
       alignItems: "center",
-      elevation: 2,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
     },
     qtyValue: {
       width: 40,
       textAlign: "center",
-      fontSize: 24,
+      fontSize: 20,
       fontWeight: "900",
-      color: theme.corTextoPrincipal,
     },
-    footer: {
-      padding: 20,
-      borderTopWidth: 1,
-      borderTopColor: theme.borda,
-      backgroundColor: theme.fundoProdutos,
-    },
+    footer: { padding: 20, borderTopWidth: 1, borderTopColor: theme.borda },
     addBtn: {
       flexDirection: "row",
       justifyContent: "space-between",
-      alignItems: "center",
       backgroundColor: theme.corBotoes,
       padding: 20,
       borderRadius: 16,
     },
     addBtnDisabled: { backgroundColor: theme.borda },
-    addBtnText: {
-      color: theme.textoBotoes,
-      fontSize: 18,
-      fontWeight: "900",
-      textTransform: "uppercase",
-    },
-    addBtnPrice: { color: theme.textoBotoes, fontSize: 20, fontWeight: "900" },
+    addBtnText: { color: theme.textoBotoes, fontSize: 18, fontWeight: "900" },
+    addBtnPrice: { color: theme.textoBotoes, fontSize: 18, fontWeight: "900" },
   });

@@ -39,7 +39,13 @@ export const establishmentApi = {
       paymentMethods: JSON.stringify(data.paymentMethods || []),
       selfServiceEnabled: data.selfServiceEnabled,
       selfServiceCode: data.selfServiceCode,
+<<<<<<< HEAD
       configurations: data.configurations || {}, 
+=======
+      configurations: {
+        logo: data.logo,
+      },
+>>>>>>> feature-104
     };
 
     return request("/estabelecimento/profile", {
@@ -49,4 +55,8 @@ export const establishmentApi = {
   },
 
   disable: () => request("/estabelecimento/disable", { method: "DELETE" }),
+<<<<<<< HEAD
 };
+=======
+};
+>>>>>>> feature-104

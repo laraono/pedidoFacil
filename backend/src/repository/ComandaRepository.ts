@@ -1,5 +1,5 @@
 import { DataSource, Repository } from "typeorm";
-import { Comanda } from "../database";
+import { Comanda } from "../database/entity/Comanda"; 
 import { CancelComandaParams, CreateComanda } from "../dto";
 import { ComandaStatus } from "../enum";
 
@@ -13,44 +13,50 @@ export class ComandaRepository extends Repository<Comanda>{
         return await this.save(comanda)
     }
 
-    async listComandas() {
-        return await this.find()
+    async listComandas(establishmentId: number) {
+        return await this.find({
+            where: { establishment: { id: establishmentId } }
+        })
     }
 
-    async listComandasByStatus(status: ComandaStatus) {
+    async listComandasByStatus(status: ComandaStatus, establishmentId: number) {
         return await this.find({ 
-            where: { status },
+            where: { 
+                status, 
+                establishment: { id: establishmentId } 
+            },
             relations: ['pedidos', 'pedidos.productOrders', 'pedidos.productOrders.product'] 
         });
     }
 
-    async getComandaByDesc(description: string) {
+    async getComandaByDesc(description: string, establishmentId: number) {
         return await this.find({
             where: {
                 status: ComandaStatus.ABERTA,
-                description
+                description,
+                establishment: { id: establishmentId }
             }
         })
     }
 
-    async getComanda(comandaId: number) {
+    async getComanda(comandaId: number, establishmentId: number) {
         return await this.findOne({
             where: {
-                id: comandaId
+                id: comandaId,
+                establishment: { id: establishmentId }
             }
         })
     }
 
     async updateComandaTotal(comandaId: number, total: number) {
-        await this.update(comandaId, {total})
+        await this.update(comandaId, { total })
     }
 
     async updateComandaStatus(comandaId: number, status: ComandaStatus) {
-        await this.update(comandaId, {status})
+        await this.update(comandaId, { status })
     }
 
     async cancelComanda(comandaId: number, params: CancelComandaParams) {
         await this.update(comandaId, params)
     }
-    
 }
