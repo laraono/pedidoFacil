@@ -1,11 +1,7 @@
 import { z } from 'zod';
-<<<<<<< HEAD
-import { OrderStatus, ServiceType } from '../../enum';
-import { safeString } from '../../utils/safeZod'; 
-=======
 import { Request, Response, NextFunction } from 'express';
 import { OrderStatus, ServiceType } from '../../enum';
->>>>>>> feature-104
+import { safeString } from '../../utils/safeZod'; 
 
 const orderStatusValues = Object.values(OrderStatus) as [string, ...string[]];
 const serviceTypeValues = Object.values(ServiceType) as [string, ...string[]];
@@ -17,19 +13,12 @@ export const createOrderSchema = z.object({
   body: z.object({
     status: z.enum(orderStatusValues),
     serviceType: z.enum(serviceTypeValues),
-<<<<<<< HEAD
     tripPrice: z.coerce.number().positive().optional(),
-    
-=======
-    
-    tripPrice: z.coerce.number().positive().optional(),
->>>>>>> feature-104
     itens: z.array(
       z.object({
         productId: z.coerce.number().int().positive(),
         quantity: z.coerce.number().int().positive(),
         productVariationId: z.coerce.number().int().positive().optional(),
-<<<<<<< HEAD
         observation: safeString(0, 255).optional().nullable()
       }).strict()
     )
@@ -44,12 +33,6 @@ export const updateOrderStatusSchema = z.object({
   body: z.object({
     status: z.enum(orderStatusValues)
   }).strict()
-});
-=======
-        observation: z.string().optional().nullable()
-      })
-    )
-  })
 });
 
 export const validateCreateOrder = (req: Request, res: Response, next: NextFunction) => {
@@ -72,4 +55,3 @@ export const validateCreateOrder = (req: Request, res: Response, next: NextFunct
 
   next();
 };
->>>>>>> feature-104
