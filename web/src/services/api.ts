@@ -4,10 +4,34 @@ export function getToken() {
   return localStorage.getItem("accessToken");
 }
 
-export async function request(path: string, options: RequestInit = {}) {
-  const headers: Record<string, string> = { "Content-Type": "application/json", ...((options.headers as Record<string, string>) || {}) };
-  const token = getToken();
+function isFormDataObj(data: any): data is FormData {
+  if (!data) return false;
+  return (
+    data instanceof FormData ||
+    (data.constructor && data.constructor.name === 'FormData') ||
+    typeof data.append === 'function'
+  );
+}
 
+interface CustomRequestInit extends RequestInit {
+  isMultipart?: boolean;
+}
+
+export async function request(path: string, options: CustomRequestInit = {}) {
+  const isFormData = options.isMultipart === true || isFormDataObj(options.body);
+  
+  const headers: Record<string, string> = { ...((options.headers as Record<string, string>) || {}) };
+  
+  if (options.body) {
+    if (isFormData) {
+      delete headers["Content-Type"];
+    } else if (typeof options.body === 'object' && !(options.body instanceof Blob)) {
+      headers["Content-Type"] = "application/json";
+      options.body = JSON.stringify(options.body); 
+    }
+  }
+
+  const token = getToken();
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -33,6 +57,7 @@ export async function request(path: string, options: RequestInit = {}) {
       localStorage.setItem("accessToken", refreshed.accessToken);
 
       headers["Authorization"] = `Bearer ${refreshed.accessToken}`;
+      
       const retry = await fetch(`${BASE_URL}${path}`, {
         ...options,
         headers,

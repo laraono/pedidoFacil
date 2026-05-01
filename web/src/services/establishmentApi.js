@@ -4,13 +4,13 @@ export const establishmentApi = {
   saveOnboardingStep: (data) =>
     request("/estabelecimento/onboarding", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: data, 
     }),
 
   finalizeOnboarding: (data) =>
     request("/estabelecimento/onboarding/finalize", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: data, 
     }),
 
   getProfile: async () => {
@@ -33,21 +33,9 @@ export const establishmentApi = {
   },
 
   updateProfile: (data) => {
-    const payload = {
-      name: data.name,
-      cnpj: data.cnpj,
-      phone: data.phone,
-      paymentMethods: data.paymentMethods || [],
-      selfServiceEnabled: data.selfServiceEnabled,
-      selfServiceCode: data.selfServiceCode,
-      configurations: data.configurations || {
-        logo: data.logo || null,
-      },
-    };
-
     return request("/estabelecimento/profile", {
       method: "PUT",
-      body: JSON.stringify(payload),
+      body: data, 
     });
   },
 

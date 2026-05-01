@@ -5,9 +5,11 @@ import { checkPermission } from '../middleware/roleAccessControl';
 import { establishmentService } from '../service'; 
 import { 
     validateSaveOnboarding, 
-    validateFinalizeOnboarding, 
-    validateUpdateEstablishment 
+    validateFinalizeOnboarding 
 } from '../validator/establishment/establishmentSchema';
+import { validateRequest } from '../middleware/validateRequest';
+import { UpdateEstablishmentDTO } from '../dto/establishment/UpdateEstablishmentDTO';
+import { validateUpload } from '../middleware/validateUpload';
 
 const establishmentRouter = Router();
 const establishmentController = new EstablishmentController(establishmentService);
@@ -42,8 +44,9 @@ establishmentRouter.put(
   '/profile',
   authenticate,
   checkPermission('ESTABELECIMENTO_EDIT', 'ALL'),
-  validateUpdateEstablishment,
-  establishmentController.update
+  validateUpload.single('logo'),   
+  validateRequest(UpdateEstablishmentDTO), 
+  establishmentController.update   
 );
 
 establishmentRouter.delete(

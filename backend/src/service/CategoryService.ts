@@ -1,6 +1,5 @@
-import { Category } from "../database/entity/Category"; 
-import { CreateCategoryDTO } from "../dto/category/CreateCategoryDTO"; 
 import { CategoryRepository } from "../repository/CategoryRepository";
+import { CreateCategoryDTO } from "../dto/category/CreateCategoryDTO"; 
 
 export class CategoryService {
     private categoryRepository: CategoryRepository
@@ -27,10 +26,16 @@ export class CategoryService {
     }
 
     async updateCategory(categoryId: number, data: any) {
-        await this.categoryRepository.updateCategory(categoryId, { 
-            name: data.name, 
-            image: data.image 
-        });
+        const updateData: any = {};
+
+        if (data.name !== undefined) updateData.name = data.name;
+        if (data.image !== undefined) updateData.image = data.image;
+
+        if (Object.keys(updateData).length === 0) {
+            return; 
+        }
+
+        await this.categoryRepository.updateCategory(categoryId, updateData);
     }
 
     async softDeleteCategory(categoryId: number) {
