@@ -8,13 +8,14 @@ export const establishmentApi = {
     }),
 
   finalizeOnboarding: (data) =>
-    request("/estabelecimento/finalize", {
+    request("/estabelecimento/onboarding/finalize", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
   getProfile: async () => {
     const data = await request("/estabelecimento/profile", { method: "GET" });
+    
     return {
       ...data,
       paymentMethods:
@@ -36,16 +37,12 @@ export const establishmentApi = {
       name: data.name,
       cnpj: data.cnpj,
       phone: data.phone,
-      paymentMethods: JSON.stringify(data.paymentMethods || []),
+      paymentMethods: data.paymentMethods || [],
       selfServiceEnabled: data.selfServiceEnabled,
       selfServiceCode: data.selfServiceCode,
-<<<<<<< HEAD
-      configurations: data.configurations || {}, 
-=======
-      configurations: {
-        logo: data.logo,
+      configurations: data.configurations || {
+        logo: data.logo || null,
       },
->>>>>>> feature-104
     };
 
     return request("/estabelecimento/profile", {
@@ -55,8 +52,4 @@ export const establishmentApi = {
   },
 
   disable: () => request("/estabelecimento/disable", { method: "DELETE" }),
-<<<<<<< HEAD
 };
-=======
-};
->>>>>>> feature-104

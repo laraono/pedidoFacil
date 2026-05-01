@@ -9,9 +9,6 @@ export class MetricsService {
         private dataSource: DataSource 
     ) {}
 
-    // =========================================================================
-    // 1. MÉTRICAS DE NOTAS FISCAIS / RECIBOS
-    // =========================================================================
     async getReceiptMetrics(establishmentId: number, startDate: string, endDate: string) {
         if (!startDate || !endDate) {
             throw new AppError('Parâmetros de data (startDate e endDate) são obrigatórios.', 400);
@@ -65,9 +62,6 @@ export class MetricsService {
         };
     }
 
-    // =========================================================================
-    // 2. MEGA ENDPOINT DO DASHBOARD (VISÃO GERAL, OPERACIONAL E FINANCEIRO)
-    // =========================================================================
     async getDashboardOverview(establishmentId: number, startDate: string, endDate: string, filter: string) {
         if (!startDate || !endDate) {
             throw new AppError('Parâmetros de data são obrigatórios.', 400);
@@ -77,7 +71,6 @@ export class MetricsService {
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999);
 
-        // --- ABA: VISÃO GERAL (KPIs Básicos) ---
         const kpisQuery = await this.dataSource.query(`
             SELECT COUNT(*) as totalComandas, SUM(c.Total) as faturamentoTotal
             FROM COMANDA c
@@ -88,7 +81,6 @@ export class MetricsService {
         const totalComandas = Number(kpisQuery[0].totalComandas || 0);
         const ticketMedio = totalComandas > 0 ? faturamento / totalComandas : 0;
 
-        // --- GRÁFICO DE FATURAMENTO (Com correção do only_full_group_by) ---
         let chartData = [];
         if (filter === '24h') {
             chartData = await this.dataSource.query(`
@@ -108,7 +100,6 @@ export class MetricsService {
             `, [establishmentId, start, end]);
         }
 
-        // --- CANAIS DE VENDA ---
         const channelsQuery = await this.dataSource.query(`
             SELECT p.Tipo_Atendimento as name, COUNT(*) as count
             FROM PEDIDO p INNER JOIN COMANDA c ON p.ID_Comanda = c.ID_Comanda
@@ -123,7 +114,6 @@ export class MetricsService {
             return { name: row.name, value: Math.round(perc), color };
         });
 
-        // --- ABA: OPERACIONAL (Fluxo de Horários) ---
         const peakHoursQuery = await this.dataSource.query(`
             SELECT DATE_FORMAT(Data_Abertura, '%H:00') as hora, COUNT(*) as count
             FROM COMANDA
@@ -134,7 +124,6 @@ export class MetricsService {
         const maxPeak = Math.max(...peakHoursQuery.map((h: any) => Number(h.count)), 1);
         const peakHours = peakHoursQuery.map((h: any) => ({ hora: h.hora, fluxo: Math.round((Number(h.count) / maxPeak) * 100) }));
 
-        // --- ABA: FINANCEIRO (Cancelamentos) ---
         const cancelamentosQuery = await this.dataSource.query(`
             SELECT COALESCE(Cancelamento_Descricao, 'Sem motivo informado') as motivo, COUNT(*) as count 
             FROM PEDIDO p INNER JOIN COMANDA c ON p.ID_Comanda = c.ID_Comanda
@@ -147,17 +136,12 @@ export class MetricsService {
             motivo: c.motivo, count: Number(c.count), color: colors[index % colors.length]
         }));
         const totalCancelados = cancellations.reduce((acc: number, curr: any) => acc + curr.count, 0);
-
-        // =========================================================================
-        // CONSULTAS DE RELACIONAMENTOS (PRODUTOS, CUPONS, USUÁRIOS E PAGAMENTOS)
-        // Usando try/catch para isolar erros e não quebrar a tela inteira
-        // =========================================================================
         
         let topProducts = [];
         try {
             const prodQuery = await this.dataSource.query(`
                 SELECT pr.Nome as nome, c.Nome as categoria, SUM(pp.Quantidade) as qtd, SUM(pp.Quantidade * pp.Preco_Unitario_Momento) as receita
-                FROM ItemPedido pp -- AQUI ESTAVA PEDIDO_PRODUTO, MUDAMOS PARA ItemPedido
+                FROM ItemPedido pp
                 INNER JOIN PEDIDO p ON pp.ID_Pedido = p.ID_Pedido
                 INNER JOIN PRODUTO pr ON pp.ID_Produto = pr.ID_Produto
                 LEFT JOIN CATEGORIA c ON pr.ID_Categoria = c.ID_Categoria
@@ -170,7 +154,7 @@ export class MetricsService {
                 nome: p.nome, categoria: p.categoria || 'Geral', qtd: Number(p.qtd),
                 receita: `R$ ${Number(p.receita).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, margem: '65%' 
             }));
-        } catch (e) { console.log("Aba Produtos: Verifique as tabelas de Itens/Categoria.", e.message); }
+        } catch (e: any) { console.log("Aba Produtos: Verifique as tabelas de Itens/Categoria.", e.message); }
         
         let couponUsage = [];
         try {
@@ -184,7 +168,7 @@ export class MetricsService {
             `, [establishmentId, start, end]);
 
             couponUsage = coupQuery.map((c: any) => ({ code: c.code, type: c.type, discount: Number(c.discount), uses: Number(c.uses) }));
-        } catch (e) { console.log("Aba Cupons: Verifique o nome da tabela no SQL.", e.message); }
+        } catch (e: any) { console.log("Aba Cupons: Verifique o nome da tabela no SQL.", e.message); }
 
         let topWaiters = [];
         try {
@@ -201,9 +185,8 @@ export class MetricsService {
                 id: idx + 1, name: w.name, orders: Number(w.orders),
                 revenue: `R$ ${Number(w.revenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
             }));
-        } catch (e) { console.log("Aba Operacional: Verifique o nome da tabela no SQL.", e.message); }
+        } catch (e: any) { console.log("Aba Operacional: Verifique o nome da tabela no SQL.", e.message); }
 
-        // --- MÉTODOS DE RECEBIMENTO (Lendo da Entidade PAGAMENTO) ---
         let paymentMethods = [];
         try {
             const payQuery = await this.dataSource.query(`
@@ -236,7 +219,7 @@ export class MetricsService {
                     color
                 };
             });
-        } catch (e) { 
+        } catch (e: any) { 
             console.log("Aba Financeira: Erro ao buscar métodos de pagamento.", e.message); 
         }
 

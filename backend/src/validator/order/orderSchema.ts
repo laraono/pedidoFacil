@@ -55,3 +55,24 @@ export const validateCreateOrder = (req: Request, res: Response, next: NextFunct
 
   next();
 };
+
+export const validateUpdateOrderStatus = (req: Request, res: Response, next: NextFunction) => {
+  const result = updateOrderStatusSchema.safeParse({
+    params: req.params,
+    body: req.body
+  });
+
+  if (!result.success) {
+    const formattedErrors = result.error.flatten();
+    
+    return res.status(400).json({
+      message: "Dados inválidos na atualização do status",
+      errors: formattedErrors.fieldErrors
+    });
+  }
+
+  req.params = result.data.params as any;
+  req.body = result.data.body;
+
+  next();
+};
