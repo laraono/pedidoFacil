@@ -9,7 +9,6 @@ const roleRouter = Router();
 const roleController = new RoleController(roleService);
 
 roleRouter.use(authenticate);
-roleRouter.use(subscriptionMiddleware)
 
 roleRouter.get('/', roleController.list);
 roleRouter.post('/', validateRole, roleController.create);

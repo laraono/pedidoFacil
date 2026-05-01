@@ -1,10 +1,10 @@
 
-import { Router } from 'express';
+import express from 'express';
 import authenticate from '../middleware/authenticate';
 import { subscriptionController } from '../controller';
 import { validateCreateSubscription } from '../validator';
 
-const subscriptionRouter = Router();
+const subscriptionRouter = express.Router();
 
 subscriptionRouter.use(authenticate);
 
