@@ -2,8 +2,6 @@ import { request } from "./api";
 
 export const planApi = {
     post: async () => {
-        
-
         await request('/plans', { method: 'POST',  body: formData })
     },
 
@@ -14,7 +12,7 @@ export const planApi = {
         await request(`/plans/${planId}`, {method: 'GET'})
     },      
 
-    deleteCategory: async (categoryId) => 
+    deletePlan: async (planId) => 
         await request(`/plans/${planId}`, {method: 'DELETE'}),
 
 };

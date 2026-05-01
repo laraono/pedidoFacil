@@ -49,7 +49,7 @@ const editPlan = async (plan) => {
   form.value = plan
 };
 
-const savePlanPrices = () => {
+const savePlanPrices = async () => {
    const price = parseFloat(String(priceForm.value).replace(',', '.'));
   if (isNaN(price) || price <= 0) return;
   chosenPlan.value.price = price
