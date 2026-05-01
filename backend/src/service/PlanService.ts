@@ -55,11 +55,20 @@ export class PlanService {
     }
 
     async listPlans() {
-        return await this.planRepository.listPlans()
+        const plans = await this.planRepository.listPlans()
+        
+        for(const plan of plans) {
+            plan.mercadoPagoId = ''
+        }
+
+        return plans
     }
 
     async getPlan(planId: number) {
-        return await this.planRepository.getPlan(planId)
+        const plan = await this.planRepository.getPlan(planId)
+       if(plan) plan.mercadoPagoId = '';
+
+        return plan
     }
 
     async deletePlan(planId: number) {
