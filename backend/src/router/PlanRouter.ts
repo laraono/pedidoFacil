@@ -1,15 +1,13 @@
-import { Router } from 'express';
-import authenticate from '../middleware/authenticate';
+import express from 'express';
 import { planController } from '../controller';
 
-const planRouter = Router();
-
+const planRouter = express.Router();
 
 planRouter.get('/plans', planController.listPlans);
 planRouter.get('/plans/:planId', planController.getPlan);
 planRouter.put('/plans/:planId', planController.updatePlan);
 planRouter.post('/plans', planController.createPlan);
-planRouter.delete('/plans', planController.deletePlan);
+planRouter.delete('/plans/:planId', planController.deletePlan);
 
 
 export { planRouter };
