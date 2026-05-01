@@ -45,6 +45,10 @@ app.use(cookieParser());
 const httpServer = http.createServer(app);
 
 AppDataSource.initialize().then(async () => {
+    app.use('/api/v1', planRouter)
+    app.use('/api/v1/estabelecimento', establishmentRouter)
+    app.use('/api/v1/conta', profileRouter)
+    app.use('/api/v1', configRouter)
     app.use('/api/v1', authRouter)
     app.use('/api/v1', categoryRouter)
     app.use('/api/v1', comandaRouter)
@@ -53,15 +57,11 @@ AppDataSource.initialize().then(async () => {
     
     app.use('/api/v1', menuRouter)
 
-    app.use('/api/v1/estabelecimento', establishmentRouter)
     app.use('/api/v1/metrics', metricsRouter)
     app.use('/api/v1/receipts', receiptRouter)
     app.use('/api/v1/roles', roleRouter)
     app.use('/api/v1/funcionario', employeeRouter)
-    app.use('/api/v1/conta', profileRouter)
     app.use('/api/v1/cupons', couponRouter)
-    app.use('/api/v1', configRouter)
-    app.use('/api/v1', planRouter)
     app.use('/api/v1', subscriptionRouter)
 
     app.use(errorHandler)
