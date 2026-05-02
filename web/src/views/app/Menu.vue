@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { useMenuStore } from "@/stores/menu";
 import { useComandaStore } from "@/stores/comandaManagement";
+import { comandaApi } from "@/services/comandaApi";
 import { request } from "@/services/api";
 import SubscriptionGuard from "@/components/SubscriptionGuard.vue";
 import { useToast } from "@/composables/useToast";
@@ -79,6 +80,12 @@ onMounted(async () => {
   const data = await getEstablishmentMock();
   establishmentName.value = data?.info?.name || "Seu Restaurante";
 
+  await menuStore.loadData();
+  await comandaStore.loadComandas();
+
+  if (productsByCategory.value && productsByCategory.value.length > 0) {
+    activeCategoryId.value = productsByCategory.value[0].id;
+  }
   checkEditMode();
 });
 
@@ -170,6 +177,7 @@ const openComandaModal = () => {
   isComandaModalOpen.value = true;
 };
 
+const confirmAndSendToKitchen = async () => {
 const confirmAndSendToKitchen = async () => {
   if (!selectedComandaId.value) return;
   if (selectedComandaId.value === 'new' && !newComandaNumber.value.trim()) return;
@@ -573,6 +581,39 @@ watch(() => route.query.editMode, checkEditMode);
                   <X :size="24" />
                 </button>
               </div>
+        <Transition
+          enter-active-class="transition duration-300"
+          enter-from-class="opacity-0"
+          leave-active-class="transition duration-200"
+          leave-to-class="opacity-0"
+        >
+          <div
+            v-if="isCartModalOpen"
+            class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          >
+            <div
+              class="w-full sm:max-w-md rounded-t sm:rounded overflow-hidden flex flex-col max-h-[90vh] shadow-2xl animate-slideUp sm:animate-none"
+              :style="{ backgroundColor: cardBg, fontFamily, color: textColor }"
+            >
+              <div
+                class="p-6 flex justify-between items-center shrink-0"
+                :style="{ borderBottom: `1px solid ${adaptiveBorder}` }"
+              >
+                <div class="flex items-center gap-3">
+                  <ShoppingBag :size="28" :style="{ color: buttonColor }" />
+                  <h3 class="font-black text-2xl">Meu Pedido</h3>
+                </div>
+                <button
+                  @click="isCartModalOpen = false"
+                  class="p-2 rounded transition-colors"
+                  :style="{
+                    backgroundColor: adaptiveButtonBg,
+                    color: textColor,
+                  }"
+                >
+                  <X :size="24" />
+                </button>
+              </div>
 
             <div class="p-4 overflow-y-auto custom-scrollbar flex-1" :style="{ backgroundColor: adaptiveSubtleBg }">
               <div class="space-y-3">
@@ -717,21 +758,37 @@ watch(() => route.query.editMode, checkEditMode);
 
             </div>
 
-            <div class="p-5 shrink-0" :style="{ borderTop: `1px solid ${adaptiveBorder}` }">
-              <button
-                @click="confirmAndSendToKitchen"
-                :disabled="!selectedComandaId || (selectedComandaId === 'new' && !newComandaNumber.trim())"
-                :style="{ backgroundColor: buttonColor, color: buttonTextColor }"
-                class="w-full py-5 font-black rounded shadow-xl transition-transform active:scale-95 flex justify-center items-center gap-2 text-lg disabled:opacity-40 disabled:cursor-not-allowed"
+              <div
+                class="p-5 shrink-0"
+                :style="{ borderTop: `1px solid ${adaptiveBorder}` }"
               >
-                <ChefHat :size="20" /> Confirmar e Enviar
-              </button>
+                <button
+                  @click="confirmAndSendToKitchen"
+                  :disabled="
+                    !selectedComandaId ||
+                    (selectedComandaId === 'new' && !newComandaNumber.trim()) ||
+                    isSubmitting
+                  "
+                  :style="{
+                    backgroundColor: buttonColor,
+                    color: buttonTextColor,
+                  }"
+                  class="w-full py-5 font-black rounded shadow-xl transition-transform active:scale-95 flex justify-center items-center gap-2 text-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChefHat v-if="!isSubmitting" :size="20" />
+                  <span
+                    v-if="isSubmitting"
+                    class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                  ></span>
+                  <span>{{
+                    isSubmitting ? "Enviando..." : "Confirmar e Enviar"
+                  }}</span>
+                </button>
+              </div>
             </div>
-
           </div>
-        </div>
-      </Transition>
-    </Teleport>
+        </Transition>
+      </Teleport>
 
       <Transition
         appear

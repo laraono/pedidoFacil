@@ -1,9 +1,6 @@
 import { ProductService } from '../service';
 import { Request, Response } from 'express';
 import { getIO } from '../socket'; 
-import { ProductStatus } from '../enum';
-
-//Request<Params, ResBody, ReqBody, ReqQuery, Locals>
 
 export class ProductController {
   private productService: ProductService;
@@ -12,8 +9,14 @@ export class ProductController {
     this.productService = productService;
   }
 
-    async createProduct(req: Request, res: Response) {
-        const productId = await this.productService.createProduct({...req.body, image: req.file?.buffer})
+  async createProduct(req: Request, res: Response) {
+    if (req.body.product) {
+      req.body.product.establishment = {
+        id: (req as any).usuario.estabelecimento,
+      };
+    }
+
+    const productId = await this.productService.createProduct(req.body);
 
         getIO().emit('menu_updated'); 
         res.status(201).json(productId);

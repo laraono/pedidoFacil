@@ -3,10 +3,10 @@ import { Establishment } from './Establishment';
 
 @Entity({ name: 'CONFIGURACAO_ESTABELECIMENTO' })
 export class Configuration {
-    @PrimaryColumn({
-        name: 'ID_Estabelecimento',
-    })
-    id!: number;
+  @PrimaryColumn({
+    name: 'ID_Estabelecimento',
+  })
+  id: number;
 
     @Column({
         type: 'varchar',
@@ -79,13 +79,13 @@ export class Configuration {
     })
     logo?: string;
 
-    @Column({
-        type: 'boolean',
-        nullable: false,
-        default: true,
-        name: 'Permite_Observacoes',
-    })
-    allowObservations?: boolean;
+  @Column({
+    type: 'boolean',
+    nullable: false,
+    default: true,
+    name: 'Permite_Observacoes',
+  })
+  allowObservations!: boolean;
 
     @OneToOne(() => Establishment)
     @JoinColumn({

@@ -1,3 +1,4 @@
+import { Establishment } from '../database/entity/Establishment';
 import { AppError } from '../middleware/error/AppError';
 import { ServiceType } from '../enum';
 import { gerarTokens } from '../config/crypto';
@@ -10,12 +11,6 @@ import { RoleRepository } from '../repository/RoleRepository';
 import { SaveOnboardingStepDTO } from '../dto/establishment/SaveOnboardingStepDTO';
 import { FinalizeOnboardingDTO } from '../dto/establishment/FinalizeOnboardingDTO';
 import { UpdateEstablishmentDTO } from '../dto/establishment/UpdateEstablishmentDTO';
-import { CreateStoreMP } from '../dto';
-import { MercadoPagoService } from './MercadoPagoService';
-import { RegisterRepository } from '../repository/RegisterRepository';
-import { RefreshTokenRepository } from '../repository';
-import { DataSource } from 'typeorm';
-import { Establishment, Register } from '../database';
 
 export class EstablishmentService {
   
@@ -23,11 +18,7 @@ export class EstablishmentService {
       private establishmentRepository: EstablishmentRepository,
       private userRepository: UserRepository,
       private configRepository: ConfigurationRepository,
-      private registerRepository: RegisterRepository,
-      private roleRepository: RoleRepository,
-      private mercadoPagoService: MercadoPagoService,
-      private refreshTokenRepository: RefreshTokenRepository,
-      private dataSource: DataSource
+      private roleRepository: RoleRepository
   ) {}
 
   private parsePermissions(permissions: any): string[] {
@@ -125,7 +116,7 @@ export class EstablishmentService {
     const updatedUser = await this.userRepository.findByIdWithRelations(userId);
     if (!updatedUser) throw new AppError('Error retrieving updated user.', 500);
 
-    const { accessToken, refreshToken } = await gerarTokens(updatedUser, this.refreshTokenRepository);
+    const { accessToken, refreshToken } = await gerarTokens(updatedUser);
 
     return { 
       message: 'Onboarding completed successfully.',
@@ -201,85 +192,5 @@ export class EstablishmentService {
       });
       await this.configRepository.save(defaultConfig);
     }
-  }
-
-   async createStore(params: CreateStoreMP) {
-    const establishment = await this.establishmentRepository.getEstablishment(params.establishmentId)
-
-    if(!establishment) {
-      throw new AppError('Estabelecimento não encontrado', 404)
-    }
-
-    const store = await this.mercadoPagoService.createStore(params)
-    await this.establishmentRepository.addMercadoPagoId(params.establishmentId, store)
-
-  }
-
-  async createRegister(name: string, establishmentId: number) {
-    await this.dataSource.transaction(async (transactionalEntityManager) => {
-      const establishment = await transactionalEntityManager.findOne(Establishment, {
-        where: {
-          id: establishmentId
-        }
-      })
-
-      if(!establishment) {
-          throw new AppError('', 400)
-      }
-
-      if(!establishment.mercadoPagoId) {
-          throw new AppError('Termine de configurar seu estabelecimento', 400)
-      }
-
-      const register = await this.mercadoPagoService.createRegister({
-          mercadoPagoId: establishment.mercadoPagoId,
-          name
-      })
-
-      await transactionalEntityManager.save(Register, {
-        mercadoPagoId: register,
-        name
-      })
-
-      await this.mercadoPagoService.getTerminals({store: establishment.mercadoPagoId, pos: register })
-
-    })
-  }
-
-  async associateRegisterToTerminal({ establishmentId, registerId }: { establishmentId: number; registerId: number }) {
-    const establishment = await this.establishmentRepository.getEstablishment(establishmentId)
-
-    if(!establishment) {
-      throw new AppError('', 404)
-    }
-
-    const register = await this.registerRepository.getRegister(registerId)
-
-    if(!register) {
-      throw new AppError('Caixa não encontrado', 404)
-    }
-
-    const [terminal] = await this.mercadoPagoService.getTerminals({store: establishment.mercadoPagoId, pos: register.mercadoPagoId})
-
-    await this.registerRepository.associateToTerminal(registerId, terminal.id)
-  }
-
-  async getTerminals({ establishmentId, pos }: { establishmentId: number; pos: string }) {
-    const establishment = await this.establishmentRepository.getEstablishment(establishmentId)
-
-    if(!establishment) {
-      throw new AppError('Estabelecimento não encontrado', 404)
-    }
-
-    return await this.mercadoPagoService.getTerminals({store: establishment.mercadoPagoId, pos})
-  }
-
-  async getRegisters({ establishmentId }: { establishmentId: number }) {
-    const establishment = await this.establishmentRepository.getEstablishment(establishmentId)
-
-    if(!establishment) {
-      throw new AppError('', 404)
-    }
-    return await this.registerRepository.listRegistersByEstablishment(establishment)
   }
 }

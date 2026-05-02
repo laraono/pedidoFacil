@@ -66,11 +66,11 @@ export class OrderService {
                 serviceType: ServiceType.AUTOATENDIMENTO
             });
 
-            await this.saveItens(createOrder.itens, order, transactionalEntityManager);
+      await this.saveItens(createOrder.itens, order, manager);
 
-            return order;
-        });
-    }
+      return order;
+    });
+  }
 
     async listOrders({establishmentId}: {establishmentId: number}) {
         const orders = await this.orderRepository.listOrders(establishmentId)
@@ -122,24 +122,22 @@ export class OrderService {
     ) {
         let total = 0;
 
-        for (const iten of itens) {
-            const validatedProduct = await this.validateItens(iten, manager);
+    for (const iten of itens) {
+      const validated = await this.validateItens(iten, manager);
 
-            const value1 = Number(validatedProduct.product.basePrice);
-            const value2 = validatedProduct.productVariation 
-                ? Number(validatedProduct.productVariation.addPrice) 
-                : 0;
+      const basePrice = Number(validated.product.basePrice);
+      const addPrice = validated.productVariation ? Number(validated.productVariation.addPrice) : 0;
+      const finalPrice = basePrice + addPrice;
 
-            const price = value1 + value2;
-            total += price;
+      totalAcumulado += (finalPrice * iten.quantity);
 
-            const productOrder: ProductOrderParams = {
-                ...validatedProduct,
-                order,
-                observation: iten.observation,
-                quantity: iten.quantity,
-                price
-            };
+      const productOrder = await manager.save(ProductOrder, {
+        orderId: order.id, 
+        productId: validated.product.id,
+        observation: iten.observation || '',
+        quantity: iten.quantity,
+        price: finalPrice
+      });
 
             const newProductOrder = await manager.save(ProductOrder, productOrder);
 
@@ -152,9 +150,11 @@ export class OrderService {
                 });
             }
         }
-
-        await this.comandaService.updateComandaTotalTransaction(order.comanda, total, manager);
+      }
     }
+
+    await this.comandaService.updateComandaTotalTransaction(order.comanda, totalAcumulado, manager);
+  }
 
     async validateItens(itens: ItensArray, manager: EntityManager) {
 

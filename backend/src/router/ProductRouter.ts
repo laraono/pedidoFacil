@@ -39,3 +39,24 @@ productRouter.delete(
   roleAccessControl.checkPermission('CARDAPIO'), 
   catchAsync((req: Request, res: Response) => productController.deleteProduct(req, res))
 );
+
+productRouter.put(
+  '/products/:id', 
+  authenticate, 
+  roleAccessControl.checkPermission('CARDAPIO'), 
+  catchAsync((req: Request, res: Response) => productController.updateProduct(req, res))
+);
+
+productRouter.delete(
+  '/products/:id', 
+  authenticate, 
+  roleAccessControl.checkPermission('CARDAPIO'), 
+  catchAsync((req: Request, res: Response) => productController.deleteProduct(req, res))
+);
+
+productRouter.patch(
+  '/products/:id/restore', 
+  authenticate, 
+  roleAccessControl.checkPermission('CARDAPIO'), 
+  catchAsync((req: Request, res: Response) => productController.restoreProduct(req, res))
+);

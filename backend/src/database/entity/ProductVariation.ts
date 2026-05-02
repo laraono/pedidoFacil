@@ -9,6 +9,7 @@ export class ProductVariation {
 
     @PrimaryGeneratedColumn({
         name: 'ID_Variacao'
+        name: 'ID_Variacao'
     })
     id!: number
 

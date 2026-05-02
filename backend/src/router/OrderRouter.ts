@@ -20,22 +20,28 @@ orderRouter.post(
 );
 
 orderRouter.get(
-	'/commands/:comandaId/orders',
-	authenticate,
-	tenant.verifyTenancy('COMANDA', 'comandaId'),
-	roleAccessControl.checkPermission('CAIXA'),
-	catchAsync((req: Request, res: Response) => orderController.listOrdersByComanda(req, res))
+  '/commands/:comandaId/orders',
+  authenticate,
+  tenant.verifyTenancy('COMANDA', 'comandaId'),
+  roleAccessControl.checkPermission('CAIXA'),
+  catchAsync((req: Request, res: Response) => orderController.listOrdersByComanda(req, res))
 );
 
 orderRouter.put(
-	'/commands/:comandaId/orders/:orderId',
-	authenticate,
-	tenant.verifyTenancy('COMANDA', 'comandaId'),
-	tenant.verifyTenancy('PEDIDO', 'orderId'),
-	roleAccessControl.checkPermission('COZINHA'),
-	catchAsync((req: Request, res: Response) => orderController.updateOrderStatus(req, res))
+  '/commands/:comandaId/orders/:orderId',
+  authenticate,
+  tenant.verifyTenancy('COMANDA', 'comandaId'),
+  tenant.verifyTenancy('PEDIDO', 'orderId'),
+  roleAccessControl.checkPermission('COZINHA'),
+  catchAsync((req: Request, res: Response) => orderController.updateOrderStatus(req, res))
 );
 
+orderRouter.get(
+  '/orders',
+  authenticate,
+  roleAccessControl.checkPermission('COZINHA'),
+  catchAsync((req: Request, res: Response) => orderController.listOrders(req, res))
+);
 orderRouter.post('/commands/:comandaId/orders/:orderId/cancel', authenticate, tenant.verifyTenancy('COMANDA', 'comandaId'), tenant.verifyTenancy('PEDIDO', 'orderId'), validateCancelOrders, roleAccessControl.checkPermission('COZINHA'), catchAsync((req: Request, res: Response) => orderController.cancelOrder(req, res)))
 
 orderRouter.get(

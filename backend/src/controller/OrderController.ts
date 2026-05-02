@@ -88,5 +88,9 @@ export class OrderController {
         const { comandaId } = req.params;
         const orders = await this.orderService.listOrdersByComanda(Number(comandaId));
         res.status(200).send(orders);
+    async listOrdersByComanda(req: Request, res: Response) {
+        const { comandaId } = req.params;
+        const orders = await this.orderService.listOrdersByComanda(Number(comandaId));
+        res.status(200).send(orders);
     }
 }

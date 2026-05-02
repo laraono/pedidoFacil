@@ -13,7 +13,7 @@ export class CategoryController {
     async createCategory(req: Request, res: Response) {
         req.body.establishment = { id: (req as any).usuario.estabelecimento };
         
-        const categoryId = await this.categoryService.createCategory({...req.body, image: req.file.buffer});
+        const categoryId = await this.categoryService.createCategory(req.body);
         
         getIO().emit('menu_updated'); 
         res.status(201).json(categoryId);

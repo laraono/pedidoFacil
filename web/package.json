@@ -10,8 +10,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "tailwind:init": "tailwindcss init -p",
-    "type-check": "vue-tsc --build --force"
+    "tailwind:init": "tailwindcss init -p"
   },
   "dependencies": {
     "@mercadopago/sdk-js": "^0.0.3",
@@ -21,21 +20,18 @@
     "mercadopago": "^0.5.0",
     "pinia": "^3.0.4",
     "socket.io-client": "^4.8.3",
-    "tailwind": "^2.3.1",
+    "tailwind": "^4.0.0",
     "uuid": "^14.0.0",
     "vue": "^3.5.22",
     "vue-router": "^5.0.4"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "autoprefixer": "^10.4.22",
     "baseline-browser-mapping": "^2.10.12",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.1",
-    "typescript": "^6.0.2",
     "vite": "^7.1.11",
-    "vite-plugin-vue-devtools": "^8.0.3",
-    "vue-tsc": "^3.2.6"
+    "vite-plugin-vue-devtools": "^8.0.3"
   }
 }

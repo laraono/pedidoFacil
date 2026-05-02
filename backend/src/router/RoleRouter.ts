@@ -3,7 +3,6 @@ import { RoleController } from '../controller/RoleController';
 import { roleService } from '../service';
 import authenticate from '../middleware/authenticate';
 import { validateRole } from '../validator/role/roleSchema';
-import { subscriptionMiddleware } from '../middleware';
 
 const roleRouter = Router();
 const roleController = new RoleController(roleService);

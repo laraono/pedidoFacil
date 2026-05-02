@@ -1,15 +1,22 @@
 <script setup>
-import { ref, onMounted, computed, watch, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
-import { isValidCPF, maskCPF } from '@/utils/validator';
-import { useToast } from '@/composables/useToast';
-import BaseInput from '@/components/ui/BaseInput.vue';
-import BaseSelect from '@/components/ui/BaseSelect.vue';
-import BaseButton from '@/components/ui/BaseButton.vue';
-import { ArrowLeft, PlusCircle, Trash, Pencil, X } from 'lucide-vue-next';
-
-const USERS_KEY = 'users';
+import { ref, computed, onMounted, watch, nextTick } from "vue";
+import { useRouter } from "vue-router";
+import { roleApi } from "@/services/roleApi";
+import { employeeApi } from "@/services/employeeApi";
+import { useAuthStore } from "@/stores/auth";
+import { isValidCPF, maskCPF } from "@/utils/validator";
+import { useToast } from "@/composables/useToast";
+import BaseInput from "@/components/ui/BaseInput.vue";
+import BaseSelect from "@/components/ui/BaseSelect.vue";
+import BaseButton from "@/components/ui/BaseButton.vue";
+import {
+  ArrowLeft,
+  PlusCircle,
+  Trash,
+  Pencil,
+  X,
+  RotateCcw,
+} from "lucide-vue-next";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -67,19 +74,29 @@ function canDeleteUser(user) {
   return true;
 }
 
+const fetchAll = async () => {
+  await fetchRoles();
+  await fetchUsers();
+};
 
-onMounted(() => {
-  loadUsers();
-  roles.value = JSON.parse(localStorage.getItem('roles') ?? '[]');
-});
+onMounted(fetchAll);
 
-function reloadRoles() {
-  roles.value = JSON.parse(localStorage.getItem('roles') ?? '[]');
-}
+const fetchRoles = async () => {
+  try {
+    roles.value = await roleApi.list();
+  } catch (e) {
+    showToast("Erro ao buscar os cargos.", "error");
+  }
+};
 
-function loadUsers() {
-  users.value = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
-}
+const fetchUsers = async () => {
+  try {
+    users.value = await employeeApi.list();
+    inactiveUsers.value = await employeeApi.listInactive();
+  } catch (e) {
+    showToast("Erro ao carregar a equipe.", "error");
+  }
+};
 
 function openForm(user = null) {
   errors.value = {};

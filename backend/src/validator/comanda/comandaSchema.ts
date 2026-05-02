@@ -41,6 +41,7 @@ export const validateCreateComanda =
             const comanda = {...req.body, establishmentId: req.usuario.estabelecimento}
             req.body = createComandaSchema.parse(comanda)
 
+            next();
         } catch (error) {
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);
@@ -50,13 +51,15 @@ export const validateCreateComanda =
     };
 
 export const validateCancelComanda = 
-    (req, res: Response, next: NextFunction) => {
+    (req: Request, res: Response, next: NextFunction) => {
         try {
             const validation =  cancelComandaSchema.parse({ params: req.params, body: {...req.body, ...req.usuario} })
 
             req.params = validation.params as any;
+            req.params = validation.params as any;
             req.body = validation.body
 
+            next();
         } catch (error) {
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);

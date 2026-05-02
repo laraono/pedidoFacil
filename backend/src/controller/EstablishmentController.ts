@@ -54,26 +54,4 @@ export class EstablishmentController {
     const result = await this.establishmentService.softDeleteEstablishment(establishmentId);
     return res.status(200).json(result);
   });
-
-  postRegister = catchAsync(async (req: Request, res: Response) => {
-    const establishmentId = (req as any).usuario.estabelecimento;
-    const {name} = req.body
-    const result = await this.establishmentService.createRegister(name, establishmentId);
-    return res.status(200).json(result);
-  });
-
-  getRegisters = catchAsync(async (req: Request, res: Response) => {
-    const establishmentId = (req as any).usuario.estabelecimento;
-    const result = await this.establishmentService.getRegisters(establishmentId);
-    return res.status(200).json(result);
-  });
-
-  associateRegisterToTerminal = catchAsync(async (req: Request, res: Response) => {
-    const establishmentId = (req as any).usuario.estabelecimento;
-    const {registerId} = req.body
-    const result = await this.establishmentService.associateRegisterToTerminal({establishmentId, registerId});
-    return res.status(200).json(result);
-  });
-
-
 }

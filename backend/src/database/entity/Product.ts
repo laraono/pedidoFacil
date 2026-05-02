@@ -31,6 +31,7 @@ export class Product {
 
     @Column({
         type: 'longtext',
+        type: 'longtext',
         name: 'Imagem',
         nullable: true,
     })

@@ -21,7 +21,7 @@ export class MenuService {
             where: { 
                 establishment: { id: establishmentId },
                 // Se não for editMode, filtra apenas os Ativos
-                ...(editMode ? {} : { status: ProductStatus.ATIVO })
+                ...(editMode ? {} : { status: ProductStatus.ATIVA })
             },
             relations: ['category', 'productVariations'],
             withDeleted: editMode,

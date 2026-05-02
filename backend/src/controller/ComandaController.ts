@@ -1,6 +1,6 @@
 import { ComandaStatus } from "../enum";
 import { ComandaService } from "../service";
-import { Request, Response } from 'express';
+import {  Request, Response  } from 'express';
 import { getIO } from "../socket";
 
 export class ComandaController {
@@ -40,15 +40,13 @@ export class ComandaController {
 
     async listOpenComandas(req, res: Response) {
         const comandas = await this.comandaService.listComandasByStatus({status: ComandaStatus.ABERTA, establishmentId: req.body.establishmentId})
-
         res.status(200).send(comandas)
     }
 
-    async listClosedComandas(req, res: Response) {
-
-        const comandas = await this.comandaService.listComandasByStatus({status: ComandaStatus.FECHADA, establishmentId: req.body.establishmentId})
-
-        res.status(200).send(comandas)
+    async listComandasByStatus(req: Request, res: Response) {
+        const { status } = req.query;
+        const comandas = await this.comandaService.listComandasByStatus(status as any);
+        res.status(200).send(comandas);
     }
     
     async updateComandaStatus(req: Request, res: Response) {

@@ -1,11 +1,9 @@
 import { z } from 'zod';
-import express, { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
+import { ProductStatus } from '../../enum';
 
-const fileSizeLimit = 5 * 1024 * 1024; // 5MB
-const ACCEPTED_IMAGE_MIME_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
-
-const createProductSchema = z.object({
+export const createProductSchema = z.object({
     product: z.object({
         name: z.string().min(1).max(20),
         description: z.string().optional(), 
@@ -13,17 +11,6 @@ const createProductSchema = z.object({
         categoryId: z.coerce.number().int().positive(),
         establishmentId: z.coerce.number().int().positive(),
         basePrice: z.coerce.number().positive(),
-        image: z
-            .instanceof(File)
-            .refine(
-                (file) => ACCEPTED_IMAGE_MIME_TYPES.includes(file.type),
-                { message: "Tipo de imagem inválido" }
-            )
-            .refine(
-                (file) => file.size <= fileSizeLimit,
-                { message: "Tamanho do arquivo não deve exceder 5MB" }
-            )
-            .optional()
     }),
     productVariations: z.object({
         name: z.string().min(1).max(20),
@@ -88,7 +75,13 @@ export const validateCreateProduct =
             next()
         } catch (error) {
             if (error instanceof ZodError) {
-                return res.status(400).send(error.message);
+                return res.status(400).json({
+                    message: "Erro de validação nos dados do produto",
+                    details: error.issues.map(issue => ({
+                        path: issue.path.join('.'),
+                        message: issue.message
+                    }))
+                });
             }
             return res.status(500).send("Internal Server Error");
         }
@@ -97,47 +90,17 @@ export const validateCreateProduct =
 export const validateListProducts = 
     (req, res: Response, next: NextFunction) => {
         try {
-            req.body = listProductsSchema.parse({establishmentId: req.usuario.estabelecimento})
+            req.body = createProductSchema.parse(req.body)
 
-            next()
         } catch (error) {
             if (error instanceof ZodError) {
-                return res.status(400).send(error.message);
-            }
-            return res.status(500).send("Internal Server Error");
-        }
-    };
-
-export const validateListProductsByCategories = 
-    (req, res: Response, next: NextFunction) => {
-        try {
-            const params = {categoryId: req.params.categoryId, establishmentId: req.usuario.estabelecimento }
-            req.body = listProductsByCategorySchema.parse(params)
-
-            next()
-        } catch (error) {
-            if (error instanceof ZodError) {
-                return res.status(400).send(error.message);
-            }
-            return res.status(500).send("Internal Server Error");
-        }
-    };
-
-export const validateUpdateProduct = 
-    (req, res: Response, next: NextFunction) => {
-        try {
-            const product = {...req.body.product, establishmentId: req.usuario.estabelecimento}
-            const productVariations = req.body.productVariations
-
-            const validation = updateProductSchema.parse({params: req.params, body: {product, productVariations, image: req.file}})
-
-            req.params = validation.params
-            req.body = validation.body
-
-            next()
-        } catch (error) {
-            if (error instanceof ZodError) {
-                return res.status(400).send(error.message);
+                return res.status(400).json({
+                    message: "Erro de validação nos dados do produto",
+                    details: error.issues.map(issue => ({
+                        path: issue.path.join('.'),
+                        message: issue.message
+                    }))
+                });
             }
             return res.status(500).send("Internal Server Error");
         }

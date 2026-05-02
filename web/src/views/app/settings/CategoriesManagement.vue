@@ -42,7 +42,12 @@ const touched = ref({});
 const form = ref({ id: null, name: "", image: null, imagePreview: null });
 
 const confirmModal = ref({
-    show: false, title: '', message: '', onConfirm: null, data: null, isError: false,
+    show: false,
+  title: "",
+  message: "",
+  onConfirm: null,
+  data: null,
+  isError: false,
 });
 
 onMounted(async () => {
@@ -61,8 +66,10 @@ const showConfirm = (title, message, onConfirm, data = null, options = {}) => {
 };
 
 const validateField = (field) => {
-    if (field === 'name') {
-        errors.value.name = !form.value.name.trim() ? 'O nome da categoria é obrigatório.' : '';
+    if (field === "name") {
+        errors.value.name = !form.value.name.trim()
+        ? "O nome da categoria é obrigatório."
+        : "";
         if (!errors.value.name) delete errors.value.name;
     }
 };
@@ -99,6 +106,44 @@ const handleImageUpload = (event) => {
         form.value.imagePreview = URL.createObjectURL(file);
         form.value.image = file;
     }
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX_WIDTH = 600;
+      const MAX_HEIGHT = 600;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+          height = MAX_HEIGHT;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+      form.value.imagePreview = compressedBase64;
+      form.value.image = compressedBase64; 
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
 };
 
 const saveCategory = async () => {
@@ -107,18 +152,25 @@ const saveCategory = async () => {
 
     isLoading.value = true;
     try {
-        const payload = { id: form.value.id, name: form.value.name, image: form.value.image };
+        const payload = {
+      id: form.value.id,
+      name: form.value.name,
+      image: form.value.image, 
+    };
+
         if (isEditing.value) {
-            await categoryApi.putCategory(payload.id, payload.name, payload.image);
+      await       await categoryApi.putCategory(payload.id, payload.name, payload.image);
         } else {
-            await categoryApi.post(form.value.name, form.value.image)
+      await       await categoryApi.post(form.value.name, form.value.image)
         }
-        showToast(`Categoria "${form.value.name}" salva com sucesso!`, 'success');
+    
+        showToast(`Categoria "${form.value.name}" salva com sucesso!`, "success");
         showModal.value = false;
 
         categories.value = await categoryApi.list()
-    } catch {
-        showToast('Erro ao salvar categoria.', 'error');
+    } catch (error) {
+    console.error("Erro ao salvar categoria:", error);
+        showToast("Erro ao salvar categoria no banco.", "error");
     } finally {
         isLoading.value = false;
     }
@@ -182,14 +234,20 @@ const handlePermanentDelete = async (category) => {
             </div>
         </header>
 
-        <div v-if="showDeleted" class="mb-8 p-4 bg-orange-500/10 border border-orange-500/20 rounded flex items-center justify-between">
-            <p class="text-orange-400 text-sm font-bold flex items-center gap-2">
-                <Archive :size="18" /> Visualizando categorias arquivadas.
-            </p>
-            <button @click="showDeleted = false" class="text-orange-300 hover:text-orange-100 text-sm font-bold underline transition-colors">
-                Voltar para ativas
-            </button>
-        </div>
+    <div
+      v-if="showDeleted"
+      class="mb-8 p-4 bg-orange-500/10 border border-orange-500/20 rounded flex items-center justify-between"
+    >
+      <p class="text-orange-400 text-sm font-bold flex items-center gap-2">
+        <Archive :size="18" /> Visualizando categorias arquivadas.
+      </p>
+      <button
+        @click="showDeleted = false"
+        class="text-orange-300 hover:text-orange-100 text-sm font-bold underline transition-colors"
+      >
+        Voltar para ativas
+      </button>
+    </div>
 
         <div class="bg-white border border-[#E0E0E0] rounded overflow-x-auto shadow-2xl">
             <table class="w-full text-left border-collapse">

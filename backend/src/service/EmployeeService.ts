@@ -13,7 +13,7 @@ export class EmployeeService {
 
   async listEmployees(establishmentId: number) {
     return await this.userRepository.find({
-      where: { establishment: { id: establishmentId } as any, status: UserStatus.ATIVO },
+      where: { establishment: { id: establishmentId } as any, status: UserStatus.ATIVA },
       relations: ['role'],
       select: ['id', 'name', 'email', 'cpf', 'status'],
       order: { name: 'ASC' }
@@ -55,7 +55,7 @@ export class EmployeeService {
       email: data.email,
       cpf: data.cpf,
       password: hashedPassword,
-      status: UserStatus.ATIVO,
+      status: UserStatus.ATIVA,
       role: role,
       establishment: { id: establishmentId } as any
     });
@@ -128,7 +128,7 @@ export class EmployeeService {
 
     if (!user) throw new AppError('Funcionário não encontrado.', 404);
     
-    user.status = UserStatus.ATIVO;
+    user.status = UserStatus.ATIVA;
     await this.userRepository.save(user);
 
     return { message: 'Funcionário reativado com sucesso.' };
