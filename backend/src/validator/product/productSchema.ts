@@ -73,7 +73,7 @@ export const validateCreateProduct =
             req.body = createProductSchema.parse({product, productVariations: req.body.productVariations, image: req.file})
 
             next()
-        } catch (error) {
+        }  catch (error) {
             if (error instanceof ZodError) {
                 return res.status(400).json({
                     message: "Erro de validação nos dados do produto",
@@ -90,8 +90,24 @@ export const validateCreateProduct =
 export const validateListProducts = 
     (req, res: Response, next: NextFunction) => {
         try {
-            req.body = createProductSchema.parse(req.body)
+            req.body = listProductsSchema.parse({establishmentId: req.usuario.estabelecimento})
 
+            next()
+        } catch (error) {
+            if (error instanceof ZodError) {
+                return res.status(400).send(error.message);
+            }
+            return res.status(500).send("Internal Server Error");
+        }
+    };
+
+export const validateListProductsByCategories = 
+    (req, res: Response, next: NextFunction) => {
+        try {
+            const params = {categoryId: req.params.categoryId, establishmentId: req.usuario.estabelecimento }
+            req.body = listProductsByCategorySchema.parse(params);
+            next();
+            next()
         } catch (error) {
             if (error instanceof ZodError) {
                 return res.status(400).json({

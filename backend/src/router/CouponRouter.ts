@@ -9,6 +9,7 @@ const couponRouter = Router();
 const couponController = new CouponController(couponService);
 
 couponRouter.use(authenticate);
+couponRouter.use(subscriptionMiddleware)
 
 couponRouter.get('/', checkPermission('CUPOM_VIEW', 'ALL'), couponController.list.bind(couponController));
 couponRouter.post('/', checkPermission('CUPOM_CREATE', 'ALL'), validateCreateCoupon, couponController.create.bind(couponController));
