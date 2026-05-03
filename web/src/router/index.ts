@@ -31,6 +31,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/register', name: 'register', component: RegisterManager },
   { path: '/onboarding/name', name: 'OnboardingName', component: EstablishmentName },
   { path: '/onboarding/type', name: 'OnboardingType', component: ServiceType },
+  { path: '/onboarding/subscription', name: 'OnboardingSubscription', component: SubscriptionPage },
 
   {
     path: "/app",
