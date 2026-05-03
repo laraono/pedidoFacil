@@ -6,15 +6,14 @@ export type CreateOrderPayment = {
 }
 
 export type CreateOrderSubscription = {
-    preapproval_plan_id?: string,
     type: "online",
-    total_amount: string, 
+    total_amount: string | number, 
     external_reference: string,
     processing_mode: "automatic",
     transactions: {
         payments: [
             {
-                amount: number, 
+                amount: number | string, 
                 payment_method: {
                     id: string,
                     type: string,
@@ -28,4 +27,19 @@ export type CreateOrderSubscription = {
         email: string,
         identification: string,
     },
+}
+
+export type RestoreOrderSubscription = {
+    payments: [
+        {
+            amount: number | string, 
+            payment_method: {
+                id: string,
+                type: string,
+                token: string,
+                installments: number,
+            },
+        },
+    ]
+    planId?: number
 }

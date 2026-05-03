@@ -39,6 +39,7 @@ export {
     CreateRegisterParams as CreateRegisterParamsMP,
     CreateOrderPayment as CreateOrderPaymentMP,
     CreateOrderSubscription as CreateOrderSubscriptionMP,
+    RestoreOrderSubscription as RestoreOrderSubscriptionMP,
     UpdateSubscription as UpdateSubscriptionMP
 } from './mercadoPago'
 export * from './establishment/SaveOnboardingStepDTO';
