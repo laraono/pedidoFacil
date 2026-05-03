@@ -62,7 +62,7 @@ export class SubscriptionService {
                 }
             })
 
-            if(!plan || !plan.mercadoPagoId) {
+            if(!plan) {
                 throw new AppError('Plano não encontrado', 404)
             }
 

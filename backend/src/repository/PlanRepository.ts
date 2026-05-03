@@ -24,10 +24,6 @@ export class PlanRepository extends Repository<Plan>{
         await this.softDelete(planId)
     }
 
-    async addMercadoPagoPlanId(planId: number, mercadoPagoId: string) {
-        await this.update(planId, {mercadoPagoId})
-    }
-
     async listPlans() {
         return await this.find()
     }
