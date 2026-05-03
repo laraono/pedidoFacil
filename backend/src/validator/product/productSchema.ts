@@ -38,17 +38,6 @@ const updateProductSchema = z.object({
             addPrice: z.coerce.number().positive(),
         }).array().optional()
     }),
-        image: z
-            .object({
-                mimetype: z.string().refine((type) => ACCEPTED_IMAGE_MIME_TYPES.includes(type), {
-                    message: "Tipo de imagem inválido",
-                }),
-                size: z.number().max(fileSizeLimit, {
-                    message: "Tamanho do arquivo não deve exceder 5MB",
-                }),
-                buffer: z.instanceof(Buffer), // Ensure it has the actual data
-            })
-            .optional(),
 });
 
 const listProductsSchema = z.object({

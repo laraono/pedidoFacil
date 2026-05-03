@@ -51,7 +51,7 @@ export const validateCreateComanda =
     };
 
 export const validateCancelComanda = 
-    (req: Request, res: Response, next: NextFunction) => {
+    (req, res: Response, next: NextFunction) => {
         try {
             const validation =  cancelComandaSchema.parse({ params: req.params, body: {...req.body, ...req.usuario} })
 

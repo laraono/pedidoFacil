@@ -1,7 +1,5 @@
 import { z, ZodError } from 'zod';
 import { Response, NextFunction } from 'express';
-import { SubscriptionStatus, ServiceType } from '../../enum';
-import { PaymentService } from '../../service';
 
 const createSubscriptionchema = z.object({
     
@@ -10,7 +8,6 @@ const createSubscriptionchema = z.object({
         establishmentId: z.coerce.number().int().positive()
     }),
     data: z.object({
-        preapproval_plan_id: z.string().optional(),
         type: z.string().min(1),
         total_amount: z.coerce.number().positive(),
         external_reference: z.string().min(1),
@@ -22,7 +19,7 @@ const createSubscriptionchema = z.object({
                     payment_method: z.object({
                         id: z.string().min(1),
                         type: z.string().min(1),
-                        tyinstallmentspe: z.coerce.number().int().positive(),
+                        installments: z.coerce.number().int().positive(),
                         token: z.string().min(1)
                     })
                 })
@@ -40,7 +37,7 @@ const createSubscriptionchema = z.object({
 });
 
 const listSubscriptionsSchema = z.object({
-    estblishmentId: z.coerce.number().int().positive()
+    establishmentId: z.coerce.number().int().positive()
 })
 
 const cancelSubscriptionSchema = z.object({
@@ -55,21 +52,73 @@ const cancelSubscriptionSchema = z.object({
     })
 })
 
+const restoreSubscriptoinSchema = z.object({
+    params: z.object({
+        subscriptionId: z.coerce.number().int().positive(),
+        establishmentId: z.coerce.number().int().positive()
+    }),
+    data: z.object({
+        payments: z.array(
+            z.object({
+                amount: z.coerce.number().positive(),
+                payment_method: z.object({
+                    id: z.string().min(1),
+                    type: z.string().min(1),
+                    installments: z.coerce.number().int().positive(),
+                    token: z.string().min(1)
+                })
+            })
+        )
+    })
+    
+});
+    
 export const validateCreateSubscription = 
     (req, res: Response, next: NextFunction) => {
         try {
-            console.log(req.body)
-            const {params, data} = createSubscriptionchema.parse({data: req.body.data, params: {planId: req.body.planId, establishmentId: req}})
+            const {params, data} = createSubscriptionchema.parse({
+                data: req.body.data, 
+                params: {
+                    planId: req.body.planId, 
+                    establishmentId: req.usuario.estabelecimento
+                }
+            })
 
             req.params = params
             req.body = data
 
             next()
         } catch (error) {
+                        console.log(error)
+
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);
             }
-            console.log(error)
+            return res.status(500).send("Internal Server Error");
+        }
+    };
+
+export const validateRestoreSubscription = 
+    (req, res: Response, next: NextFunction) => {
+        try {
+            const {params, data} = restoreSubscriptoinSchema.parse({
+                data: req.body.data.transaction.payments, 
+                params: {
+                    subscriptionId: req.params.subscriptionId, 
+                    establishmentId: req.usuario.estabelecimento
+                }
+            })
+
+            req.params = params
+            req.body = data
+
+            next()
+        } catch (error) {
+                        console.log(error)
+
+            if (error instanceof ZodError) {
+                return res.status(400).send(error.message);
+            }
             return res.status(500).send("Internal Server Error");
         }
     };
@@ -77,10 +126,11 @@ export const validateCreateSubscription =
 export const validateListSubscriptions = 
     (req, res: Response, next: NextFunction) => {
         try {
-            req.body = listSubscriptionsSchema.parse({estblishmentId: req.usuario.estabelecimento})
+            req.body = listSubscriptionsSchema.parse({establishmentId: req.usuario.estabelecimento})
 
             next()
         } catch (error) {
+            console.log(error)
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);
             }

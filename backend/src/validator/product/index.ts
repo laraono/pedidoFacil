@@ -1,1 +1,1 @@
-export {validateCreateProduct, validateListProducts, validateListProductsByCategories, validateDeleteProduct, validateUpdateProduct} from './productSchema'
+export {validateCreateProduct, validateListProducts, validateListProductsByCategories, validateDeleteProduct,} from './productSchema'
