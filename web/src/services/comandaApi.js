@@ -17,10 +17,8 @@ export const comandaApi = {
         await request(`/commands/${comandaId}`, {method: 'PUT', body: JSON.stringify({status})}),
 
     cancelComanda: async (comandaId, reason) => 
-        await request(`/commands/${comandaId}`, {method: 'PUT', body: JSON.stringify({reason})})
-};import { request } from './api';
+        await request(`/commands/${comandaId}`, {method: 'PUT', body: JSON.stringify({reason})}),
 
-export const comandaApi = {
   create: (data) => request('/commands', { 
     method: 'POST',
     body: JSON.stringify(data)

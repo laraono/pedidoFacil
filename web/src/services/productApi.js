@@ -17,10 +17,8 @@ export const productApi = {
   
   delete: (id) => request(`/products/${id}`, { method: 'DELETE' }),
   
-  restore: (id) => request(`/products/${id}/restore`, { method: 'PATCH' })
-};import { request } from "./api";
+  restore: (id) => request(`/products/${id}/restore`, { method: 'PATCH' }),
 
-export const productApi = {
     post: async (product, productVariations, image) =>{
         const formData = new FormData()
         formData.append('product', product)

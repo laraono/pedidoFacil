@@ -1,16 +1,24 @@
 import { request } from "./api";
 
 export const subscriptionApi = {
-    post: async (data, planId) => {
-        await request(`/process-order`, { method: 'POST',  body: JSON.stringify({data, planId}) })
-    },
+    post: async (data, planId) => 
+        await request(`/process-order`, { method: 'POST',  body: JSON.stringify({data, planId}) }),
 
     list: async (status, name) =>
         await request(`/subscriptions?status=${status}&?name=${name}`, { method: 'GET'}),
 
-    getsubscription: async (subscriptionId) => {
-        await request(`/subscriptions/${subscriptionId}`, {method: 'GET'})
-    },      
+    getSubscription: async (subscriptionId) => 
+        await request(`/subscriptions/${subscriptionId}`, {method: 'GET'}),
+
+    restoreSubscription: async (subscriptionId, data) => {
+        await request(`/process-order/${subscriptionId}`, { method: 'POST',  body: JSON.stringify({data})})
+    },
+    
+    getEstablishmentSubscription: async () => 
+        await request(`/subscriptions/establishment`, {method: 'GET'}),
+
+    getSubscriptionHistory: async () => 
+        await request(`/subscriptions/history`, {method: 'GET'}),
 
     deleteSubscription: async (subscriptionId) => 
         await request(`/subscriptions/${subscriptionId}`, {method: 'DELETE'}),
