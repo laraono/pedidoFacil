@@ -17,6 +17,9 @@ export class SubscriptionRepository extends Repository<Subscription>{
         return await this.findOne({
             where: {
                 id: subscriptionId
+            },
+            relations: {
+                plan: true
             }
         })
     }
@@ -77,7 +80,8 @@ export class SubscriptionRepository extends Repository<Subscription>{
                 id: 'DESC'
             },
             relations: {
-                establishment: true
+                establishment: true,
+                plan: true
             }
         })
     }

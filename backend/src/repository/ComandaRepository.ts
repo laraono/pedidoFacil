@@ -1,5 +1,5 @@
 import { DataSource, Repository } from "typeorm";
-import { Comanda } from "../database";
+import { Comanda, Establishment } from "../database";
 import { CancelComandaParams, CreateComandaParams } from "../dto";
 import { ComandaStatus } from "../enum";
 
@@ -41,6 +41,16 @@ export class ComandaRepository extends Repository<Comanda>{
                 orders: {
                     id: true
                 }
+            }
+        })
+    }
+
+    async checkComandaDescription(establishment: Establishment, description: string) {
+        return await this.find({
+            where: {
+                establishment,
+                description,
+                status: ComandaStatus.ABERTA
             }
         })
     }

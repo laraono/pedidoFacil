@@ -52,6 +52,10 @@ export class CategoryRepository extends Repository<Category>{
         await this.update(categoryId, params)
     }
 
+    async restoreCategory(categoryId: number) {
+        await this.update(categoryId, {status: CategoryStatus.ATIVA})
+    }
+
     async deleteCategory(categoryId: number) {
         await this.softDelete(categoryId)
     }
@@ -65,9 +69,5 @@ export class CategoryRepository extends Repository<Category>{
 
     async softDeleteCategory(categoryId: number) {
         await this.softDelete(categoryId);
-    }
-
-    async restoreCategory(categoryId: number) {
-        await this.restore(categoryId);
     }
 }
