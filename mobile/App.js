@@ -18,14 +18,16 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         <CartProvider>
-          <NavigationContainer>
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="Welcome" component={WelcomeScreen} />
-              <Stack.Screen name="Menu" component={MenuScreen} />
-              <Stack.Screen name="CartReview" component={CartReviewScreen} />
-              <Stack.Screen name="Payment" component={PaymentScreen} />
-            </Stack.Navigator>
-          </NavigationContainer>
+          <ErrorContext>
+            <NavigationContainer>
+              <Stack.Navigator screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="Welcome" component={WelcomeScreen} />
+                <Stack.Screen name="Menu" component={MenuScreen} />
+                <Stack.Screen name="CartReview" component={CartReviewScreen} />
+                <Stack.Screen name="Payment" component={PaymentScreen} />
+              </Stack.Navigator>
+            </NavigationContainer>
+          </ErrorContext>
         </CartProvider>
       </ThemeProvider>
     </SafeAreaProvider>

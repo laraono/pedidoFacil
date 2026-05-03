@@ -1,6 +1,9 @@
 import { API_URL } from './apiConfig';
+import { useNavigation } from '@react-navigation/native';
 
-export async function submitOrder({ comandaId, comandaLabel, cartItems, authToken }) {
+export async function submitOrder({ comandaId, comandaLabel, cartItems, authToken }, setErrorMessage) {
+
+    const navigate = useNavigation()
 
     const itens = cartItems.map(item => ({
         productId: item.id,
@@ -34,6 +37,16 @@ export async function submitOrder({ comandaId, comandaLabel, cartItems, authToke
             body: JSON.stringify(body),
         }
     );
+
+    if (response.status === 402) {
+        response.json().then(data => {
+            setErrorMessage('Há um erro com a sua assinatura. Corrija ele para poder acessar o menu.');
+        });
+        navigation.navigate('Welcome');;
+        return
+    };
+
+    setErrorMessage()
 
     if (!response.ok) {
         const errorText = await response.text();

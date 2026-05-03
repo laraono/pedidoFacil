@@ -15,6 +15,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { useCart } from "../contexts/CartContext";
 import { useTheme } from "../contexts/ThemeContext";
+import { useError } from "../contexts/ErrorContext";
 import { useIdleTimer } from "../hooks/useIdleTimer";
 import CartBottomBar from "../components/CartBottomBar";
 import BrandHeader from "../components/ui/BrandHeader";
@@ -30,6 +31,7 @@ export default function MenuScreen() {
 
   const { addToCart } = useCart();
   const { theme, loadTheme } = useTheme();
+  const { errorMessage, setErrorMessage } = useTheme();
   const { width } = useWindowDimensions();
   const panHandlers = useIdleTimer(45);
 
@@ -48,7 +50,7 @@ export default function MenuScreen() {
 
   const loadMenuData = async () => {
     try {
-      const data = await fetchFullMenu();
+      const data = await fetchFullMenu(setErrorMessage);
       if (data) {
         setCategories(data.categories || []);
         setProducts(data.products || []);

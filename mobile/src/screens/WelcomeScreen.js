@@ -11,12 +11,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
+import { useError } from "../contexts/ErrorContext";
 
 import imgLogo from "../../assets/logo.png";
 import patternOndas from "../../assets/ondas.png";
 
 export default function WelcomeScreen() {
   const { theme } = useTheme();
+  const { errorMessage, setErrorMessage } = useTheme();
   const navigation = useNavigation();
   const styles = useMemo(() => getStyles(theme), [theme]);
 
@@ -75,6 +77,17 @@ export default function WelcomeScreen() {
 
           <Text style={styles.subtitle}>Rápido, fácil e do seu jeito.</Text>
         </View>
+        {
+          errorMessage && (
+            <View style={styles.errorBanner}>
+              <Feather name="alert-circle" size={20} color="#FFF" />
+               <Text style={styles.errorText}>{errorMessage}</Text>
+              <TouchableOpacity onPress={() => setErrorMessage(null)}>
+                <Feather name="x" size={20} color="#FFF" />
+              </TouchableOpacity>
+            </View>
+          )
+        }
 
         <View style={styles.bottomContent}>
           <Animated.View
@@ -188,5 +201,33 @@ const getStyles = (theme) =>
       color: theme.textoBotoes,
       textTransform: "uppercase",
       letterSpacing: 1,
+    },
+    errorBanner: {
+      position: "absolute",
+      top: 60, // Positioned at the top of the SafeArea
+      left: 24,
+      right: 24,
+      zIndex: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#e74c3c", 
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+      borderRadius: 20, 
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+      elevation: 10,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+    },
+    errorText: {
+      flex: 1,
+      fontSize: 16,
+      fontWeight: "700",
+      color: "#FFFFFF", /
+      marginLeft: 12,
+      lineHeight: 20,
     },
   });

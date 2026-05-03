@@ -15,6 +15,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 
 import { useCart } from "../contexts/CartContext";
 import { useTheme } from "../contexts/ThemeContext";
+import { useError } from "../contexts/ErrorContext";
 import { useIdleTimer } from "../hooks/useIdleTimer";
 import BrandHeader from "../components/ui/BrandHeader";
 
@@ -40,6 +41,7 @@ export default function PaymentScreen() {
   const route = useRoute();
   const { cartItems, cartTotal, clearCart } = useCart();
   const { theme } = useTheme();
+  const { errorMessage, setErrorMessage } = useError();
 
   const panHandlers = useIdleTimer(120);
 
@@ -124,12 +126,15 @@ export default function PaymentScreen() {
     setPaymentStatus("Enviando pedido para a cozinha...");
 
     try {
-      const order = await submitOrder({
-        comandaId,
-        comandaLabel,
-        cartItems,
-        authToken: null,
-      });
+      const order = await submitOrder7(
+        {
+          comandaId,
+          comandaLabel,
+          cartItems,
+          authToken: null,
+        }, 
+        setErrorMessage
+      );
 
       setOrderId(order.id);
       
