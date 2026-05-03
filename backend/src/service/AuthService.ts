@@ -7,6 +7,7 @@ import { UserStatus } from '../enum';
 import { AppError } from '../middleware';
 import { UserRepository } from '../repository';
 import { gerarTokens, gerarTokenAdmin } from '../config/crypto';
+import { MercadoPagoService } from './MercadoPagoService';
 
 const DUMMY_HASH = '$2b$12$eImiTXuWVxfM37uY4JANjQev3nHN.SBuNFa5UPSmKUVgwjBiCXhHu';
 
@@ -21,7 +22,8 @@ function validarSenhaForte(senha: string): string | null {
 export class AuthService {
   constructor(
     private dataSource: DataSource,
-    private userRepository: UserRepository
+    private userRepository: UserRepository,
+    private mercadoPagoService: MercadoPagoService
   ) {}
 
   async registerManager(data: { nome_usuario: string; email: string; senha: string; }) {
@@ -41,7 +43,7 @@ export class AuthService {
       name: data.nome_usuario,
       email: data.email,
       password: passwordHash,
-      status: UserStatus.ATIVA,
+      status: UserStatus.ATIVO
     });
 
     const savedUser = await this.userRepository.save(user);
@@ -58,7 +60,7 @@ export class AuthService {
     });
 
     if (user) {
-      if (user.status !== UserStatus.ATIVA) throw new AppError('Esta conta foi desativada.', 403);
+      if (user.status !== UserStatus.ATIVO) throw new AppError('Esta conta foi desativada.', 403);
 
       const senhaValida = await bcrypt.compare(data.senha, user.password);
       if (!senhaValida) throw new AppError('Credenciais inválidas.', 401);
@@ -119,7 +121,7 @@ export class AuthService {
     }
 
     const user = await this.userRepository.findOne({
-      where: { id: decoded.id, status: UserStatus.ATIVA },
+      where: { id: decoded.id, status: UserStatus.ATIVO },
       relations: { establishment: true, role: true },
     });
 

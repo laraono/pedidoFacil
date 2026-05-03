@@ -114,36 +114,7 @@ export class ProductService {
     async listDeletedProducts() {
         return await this.productRepository.listDeletedProducts();
     }
-
-    async updateProduct(productId: number, data: any) {
-        const updateData: any = {};
-        
-        if (data.name !== undefined) updateData.name = data.name;
-        if (data.description !== undefined) updateData.description = data.description;
-        if (data.price !== undefined) updateData.basePrice = data.price;
-        if (data.image !== undefined) updateData.image = data.image;
-        if (data.categoryId !== undefined) updateData.category = { id: data.categoryId };
-        
-        if (data.available !== undefined) {
-            updateData.status = data.available ? 'Ativo' : 'Inativo';
-        }
-
-        await this.productRepository.updateProduct(productId, updateData);
-
-        if (data.sizes && Array.isArray(data.sizes)) {
-            await this.productVariationRepository.softDeleteVariationsByProduct(productId);
-            
-            for (const size of data.sizes) {
-                await this.productVariationRepository.createProductVariation({
-                    name: size.name,
-                    addPrice: size.price,
-                    status: 'Ativo',
-                    product: { id: productId }
-                } as any);
-            }
-        }
-    }
-
+    
     async softDeleteProduct(productId: number) {
         await this.productRepository.softDeleteProduct(productId);
     }

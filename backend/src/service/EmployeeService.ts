@@ -13,7 +13,7 @@ export class EmployeeService {
 
   async listEmployees(establishmentId: number) {
     return await this.userRepository.find({
-      where: { establishment: { id: establishmentId } as any, status: UserStatus.ATIVA },
+      where: { establishment: { id: establishmentId } as any, status: UserStatus.ATIVO },
       relations: ['role'],
       select: ['id', 'name', 'email', 'cpf', 'status'],
       order: { name: 'ASC' }
@@ -22,7 +22,7 @@ export class EmployeeService {
 
   async listInactiveEmployees(establishmentId: number) {
     return await this.userRepository.find({
-      where: { establishment: { id: establishmentId } as any, status: UserStatus.INATIVA },
+      where: { establishment: { id: establishmentId } as any, status: UserStatus.INATIVO },
       relations: ['role'],
       select: ['id', 'name', 'email', 'cpf', 'status'],
       order: { id: 'DESC' } 
@@ -36,7 +36,7 @@ export class EmployeeService {
     if (data.cpf) {
       const existingUser = await this.userRepository.findOne({ where: { cpf: data.cpf } });
       if (existingUser) {
-        if (existingUser.status === UserStatus.INATIVA) {
+        if (existingUser.status === UserStatus.INATIVO) {
           throw new AppError('Este CPF pertence a um usuário desativado. Vá na aba "Desativados" para reativá-lo.', 400);
         }
         throw new AppError('Este CPF já está em uso por um funcionário ativo.', 400);
@@ -55,7 +55,7 @@ export class EmployeeService {
       email: data.email,
       cpf: data.cpf,
       password: hashedPassword,
-      status: UserStatus.ATIVA,
+      status: UserStatus.ATIVO,
       role: role,
       establishment: { id: establishmentId } as any
     });
@@ -115,7 +115,7 @@ export class EmployeeService {
       throw new AppError('Não é possível excluir o Gerente principal.', 403);
     }
 
-    user.status = UserStatus.INATIVA;
+    user.status = UserStatus.INATIVO;
     await this.userRepository.save(user);
 
     return { message: 'Funcionário desativado com sucesso.' };
@@ -128,7 +128,7 @@ export class EmployeeService {
 
     if (!user) throw new AppError('Funcionário não encontrado.', 404);
     
-    user.status = UserStatus.ATIVA;
+    user.status = UserStatus.ATIVO;
     await this.userRepository.save(user);
 
     return { message: 'Funcionário reativado com sucesso.' };

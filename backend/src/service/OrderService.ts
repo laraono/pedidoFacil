@@ -45,7 +45,7 @@ export class OrderService {
     }
 
     async createOrder(createOrder: CreateOrder) {
-        return await this.dataSource.transaction(async (transactionalEntityManager) => {
+        return await this.dataSource.transaction(async (manager) => {
             
             const comanda = await this.comandaService.getComanda(createOrder.comandaId)
 
@@ -59,7 +59,7 @@ export class OrderService {
                 throw new AppError('Estabelecimento não encontrado', 400)
             }
 
-            const order = await transactionalEntityManager.save(Order, {
+            const order = await manager.save(Order, {
                 status: createOrder.status,
                 comanda,
                 establishment,
@@ -123,37 +123,35 @@ export class OrderService {
         let total = 0;
 
     for (const iten of itens) {
-      const validated = await this.validateItens(iten, manager);
+        const validated = await this.validateItens(iten, manager);
 
-      const basePrice = Number(validated.product.basePrice);
-      const addPrice = validated.productVariation ? Number(validated.productVariation.addPrice) : 0;
-      const finalPrice = basePrice + addPrice;
+        const basePrice = Number(validated.product.basePrice);
+        const addPrice = validated.productVariation ? Number(validated.productVariation.addPrice) : 0;
+        const finalPrice = basePrice + addPrice;
 
-      totalAcumulado += (finalPrice * iten.quantity);
+        total += (finalPrice * iten.quantity);
 
-      const productOrder = await manager.save(ProductOrder, {
-        orderId: order.id, 
-        productId: validated.product.id,
-        observation: iten.observation || '',
-        quantity: iten.quantity,
-        price: finalPrice
-      });
+        const productOrder = await manager.save(ProductOrder, {
+            orderId: order.id, 
+            productId: validated.product.id,
+            observation: iten.observation || '',
+            quantity: iten.quantity,
+            price: finalPrice
+        });
 
-            const newProductOrder = await manager.save(ProductOrder, productOrder);
+        const newProductOrder = await manager.save(ProductOrder, productOrder);
 
-            if(validatedProduct.productVariation) {
-                await manager.save(ProductVariationOrder, {
-                    productId: newProductOrder.product.id,
-                    orderId: newProductOrder.order.id,
-                    productVariationId: validatedProduct.productVariation.id,
-                    price: value2
-                });
-            }
+        if(validated.productVariation) {
+            await manager.save(ProductVariationOrder, {
+                productId: newProductOrder.productId,
+                orderId: newProductOrder.orderId,
+                productVariationId: validated.productVariation.id,
+                price: addPrice
+            });
         }
-      }
     }
 
-    await this.comandaService.updateComandaTotalTransaction(order.comanda, totalAcumulado, manager);
+    await this.comandaService.updateComandaTotalTransaction(order.comanda, total, manager);
   }
 
     async validateItens(itens: ItensArray, manager: EntityManager) {

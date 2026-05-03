@@ -99,6 +99,20 @@ export class CategoryService {
         return `${endpoint}/${bucketName}/${category.image}`
     }
 
+    async restoreCategory(categoryId: number) {
+        const category = await this.categoryRepository.getCategory(categoryId)
+
+        if(category && category.products) {
+            category.products.forEach(async(product) => {
+                const productStatus = ProductStatus.ATIVO 
+
+                await this.productRepository.updateProductStatus(product.id, productStatus)
+            })
+        }     
+
+        await this.categoryRepository.restoreCategory(categoryId)
+    }
+
     async updateCategory(categoryId: number, params: EditCategory) {
 
         const establishment = await this.establishmentRepository.getEstablishment(params.establishmentId)

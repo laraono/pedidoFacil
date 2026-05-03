@@ -36,8 +36,9 @@ import { SubscriptionService } from './SubscriptionService';
 import { MercadoPagoService } from './MercadoPagoService';
 import { PlanService } from './PlanService';
 
-const authService = new AuthService(AppDataSource, userRepository, refreshTokenRepository);
 const mercadoPagoService = new MercadoPagoService()
+
+const authService = new AuthService(AppDataSource, userRepository, mercadoPagoService);
 
 const categoryService = new CategoryService(categoryRepository, establishmentRepository, productRepository);
 
@@ -77,10 +78,9 @@ const establishmentService = new EstablishmentService(
   establishmentRepository,
   userRepository,
   configurationRepository,
-  registerRepository,
   roleRepository,
+registerRepository,
   mercadoPagoService,
-  refreshTokenRepository,
   AppDataSource
 );
 
@@ -90,7 +90,6 @@ const menuService = new MenuService(categoryRepository, productRepository);
 
 const subscriptionService = new SubscriptionService(
     planRepository,
-    establishmentRepository,
     subscriptionRepository,
     mercadoPagoService,
     AppDataSource
