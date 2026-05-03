@@ -26,47 +26,18 @@ export class PlanService {
 
             const plan = await transactionalEntityManager.save(Plan, localRepositoryParams)
 
-            if(params.frequency === 'anual') {
-                params.frequency = 'months'
-                params.repetitions = 12
-            }
-
-            const mercadoPagoParams: CreatePlanMercadoPago = {
-                reason: params.name,
-                back_url: 'https://docs.google.com/document/d/10MVs5bBpUX5oQAb1YSolBP5eFK67gVC3wU-iOzTH0y4/edit?tab=t.kdyeobkwb0n4', //TODO
-                auto_recurring: {
-                    currency_id: 'BRL',
-                    transaction_amount: plan.price / params.repetitions,
-                    frequency: 1,
-                    frequency_type: params.frequency,
-                    billing_day:  params.billingDay,
-                    billing_day_proportional: params.billingDayProportional,
-                    repetitions: params.repetitions
-                }
-                
-            }
-
-            const answer = await this.mercadoPagoService.createPlan(mercadoPagoParams)
-
-            await transactionalEntityManager.update(Plan, plan.id, {mercadoPagoId: answer.id})
-
             return plan
         })
     }
 
     async listPlans() {
         const plans = await this.planRepository.listPlans()
-        
-        for(const plan of plans) {
-            plan.mercadoPagoId = ''
-        }
 
         return plans
     }
 
     async getPlan(planId: number) {
         const plan = await this.planRepository.getPlan(planId)
-       if(plan) plan.mercadoPagoId = '';
 
         return plan
     }
@@ -90,7 +61,7 @@ export class PlanService {
                 }
             })
 
-            if(!plan || !plan.mercadoPagoId) {
+            if(!plan) {
                 throw new AppError('Plano não encontrado', 404)
             }
 
@@ -107,23 +78,6 @@ export class PlanService {
                 params.frequency = 'months'
                 params.repetitions = 12
             }
-
-            const mercadoPagoParams: CreatePlanMercadoPago = {
-                reason: params.name,
-                back_url: 'https://docs.google.com/document/d/10MVs5bBpUX5oQAb1YSolBP5eFK67gVC3wU-iOzTH0y4/edit?tab=t.kdyeobkwb0n4', //TODO
-                auto_recurring: {
-                    currency_id: 'BRL',
-                    transaction_amount: plan.price / params.repetitions,
-                    frequency: 1,
-                    frequency_type: params.frequency,
-                    billing_day:  params.billingDay,
-                    billing_day_proportional: params.billingDayProportional,
-                    repetitions: params.repetitions
-                }
-                
-            }
-
-            await this.mercadoPagoService.updatePlan(plan.mercadoPagoId, mercadoPagoParams)
 
             return plan
         })

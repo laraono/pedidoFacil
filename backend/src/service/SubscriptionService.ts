@@ -2,73 +2,18 @@ import { SubscriptionStatus } from "../enum"
 import { EstablishmentRepository, PlanRepository, SubscriptionRepository } from "../repository"
 import { AppError } from "../middleware"
 import { MercadoPagoService } from "./MercadoPagoService"
-import { CreateOrderSubscriptionMP, CreateSubscriptionParams } from "../dto"
+import { CreateOrderSubscriptionMP, CreateSubscriptionParams, RestoreOrderSubscriptionMP } from "../dto"
 import { DataSource, EntityManager } from "typeorm"
-import { Establishment, Plan, Subscription } from "../database"
+import { Establishment, Plan, Subscription, User } from "../database"
 
 export class SubscriptionService {
 
     constructor(
         private planRepository: PlanRepository,
-        private establishmentRepository: EstablishmentRepository,
         private subscriptionRepository: SubscriptionRepository,
         private mercadoPagoService: MercadoPagoService,
         private dataSource: DataSource
     ) {}
-
-    async createSubscription(params: CreateSubscriptionParams, cardToken: string, transactionManager: EntityManager) {
-
-        const plan = await this.planRepository.getPlan(params.planId)
-
-        if(!plan) {
-            throw new AppError('Plano não encontrado', 404)
-        }
-
-        const establishment = await transactionManager.findOne(Establishment, {
-            where: {
-                id: params.establishmentId
-            }
-        })
-
-        if(!establishment) {
-            throw new AppError('Estabelecimento não encontrado', 404)
-        }
-
-        const createdSubscription = await this.mercadoPagoService.createSubscription({
-            payer_email: params.email,
-            card_token_id: cardToken,
-            back_url: 'http://localhost:3000/' //TODO
-        })
-
-        const expirationDate = createdSubscription.auto_recurring.end_date 
-
-        const intialSubscription = {
-            initialDate: new Date(),
-            establishment,
-            expirationDate,
-            lastPayment: new Date(),
-            plan
-        }
-
-        const subscription = await transactionManager.save(Subscription, intialSubscription)
-
-        return subscription
-    }
-
-    async verifySubscription(establishmentId: number) {
-        const [subscription] = await this.subscriptionRepository.getSubscriptionByEstablishment(establishmentId)
-
-        if (subscription.status === SubscriptionStatus.CANCELADA) throw new AppError('Assinatura cancelada', 402)
-        if (subscription.status === SubscriptionStatus.EXPIRADA) throw new AppError('Assinatura expirada', 402)
-
-        if (subscription.expirationDate <= new Date()) {
-            await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.EXPIRADA)
-
-            throw new AppError('Assinatura expirada', 402)
-        } 
-
-        return await this.mercadoPagoService.getSubscription(subscription.mercadoPagoId)
-    }
 
     async cancelSubscription(subscriptionId: number) {
         const subscription = await this.subscriptionRepository.getSubscription(subscriptionId)
@@ -110,8 +55,8 @@ export class SubscriptionService {
         mercadoPagoParams: CreateOrderSubscriptionMP,
         {planId, establishmentId}: {planId: number, establishmentId: number}
     ) {
-        return await this.dataSource.transaction(async (transactionalEntityManager) => {
-            const plan = await transactionalEntityManager.findOne(Plan, {
+        return await this.dataSource.transaction(async (transactionManager) => {
+            const plan = await transactionManager.findOne(Plan, {
                 where: {
                     id: planId
                 }
@@ -121,18 +66,88 @@ export class SubscriptionService {
                 throw new AppError('Plano não encontrado', 404)
             }
 
-            mercadoPagoParams.preapproval_plan_id = plan.mercadoPagoId
+            const establishment = await transactionManager.findOne(Establishment, {
+                where: {
+                    id: establishmentId
+                }
+            })
 
-            const answer = await this.mercadoPagoService.createSubscriptionOrder(mercadoPagoParams)
+            if(!establishment) {
+                throw new AppError('Estabelecimento não encontrado', 404)
+            }
 
-            const subscription = await this.createSubscription(
+            const [existingSubscription] = await transactionManager.find(Subscription, {
+                where: {
+                    establishment
+                }
+            })
+
+            if(existingSubscription) {
+                await transactionManager.update(Subscription, {id: existingSubscription.id}, {status: SubscriptionStatus.CANCELADA})
+            }
+
+            mercadoPagoParams.total_amount = mercadoPagoParams.total_amount.toString()
+            mercadoPagoParams.transactions.payments[0].amount = mercadoPagoParams.transactions.payments[0].amount.toString()
+
+            const createdSubscription = await this.mercadoPagoService.createSubscriptionOrder(mercadoPagoParams)
+
+            const expirationDate = new Date();
+            expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+
+            const intialSubscription = {
+                initialDate: new Date(),
+                establishment,
+                expirationDate,
+                lastPayment: new Date(),
+                price: plan.price,
+                plan,
+                mercadoPagoId: createdSubscription.id
+            }
+
+            const subscription = await transactionManager.save(Subscription, intialSubscription)
+
+            return subscription
+
+        })
+    }
+
+    async restoreSubscription(
+        mercadoPagoParams: RestoreOrderSubscriptionMP,
+        {subscriptionId, establishmentId}: {subscriptionId: number, establishmentId: number}
+    ) {
+        return await this.dataSource.transaction(async (transactionManager) => {
+            const subscription = await transactionManager.findOne(Subscription, {
+                where: {
+                    id: subscriptionId
+                }
+            })
+
+            if(!subscription || !subscription.mercadoPagoId) {
+                throw new AppError('Assinatura não encontrada', 404)
+            }
+
+            const establishment = await transactionManager.findOne(Establishment, {
+                where: {
+                    id: establishmentId
+                }
+            })
+
+            if(!establishment) {
+                throw new AppError('Estabelecimento não encontrado', 404)
+            }
+
+            const order = await this.mercadoPagoService.getOrder(subscription.mercadoPagoId)
+
+            const transactionId = order.transactions.payments[0].id
+
+            await this.mercadoPagoService.updateOrder(subscription.mercadoPagoId, transactionId, mercadoPagoParams.payments[0].payment_method)
+
+            await transactionManager.update(
+                Subscription, 
+                {id: subscriptionId}, 
                 {
-                    email: mercadoPagoParams.payer.email,
-                    establishmentId,
-                    planId
-                },
-                answer.transactions.payments[0].payment_method.token,
-                transactionalEntityManager
+                    status: SubscriptionStatus.PENDENTE, 
+                }
             )
 
             return subscription
@@ -143,6 +158,28 @@ export class SubscriptionService {
         const [subscription] = await this.subscriptionRepository.getSubscriptionByEstablishment(establishmentId)
 
         return subscription
+    }
+
+    async getEstablishmentHistory(establishmentId: number) {
+        const subscriptions = await this.subscriptionRepository.getSubscriptionByEstablishment(establishmentId)
+
+        const history: Array<any> = []
+ 
+        for(const sub of subscriptions) {
+            const order = await this.mercadoPagoService.getOrder(sub.mercadoPagoId)
+            const data = {
+                amount: order.transactions.payments[0].paid_amount,
+                status: order.transactions.payments[0].status_detail.toUpperCase(),
+                type: 'CRÉDITO',
+                installments: order.transactions.payments[0].payment_method.installments,
+                name: sub.plan ? sub.plan.name : '',
+                date: order.last_updated_date
+            }
+
+            history.push(data)
+        }
+
+        return history
     }
 
     async getSubscription(subscriptionId: number) {
