@@ -36,6 +36,15 @@ export async function request(path, options = {}) {
 
     if (res.status === 204) return null;
 
+    if (res.status === 402) {
+        res.json().then(data => {
+            localStorage.setItem('subscriptionError', data.message);
+        });
+        window.location.href = '/app/subscription';
+        return
+    };
+
+    localStorage.setItem('subscriptionError', '')
     const data = await res.json().catch(() => ({}));
 
     if (res.status === 401 && path !== '/refresh' && path !== '/login') {
