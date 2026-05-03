@@ -1,11 +1,11 @@
 import { CreateOrderPaymentMP, CreateOrderSubscriptionMP, CreatePlanMercadoPago, CreateRegisterParamsMP, CreateStoreParamsMP, UpdatePlanMercadoPago, UpdateSubscriptionMP } from '../dto';
 import { AppError } from '../middleware';
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
 import opencage from 'opencage-api-client';
 import crypto from 'crypto';
 import { MercadoPagoConfig, OAuth } from 'mercadopago'
 
-const v4 = require('uuid')
+const { v4 } = require('uuid');
 
 type CreateOrderType = {
     id: string,
@@ -32,7 +32,7 @@ type CreateOrderType = {
             status: string,
             status_detail: string,
             payment_method: {
-                id: 'visa',
+                id: string,
                 type: 'credit_card',
                 token: string,
                 installments: string,
@@ -49,16 +49,23 @@ type CreateOrderType = {
     }
 }
 
+type PaymentMethod = {
+    id: string;
+    type: string;
+    token: string;
+    installments: number
+}
+
 export class MercadoPagoService {
 
     async createPlan(params: CreatePlanMercadoPago) {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
             throw new AppError('', 500)
         }
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN 
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA 
         }
 
         try {
@@ -76,13 +83,13 @@ export class MercadoPagoService {
     }
 
     async updatePlan(mercadoPagoId: string, params: UpdatePlanMercadoPago) {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
             throw new AppError('', 500)
         }
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN 
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA 
         }
 
         try {
@@ -99,20 +106,49 @@ export class MercadoPagoService {
         }
     }
 
-    async createSubscription(
-        params: {
-            payer_email: string,
-            card_token_id: string,
-            back_url: string
-        }
-    ) {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+    async getPlans() {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
             throw new AppError('', 500)
         }
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN 
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA 
+        }
+
+        try {
+            const answer = await axios({
+                method: "get",
+                url: "https://api.mercadopago.com/preapproval_plan/search",
+                headers
+            })
+            return answer.data
+        } catch(err: any) {
+
+            for(const error of err.response.data.errors) {
+                console.log(error)
+                console.log('DETALHES', error.details)
+            }
+            throw new AppError('Erro buscando planos', 500)
+        }
+    }
+
+    async createSubscription(
+        params: {
+            preapproval_plan_id: string,
+            payer_email: string,
+            card_token_id: string,
+            reason: string,
+            status: string
+        }
+    ) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
+            throw new AppError('', 500)
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA 
         }
 
         try {
@@ -124,19 +160,23 @@ export class MercadoPagoService {
             })
 
             return answer.data
-        } catch(error) {
-            throw new AppError('Erro criando plano', 500)
+        } catch(err: any) {
+            console.log(err.response.data)
+            console.log()
+            console.log()
+
+            throw new AppError('Erro criando assinatura', 500)
         }
     }
 
     async getSubscription(mercadoPagoId: string) {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
             throw new AppError('', 500)
         }
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN 
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA 
         }
 
         try {
@@ -153,13 +193,13 @@ export class MercadoPagoService {
     }
 
     async updateSubscriptionValue(params: UpdateSubscriptionMP) {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
             throw new AppError('', 500)
         }
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN 
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA 
         }
 
         const updateSubscription = {
@@ -184,13 +224,13 @@ export class MercadoPagoService {
     }
 
     async cancelSubscription(subscriptionId: string) {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
             throw new AppError('', 500)
         }
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN 
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA 
         }
 
         const status = {status: 'canceled'}
@@ -211,7 +251,7 @@ export class MercadoPagoService {
     }
 
     async createStore(params: CreateStoreParamsMP) {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN || !process.env.MERCADOPAGO_USER_ID) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA || !process.env.MERCADOPAGO_USER_ID) {
             throw new AppError('', 500)
         }
 
@@ -225,7 +265,7 @@ export class MercadoPagoService {
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN 
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA 
         }
 
         const store = {
@@ -258,7 +298,7 @@ export class MercadoPagoService {
     }
 
     async createRegister(params: CreateRegisterParamsMP) {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
             throw new AppError('', 500)
         }
 
@@ -270,7 +310,7 @@ export class MercadoPagoService {
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN 
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA 
         }
 
         try {
@@ -289,13 +329,13 @@ export class MercadoPagoService {
     }
 
     async getTerminals({ store, pos }: { store?: string; pos?: string }) {
-        if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+        if (!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
             throw new AppError('Missing API Credentials', 500);
         }
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`
+            'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA}`
         };
 
         try {
@@ -318,13 +358,13 @@ export class MercadoPagoService {
     }
 
     async activeTerminal(terminalId: string) {
-        if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+        if (!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
             throw new AppError('Missing API Credentials', 500);
         }
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`
+            'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA}`
         };
 
         try {
@@ -345,7 +385,7 @@ export class MercadoPagoService {
     }
 
     async createOrder(params: CreateOrderPaymentMP): Promise<CreateOrderType> {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT) {
             throw new AppError('', 500)
         }
 
@@ -366,7 +406,7 @@ export class MercadoPagoService {
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN ,
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT ,
             'X-Idempotency-Key': v4()
         }
 
@@ -385,18 +425,41 @@ export class MercadoPagoService {
         }
     }
 
-    async cancelOrder(orderId: string) {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN) {
-            throw new AppError('', 500)
-        }
-
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+    async updateOrder(orderId: string, transactionId: string, payment_method: PaymentMethod) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT) {
             throw new AppError('', 500)
         }
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN ,
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT ,
+            'X-Idempotency-Key': v4()
+        }
+
+        try {
+            const answer = await axios({
+                method: "put",
+                url: `https://api.mercadopago.com/v1/orders/${orderId}/transactions/${transactionId}`, 
+                headers,
+                data: payment_method
+            })
+
+            if(answer.data.status === 'canceled') return true
+            else return false
+
+        } catch(error) {
+            throw new AppError('', 500)
+        }
+    }
+
+    async cancelOrder(orderId: string) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT) {
+            throw new AppError('', 500)
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT ,
             'X-Idempotency-Key': v4()
         }
 
@@ -416,17 +479,13 @@ export class MercadoPagoService {
     }
 
     async refundOrder(orderId: string) {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN) {
-            throw new AppError('', 500)
-        }
-
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT) {
             throw new AppError('', 500)
         }
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN ,
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT ,
             'X-Idempotency-Key': v4()
         }
 
@@ -446,17 +505,13 @@ export class MercadoPagoService {
     }
 
     async getOrder(orderId: string) {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN) {
-            throw new AppError('', 500)
-        }
-
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT) {
             throw new AppError('', 500)
         }
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN ,
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT ,
         }
 
         try {
@@ -466,11 +521,10 @@ export class MercadoPagoService {
                 headers,
             })
 
-            if(answer.data.status === 'refunded') return true
-            else return false
+            return answer.data
 
         } catch(error) {
-            throw new AppError('', 500)
+            throw new AppError('Erro ao conectar ao Mercado Pago', 500)
         }
     }
 
@@ -562,14 +616,72 @@ export class MercadoPagoService {
 
     }
 
-    async createSubscriptionOrder(params: CreateOrderSubscriptionMP): Promise<CreateOrderType> {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+
+    async processCardInfo(userId: string, token: string) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
             throw new AppError('', 500)
         }
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN ,
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA ,
+            'X-Idempotency-Key': v4()
+        }
+
+        try {
+            const answer = await axios({
+                method: "post",
+                url: `https://api.mercadopago.com/v1/customers/${userId}/cards`, 
+                headers,
+                data: {
+                    token
+                }
+            })
+
+            return answer.data
+
+        } catch(err: any) {
+
+            console.log('ERRO',  err.response.data)
+            throw new AppError('Erro de conexão com o Mercado Pago', 500)
+        }
+    }
+
+    async processOrder(orderId: string) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT) {
+            throw new AppError('', 500)
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT ,
+            'X-Idempotency-Key': v4()
+        }
+
+        try {
+            const answer = await axios({
+                method: "post",
+                url: `https://api.mercadopago.com/v1/orders/${orderId}/process`, 
+                headers
+            })
+
+            return answer.data
+
+        } catch(error:any) {
+            console.log('ERRO',  error.response.data)
+
+            throw new AppError('Erro de conexão com o Mercado Pago', 500)
+        }
+    }
+
+    async createSubscriptionOrder(params: CreateOrderSubscriptionMP): Promise<CreateOrderType> {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT) {
+            throw new AppError('', 500)
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT ,
             'X-Idempotency-Key': v4()
         }
 
@@ -583,33 +695,15 @@ export class MercadoPagoService {
 
             return answer.data
 
-        } catch(error) {
-            throw new AppError('', 500)
-        }
-    }
+        } catch(error: any) {
+            console.log('ERRO',  error.response.data)
+            if( error.response.data.errors) {
+                for(const e of  error.response.data.errors) {
+                    console.log(e)
+                }
+            }
 
-    async processOrder(orderId: string) {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN) {
-            throw new AppError('', 500)
-        }
-
-        const headers = {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN ,
-            'X-Idempotency-Key': v4()
-        }
-
-        try {
-            const answer = await axios({
-                method: "post",
-                url: `https://api.mercadopago.com/v1/orders/${orderId}/process`, 
-                headers
-            })
-
-            return answer.data
-
-        } catch(error) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago', 500)
         }
     }
 
