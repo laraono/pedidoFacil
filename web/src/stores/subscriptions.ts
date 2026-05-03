@@ -89,7 +89,7 @@ export const useSubscriptionStore = defineStore('subscription', () => {
   }
 
   function getPlanToBeSubscribed() {
-    localStorage.getItem(PLAN_KEY)
+    return localStorage.getItem(PLAN_KEY)
   }
 
   function updatePaymentMethod(method: string): void {
