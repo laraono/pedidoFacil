@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import multer from 'multer';
 import { productController } from '../controller';
-import { validateCreateProduct, validateDeleteProduct, validateListProducts, validateListProductsByCategories, validateUpdateProduct } from '../validator/product';
+import { validateCreateProduct, validateDeleteProduct, validateListProducts, validateListProductsByCategories } from '../validator/product';
 import { catchAsync, subscriptionMiddleware } from '../middleware';
 const authenticate = require('../middleware/authenticate');
 const tenant = require('../middleware/tenant');
@@ -20,7 +20,7 @@ productRouter.get('/categories/:categoryId/products', authenticate, roleAccessCo
 
 productRouter.get('/categories/:categoryId/products/active', authenticate, roleAccessControl.checkPermission('CARDAPIO'), validateListProductsByCategories, catchAsync((req: Request, res: Response) => productController.listActiveProductsByCategory(req, res)));
 
-productRouter.put('/categories/:categoryId/products/:productId', authenticate, roleAccessControl.checkPermission('CARDAPIO'), upload.single('image'), validateUpdateProduct, catchAsync((req: Request, res: Response) => productController.updateProduct(req, res)));
+productRouter.put('/categories/:categoryId/products/:productId', authenticate, roleAccessControl.checkPermission('CARDAPIO'), upload.single('image'), catchAsync((req: Request, res: Response) => productController.updateProduct(req, res)));
 
 productRouter.put('/categories/:categoryId/products/:productId/status', authenticate, roleAccessControl.checkPermission('CARDAPIO'), catchAsync((req: Request, res: Response) => productController.updateProductStatus(req, res)));
 
@@ -52,11 +52,4 @@ productRouter.delete(
   authenticate, 
   roleAccessControl.checkPermission('CARDAPIO'), 
   catchAsync((req: Request, res: Response) => productController.deleteProduct(req, res))
-);
-
-productRouter.patch(
-  '/products/:id/restore', 
-  authenticate, 
-  roleAccessControl.checkPermission('CARDAPIO'), 
-  catchAsync((req: Request, res: Response) => productController.restoreProduct(req, res))
 );

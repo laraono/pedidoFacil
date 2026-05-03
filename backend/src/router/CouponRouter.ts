@@ -4,6 +4,7 @@ import { couponService } from '../service';
 import authenticate from '../middleware/authenticate';
 import { checkPermission } from '../middleware/roleAccessControl';
 import { validateCreateCoupon } from '../validator/coupon/couponSchema';
+import { subscriptionMiddleware } from '../middleware';
 
 const couponRouter = Router();
 const couponController = new CouponController(couponService);
