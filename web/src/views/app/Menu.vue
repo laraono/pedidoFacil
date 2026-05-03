@@ -2,7 +2,6 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { useMenuStore } from "@/stores/menu";
 import { useComandaStore } from "@/stores/comandaManagement";
-import { comandaApi } from "@/services/comandaApi";
 import { request } from "@/services/api";
 import SubscriptionGuard from "@/components/SubscriptionGuard.vue";
 import { useToast } from "@/composables/useToast";
@@ -11,7 +10,6 @@ import { getEstablishmentMock } from "@/mock/stablishmentmock";
 import ToastMessage from "@/components/ui/ToastMessage.vue";
 import { useUtils } from "@/composables/useUtils";
 import { useRoute, useRouter } from "vue-router";
-
 import {
   Utensils, X, Plus, Minus, ShoppingBag,
   Trash2, ChefHat, CheckCircle2, Palette, ArrowLeft,
@@ -177,7 +175,6 @@ const openComandaModal = () => {
   isComandaModalOpen.value = true;
 };
 
-const confirmAndSendToKitchen = async () => {
 const confirmAndSendToKitchen = async () => {
   if (!selectedComandaId.value) return;
   if (selectedComandaId.value === 'new' && !newComandaNumber.value.trim()) return;
@@ -546,41 +543,7 @@ watch(() => route.query.editMode, checkEditMode);
             </div>
           </div>
         </div>
-      </Transition>
-
-        <Transition
-          enter-active-class="transition duration-300"
-          enter-from-class="opacity-0"
-          leave-active-class="transition duration-200"
-          leave-to-class="opacity-0"
-        >
-          <div
-            v-if="isCartModalOpen"
-            class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
-          >
-            <div
-              class="w-full sm:max-w-md rounded-t sm:rounded overflow-hidden flex flex-col max-h-[90vh] shadow-2xl animate-slideUp sm:animate-none"
-              :style="{ backgroundColor: cardBg, fontFamily, color: textColor }"
-            >
-              <div
-                class="p-6 flex justify-between items-center shrink-0"
-                :style="{ borderBottom: `1px solid ${adaptiveBorder}` }"
-              >
-                <div class="flex items-center gap-3">
-                  <ShoppingBag :size="28" :style="{ color: buttonColor }" />
-                  <h3 class="font-black text-2xl">Meu Pedido</h3>
-                </div>
-                <button
-                  @click="isCartModalOpen = false"
-                  class="p-2 rounded transition-colors"
-                  :style="{
-                    backgroundColor: adaptiveButtonBg,
-                    color: textColor,
-                  }"
-                >
-                  <X :size="24" />
-                </button>
-              </div>
+      </Transition>            
         <Transition
           enter-active-class="transition duration-300"
           enter-from-class="opacity-0"

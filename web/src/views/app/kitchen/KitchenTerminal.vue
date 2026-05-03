@@ -277,18 +277,6 @@ const indicatorColor = (color) => {
           </div>
         </section>
       </main>
-            <div
-              v-if="columnOrders(col.key).length === 0"
-              class="flex flex-col items-center justify-center h-40 text-[#757575]"
-            >
-              <Bell :size="48" class="mb-2 opacity-20" />
-              <p class="text-[10px] font-black uppercase tracking-[0.2em]">
-                Cozinha Limpa
-              </p>
-            </div>
-          </div>
-        </section>
-      </main>
 
     <nav class="fixed bottom-0 left-0 w-full bg-white border-t border-[#E0E0E0] shadow-lg md:hidden z-50 px-8 py-3 pb-8 flex justify-between items-center">
 

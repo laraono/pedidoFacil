@@ -106,7 +106,6 @@ const handleImageUpload = (event) => {
         form.value.imagePreview = URL.createObjectURL(file);
         form.value.image = file;
     }
-  const file = event.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();

@@ -67,7 +67,7 @@ const renderCardPaymentBrick = async () => {
                             }
                         },
                         paymentMethods: {
-                            minInstallments: 2,
+                            minInstallments: 12,
                             maxInstallments: 12,
                         },
                     },
@@ -82,12 +82,12 @@ const renderCardPaymentBrick = async () => {
                                     preapproval_plan_id: planId.value,
                                     type: "online",
                                     total_amount: String(formData.transaction_amount), 
-                                    external_reference: v4(), // identificador da origem da transação.
+                                    external_reference: v4(), 
                                     processing_mode: "automatic",
                                     transactions: {
                                         payments: [
                                             {
-                                                amount: String(formData.transaction_amount), // deve ser uma string com formato 00.00 
+                                                amount: String(formData.transaction_amount), 
                                                 payment_method: {
                                                     id: formData.payment_method_id,
                                                     type: additionalData.paymentTypeId,
@@ -103,9 +103,7 @@ const renderCardPaymentBrick = async () => {
                                     }
                                 };
 
-                                console.log(submitData.payer.identification)
-
-                               // await subscriptionApi.post(submitData, planId.value);
+                               await subscriptionApi.post(submitData, planId.value);
                                 router.push("/app/dashboard");
                             } catch (err) {
                                 console.error("Payment error:", err);
@@ -153,7 +151,7 @@ const goBack = () => {
 
 onMounted(async () => {
     plans.value = await planApi.list()
-    planId.value = subscriptionStore.getPlanToBeSubscribed() ?? 0
+    planId.value = subscriptionStore.getPlanToBeSubscribed ?? 0
     
     try {
         await loadMercadoPago();
@@ -161,7 +159,7 @@ onMounted(async () => {
         console.log("MercadoPago ready");
         
         if (planId.value && plans.value.length > 0) {
-            const plan = plans.value.find(p => p.id === savedPlanId);
+            const plan = plans.value.find(p => p.id === planId.value);
             if (plan) {
                 await selectPlan(plan);
             }

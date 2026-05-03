@@ -22,7 +22,7 @@ import { register } from 'node:module';
 const router = useRouter();
 const { showToast } = useToast();
 
-onMounted(() => {
+onMounted(async () => {
   categories.value = await registerApi.list();
   establishment.value = await establishmentApi.getProfile()
 });
