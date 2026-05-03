@@ -1,6 +1,7 @@
 import { ProductService } from '../service';
 import { Request, Response } from 'express';
 import { getIO } from '../socket'; 
+import { ProductStatus } from '../enum';
 
 export class ProductController {
   private productService: ProductService;

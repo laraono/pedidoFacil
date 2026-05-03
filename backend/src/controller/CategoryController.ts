@@ -37,6 +37,12 @@ export class CategoryController {
         res.sendStatus(204)
     }
 
+    async restoreCategory(req, res: Response) {
+        await this.categoryService.restoreCategory(req.params.categoryId)
+
+        res.sendStatus(204)
+    }
+
     async deleteCategory(req, res: Response) {
         const {categoryId} = req.params
 
