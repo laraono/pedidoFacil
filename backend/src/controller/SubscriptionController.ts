@@ -22,12 +22,19 @@ export class SubscriptionController {
 
     getEstablishmentSubscription = catchAsync(async (req, res: Response) => {
         const subscription = await this.subscriptionService.getEstablishmentSubscription(req.usuario.estabelecimento);
-        return res.status(200).json(subscription);
+        console.log(subscription)
+        return res.status(200).send(subscription);
+    });
+
+    getEstablishmentHistory = catchAsync(async (req, res: Response) => {
+        const subscription = await this.subscriptionService.getEstablishmentHistory(req.usuario.estabelecimento);
+        console.log(subscription)
+        return res.status(200).send(subscription);
     });
 
     getSubscription = catchAsync(async (req, res: Response) => {
         const subscription = await this.subscriptionService.getSubscription(req.params.subscriptionId);
-        return res.status(200).json(subscription);
+        return res.status(200).send(subscription);
     });
 
     cancelSubcription = catchAsync(async (req, res: Response) => {
@@ -40,9 +47,13 @@ export class SubscriptionController {
         return res.sendStatus(204)
     });
 
-    processCardInfo  = catchAsync(async (req: Request, res: Response) => {
-        const {data, params} = req.body
-        const result = await this.subscriptionService.processCardInfo(data, params);
+    processCardInfo  = catchAsync(async (req, res: Response) => {
+        await this.subscriptionService.processCardInfo(req.body, req.params);
+        return res.sendStatus(204);
+    });
+
+    restoreSubscription  = catchAsync(async (req, res: Response) => {
+        await this.subscriptionService.restoreSubscription(req.body, req.params);
         return res.sendStatus(204);
     });
 
