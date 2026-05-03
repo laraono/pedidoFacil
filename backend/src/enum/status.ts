@@ -24,7 +24,7 @@ export enum CategoryStatus {
 
 export enum UserStatus {
     ATIVO ='Ativo',
-    INATIVA = 'Inativo',
+    INATIVO = 'Inativo',
     PENDENTE = 'Pendente'
 }
 

@@ -48,6 +48,7 @@ AppDataSource.initialize().then(async () => {
     app.use('/api/v1', planRouter)
     app.use('/api/v1/estabelecimento', establishmentRouter)
     app.use('/api/v1/conta', profileRouter)
+    app.use('/api/v1', subscriptionRouter)
     app.use('/api/v1', configRouter)
     app.use('/api/v1', authRouter)
     app.use('/api/v1', categoryRouter)
@@ -67,7 +68,6 @@ AppDataSource.initialize().then(async () => {
     
     app.use('/api/v1', menuRouter)
 
-    app.use('/api/v1', subscriptionRouter)
 
     app.use(errorHandler)
 
