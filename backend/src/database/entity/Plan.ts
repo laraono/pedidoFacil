@@ -38,23 +38,9 @@ export class Plan {
     @Column({
         type: 'varchar',
         name: 'Features',
-        nullable: false
-    })
-    features!: string
-
-    @Column({
-        type: 'int',
-        name: 'Dia_Pagamento',
-        nullable: false
-    })
-    billingDay!: number
-
-    @Column({
-        name: 'Mercado_Pago_Id',
-        type: "varchar",
         nullable: true
     })
-    mercadoPagoId?: string
+    features?: string
     
     @OneToMany(() => Subscription, (subscription) => subscription.establishment)
     subscriptions?: Subscription[]

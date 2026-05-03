@@ -111,20 +111,6 @@ export class Establishment {
     })
     deletedAt?: Date
 
-
-    @Column({
-        type: 'varchar',
-        name: 'Mercado_Pago_Id',
-        nullable: true
-    })
-    mercadoPagoId?: string
-
-    @DeleteDateColumn({
-        name: 'Data_Exclusao',
-        nullable: true
-    })
-    deletedAt?: Date
-
     @OneToOne(() => User)
     @JoinColumn({
         name: 'ID_Gerente_Responsavel'
