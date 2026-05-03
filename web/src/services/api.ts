@@ -4,11 +4,20 @@ export function getToken() {
   return localStorage.getItem("accessToken");
 }
 
-export async function request(path: string, options: RequestInit = {}) {
-  const headers: Record<string, string> = { "Content-Type": "application/json", ...((options.headers as Record<string, string>) || {}) };
-  const token = getToken();
+export async function request(path: string, options: RequestInit & { isMultipart?: boolean } = {}) {
+  const isFormData = options.isMultipart === true || options.body instanceof FormData;
 
+  const headers: Record<string, string> = {
+    ...(!isFormData ? { "Content-Type": "application/json" } : {}),
+    ...((options.headers as Record<string, string>) || {}),
+  };
+
+  const token = getToken();
   if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  if (options.body && !isFormData && typeof options.body === "object") {
+    options = { ...options, body: JSON.stringify(options.body) };
+  }
 
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,

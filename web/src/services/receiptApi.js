@@ -1,5 +1,15 @@
 import { request } from './api';
 
+export const paymentApi = {
+  list: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate)   params.append('endDate',   filters.endDate);
+    if (filters.status)    params.append('status',    filters.status);
+    return request(`/payments?${params.toString()}`, { method: 'GET' });
+  },
+};
+
 export const receiptApi = {
   list: (filters = {}) => {
     const params = new URLSearchParams();
@@ -17,8 +27,7 @@ export const receiptApi = {
   create: (payload) =>
     request('/receipts', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   cancel: (id) =>

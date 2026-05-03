@@ -3,12 +3,14 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import PageHeader from '@/components/ui/PageHeader.vue';
 import ToastMessage from '@/components/ui/ToastMessage.vue';
+import FormModal from '@/components/ui/FormModal.vue';
+import BaseInput from '@/components/ui/BaseInput.vue';
 import { useToast } from '@/composables/useToast';
-import { receiptApi } from '@/services/receiptApi';
+import { receiptApi, paymentApi } from '@/services/receiptApi';
 import { establishmentApi } from '@/services/establishmentApi';
 import {
   FileText, Download, Search, CheckCircle2, XCircle,
-  AlertTriangle, Clock, RefreshCw, Eye, FileDown, Building2
+  AlertTriangle, RefreshCw, Eye, Building2, Plus
 } from 'lucide-vue-next';
 
 const { showToast } = useToast();
@@ -163,6 +165,95 @@ const viewError = (nf) => {
 
 const exportAll = () => showToast('Exportação em lote solicitada (em breve).', 'info');
 
+// --- Emitir NF modal ---
+const showEmitModal = ref(false);
+const emitForm = ref({ paymentId: '', cpfcnpj: '', totalValue: '' });
+const emitErrors = ref({});
+const isEmitting = ref(false);
+const availablePayments = ref([]);
+const isLoadingPayments = ref(false);
+const simulateMode = ref(false);
+
+const openEmitModal = async () => {
+  emitForm.value = { paymentId: '', cpfcnpj: '', totalValue: '' };
+  emitErrors.value = {};
+  simulateMode.value = false;
+  showEmitModal.value = true;
+  isLoadingPayments.value = true;
+  try {
+    const data = await paymentApi.list();
+    availablePayments.value = data.map(p => ({
+      id: p.id,
+      label: `#${p.id} · R$ ${Number(p.totalValue).toFixed(2)} · ${p.paymentType}`,
+    }));
+  } catch {
+    availablePayments.value = [];
+  } finally {
+    isLoadingPayments.value = false;
+  }
+};
+
+const formatCpfCnpj = (val) => {
+  const digits = val.replace(/\D/g, '');
+  if (digits.length <= 11) {
+    return digits
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  }
+  return digits
+    .replace(/(\d{2})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1/$2')
+    .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+};
+
+const onCpfCnpjInput = (e) => {
+  emitForm.value.cpfcnpj = formatCpfCnpj(e.target.value);
+};
+
+const validateEmitForm = () => {
+  const errors = {};
+  if (simulateMode.value) {
+    const v = Number(emitForm.value.totalValue);
+    if (!emitForm.value.totalValue || isNaN(v) || v <= 0) {
+      errors.totalValue = 'Informe um valor maior que zero.';
+    }
+  } else {
+    const id = Number(emitForm.value.paymentId);
+    if (!emitForm.value.paymentId || isNaN(id) || id <= 0) {
+      errors.paymentId = 'Selecione um pagamento.';
+    }
+  }
+  const digits = emitForm.value.cpfcnpj.replace(/\D/g, '');
+  if (digits && digits.length !== 11 && digits.length !== 14) {
+    errors.cpfcnpj = 'CPF (11 dígitos) ou CNPJ (14 dígitos).';
+  }
+  emitErrors.value = errors;
+  return Object.keys(errors).length === 0;
+};
+
+const submitEmit = async () => {
+  if (!validateEmitForm()) return;
+  isEmitting.value = true;
+  try {
+    const payload = simulateMode.value
+      ? { simulate: true, totalValue: Number(emitForm.value.totalValue) }
+      : { paymentId: Number(emitForm.value.paymentId) };
+    const digits = emitForm.value.cpfcnpj.replace(/\D/g, '');
+    if (digits) payload.cpfcnpj = digits;
+    await receiptApi.create(payload);
+    showToast('Nota Fiscal emitida com sucesso!', 'success');
+    showEmitModal.value = false;
+    await fetchReceipts();
+    await fetchMetrics();
+  } catch (err) {
+    showToast(err.message || 'Erro ao emitir nota fiscal.', 'error');
+  } finally {
+    isEmitting.value = false;
+  }
+};
+
 const currentPage = ref(1);
 const perPage = 5;
 const totalPages = computed(() => Math.ceil(filteredNFs.value.length / perPage));
@@ -174,6 +265,86 @@ const pagedNFs = computed(() =>
 <template>
   <main class="max-w-7xl mx-auto py-12 px-6 font-inter">
     <ToastMessage />
+
+    <!-- Modal: Emitir NF -->
+    <FormModal
+      :show="showEmitModal"
+      title="Emitir Nota Fiscal"
+      saveLabel="Emitir NF"
+      size="sm"
+      :isLoading="isEmitting"
+      @close="showEmitModal = false"
+      @save="submitEmit"
+    >
+      <div class="flex flex-col gap-6">
+        <div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded flex items-start gap-3">
+          <AlertTriangle :size="16" class="text-amber-400 mt-0.5 shrink-0" />
+          <p class="text-sm text-[#757575] leading-relaxed">
+            A NF-e será emitida no <strong class="text-[#212121]">ambiente sandbox</strong> da Nuvem Fiscal.
+          </p>
+        </div>
+
+        <!-- Toggle simulação -->
+        <label class="flex items-center gap-3 cursor-pointer select-none">
+          <div
+            class="relative w-10 h-5 rounded-full transition-colors"
+            :class="simulateMode ? 'bg-primary' : 'bg-gray-300'"
+            @click="simulateMode = !simulateMode"
+          >
+            <div
+              class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
+              :class="simulateMode ? 'translate-x-5' : 'translate-x-0.5'"
+            />
+          </div>
+          <span class="text-sm font-bold text-[#212121]">Modo simulação</span>
+          <span class="text-xs text-[#757575]">(preencher dados manualmente)</span>
+        </label>
+
+        <!-- Pagamento real -->
+        <div v-if="!simulateMode" class="flex flex-col gap-1">
+          <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1">Pagamento *</label>
+          <div v-if="isLoadingPayments" class="flex items-center gap-2 py-3 px-4 bg-gray-50 border border-[#E0E0E0] rounded text-sm text-[#757575]">
+            <RefreshCw :size="14" class="animate-spin" /> Buscando pagamentos...
+          </div>
+          <select
+            v-else
+            v-model="emitForm.paymentId"
+            class="w-full py-3.5 px-4 rounded border bg-gray-50 text-[#212121] focus:border-primary/50 focus:outline-none transition-all"
+            :class="emitErrors.paymentId ? '!border-red-500 !bg-red-500/5' : 'border-[#E0E0E0]'"
+          >
+            <option value="" disabled>Selecione um pagamento...</option>
+            <option v-if="availablePayments.length === 0" value="" disabled>Nenhum pagamento encontrado</option>
+            <option v-for="p in availablePayments" :key="p.id" :value="p.id">{{ p.label }}</option>
+          </select>
+          <p v-if="emitErrors.paymentId" class="text-danger text-[11px] font-bold ml-1 mt-0.5">{{ emitErrors.paymentId }}</p>
+        </div>
+
+        <!-- Simulação: valor manual -->
+        <BaseInput
+          v-if="simulateMode"
+          v-model="emitForm.totalValue"
+          label="Valor Total (R$) *"
+          type="number"
+          placeholder="Ex: 59.90"
+          :error="emitErrors.totalValue"
+        />
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1">
+            CPF / CNPJ do Consumidor <span class="font-normal normal-case tracking-normal">(opcional)</span>
+          </label>
+          <input
+            :value="emitForm.cpfcnpj"
+            @input="onCpfCnpjInput"
+            placeholder="000.000.000-00 ou 00.000.000/0001-00"
+            maxlength="18"
+            class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] placeholder-gray-400 focus:border-primary/50 focus:outline-none transition-all"
+            :class="emitErrors.cpfcnpj ? '!border-red-500 !bg-red-500/5' : ''"
+          />
+          <p v-if="emitErrors.cpfcnpj" class="text-danger text-[11px] font-bold ml-1 mt-0.5">{{ emitErrors.cpfcnpj }}</p>
+        </div>
+      </div>
+    </FormModal>
 
     <div v-if="!hasCnpj" class="flex items-center justify-center min-h-[60vh]">
       <div class="bg-white border border-[#E0E0E0] rounded p-10 max-w-md w-full text-center shadow-2xl">
@@ -202,6 +373,12 @@ const pagedNFs = computed(() =>
             class="flex items-center gap-2 px-5 py-3 bg-gray-50 border border-[#E0E0E0] text-[#757575] text-sm font-black uppercase tracking-widest rounded hover:bg-gray-100 hover:text-[#212121] transition-all"
           >
             <Download :size="16" /> Exportar XML
+          </button>
+          <button
+            @click="openEmitModal"
+            class="flex items-center gap-2 px-5 py-3 bg-primary text-white text-sm font-black uppercase tracking-widest rounded hover:bg-primary-dark transition-all active:scale-95"
+          >
+            <Plus :size="16" /> Emitir NF
           </button>
         </template>
       </PageHeader>

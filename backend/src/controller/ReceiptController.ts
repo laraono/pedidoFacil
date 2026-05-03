@@ -7,8 +7,11 @@ export class ReceiptController {
 
     create = catchAsync(async (req: Request, res: Response) => {
         const establishmentId = (req as any).usuario.estabelecimento;
-        const { paymentId, cpfcnpj } = req.body;
-        const receipt = await this.receiptService.generateReceipt(paymentId, establishmentId, cpfcnpj);
+        const { paymentId, cpfcnpj, simulate, totalValue } = req.body;
+        const receipt = await this.receiptService.generateReceipt(
+            paymentId, establishmentId, cpfcnpj,
+            simulate === true, totalValue != null ? Number(totalValue) : undefined
+        );
         return res.status(201).json(receipt);
     });
 

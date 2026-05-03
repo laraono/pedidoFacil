@@ -14,29 +14,40 @@ export class ReceiptService {
         private establishmentRepository: EstablishmentRepository
     ) {}
 
-    async generateReceipt(paymentId: number, establishmentId: number, cpfCnpj?: string) {
-        const establishment = await this.establishmentRepository.findOne({ 
-            where: { id: establishmentId } 
+    async generateReceipt(paymentId: number, establishmentId: number, cpfCnpj?: string, simulate = false, simulatedValue?: number) {
+        const establishment = await this.establishmentRepository.findOne({
+            where: { id: establishmentId }
         });
-        
+
         if (!establishment?.cnpj) {
             throw new AppError('CNPJ do estabelecimento não configurado para emissão de NF.', 400);
         }
 
-        const payment = await this.paymentRepository.findOne({
-            where: { 
-                id: paymentId, 
-                establishment: { id: establishmentId } 
-            },
-            relations: ['paymentOrders']
-        });
+        let resolvedValue: number;
+        let payment = null;
 
-        if (!payment) throw new AppError('Pagamento não encontrado.', 404);
+        if (simulate) {
+            if (!simulatedValue || simulatedValue <= 0) {
+                throw new AppError('Informe um valor válido para a simulação.', 400);
+            }
+            resolvedValue = simulatedValue;
+        } else {
+            payment = await this.paymentRepository.findOne({
+                where: {
+                    id: paymentId,
+                    establishment: { id: establishmentId }
+                },
+                relations: ['paymentOrders']
+            });
+
+            if (!payment) throw new AppError('Pagamento não encontrado.', 404);
+            resolvedValue = Number(payment.totalValue);
+        }
 
         const receipt = this.receiptRepository.create({
             receiptNumber: null,
             cpfcnpj: cpfCnpj || null,
-            totalValue: payment.totalValue,
+            totalValue: resolvedValue,
             status: ReceiptStatus.PENDENTE,
             payment: payment,
             establishment: establishment,
@@ -47,7 +58,8 @@ export class ReceiptService {
         try {
             const result = await nuvemFiscalService.emitirNFe(
                 establishment.cnpj,
-                Number(payment.totalValue),
+                establishment.name,
+                resolvedValue,
                 cpfCnpj
             );
 
@@ -94,6 +106,7 @@ export class ReceiptService {
         try {
             const result = await nuvemFiscalService.emitirNFe(
                 receipt.establishment.cnpj,
+                receipt.establishment.name,
                 Number(receipt.totalValue),
                 receipt.cpfcnpj
             );

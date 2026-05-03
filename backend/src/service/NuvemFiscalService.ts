@@ -1,5 +1,5 @@
 const NUVEM_FISCAL_BASE_URL = 'https://api.sandbox.nuvemfiscal.com.br';
-const NUVEM_FISCAL_AUTH_URL = 'https://auth.sandbox.nuvemfiscal.com.br/oauth/token';
+const NUVEM_FISCAL_AUTH_URL = 'https://auth.nuvemfiscal.com.br/oauth/token';
 
 interface NuvemFiscalToken {
     access_token: string;
@@ -25,10 +25,11 @@ interface NFeItemInput {
 
 export class NuvemFiscalService {
     private tokenCache: NuvemFiscalToken | null = null;
+    private empresaSetupCache = new Set<string>();
 
     constructor(
-        private clientId: string = process.env.NUVEM_FISCAL_CLIENT_ID!,
-        private clientSecret: string = process.env.NUVEM_FISCAL_CLIENT_SECRET!
+        private clientId?: string,
+        private clientSecret?: string
     ) {}
 
     private async getAccessToken(): Promise<string> {
@@ -38,11 +39,18 @@ export class NuvemFiscalService {
             return this.tokenCache.access_token;
         }
 
+        const clientId = this.clientId ?? process.env.NUVEM_FISCAL_CLIENT_ID;
+        const clientSecret = this.clientSecret ?? process.env.NUVEM_FISCAL_CLIENT_SECRET;
+
+        if (!clientId || !clientSecret) {
+            throw new Error('Credenciais da Nuvem Fiscal não configuradas (NUVEM_FISCAL_CLIENT_ID / NUVEM_FISCAL_CLIENT_SECRET).');
+        }
+
         const body = new URLSearchParams({
             grant_type: 'client_credentials',
-            client_id: this.clientId,
-            client_secret: this.clientSecret,
-            scope: 'nfe cnpj',
+            client_id: clientId,
+            client_secret: clientSecret,
+            scope: 'nfe cnpj empresa',
         });
 
         const res = await fetch(NUVEM_FISCAL_AUTH_URL, {
@@ -91,19 +99,84 @@ export class NuvemFiscalService {
         return JSON.parse(responseText) as T;
     }
 
+    private async garantirEmpresaCadastrada(cnpj: string, nome: string): Promise<void> {
+        if (this.empresaSetupCache.has(cnpj)) return;
+
+        // 1. Cadastrar empresa se não existir
+        let empresaExiste = false;
+        try {
+            await this.request('GET', `/empresas/${cnpj}`);
+            empresaExiste = true;
+        } catch (err: any) {
+            if (!err?.message?.includes('404')) throw err;
+        }
+
+        if (!empresaExiste) {
+            await this.request('POST', '/empresas', {
+                cpf_cnpj: cnpj,
+                nome_razao_social: nome.toUpperCase().slice(0, 60),
+                email: `nfe@${cnpj}.sandbox`,
+                endereco: {
+                    logradouro: 'RUA TESTE',
+                    numero: '1',
+                    bairro: 'CENTRO',
+                    codigo_municipio: '3550308',
+                    uf: 'SP',
+                    cep: '01001000',
+                },
+            });
+        }
+
+        // 2. Cadastrar certificado se não existir
+        let certExiste = false;
+        try {
+            await this.request('GET', `/empresas/${cnpj}/certificados`);
+            certExiste = true;
+        } catch (err: any) {
+            if (!err?.message?.includes('404')) throw err;
+        }
+
+        if (!certExiste) {
+            const certBase64 = process.env.NUVEM_FISCAL_CERT_BASE64;
+            const certPassword = process.env.NUVEM_FISCAL_CERT_PASSWORD;
+
+            if (!certBase64 || !certPassword) {
+                throw new Error(
+                    'Certificado digital não configurado. Defina NUVEM_FISCAL_CERT_BASE64 e NUVEM_FISCAL_CERT_PASSWORD no .env.'
+                );
+            }
+
+            await this.request('POST', `/empresas/${cnpj}/certificados`, {
+                certificado: certBase64,
+                password: certPassword,
+            });
+        }
+
+        // 3. Configurar ambiente NF-e (idempotente)
+        await this.request('PUT', `/empresas/${cnpj}/nfe`, {
+            ambiente: 'homologacao',
+            CRT: 1,
+        });
+
+        this.empresaSetupCache.add(cnpj);
+    }
+
     async emitirNFe(
         cnpjEmitente: string,
+        emitNome: string,
         totalValue: number,
         cpfCnpjDestinatario?: string,
         itens?: NFeItemInput[]
     ): Promise<NFeEmitidaResult> {
         const cnpjLimpo = cnpjEmitente.replace(/\D/g, '');
 
+        await this.garantirEmpresaCadastrada(cnpjLimpo, emitNome);
+
         const itensFinal = itens?.length
             ? itens
             : [
                   {
-                      descricao: 'Venda de produtos/serviços',
+                      descricao: 'Venda de produtos/servicos',
                       quantidade: 1,
                       valorUnitario: totalValue,
                       ncm: '22021000',
@@ -111,7 +184,7 @@ export class NuvemFiscalService {
                   },
               ];
 
-        const payload = this.buildNFePayload(cnpjLimpo, totalValue, cpfCnpjDestinatario, itensFinal);
+        const payload = this.buildNFePayload(cnpjLimpo, emitNome, totalValue, cpfCnpjDestinatario, itensFinal);
 
         const nfCriada = await this.request<any>('POST', '/nfe', payload);
         const nfId: string = nfCriada.id;
@@ -151,56 +224,121 @@ export class NuvemFiscalService {
 
     private buildNFePayload(
         cnpj: string,
+        emitNome: string,
         totalValue: number,
         cpfCnpjDestinatario?: string,
         itens: NFeItemInput[] = []
     ): object {
-        const destinatario = cpfCnpjDestinatario
+        const now = new Date();
+        const dhEmi = now.toISOString().slice(0, 19) + '-03:00';
+        const vProd = Number(totalValue.toFixed(2));
+
+        const dest = cpfCnpjDestinatario
             ? {
-                  cpf_cnpj: cpfCnpjDestinatario.replace(/\D/g, ''),
-                  nome: 'CONSUMIDOR',
-                  indicador_inscricao_estadual: 9,
-              }
+                CPF: cpfCnpjDestinatario.replace(/\D/g, '').slice(0, 11),
+                xNome: 'CONSUMIDOR',
+                indIEDest: 9,
+            }
             : {
-                  nome: 'CONSUMIDOR NÃO IDENTIFICADO',
-                  indicador_inscricao_estadual: 9,
-              };
+                CPF: '00000000191', // CPF genérico para consumidor não identificado
+                xNome: 'CONSUMIDOR NAO IDENTIFICADO',
+                indIEDest: 9,
+            };
+
+        const det = itens.map((item, idx) => ({
+            nItem: idx + 1,
+            prod: {
+                cProd: `PROD-${String(idx + 1).padStart(4, '0')}`,
+                cEAN: 'SEM GTIN',
+                xProd: item.descricao,
+                NCM: item.ncm ?? '22021000',
+                CFOP: item.cfop ?? '5102',
+                uCom: 'UN',
+                qCom: item.quantidade,
+                vUnCom: Number(item.valorUnitario.toFixed(2)),
+                vProd: Number((item.quantidade * item.valorUnitario).toFixed(2)),
+                cEANTrib: 'SEM GTIN',
+                uTrib: 'UN',
+                qTrib: item.quantidade,
+                vUnTrib: Number(item.valorUnitario.toFixed(2)),
+                indTot: 1,
+            },
+            imposto: {
+                ICMS: { ICMS40: { orig: 0, CST: '41' } },
+                PIS:    { PISNT: { CST: '07' } },
+                COFINS: { COFINSNT: { CST: '07' } },
+            },
+        }));
 
         return {
             ambiente: 'homologacao',
-            serie: '1',
-            tipo: 'saida',
-            finalidade: 'normal',
-            natureza_operacao: 'VENDA DE MERCADORIA',
-            emitente: {
-                cpf_cnpj: cnpj,
-            },
-            destinatario,
-            itens: itens.map((item, idx) => ({
-                numero: idx + 1,
-                codigo: `PROD-${String(idx + 1).padStart(4, '0')}`,
-                descricao: item.descricao,
-                ncm: item.ncm ?? '22021000',
-                cfop: item.cfop ?? '5102',
-                unidade_comercial: 'UN',
-                quantidade_comercial: item.quantidade,
-                valor_unitario_comercial: item.valorUnitario,
-                valor_bruto: item.quantidade * item.valorUnitario,
-                inclui_no_total: true,
-                tributacao: {
-                    icms: { origem: 0, cst: '41' },
-                    pis: { cst: '07' },
-                    cofins: { cst: '07' },
+            referencia: `REF-${Date.now()}`,
+            infNFe: {
+                versao: '4.00',
+                ide: {
+                    cUF: 35,         // SP
+                    natOp: 'VENDA DE MERCADORIA',
+                    mod: 55,
+                    serie: 1,
+                    nNF: Math.floor(Math.random() * 900000) + 100000,
+                    dhEmi,
+                    tpNF: 1,         // saída
+                    idDest: 1,       // operação interna
+                    cMunFG: 3550308, // São Paulo
+                    tpImp: 1,
+                    tpEmis: 1,
+                    tpAmb: 2,        // homologação
+                    finNFe: 1,
+                    indFinal: 1,     // consumidor final
+                    indPres: 1,      // presencial
+                    procEmi: 0,
+                    verProc: '1.0',
                 },
-            })),
-            cobranca: {
-                duplicatas: [
-                    {
-                        numero: '001',
-                        vencimento: new Date().toISOString().split('T')[0],
-                        valor: totalValue,
+                emit: {
+                    CNPJ: cnpj,
+                    xNome: emitNome.toUpperCase().slice(0, 60),
+                    enderEmit: {
+                        xLgr: 'RUA TESTE',
+                        nro: '1',
+                        xBairro: 'CENTRO',
+                        cMun: 3550308,
+                        xMun: 'SAO PAULO',
+                        UF: 'SP',
+                        CEP: '01001000',
+                        cPais: 1058,
+                        xPais: 'BRASIL',
                     },
-                ],
+                    CRT: 1, // Simples Nacional
+                },
+                dest,
+                det,
+                total: {
+                    ICMSTot: {
+                        vBC: 0,
+                        vICMS: 0,
+                        vICMSDeson: 0,
+                        vFCP: 0,
+                        vBCST: 0,
+                        vST: 0,
+                        vFCPST: 0,
+                        vFCPSTRet: 0,
+                        vProd,
+                        vFrete: 0,
+                        vSeg: 0,
+                        vDesc: 0,
+                        vII: 0,
+                        vIPI: 0,
+                        vIPIDevol: 0,
+                        vPIS: 0,
+                        vCOFINS: 0,
+                        vOutro: 0,
+                        vNF: vProd,
+                    },
+                },
+                transp: { modFrete: 9 },
+                pag: {
+                    detPag: [{ tPag: '01', vPag: vProd }],
+                },
             },
         };
     }
