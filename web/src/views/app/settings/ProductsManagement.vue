@@ -16,10 +16,6 @@ import { productApi } from "@/services/productApi";
 const { showToast } = useToast();
 const { confirmState, showConfirm } = useConfirm();
 
-onMounted(() => {
-  menuStore.loadData();
-});
-
 const showDeleted = ref(false);
 const showModal = ref(false);
 const isEditing = ref(false);
@@ -36,8 +32,12 @@ const displayedProducts = computed(() =>
 )
 
 onMounted(async () => {
+  try {
     categoryOptions.value = await categoryApi.list()
     products.value = await productApi.list()
+  } catch(err) {
+    console.log(err)
+  }
 })
 
 const bulkMode = ref(false);

@@ -158,9 +158,9 @@ const saveCategory = async () => {
     };
 
         if (isEditing.value) {
-      await       await categoryApi.putCategory(payload.id, payload.name, payload.image);
+            await categoryApi.update(payload.id, payload.name, payload.image);
         } else {
-      await       await categoryApi.post(form.value.name, form.value.image)
+            await categoryApi.create(form.value.name, form.value.image)
         }
     
         showToast(`Categoria "${form.value.name}" salva com sucesso!`, "success");

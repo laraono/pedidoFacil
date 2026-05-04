@@ -5,9 +5,9 @@ export const categoryApi = {
   
   listDeleted: () => request('/categories?deleted=true', { method: 'GET' }),
   
-  create: (data) => request('/categories', { 
+  create: (name) => request('/categories', { 
     method: 'POST', 
-    body: JSON.stringify(data) 
+    body: JSON.stringify({name}) 
   }),
   
   update: (id, data) => request(`/categories/${id}`, { 

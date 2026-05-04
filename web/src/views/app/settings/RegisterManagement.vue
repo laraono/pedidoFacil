@@ -17,13 +17,12 @@ import {
 } from "lucide-vue-next";
 import {registerApi} from '@/services/registerApi'
 import {establishmentApi} from '@/services/establishmentApi'
-import { register } from 'node:module';
 
 const router = useRouter();
 const { showToast } = useToast();
 
 onMounted(async () => {
-  categories.value = await registerApi.list();
+  registers.value = await registerApi.list();
   establishment.value = await establishmentApi.getProfile()
 });
 
@@ -42,10 +41,6 @@ const form = ref({ id: null, name: "", image: null, imagePreview: null });
 const confirmModal = ref({
     show: false, title: '', message: '', onConfirm: null, data: null, isError: false,
 });
-
-onMounted(async () => {
-    categories.value = await registerApi.list()
-})
 
 const showConfirm = (title, message, onConfirm, data = null, options = {}) => {
     confirmModal.value = {

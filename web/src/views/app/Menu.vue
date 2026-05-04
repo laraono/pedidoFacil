@@ -58,7 +58,7 @@ const categories = ref([])
 const comandas = ref([])
 
 onMounted(async () => {
-  categories.value = await categoryApi.listActive()
+  categories.value = await categoryApi.list()
   products.value = await productApi.listActiveByCategory(categories.value[0].id)
   comandas.value = await comandaApi.listOpen()
   activeCategoryId.value = categories.value[0].id
