@@ -34,7 +34,7 @@ establishmentRouter.post(
 establishmentRouter.get(
   '/profile',
   authenticate,
-  checkPermission('ESTABELECIMENTO_VIEW', 'ALL'),
+  checkPermission('ESTABELECIMENTO_VIEW', 'CONFIGURACAO'),
   establishmentController.getProfile
 );
 

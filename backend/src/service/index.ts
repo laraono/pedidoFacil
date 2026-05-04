@@ -72,17 +72,20 @@ const orderService = new OrderService(
 );
 const couponService = new CouponService(couponRepository);
 const roleService = new RoleService(roleRepository, userRepository);
-const profileService = new ProfileService(userRepository);
 
 const establishmentService = new EstablishmentService(
-  establishmentRepository,
-  userRepository,
-  configurationRepository,
-  roleRepository,
-registerRepository,
-  mercadoPagoService,
-  AppDataSource
+    establishmentRepository,
+    userRepository,
+    configurationRepository,
+    roleRepository,
+    registerRepository,
+    mercadoPagoService,
+    AppDataSource
 );
+
+
+const profileService = new ProfileService(userRepository, establishmentService);
+
 
 const employeeService = new EmployeeService(userRepository, roleRepository);
 

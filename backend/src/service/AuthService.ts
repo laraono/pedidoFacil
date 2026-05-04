@@ -48,6 +48,8 @@ export class AuthService {
 
     const savedUser = await this.userRepository.save(user);
 
+    
+
     const { accessToken, refreshToken } = await gerarTokens(savedUser);
 
     return { accessToken, refreshToken, usuario: { id: savedUser.id, nome: savedUser.name, email: savedUser.email } };

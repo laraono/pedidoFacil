@@ -14,8 +14,8 @@ import { UpdateEstablishmentDTO } from '../dto/establishment/UpdateEstablishment
 import { RegisterRepository } from '../repository';
 import { MercadoPagoService } from './MercadoPagoService';
 import { DataSource } from 'typeorm';
-import { CreateStoreMP } from '../dto';
-import { Register } from '../database';
+import { CreateStoreMP, CreateStoreParamsMP } from '../dto';
+import { Register, User } from '../database';
 
 export class EstablishmentService {
   
@@ -95,9 +95,14 @@ export class EstablishmentService {
 
     const managerRole = this.roleRepository.create({
       name: 'Gerente',
-      permissions: JSON.stringify(['ALL']),
+      permissions: JSON.stringify([
+        'RELATORIOS', 'COZINHA', 'CARDAPIO', 'FUNCIONARIOS', 'CONFIGURACAO',
+        'ASSINATURA', 'CRIAR_PEDIDO', 'NOTIFICACOES', 'CAIXA',
+        'COMANDAS_FINALIZADAS', 'CUPONS', 'NOTA_FISCAL'
+      ]),
       establishment: { id: establishmentId } as any,
     });
+
     const savedManagerRole = await this.roleRepository.save(managerRole);
 
     await this.userRepository.updateRoleId(userId, savedManagerRole.id);
@@ -202,15 +207,21 @@ export class EstablishmentService {
     }
   }
 
-  async createStore(params: CreateStoreMP) {
-    const establishment = await this.establishmentRepository.getEstablishment(params.establishmentId)
+  async createStore({address, city, state, user} : {address: string, city: string, state: string, user: User}) {
+    const establishment = await this.establishmentRepository.getEstablishmentByUser(user)
 
     if(!establishment) {
       throw new AppError('Estabelecimento não encontrado', 404)
     }
+    console.log('pre store')
 
-    const store = await this.mercadoPagoService.createStore(params)
-    await this.establishmentRepository.addMercadoPagoId(params.establishmentId, store)
+    const store = await this.mercadoPagoService.createStore({
+      address, city, state, establishmentId: establishment.id, name: establishment.name
+    })
+    console.log('pos store')
+
+
+    await this.establishmentRepository.addMercadoPagoId(establishment.id, store)
 
   }
 

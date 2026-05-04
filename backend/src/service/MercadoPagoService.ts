@@ -60,7 +60,7 @@ export class MercadoPagoService {
 
     async createPlan(params: CreatePlanMercadoPago) {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const headers = {
@@ -84,7 +84,7 @@ export class MercadoPagoService {
 
     async updatePlan(mercadoPagoId: string, params: UpdatePlanMercadoPago) {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const headers = {
@@ -108,7 +108,7 @@ export class MercadoPagoService {
 
     async getPlans() {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const headers = {
@@ -143,7 +143,7 @@ export class MercadoPagoService {
         }
     ) {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const headers = {
@@ -171,7 +171,7 @@ export class MercadoPagoService {
 
     async getSubscription(mercadoPagoId: string) {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const headers = {
@@ -194,7 +194,7 @@ export class MercadoPagoService {
 
     async updateSubscriptionValue(params: UpdateSubscriptionMP) {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const headers = {
@@ -219,13 +219,13 @@ export class MercadoPagoService {
             return answer.data.id
 
         } catch(error) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
 
     async cancelSubscription(subscriptionId: string) {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const headers = {
@@ -246,26 +246,26 @@ export class MercadoPagoService {
             return answer.data.id
 
         } catch(error) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
 
     async createStore(params: CreateStoreParamsMP) {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA || !process.env.MERCADOPAGO_USER_ID) {
-            throw new AppError('', 500)
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT || !process.env.MERCADOPAGO_USER_ID) {
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const coordinates = await this.fetchCoordinates(params)
 
         if(!coordinates) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const address = params.address.split(',')
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA 
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT 
         }
 
         const store = {
@@ -293,13 +293,14 @@ export class MercadoPagoService {
             return answer.data.id
 
         } catch(error) {
-            throw new AppError('', 500)
+            console.log('ERRO', error)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
 
     async createRegister(params: CreateRegisterParamsMP) {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const register = {
@@ -324,7 +325,7 @@ export class MercadoPagoService {
             return answer.data.id
 
         } catch(error) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
 
@@ -386,7 +387,7 @@ export class MercadoPagoService {
 
     async createOrder(params: CreateOrderPaymentMP): Promise<CreateOrderType> {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const order = {
@@ -421,13 +422,13 @@ export class MercadoPagoService {
             return answer.data
 
         } catch(error) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
 
     async updateOrder(orderId: string, transactionId: string, payment_method: PaymentMethod) {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const headers = {
@@ -448,13 +449,13 @@ export class MercadoPagoService {
             else return false
 
         } catch(error) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
 
     async cancelOrder(orderId: string) {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const headers = {
@@ -474,13 +475,13 @@ export class MercadoPagoService {
             else return false
 
         } catch(error) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
 
     async refundOrder(orderId: string) {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const headers = {
@@ -500,13 +501,13 @@ export class MercadoPagoService {
             else return false
 
         } catch(error) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
 
     async getOrder(orderId: string) {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const headers = {
@@ -542,11 +543,11 @@ export class MercadoPagoService {
             }
         })
         .catch((error) => {
-            console.log('Error', error.message);
+            console.log('error', error.message);
             if (error.status.code === 402) {
                 console.log('hit free trial daily limit');
                 console.log('become a customer: https://opencagedata.com/pricing');
-                throw new AppError('', 500)
+                throw new AppError('Erro de conexão com o Mercado Pago',  500)
             }
         });
     }
@@ -581,13 +582,13 @@ export class MercadoPagoService {
                 }
             })
         } catch(error) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
 
     async setUserAuthURL() {
         if(!process.env.MERCADOPAGO_CLIENT_ID) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const random = v4()
@@ -619,7 +620,7 @@ export class MercadoPagoService {
 
     async processCardInfo(userId: string, token: string) {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const headers = {
@@ -643,13 +644,13 @@ export class MercadoPagoService {
         } catch(err: any) {
 
             console.log('ERRO',  err.response.data)
-            throw new AppError('Erro de conexão com o Mercado Pago', 500)
+            throw new AppError(err.response.data.message, 500)
         }
     }
 
     async processOrder(orderId: string) {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const headers = {
@@ -670,13 +671,13 @@ export class MercadoPagoService {
         } catch(error:any) {
             console.log('ERRO',  error.response.data)
 
-            throw new AppError('Erro de conexão com o Mercado Pago', 500)
+            throw new AppError(error.response.data.message, 500)
         }
     }
 
     async createSubscriptionOrder(params: CreateOrderSubscriptionMP): Promise<CreateOrderType> {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT) {
-            throw new AppError('', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
         const headers = {
@@ -696,14 +697,12 @@ export class MercadoPagoService {
             return answer.data
 
         } catch(error: any) {
-            console.log('ERRO',  error.response.data)
             if( error.response.data.errors) {
                 for(const e of  error.response.data.errors) {
-                    console.log(e)
+                    throw new AppError(e.message, 500)
                 }
             }
-
-            throw new AppError('Erro de conexão com o Mercado Pago', 500)
+            throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
 

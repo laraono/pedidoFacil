@@ -5,7 +5,7 @@ import { Establishment } from "./Establishment"
 export class Register {
 
     @PrimaryGeneratedColumn({
-        name: 'ID_Assinatura'
+        name: 'ID_Caixa'
     })
     id!: number
 

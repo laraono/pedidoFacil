@@ -24,7 +24,6 @@ export async function subscriptionMiddleware(req, res: Response, next: NextFunct
         } 
 
         const order =  await mercadoPagoService.getOrder(subscription.mercadoPagoId)
-        console.log('ORDER  TRANSACTIONS', order.transactions.payments)
         
         if(order.status_detail === 'in_process' || order.status_detail === 'accredited')
             next()
