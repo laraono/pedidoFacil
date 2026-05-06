@@ -33,9 +33,12 @@ export const establishmentApi = {
 
   updateProfile: (data) => {
     const payload = {
-      name: data.name,
-      cnpj: data.cnpj,
-      phone: data.phone,
+      name: data.name ?? '',
+      cnpj: data.cnpj ?? '',
+      razaoSocial: data.razaoSocial ?? '',
+      phone: data.phone ?? '',
+      address: data.address ?? '',
+      inscricaoMunicipalPath: data.inscricaoMunicipalPath ?? null,
       paymentMethods: JSON.stringify(data.paymentMethods || []),
       selfServiceEnabled: data.selfServiceEnabled,
       selfServiceCode: data.selfServiceCode,
@@ -47,6 +50,16 @@ export const establishmentApi = {
     return request("/estabelecimento/profile", {
       method: "PUT",
       body: JSON.stringify(payload),
+    });
+  },
+
+  uploadInscricaoMunicipal: (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return request("/estabelecimento/inscricao-municipal", {
+      method: "POST",
+      body: formData,
+      headers: {},
     });
   },
 

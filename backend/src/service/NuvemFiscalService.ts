@@ -23,6 +23,14 @@ interface NFeItemInput {
     cfop?: string;
 }
 
+interface SincronizarEmpresaInput {
+    cnpj: string;
+    razaoSocial: string;
+    address: string;
+    inscricaoMunicipalPath?: string;
+    empresaIdExistente?: string;
+}
+
 export class NuvemFiscalService {
     private tokenCache: NuvemFiscalToken | null = null;
 
@@ -89,6 +97,49 @@ export class NuvemFiscalService {
         }
 
         return JSON.parse(responseText) as T;
+    }
+
+    async sincronizarEmpresa(input: SincronizarEmpresaInput): Promise<string | null> {
+        const cnpjLimpo = input.cnpj.replace(/\D/g, '');
+
+        const partes = input.address.split(',').map(s => s.trim());
+        const logradouro = partes[0] ?? input.address;
+        const numero = partes[1]?.split('-')[0]?.trim() ?? 'S/N';
+        const bairro = partes[1]?.split('-')[1]?.trim() ?? 'Centro';
+        const cidadeUF = partes[2]?.split('-') ?? [];
+        const municipio = cidadeUF[0]?.trim() ?? 'Não informado';
+        const uf = cidadeUF[1]?.trim()?.slice(0, 2) ?? 'SP';
+        const cep = partes[3]?.replace(/\D/g, '') ?? '00000000';
+
+        const payload = {
+            cpf_cnpj: cnpjLimpo,
+            inscricao_municipal: input.inscricaoMunicipalPath ? '000000' : undefined,
+            nome_razao_social: input.razaoSocial,
+            nome_fantasia: input.razaoSocial,
+            fone: '',
+            email: '',
+            endereco: {
+                logradouro,
+                numero,
+                bairro,
+                codigo_municipio_ibge: '',
+                cidade: municipio,
+                uf,
+                cep: cep.padStart(8, '0'),
+            },
+            optante_simples_nacional: false,
+        };
+
+        if (input.empresaIdExistente) {
+            try {
+                const updated = await this.request<any>('PUT', `/empresas/${cnpjLimpo}`, payload);
+                return updated?.cpf_cnpj ? cnpjLimpo : input.empresaIdExistente;
+            } catch {
+            }
+        }
+
+        const empresa = await this.request<any>('POST', '/empresas', payload);
+        return empresa?.cpf_cnpj ?? cnpjLimpo;
     }
 
     async emitirNFe(

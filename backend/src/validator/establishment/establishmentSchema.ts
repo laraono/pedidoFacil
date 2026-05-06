@@ -6,8 +6,10 @@ import { AppError } from '../../middleware/error/AppError';
 export const saveOnboardingSchema = z.object({
     name: z.string().optional(),
     cnpj: z.string().optional(),
+    razaoSocial: z.string().optional(),
     phone: z.string().optional(),
-    address: z.string().optional()
+    address: z.string().optional(),
+    inscricaoMunicipalPath: z.string().optional()
 });
 
 export const finalizeOnboardingSchema = z.object({
@@ -21,8 +23,10 @@ export const finalizeOnboardingSchema = z.object({
 export const updateEstablishmentSchema = z.object({
     name: z.string().optional(),
     cnpj: z.string().optional(),
+    razaoSocial: z.string().optional(),
     phone: z.string().optional(),
     address: z.string().optional(),
+    inscricaoMunicipalPath: z.string().optional(),
     paymentMethods: z.any().optional(), 
     selfServiceEnabled: z.boolean().optional(),
     selfServiceCode: z.string().optional().nullable(),
@@ -35,7 +39,6 @@ export const updateEstablishmentSchema = z.object({
     }).optional()
 });
 
-// Middleware Genérico usando o seu AppError
 const handleValidation = (schema: z.ZodSchema) => {
     return (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -44,7 +47,6 @@ const handleValidation = (schema: z.ZodSchema) => {
         } catch (error) {
             if (error instanceof ZodError) {
                 const firstError = error.issues[0]?.message || "Erro de validação nos campos.";
-                // Passa o erro para o SEU errorHandler
                 return next(new AppError(firstError, 400));
             }
             return next(error);

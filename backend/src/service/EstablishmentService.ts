@@ -11,6 +11,7 @@ import { RoleRepository } from '../repository/RoleRepository';
 import { SaveOnboardingStepDTO } from '../dto/establishment/SaveOnboardingStepDTO';
 import { FinalizeOnboardingDTO } from '../dto/establishment/FinalizeOnboardingDTO';
 import { UpdateEstablishmentDTO } from '../dto/establishment/UpdateEstablishmentDTO';
+import { nuvemFiscalService } from './NuvemFiscalService';
 
 export class EstablishmentService {
   
@@ -148,14 +149,39 @@ export class EstablishmentService {
     this.establishmentRepository.merge(establishment, {
       name: updateData.name,
       cnpj: updateData.cnpj,
+      razaoSocial: updateData.razaoSocial,
       phone: updateData.phone,
       address: updateData.address,
+      inscricaoMunicipalPath: updateData.inscricaoMunicipalPath,
       paymentMethods: paymentMethods,
       selfServiceEnabled: updateData.selfServiceEnabled,
       selfServiceCode: updateData.selfServiceCode,
     });
     
     await this.establishmentRepository.save(establishment);
+
+    const cnpj = updateData.cnpj ?? establishment.cnpj;
+    const razaoSocial = updateData.razaoSocial ?? establishment.razaoSocial;
+    const address = updateData.address ?? establishment.address;
+
+    if (cnpj && razaoSocial && address) {
+      try {
+        const empresaId = await nuvemFiscalService.sincronizarEmpresa({
+          cnpj,
+          razaoSocial,
+          address,
+          inscricaoMunicipalPath: updateData.inscricaoMunicipalPath ?? establishment.inscricaoMunicipalPath,
+          empresaIdExistente: establishment.nuvemFiscalEmpresaId,
+        });
+
+        if (empresaId && empresaId !== establishment.nuvemFiscalEmpresaId) {
+          establishment.nuvemFiscalEmpresaId = empresaId;
+          await this.establishmentRepository.save(establishment);
+        }
+      } catch (err: any) {
+        console.warn('[NuvemFiscal] Falha ao sincronizar empresa:', err?.message);
+      }
+    }
 
     if (updateData.configurations) {
         const config = await this.configRepository.findByEstablishmentId(establishmentId);

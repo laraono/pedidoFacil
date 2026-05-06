@@ -1,8 +1,10 @@
 export interface UpdateEstablishmentDTO {
     name?: string;
     cnpj?: string;
+    razaoSocial?: string;
     phone?: string;
     address?: string;
+    inscricaoMunicipalPath?: string;
     paymentMethods?: string; 
     selfServiceEnabled?: boolean;
     selfServiceCode?: string;

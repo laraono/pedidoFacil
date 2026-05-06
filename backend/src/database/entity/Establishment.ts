@@ -45,6 +45,29 @@ export class Establishment {
 
     @Column({
         type: 'varchar',
+        name: 'Razao_Social',
+        nullable: true,
+        length: 150
+    })
+    razaoSocial?: string
+
+    @Column({
+        type: 'text',
+        name: 'Inscricao_Municipal_Path',
+        nullable: true
+    })
+    inscricaoMunicipalPath?: string
+
+    @Column({
+        type: 'varchar',
+        name: 'Nuvem_Fiscal_Empresa_Id',
+        nullable: true,
+        length: 100
+    })
+    nuvemFiscalEmpresaId?: string
+
+    @Column({
+        type: 'varchar',
         name: 'Telefone',
         nullable: true,
         length: 20

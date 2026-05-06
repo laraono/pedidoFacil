@@ -14,7 +14,8 @@ import {
 const { showToast } = useToast();
 const router = useRouter();
 
-const hasCnpj = ref(true);
+const hasDadosFiscais = ref(true);
+const dadosFiscaisInfo = ref({ cnpj: '', razaoSocial: '', address: '', inscricaoMunicipalPath: '' });
 const receipts = ref([]);
 const isLoading = ref(false);
 
@@ -31,8 +32,18 @@ onMounted(async () => {
   try {
     isLoading.value = true;
     const estData = await establishmentApi.getProfile();
-    hasCnpj.value = !!estData?.cnpj?.trim();
-    if (hasCnpj.value) {
+    const cnpjOk = !!estData?.cnpj?.replace(/\D/g, '')?.length === true && estData.cnpj.replace(/\D/g, '').length === 14;
+    const razaoOk = !!estData?.razaoSocial?.trim();
+    const enderecoOk = !!estData?.address?.trim();
+    const inscricaoOk = !!estData?.inscricaoMunicipalPath;
+    hasDadosFiscais.value = cnpjOk && razaoOk && enderecoOk && inscricaoOk;
+    dadosFiscaisInfo.value = {
+      cnpj: estData?.cnpj || '',
+      razaoSocial: estData?.razaoSocial || '',
+      address: estData?.address || '',
+      inscricaoMunicipalPath: estData?.inscricaoMunicipalPath || '',
+    };
+    if (hasDadosFiscais.value) {
       await fetchReceipts();
       await fetchMetrics();
     }
@@ -175,27 +186,49 @@ const pagedNFs = computed(() =>
   <main class="max-w-7xl mx-auto py-12 px-6 font-inter">
     <ToastMessage />
 
-    <div v-if="!hasCnpj" class="flex items-center justify-center min-h-[60vh]">
+    <div v-if="!hasDadosFiscais" class="flex items-center justify-center min-h-[60vh]">
       <div class="bg-white border border-[#E0E0E0] rounded p-10 max-w-md w-full text-center shadow-2xl">
         <div class="w-16 h-16 rounded bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-5">
           <AlertTriangle :size="28" class="text-amber-400" />
         </div>
-        <h2 class="text-xl font-black text-[#212121] mb-3">Dados fiscais não configurados</h2>
-        <p class="text-sm text-[#757575] mb-2 leading-relaxed">
-          A emissão de Notas Fiscais requer o <span class="text-[#212121] font-bold">CNPJ</span> do estabelecimento cadastrado.
+        <h2 class="text-xl font-black text-[#212121] mb-3">Dados fiscais incompletos</h2>
+        <p class="text-sm text-[#757575] mb-4 leading-relaxed">
+          Para emitir Notas Fiscais Eletrônicas é necessário cadastrar todos os dados da empresa:
+          <strong class="text-[#212121]">CNPJ</strong>,
+          <strong class="text-[#212121]">Razão Social</strong>,
+          <strong class="text-[#212121]">Endereço</strong> e
+          <strong class="text-[#212121]">Inscrição Municipal</strong>.
         </p>
+        <ul class="text-left mb-6 space-y-2">
+          <li class="flex items-center gap-2 text-xs font-bold"
+            :class="dadosFiscaisInfo.cnpj?.replace(/\D/g,'').length === 14 ? 'text-green-600' : 'text-amber-600'">
+            <span>{{ dadosFiscaisInfo.cnpj?.replace(/\D/g,'').length === 14 ? '✓' : '✗' }}</span> CNPJ
+          </li>
+          <li class="flex items-center gap-2 text-xs font-bold"
+            :class="dadosFiscaisInfo.razaoSocial?.trim() ? 'text-green-600' : 'text-amber-600'">
+            <span>{{ dadosFiscaisInfo.razaoSocial?.trim() ? '✓' : '✗' }}</span> Razão Social
+          </li>
+          <li class="flex items-center gap-2 text-xs font-bold"
+            :class="dadosFiscaisInfo.address?.trim() ? 'text-green-600' : 'text-amber-600'">
+            <span>{{ dadosFiscaisInfo.address?.trim() ? '✓' : '✗' }}</span> Endereço
+          </li>
+          <li class="flex items-center gap-2 text-xs font-bold"
+            :class="dadosFiscaisInfo.inscricaoMunicipalPath ? 'text-green-600' : 'text-amber-600'">
+            <span>{{ dadosFiscaisInfo.inscricaoMunicipalPath ? '✓' : '✗' }}</span> Inscrição Municipal
+          </li>
+        </ul>
         <button
           @click="router.push('/app/settings/establishment')"
           class="w-full py-3.5 rounded bg-primary text-white font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary-dark transition-colors active:scale-95"
         >
           <Building2 :size="16" />
-          Ir para Meu Estabelecimento
+          Completar Dados da Empresa
         </button>
       </div>
     </div>
 
-    <template v-if="hasCnpj">
-      <PageHeader title="Notas Fiscais" subtitle="Emissão e gestão de NF-e · Nuvem Fiscal Sandbox">
+    <template v-if="hasDadosFiscais">
+      <PageHeader title="Notas Fiscais" subtitle="Emissão e gestão de NF-e.">
         <template #actions>
           <button
             @click="exportAll"
