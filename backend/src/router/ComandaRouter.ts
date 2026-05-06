@@ -8,7 +8,7 @@ const roleAccessControl = require('../middleware/roleAccessControl');
 
 export const comandaRouter = express.Router();
 
-comandaRouter.use(subscriptionMiddleware)
+comandaRouter.use(authenticate, subscriptionMiddleware)
 
 comandaRouter.get(
   '/commands',

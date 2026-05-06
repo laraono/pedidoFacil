@@ -179,28 +179,26 @@ const ESTABLISHMENT_PREFIXES = [
   "/app/subscription",
 ];
 
-router.beforeEach(async (to, _from, next) => {
+router.beforeEach(async (to, _from) => {
   const auth = useAuthStore();
   auth.loadSession();
 
   if (to.meta.requiresAuth) {
     const valid = await auth.validateSession();
-    if (!valid) return next('/login');
+    if (!valid) return '/login';
   }
 
   if (auth.isAdmin && ESTABLISHMENT_PREFIXES.some(p => to.path.startsWith(p))) {
-    return next({ name: 'dashboard' });
+    return { name: 'dashboard' };
   }
 
   if (to.meta.requiresAdmin && !auth.isAdmin) {
-    return next({ name: "dashboard" });
+    return { name: 'dashboard' };
   }
 
   if (to.meta.permission && !auth.hasPermission(to.meta.permission as string)) {
-    return next({ name: 'dashboard' });
+    return { name: 'dashboard' };
   }
-
-  next();  
 });
 
 export default router;

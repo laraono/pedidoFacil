@@ -5,7 +5,7 @@ import { subscriptionMiddleware } from '../middleware';
 
 const paymentRouter = Router();
 
-paymentRouter.use(subscriptionMiddleware)
+paymentRouter.use(authenticate, subscriptionMiddleware)
 
 paymentRouter.get('/', authenticate, paymentController.listPayments);
 paymentRouter.get('/:paymentId', authenticate, paymentController.getPaymentDetails);

@@ -8,7 +8,7 @@ const roleAccessControl = require('../middleware/roleAccessControl');
 
 export const orderRouter = express.Router();
 
-orderRouter.use(subscriptionMiddleware)
+orderRouter.use(authenticate, subscriptionMiddleware)
 
 orderRouter.post(
 	'/commands/:comandaId/orders',

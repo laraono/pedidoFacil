@@ -92,7 +92,11 @@ export class SubscriptionService {
             const createdSubscription = await this.mercadoPagoService.createSubscriptionOrder(mercadoPagoParams)
 
             const expirationDate = new Date();
-            expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+            if (plan.frequency === 'anual') {
+                expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+            } else {
+                expirationDate.setMonth(expirationDate.getMonth() + 1);
+            }
 
             const intialSubscription = {
                 initialDate: new Date(),
@@ -157,21 +161,51 @@ export class SubscriptionService {
     async getEstablishmentSubscription(establishmentId: number) {
         const [subscription] = await this.subscriptionRepository.getSubscriptionByEstablishment(establishmentId)
 
+        if (!subscription) return null
+
+        if (subscription.mercadoPagoId && subscription.status !== SubscriptionStatus.PAGA) {
+            try {
+                const order = await this.mercadoPagoService.getOrder(subscription.mercadoPagoId)
+                if (order.status_detail === 'accredited') {
+                    await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.PAGA)
+                    subscription.status = SubscriptionStatus.PAGA
+                }
+            } catch {}
+        }
+
         return subscription
     }
 
     async getEstablishmentHistory(establishmentId: number) {
         const subscriptions = await this.subscriptionRepository.getSubscriptionByEstablishment(establishmentId)
 
+        const statusLabels: Record<string, string> = {
+            'accredited': 'Aprovado',
+            'in_process': 'Em processamento',
+            'canceled': 'Cancelado',
+            'cancelled': 'Cancelado',
+            'pending_capture': 'Aguardando captura',
+            'authorized': 'Autorizado',
+            'rejected': 'Recusado',
+            'refunded': 'Estornado',
+            'charged_back': 'Contestado',
+            'pending': 'Pendente',
+        }
+
         const history: Array<any> = []
- 
+
         for(const sub of subscriptions) {
             const order = await this.mercadoPagoService.getOrder(sub.mercadoPagoId)
+            const payment = order.transactions.payments[0]
+            const statusKey = payment.status_detail?.toLowerCase() ?? ''
             const data = {
-                amount: order.transactions.payments[0].paid_amount,
-                status: order.transactions.payments[0].status_detail.toUpperCase(),
-                type: 'CRÉDITO',
-                installments: order.transactions.payments[0].payment_method.installments,
+                amount: payment.paid_amount,
+                status: statusLabels[statusKey] ?? payment.status_detail,
+                type: payment.payment_method?.type === 'credit_card' ? 'Cartão de Crédito'
+                    : payment.payment_method?.type === 'debit_card' ? 'Cartão de Débito'
+                    : payment.payment_method?.type === 'bank_transfer' ? 'Pix'
+                    : 'Cartão',
+                installments: payment.payment_method?.installments,
                 name: sub.plan ? sub.plan.name : '',
                 date: order.last_updated_date
             }

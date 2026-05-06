@@ -6,7 +6,7 @@ import { subscriptionMiddleware } from '../middleware';
 
 const receiptRouter = Router();
 
-receiptRouter.use(subscriptionMiddleware)
+receiptRouter.use(authenticate, subscriptionMiddleware)
 
 receiptRouter.post(
   '/',

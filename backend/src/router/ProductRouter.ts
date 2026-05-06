@@ -10,7 +10,7 @@ const tenant = require('../middleware/tenant');
 export const productRouter = express.Router();
 const upload = multer()
 
-productRouter.use(subscriptionMiddleware)
+productRouter.use(authenticate, subscriptionMiddleware)
 
 productRouter.post('/products', authenticate, checkPermission('CARDAPIO'), upload.single('image'), validateCreateProduct, catchAsync((req: Request, res: Response) => productController.createProduct(req, res)));
 
