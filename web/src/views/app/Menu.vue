@@ -200,7 +200,7 @@ const confirmAndSendToKitchen = async () => {
     const orderPayload = {
       status: "Aguardando_Preparo",
       serviceType: "Autoatendimento",
-      comandaId: comandaIdParaEnviar, 
+      //comandaId: comandaIdParaEnviar, 
       itens: cart.value.map(item => ({
         productId: item.productId,
         quantity: item.quantity,
@@ -234,7 +234,7 @@ const saveVisuals = async () => {
 
     await request("/estabelecimento/config", {
       method: "PUT",
-      body: JSON.stringify({
+      body: {
         backgroundColor: bgColor.value,
         cardsColor: cardBg.value,
         textsColor: textColor.value,
@@ -244,7 +244,7 @@ const saveVisuals = async () => {
         fontFamily: fontFamily.value,
         comandaLabel: comandaUnitLabel.value, 
         allowObservations: observacoesPermitidas.value,
-      }),
+      },
     });
 
     localStorageService.saveBackgroundColors(bgColor.value);

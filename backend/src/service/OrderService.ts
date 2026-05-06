@@ -1,23 +1,16 @@
 import { DataSource, EntityManager } from 'typeorm';
 import {
-  AppDataSource,
   Order,
   Product,
   ProductOrder,
   ProductVariation,
   ProductVariationOrder,
+  Comanda,
 } from '../database';
-import { CreateOrder, ItensArray, ProductOrderParams } from '../dto';
-import { OrderStatus } from '../enum';
+import { OrderStatus, ComandaStatus, ServiceType } from '../enum';
 import { AppError } from '../middleware';
-import {
-  OrderRepository,
-  ProductOrderRepository,
-  ProductVariationOrderRepository,
-  ProductVariationRepository,
-} from '../repository';
+import { OrderRepository } from '../repository';
 import { ComandaService } from './ComandaService';
-import { ProductService } from './ProductService';
 
 export class OrderService {
   private dataSource: DataSource;
@@ -37,23 +30,46 @@ export class OrderService {
   async createOrder(data: any) {
     const comanda = await this.comandaService.getComanda(data.comandaId);
     if (!comanda) throw new AppError('Comanda não encontrada', 404);
-    
+
     return await this.createOrderWithTransaction(data, comanda);
   }
 
   async createOrderWithTransaction(createOrder: any, comanda: any) {
     return await this.dataSource.transaction(async (manager) => {
-      
       const order = await manager.save(Order, {
         status: createOrder.status,
         serviceType: createOrder.serviceType,
         comanda: comanda,
         establishment: { id: createOrder.establishmentId },
-        isDelivered: false
+        isDelivered: false,
       });
 
       await this.saveItens(createOrder.itens, order, manager);
 
+      return order;
+    });
+  }
+
+  async createTotemOrder(data: any) {
+    return await this.dataSource.transaction(async (manager) => {
+      const comanda = await manager.save(Comanda, {
+        description: data.comandaLabel,
+        status: ComandaStatus.FECHADA,
+        total: 0,
+        establishment: { id: data.establishmentId },
+      });
+
+      const order = await manager.save(Order, {
+        status: 'Aguardando_Preparo' as OrderStatus,
+        serviceType: ServiceType.AUTOATENDIMENTO,
+        comanda: comanda,
+        establishment: { id: data.establishmentId },
+        isDelivered: false,
+      });
+
+      await this.saveItens(data.itens, order, manager);
+
+      order.comanda = comanda;
       return order;
     });
   }
@@ -65,17 +81,19 @@ export class OrderService {
       const validated = await this.validateItens(iten, manager);
 
       const basePrice = Number(validated.product.basePrice);
-      const addPrice = validated.productVariation ? Number(validated.productVariation.addPrice) : 0;
+      const addPrice = validated.productVariation
+        ? Number(validated.productVariation.addPrice)
+        : 0;
       const finalPrice = basePrice + addPrice;
 
-      totalAcumulado += (finalPrice * iten.quantity);
+      totalAcumulado += finalPrice * iten.quantity;
 
       const productOrder = await manager.save(ProductOrder, {
-        orderId: order.id, 
+        orderId: order.id,
         productId: validated.product.id,
         observation: iten.observation || '',
         quantity: iten.quantity,
-        price: finalPrice
+        price: finalPrice,
       });
 
       if (validated.productVariation && iten.productVariationId) {
@@ -84,47 +102,64 @@ export class OrderService {
             productId: productOrder.productId,
             orderId: productOrder.orderId,
             productVariationid: validated.productVariation.id,
-            price: addPrice
+            price: addPrice,
           });
         } catch (vError) {
-          console.warn("⚠️ [ITEM] Erro ao salvar variação, mas seguindo adiante:", vError);
+          console.warn('⚠️ [ITEM] Erro ao salvar variação:', vError);
         }
       }
     }
 
-    await this.comandaService.updateComandaTotalTransaction(order.comanda, totalAcumulado, manager);
+    await this.comandaService.updateComandaTotalTransaction(
+      order.comanda,
+      totalAcumulado,
+      manager,
+    );
   }
-
+  
   async validateItens(iten: any, manager: EntityManager) {
-    const product = await manager.findOne(Product, { where: { id: iten.productId } });
+    const product = await manager.findOne(Product, {
+      where: { id: iten.productId },
+      lock: { mode: 'pessimistic_write' } 
+    });
+
     if (!product) throw new AppError(`Produto ${iten.productId} não existe`, 400);
 
     let productVariation = null;
     if (iten.productVariationId) {
-      productVariation = await manager.findOne(ProductVariation, { 
-        where: { id: iten.productVariationId } 
+      productVariation = await manager.findOne(ProductVariation, {
+        where: { id: iten.productVariationId },
       });
     }
 
     return { product, productVariation };
   }
 
-  async listOrders() {
-    return await this.orderRepository.listOrders();
+  async listOrders(establishmentId: number) {
+    return await this.orderRepository.listOrders(establishmentId);
   }
 
   async listOrdersByComanda(comandaId: number) {
     return await this.orderRepository.listOrdersByComanda(comandaId);
   }
 
-  async updateOrderStatus(orderId: number, status: OrderStatus) {
-    await this.orderRepository.updateOrderStatus(orderId, status);
+  async updateOrderStatus(orderId: number, status: OrderStatus, userId?: number, reason?: string) {
+    const updateData: any = { status };
+
+    const currentStatus = String(status);
+
+    if (currentStatus === 'Cancelado' || currentStatus === 'CANCELADO') {
+      if (userId) updateData.user = { id: userId }; 
+      if (reason) updateData.cancellationDescription = reason;
+    }
+
+    await this.orderRepository.update(orderId, updateData);
   }
 
   async getOrderWithDetails(orderId: number) {
     return await this.dataSource.getRepository(Order).findOne({
-        where: { id: orderId },
-        relations: ['productOrders', 'productOrders.product']
+      where: { id: orderId },
+      relations: ['productOrders', 'productOrders.product'],
     });
   }
 }

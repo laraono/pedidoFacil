@@ -3,18 +3,30 @@ import { Order } from "../database";
 import { OrderParams } from "../dto";
 import { OrderStatus } from "../enum";
 
-export class OrderRepository extends Repository<Order>{
+export class OrderRepository extends Repository<Order> {
 
     constructor(private dataSource: DataSource) {
         super(Order, dataSource.createEntityManager());
     }
 
     async createOrder(order: OrderParams) {
-        return await this.save(order)
+        return await this.save(order);
     }
 
-    async listOrders() {
-        return await this.find()
+    async getOrderWithDetails(id: number) {
+        return await this.findOne({
+            where: { id },
+            relations: ["productOrders", "productOrders.product", "productOrders.productVariation"]
+        });
+    }
+
+    async listOrders(establishmentId: number) {
+        return await this.find({
+            where: {
+                establishment: { id: establishmentId }
+            },
+            relations: ["comanda", "productOrders", "productOrders.product"]
+        });
     }
 
     async listOrdersByComanda(comandaId: number) {
@@ -24,11 +36,10 @@ export class OrderRepository extends Repository<Order>{
                     id: comandaId
                 }
             }
-        })
+        });
     }
 
     async updateOrderStatus(id: number, status: OrderStatus) {
-        await this.update(id, {status})
+        await this.update(id, { status });
     }
-    
 }

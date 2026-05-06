@@ -37,7 +37,21 @@ export class EstablishmentController {
     return res.status(200).json({
       name: establishment.name,
       paymentMethods: establishment.paymentMethods,
-      selfServiceEnabled: establishment.selfServiceEnabled
+      selfServiceEnabled: establishment.selfServiceEnabled,
+      configurations: establishment.configurations 
+    });
+  });
+
+  getByCode = catchAsync(async (req: Request, res: Response) => {
+    const code = req.params.code as string;
+    
+    const establishment = await this.establishmentService.validateAccessCode(code);
+
+    return res.status(200).json({
+      id: establishment.id, 
+      name: establishment.name,
+      selfServiceCode: establishment.selfServiceCode,
+      configurations: establishment.configurations
     });
   });
 
@@ -48,6 +62,7 @@ export class EstablishmentController {
     if (typeof updateData.paymentMethods === 'string') {
       updateData.paymentMethods = JSON.parse(updateData.paymentMethods);
     }
+    
     if (updateData.selfServiceEnabled === 'true' || updateData.selfServiceEnabled === 'false') {
       updateData.selfServiceEnabled = updateData.selfServiceEnabled === 'true';
     }
@@ -58,6 +73,7 @@ export class EstablishmentController {
       if (oldProfile && oldProfile.configurations && oldProfile.configurations.logo) {
         deleteFile(oldProfile.configurations.logo);
       }
+      
       updateData.configurations = {
         ...updateData.configurations,
         logo: req.file.filename

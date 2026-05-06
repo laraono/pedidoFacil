@@ -15,6 +15,11 @@ const establishmentRouter = Router();
 const establishmentController = new EstablishmentController(establishmentService);
 
 establishmentRouter.get(
+  '/code/:code',
+  establishmentController.getByCode
+);
+
+establishmentRouter.get(
   '/:id/public',
   establishmentController.getPublicProfile
 );

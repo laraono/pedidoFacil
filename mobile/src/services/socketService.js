@@ -1,12 +1,12 @@
 import { io } from "socket.io-client";
-import { SOCKET_URL } from "./apiConfig"; 
+import { appConfig } from "./apiConfig"; 
 
 let socket = null;
 
 export function connectMobileSocket() {
   if (socket && socket.connected) return socket;
 
-  socket = io(SOCKET_URL, {
+  socket = io(appConfig.SOCKET_URL, {
     transports: ["polling", "websocket"],
     reconnection: true,
     reconnectionAttempts: 5,

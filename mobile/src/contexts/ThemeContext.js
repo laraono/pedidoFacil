@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { API_URL } from "../services/apiConfig";
+import { appConfig } from "../services/apiConfig"; 
 
 const defaultTheme = {
   fundoGeral: "#F5F6FA",
@@ -22,10 +22,10 @@ export const ThemeContext = createContext({});
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(defaultTheme);
 
-  const loadTheme = async (establishmentId = 1) => {
+  const loadTheme = async () => {
     try {
       const response = await fetch(
-        `${API_URL}/estabelecimento/${establishmentId}/config`,
+        `${appConfig.API_URL}/estabelecimento/${appConfig.ESTABLISHMENT_ID}/config`
       );
 
       if (response.ok) {

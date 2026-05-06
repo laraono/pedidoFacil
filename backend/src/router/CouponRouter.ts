@@ -8,6 +8,11 @@ import { validateCreateCoupon } from '../validator/coupon/couponSchema';
 const couponRouter = Router();
 const couponController = new CouponController(couponService);
 
+couponRouter.get(
+  '/validate/:code', 
+  couponController.validate.bind(couponController)
+);
+
 couponRouter.use(authenticate);
 
 couponRouter.get(
@@ -34,12 +39,6 @@ couponRouter.delete(
   '/:id', 
   checkPermission('CUPOM_DELETE', 'ALL'), 
   couponController.delete.bind(couponController)
-);
-
-couponRouter.get(
-  '/validate/:code', 
-  checkPermission('CUPOM_VIEW', 'ALL'), 
-  couponController.validate.bind(couponController)
 );
 
 export { couponRouter };

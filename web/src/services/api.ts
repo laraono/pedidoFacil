@@ -73,8 +73,12 @@ export async function request(path: string, options: CustomRequestInit = {}) {
     } catch {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("user");
-      window.location.href = "/login";
-      throw new Error("Sessão expirada. Faça login novamente.");
+      
+      if (window.location.pathname !== '/login') {
+         window.location.href = "/login";
+      }
+      
+      return new Promise(() => {}); 
     }
   }
 

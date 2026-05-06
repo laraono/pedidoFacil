@@ -1,1 +1,1 @@
-export {CreateCategory} from './CreateCategoryDTO'
+export { CreateCategoryDTO } from './CreateCategoryDTO'

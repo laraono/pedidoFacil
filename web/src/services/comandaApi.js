@@ -3,12 +3,12 @@ import { request } from './api';
 export const comandaApi = {
   create: (data) => request('/commands', { 
     method: 'POST',
-    body: JSON.stringify(data)
+    body: data
   }),
   
   addOrder: (comandaId, data) => request(`/commands/${Number(comandaId)}/orders`, { 
     method: 'POST',
-    body: JSON.stringify(data)
+    body: data
   }),
 
   list: () => request('/commands', { method: 'GET' }),

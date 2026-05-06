@@ -15,7 +15,7 @@ export class OrderController {
             const usuario = (req as any).usuario;
 
             if (!usuario || !usuario.estabelecimento) {
-                return res.status(401).json({ error: "Sessão inválida" });
+                return res.status(401).json({ error: "Sessão ou código de estabelecimento inválido." });
             }
 
             const order = await this.orderService.createOrder({
@@ -27,7 +27,7 @@ export class OrderController {
             const fullOrder = await this.orderService.getOrderWithDetails(order.id);
             
             const mappedItems = fullOrder?.productOrders.map(po => ({
-                name: po.product?.name || po.product?.name || "Produto",
+                name: po.product?.name || "Produto",
                 quantity: po.quantity,
                 observation: po.observation
             })) || [];
@@ -38,7 +38,7 @@ export class OrderController {
                 comandaLabel: req.body.comandaLabel || `Comanda #${comandaId}`,
                 items:        mappedItems, 
                 createdAt:    new Date().toISOString(),
-                source:       req.body.serviceType || 'web',
+                source:       req.body.source || 'web', 
             });
 
             return res.status(201).json(order);
@@ -48,13 +48,62 @@ export class OrderController {
         }
     }
 
+    async createTotemOrder(req: Request, res: Response) {
+        try {
+            const usuario = (req as any).usuario;
+
+            if (!usuario || !usuario.estabelecimento) {
+                return res.status(401).json({ error: "Código do Totem inválido ou estabelecimento não encontrado." });
+            }
+
+            const randomTicket = Math.floor(100 + Math.random() * 900).toString();
+            const comandaLabel = `Totem #${randomTicket}`;
+
+            const order = await this.orderService.createTotemOrder({
+                ...req.body,
+                establishmentId: usuario.estabelecimento,
+                comandaLabel: comandaLabel
+            });
+
+            const fullOrder = await this.orderService.getOrderWithDetails(order.id);
+            const mappedItems = fullOrder?.productOrders.map(po => ({
+                name: po.product?.name || "Produto",
+                quantity: po.quantity,
+                observation: po.observation
+            })) || [];
+
+            getIO().to('kitchen').emit('new_order', {
+                orderId:      order.id,
+                comandaId:    order.comanda.id, 
+                comandaLabel: comandaLabel,
+                items:        mappedItems,
+                createdAt:    new Date().toISOString(),
+                source:       'totem',
+            });
+
+            return res.status(201).json({
+                id: order.id,
+                ticket: randomTicket,
+                label: comandaLabel
+            });
+        } catch (error: any) {
+            console.error("🔥 Erro no pedido Totem:", error.message);
+            return res.status(400).json({ error: error.message || "Erro interno ao processar pedido" });
+        }
+    }
+
     async updateOrderStatus(req: Request, res: Response) {
         const { orderId } = req.params;
-        const { status } = req.body;
+        const { status, cancellationDescription } = req.body;
+        const usuario = (req as any).usuario;
 
-        await this.orderService.updateOrderStatus(Number(orderId), status);
-
-        getIO().to('cashier').to('waiter').emit('order_status_updated', {
+        await this.orderService.updateOrderStatus(
+            Number(orderId), 
+            status, 
+            usuario.id, 
+            cancellationDescription
+        );
+        getIO().to('kitchen').to('cashier').to('waiter').emit('order_status_updated', {
             orderId:   Number(orderId),
             comandaId: req.params.comandaId ? Number(req.params.comandaId) : null,
             status,
@@ -64,7 +113,8 @@ export class OrderController {
     }
 
     async listOrders(req: Request, res: Response) {
-        const orders = await this.orderService.listOrders();
+        const establishmentId = (req as any).usuario.estabelecimento;
+        const orders = await this.orderService.listOrders(establishmentId);
         res.status(200).send(orders);
     }
 

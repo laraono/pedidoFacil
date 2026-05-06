@@ -9,7 +9,20 @@ export const createOrderSchema = z.object({
     status: z.enum(orderStatusValues),
     serviceType: z.string().optional(),
     establishmentId: z.number().int().positive().optional(), 
-    comandaId: z.number().int().positive(),
+    comandaId: z.number().int().positive(), 
+    itens: z.array(
+      z.object({
+        productId: z.number().int().positive(),
+        quantity: z.number().int().positive(),
+        productVariationId: z.number().int().positive().optional().nullable(),
+        observation: safeString(0, 255).optional().nullable()
+      }).strict()
+    ).min(1, "O pedido deve ter pelo menos um item")
+  }).strict()
+});
+
+export const createTotemOrderSchema = z.object({
+  body: z.object({
     itens: z.array(
       z.object({
         productId: z.number().int().positive(),
@@ -28,4 +41,5 @@ export const updateOrderStatusSchema = z.object({
 });
 
 export type CreateOrderDTO = z.infer<typeof createOrderSchema>['body'];
+export type CreateTotemOrderDTO = z.infer<typeof createTotemOrderSchema>['body'];
 export type UpdateOrderStatusDTO = z.infer<typeof updateOrderStatusSchema>['body'];

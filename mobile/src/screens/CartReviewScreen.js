@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   FlatList,
   TextInput,
+  Alert
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -17,12 +18,11 @@ import CartItemRow from "../components/CartItemRow";
 import BrandHeader from "../components/ui/BrandHeader";
 import ProductModal from "../components/ProductModal";
 
-import { COUPONS } from "../mocks";
+import { appConfig } from "../services/apiConfig";
 
 export default function CartReviewScreen() {
   const navigation = useNavigation();
-  const { cartItems, addToCart, removeFromCart, updateCartItem, cartTotal } =
-    useCart();
+  const { cartItems, addToCart, removeFromCart, updateCartItem, cartTotal } = useCart();
   const { theme } = useTheme();
 
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -30,24 +30,49 @@ export default function CartReviewScreen() {
 
   const [cupomInput, setCupomInput] = useState("");
   const [desconto, setDesconto] = useState(0);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [couponMessage, setCouponMessage] = useState("");
 
   const styles = useMemo(() => getStyles(theme), [theme]);
 
   const totalComDesconto = Math.max(0, cartTotal - desconto);
 
-  const handleApplyCupom = () => {
-    const found = COUPONS.find(
-      (c) => c.code.toUpperCase() === cupomInput.trim().toUpperCase(),
-    );
+  const handleApplyCupom = async () => {
+    if (!cupomInput.trim()) {
+      setDesconto(0);
+      setCouponMessage("");
+      return;
+    }
 
-    if (found) {
+    setIsApplyingCoupon(true);
+    setCouponMessage("");
+
+    try {
+      const response = await fetch(`${appConfig.API_URL}/cupons/validate/${cupomInput.trim()}?establishmentId=${appConfig.ESTABLISHMENT_ID}`);
+      
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        setDesconto(0);
+        setCouponMessage(errData.error || "Cupom inválido ou expirado.");
+        setIsApplyingCoupon(false);
+        return;
+      }
+
+      const found = await response.json();
+      
       const valorDesconto =
-        found.type === "percentage"
+        found.type === "Percentual"
           ? cartTotal * (found.value / 100)
           : found.value;
+          
       setDesconto(valorDesconto);
-    } else {
+      setCouponMessage("");
+    } catch (error) {
+      console.error("Erro ao validar cupom:", error);
       setDesconto(0);
+      setCouponMessage("Erro de conexão ao validar cupom.");
+    } finally {
+      setIsApplyingCoupon(false);
     }
   };
 
@@ -87,7 +112,7 @@ export default function CartReviewScreen() {
         <FlatList
           data={cartItems}
           keyExtractor={(item, index) =>
-            `${item.id}-${item.size.name}-${index}`
+            `${item.id}-${item.size?.name || 'unico'}-${index}`
           }
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
@@ -112,7 +137,7 @@ export default function CartReviewScreen() {
           )}
         />
 
-        {cartItems.length > 0 ? (
+        {cartItems.length > 0 && (
           <View style={styles.bottomPanel}>
             <View style={styles.cupomSection}>
               <View style={styles.cupomRow}>
@@ -123,23 +148,34 @@ export default function CartReviewScreen() {
                     placeholder="Cupom"
                     placeholderTextColor={theme.textoSecundario}
                     value={cupomInput}
-                    onChangeText={setCupomInput}
+                    onChangeText={(text) => {
+                       setCupomInput(text);
+                       if(desconto > 0) {
+                         setDesconto(0); 
+                       }
+                    }}
                     autoCapitalize="characters"
                   />
                 </View>
                 <TouchableOpacity
-                  style={styles.btnApply}
+                  style={[styles.btnApply, isApplyingCoupon && { opacity: 0.7 }]}
                   onPress={handleApplyCupom}
                   activeOpacity={0.8}
+                  disabled={isApplyingCoupon}
                 >
-                  <Text style={styles.btnApplyText}>Aplicar</Text>
+                  <Text style={styles.btnApplyText}>
+                    {isApplyingCoupon ? "..." : "Aplicar"}
+                  </Text>
                 </TouchableOpacity>
               </View>
               {desconto > 0 && (
                 <Text style={styles.discountMsg}>
-                  Desconto de R$ {desconto.toFixed(2)} aplicado!
+                  Desconto de R$ {desconto.toFixed(2).replace(".", ",")} aplicado!
                 </Text>
               )}
+              {couponMessage ? (
+                <Text style={styles.errorMsg}>{couponMessage}</Text>
+              ) : null}
             </View>
 
             <View style={styles.totalRow}>
@@ -191,7 +227,7 @@ export default function CartReviewScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        ) : null}
+        )}
       </View>
 
       <ProductModal
@@ -284,6 +320,12 @@ const getStyles = (theme) =>
     },
     discountMsg: {
       color: theme.corCategorias,
+      fontWeight: "800",
+      fontSize: 13,
+      marginTop: 8,
+    },
+    errorMsg: {
+      color: "#E53935",
       fontWeight: "800",
       fontSize: 13,
       marginTop: 8,

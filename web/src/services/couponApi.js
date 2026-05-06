@@ -6,13 +6,13 @@ export const couponApi = {
   create: (data) =>
     request("/cupons", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: data, 
     }),
 
   update: (id, data) =>
     request(`/cupons/${id}`, {
       method: "PUT",
-      body: JSON.stringify(data),
+      body: data, 
     }),
 
   delete: (id) => request(`/cupons/${id}`, { method: "DELETE" }),

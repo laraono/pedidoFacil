@@ -1176,7 +1176,7 @@ async function finishPaymentFlow() {
   try {
     await request(`/commands/${selectedComanda.value.id}/checkout`, {
       method: "POST",
-      body: JSON.stringify({
+      body: {
         payments: pendingPayments.value.map(p => ({ type: p.type, amount: p.amount })),
         totalValue: totalWithDiscount.value,
         change:
@@ -1185,7 +1185,7 @@ async function finishPaymentFlow() {
             : 0,
         discountType: discountType.value,
         discountValue: discountValue.value
-      }),
+      },
     });
 
     const closedComanda = {

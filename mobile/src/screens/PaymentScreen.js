@@ -20,12 +20,10 @@ import BrandHeader from "../components/ui/BrandHeader";
 
 import { submitOrder } from "../services/orderService";
 import { connectMobileSocket, listenOrderStatus, stopListeningOrderStatus } from "../services/socketService";
-import { API_URL } from "../services/apiConfig";
+
+import { appConfig } from "../services/apiConfig";
 
 const { width } = Dimensions.get("window");
-
-const DEFAULT_COMANDA_ID = 1;
-const DEFAULT_COMANDA_LABEL = "Totem";
 
 const PAYMENT_ICONS = {
   "PIX": { icon: "qrcode-scan", label: "Pix", color: "#32BCAD" },
@@ -44,9 +42,6 @@ export default function PaymentScreen() {
   const panHandlers = useIdleTimer(120);
 
   const desconto = route.params?.descontoAplicado || 0;
-  const comandaId = route.params?.comandaId || DEFAULT_COMANDA_ID;
-  const comandaLabel = route.params?.comandaLabel || DEFAULT_COMANDA_LABEL;
-
   const totalComDesconto = Math.max(0, cartTotal - desconto);
 
   const [availableMethods, setAvailableMethods] = useState([]);
@@ -56,16 +51,17 @@ export default function PaymentScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState("");
   const [isApproved, setIsApproved] = useState(false);
+  
   const [orderId, setOrderId] = useState(null);
 
   const loadEstablishmentData = useCallback(async () => {
     try {
-      const url = `${API_URL}/estabelecimento/1/public?t=${new Date().getTime()}`;
-
+      const url = `${appConfig.API_URL}/estabelecimento/${appConfig.ESTABLISHMENT_ID}/public`;
       const response = await fetch(url, {
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
+          'x-totem-code': appConfig.selfServiceCode 
         }
       });
       
@@ -79,11 +75,9 @@ export default function PaymentScreen() {
         
         setAvailableMethods(methods);
       } else {
-        console.warn("[PaymentScreen] Rota retornou erro:", response.status);
         setAvailableMethods(["MISTO"]);
       }
     } catch (error) {
-      console.error("[PaymentScreen] Erro de conexão:", error);
       setAvailableMethods(["MISTO"]);
     } finally {
       setIsLoadingMethods(false);
@@ -92,11 +86,9 @@ export default function PaymentScreen() {
 
   useEffect(() => {
     loadEstablishmentData();
-
     const socket = connectMobileSocket();
 
     socket.on("profile_updated", () => {
-      console.log("[Socket] Métodos alterados! Recarregando...");
       setSelectedMethod(null);
       loadEstablishmentData(); 
     });
@@ -110,34 +102,8 @@ export default function PaymentScreen() {
     if (!orderId) return;
     connectMobileSocket();
     listenOrderStatus(orderId, (data) => {
-      console.log("Status do pedido recebido via socket:", data.status);
     });
     return () => stopListeningOrderStatus();
-  }, [orderId]);
-
-  const [orderId, setOrderId] = useState(null);
-  const [orderTrackingStatus, setOrderTrackingStatus] = useState(null);
-
-  const STATUS_LABELS = {
-    Aguardando_Preparo: "Pedido recebido! Aguardando a cozinha...",
-    Em_Preparo: "Sua comida está sendo preparada!",
-    Pronto: "Pedido pronto! Retire no balcão.",
-    Finalizado: "Pedido finalizado. Obrigado!",
-    Cancelado: "Pedido cancelado. Fale com o atendente.",
-  };
-
-  useEffect(() => {
-    if (!orderId) return;
-
-    connectMobileSocket();
-
-    listenOrderStatus(orderId, (data) => {
-      setOrderTrackingStatus(data.status);
-    });
-
-    return () => {
-      stopListeningOrderStatus();
-    };
   }, [orderId]);
 
   const styles = useMemo(() => getStyles(theme, width), [theme, width]);
@@ -149,38 +115,36 @@ export default function PaymentScreen() {
     setPaymentStatus("Enviando pedido para a cozinha...");
 
     try {
-      const order = await submitOrder({
-        comandaId,
-        comandaLabel,
-        cartItems,
-        authToken: null,
-      });
+      const orderData = await submitOrder({ cartItems });
 
-      setOrderId(order.id);
+      setOrderId(orderData.id);
       
+      const successMessage = `Pedido #${orderData.ticket} enviado!`;
+
       if (selectedMethod === "Dinheiro" || selectedMethod === "MISTO") {
-        setPaymentStatus("Pedido enviado! Pague no caixa ao retirar.");
+        setPaymentStatus(`${successMessage} Pague no caixa ao retirar.`);
         setIsApproved(true);
         setTimeout(() => {
           setIsProcessing(false);
           clearCart();
           navigation.navigate("Welcome");
-        }, 4000);
+        }, 4500);
       } else {
-        setPaymentStatus(selectedMethod === "PIX" ? "Gerando QR Code Pix..." : "Comunicando com a operadora...");
+        setPaymentStatus(selectedMethod === "PIX" ? "Gerando Pix..." : "Processando cartão...");
+        
         setTimeout(() => {
-          setPaymentStatus("Pagamento Aprovado! Pedido na fila da cozinha.");
+          setPaymentStatus(`Pagamento Aprovado! ${successMessage}`);
           setIsApproved(true);
           setTimeout(() => {
             setIsProcessing(false);
             clearCart();
             navigation.navigate("Welcome");
-          }, 3000);
-        }, 3000);
+          }, 3500);
+        }, 2500);
       }
     } catch (error) {
-      console.error("[PaymentScreen] Erro ao enviar pedido:", error);
-      setPaymentStatus("Erro ao enviar o pedido. Tente novamente.");
+      console.error("[PaymentScreen] Erro:", error);
+      setPaymentStatus("Erro ao processar. Tente novamente.");
       setIsProcessing(false);
       setIsApproved(false);
     }
@@ -234,7 +198,6 @@ export default function PaymentScreen() {
             })}
           </View>
 
-          {/* 🔥 AQUI TAMBÉM: Verificando "Dinheiro" */}
           {(selectedMethod === "Dinheiro" || selectedMethod === "MISTO") && (
             <View style={styles.cashWarning}>
               <Feather name="info" size={20} color={theme.corCategorias} />
@@ -269,7 +232,6 @@ export default function PaymentScreen() {
           disabled={!selectedMethod}
           onPress={handleConfirm}
         >
-          {/* 🔥 AQUI TAMBÉM: Verificando "Dinheiro" */}
           <Text style={styles.btnConfirmText}>
             {selectedMethod === "Dinheiro" || selectedMethod === "MISTO" ? "Gerar Ficha" : "Finalizar Pedido"}
           </Text>
@@ -314,10 +276,6 @@ const getStyles = (theme, width) =>
       borderWidth: 0.5,
       borderColor: 'rgba(255, 255, 255, 0.1)',
       elevation: 5,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
       paddingVertical: 24,
       paddingHorizontal: 12,
       minHeight: 140,
@@ -350,10 +308,6 @@ const getStyles = (theme, width) =>
       paddingHorizontal: 30, paddingTop: 20, paddingBottom: 30,
       borderTopWidth: 0.5,
       borderTopColor: 'rgba(255, 255, 255, 0.1)',
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: -4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 10,
       elevation: 20,
     },
     totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },

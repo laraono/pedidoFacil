@@ -72,16 +72,16 @@ export const useMenuStore = defineStore("menu", () => {
   const loadData = async () => {
     try {
       const [catActive, catDeleted, prodActive, prodDeleted] = await Promise.all([
-          categoryApi.list(),
-          categoryApi.listDeleted(),
-          productApi.list(),
-          productApi.listDeleted(),
+          categoryApi.list().catch(() => []),
+          categoryApi.listDeleted().catch(() => []),
+          productApi.list().catch(() => []),
+          productApi.listDeleted().catch(() => []),
       ]);
 
       categories.value = [...catActive, ...catDeleted].map(mapCategory);
       products.value = [...prodActive, ...prodDeleted].map(mapProduct);
     } catch (error) {
-      console.error("Erro ao sincronizar cardápio:", error);
+      console.error("Erro crítico ao sincronizar cardápio:", error);
     }
   };
 
@@ -121,30 +121,17 @@ export const useMenuStore = defineStore("menu", () => {
     categories.value = categories.value.filter((c) => c.id !== id);
   };
 
-  const addProduct = async (productData: any) => {
-    const payload = {
-      product: {
-        name: productData.name,
-        description: productData.description,
-        basePrice: productData.price,
-        categoryId: productData.categoryId,
-        image: productData.image,
-        status: productData.available ? "Ativo" : "Inativo",
-        estocavel: false,
-      },
-      productVariations: productData.sizes.map((s: any) => ({
-        name: s.name,
-        addPrice: s.price,
-        status: "Ativo",
-      })),
-    };
-
-    await productApi.create(payload);
+  const addProduct = async (formDataPayload: any) => {
+    await productApi.create(formDataPayload);
     await loadData();
   };
 
-  const updateProduct = async (updatedProduct: any) => {
-    await productApi.update(updatedProduct.id, updatedProduct);
+  const updateProduct = async (formDataPayload: any) => {
+    const id = formDataPayload.id || (formDataPayload.get ? formDataPayload.get('id') : undefined);
+    
+    if (!id) throw new Error("ID do produto não encontrado na atualização.");
+
+    await productApi.update(id, formDataPayload);
     await loadData();
   };
 

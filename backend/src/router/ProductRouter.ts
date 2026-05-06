@@ -28,7 +28,7 @@ productRouter.get(
   catchAsync((req: Request, res: Response) => productController.listProducts(req, res))
 );
 
-productRouter.post(
+productRouter.get(
   '/categories/:categoryId/products',
   authenticate,
   tenant.verifyTenancy('CATEGORIA', 'categoryId'),

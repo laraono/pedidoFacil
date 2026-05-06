@@ -39,6 +39,21 @@ export class EstablishmentService {
     }
   }
 
+  
+  async validateAccessCode(code: string): Promise<Establishment> {
+    const establishment = await this.establishmentRepository.findByAccessCode(code);
+
+    if (!establishment) {
+      throw new AppError('Código de acesso inválido.', 404);
+    }
+
+    if (!establishment.selfServiceEnabled) {
+      throw new AppError('O autoatendimento está desativado para este estabelecimento.', 403);
+    }
+
+    return establishment;
+  }
+
   async saveOnboardingStep(userId: number, stepData: SaveOnboardingStepDTO) {
     const user = await this.userRepository.findByIdWithEstablishment(userId);
     if (!user) throw new AppError('User not found.', 404);
@@ -188,6 +203,11 @@ export class EstablishmentService {
         cardsColor: '#FFFFFF',
         buttonsColor: '#E85D5D',
         comandaLabel: 'Comanda',
+        activeCateogryColor: '#E85D5D',
+        textsColor: '#333333',
+        buttonsTextColor: '#FFFFFF',
+        fontFamily: 'Inter',
+        allowObservations: true
       });
       await this.configRepository.save(defaultConfig);
     }

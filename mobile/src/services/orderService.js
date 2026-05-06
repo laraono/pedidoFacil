@@ -1,36 +1,27 @@
-import { API_URL } from './apiConfig';
+import { appConfig } from './apiConfig';
 
-export async function submitOrder({ comandaId, comandaLabel, cartItems, authToken }) {
+export async function submitOrder({ cartItems }) {
 
     const itens = cartItems.map(item => ({
         productId: item.id,
         productVariationId: item.size?.id || null,
-        productName: item.name,
+        productName: item.name, 
         quantity: item.quantity,
         observation: item.observation || '',
     }));
 
-    const body = {
-        status: 'Aguardando_Preparo',
-        source: 'mobile',
-        comandaLabel: comandaLabel || `Comanda #${comandaId}`,
-        itens,
-    };
+    const body = { itens };
 
     const headers = {
         'Content-Type': 'application/json',
+        'x-totem-code': appConfig.selfServiceCode
     };
 
-    if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-    }
-
     const response = await fetch(
-        `${API_URL}/api/v1/commands/${comandaId}/orders`,
+        `${appConfig.API_URL}/totem/orders`,
         {
             method: 'POST',
             headers,
-            credentials: 'include',
             body: JSON.stringify(body),
         }
     );

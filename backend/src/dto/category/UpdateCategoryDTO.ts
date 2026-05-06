@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { safeString } from '../../utils/safeZod'; // Verifique o caminho correto
+import { safeString } from '../../utils/safeZod'; 
 
 export const updateCategorySchema = z.object({
   body: z.object({
