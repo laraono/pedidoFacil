@@ -1,4 +1,4 @@
-import { DataSource, Repository, DeepPartial } from "typeorm";
+import { DataSource, Repository } from "typeorm";
 import { Establishment } from "../database/entity/Establishment";
 import { User } from "../database";
 
@@ -14,6 +14,13 @@ export class EstablishmentRepository extends Repository<Establishment> {
 
     async findByCnpj(cnpj: string): Promise<Establishment | null> {
         return await this.findOne({ where: { cnpj } });
+    }
+
+    async findByAccessCode(code: string): Promise<Establishment | null> {
+        return await this.findOne({ 
+            where: { selfServiceCode: code },
+            relations: ['configurations'] 
+        });
     }
 
     async getByIdWithRelations(id: number): Promise<Establishment | null> {

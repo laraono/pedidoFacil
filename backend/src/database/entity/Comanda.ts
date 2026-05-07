@@ -60,7 +60,7 @@ export class Comanda {
         name: 'Data_Abertura' ,
         default: () => "CURRENT_TIMESTAMP(6)"
     })
-    createdAt!: Date;
+    created_at!: Date;
 
     @DeleteDateColumn({
         name: 'deleted_at',
@@ -70,24 +70,24 @@ export class Comanda {
     deletedAt?: Date
 
     @OneToMany(() => Order, (pedido) => pedido.comanda)
-    orders?: Order[]
+    pedidos!: Order[]
 
     @ManyToOne(() => Establishment, (establishment) => establishment.comandas)
     @JoinColumn({
         name: 'ID_Estabelecimento'
     })
-    establishment?: Establishment
+    establishment!: Establishment
 
     @OneToOne(() => User)
     @JoinColumn({
         name: 'ID_Usuario_Abertura'
     })
-    user?: User
+    user!: User
 
     @OneToOne(() => Coupon)
     @JoinColumn({
         name: 'ID_Cupom_Aplicado'
     })
-    coupon?: Coupon
+    coupon!: Coupon
 
 }

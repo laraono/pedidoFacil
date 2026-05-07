@@ -299,7 +299,7 @@ export class MercadoPagoService {
     }
 
     async createRegister(params: CreateRegisterParamsMP) {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_TERMINAL) {
             throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
@@ -311,7 +311,7 @@ export class MercadoPagoService {
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA 
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_TERMINAL
         }
 
         try {
@@ -330,13 +330,13 @@ export class MercadoPagoService {
     }
 
     async getTerminals({ store, pos }: { store?: string; pos?: string }) {
-        if (!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
+        if (!process.env.MERCADOPAGO_ACCESS_TOKEN_TERMINAL) {
             throw new AppError('Missing API Credentials', 500);
         }
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA}`
+            'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN_TERMINAL}`
         };
 
         try {
@@ -359,13 +359,13 @@ export class MercadoPagoService {
     }
 
     async activeTerminal(terminalId: string) {
-        if (!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
+        if (!process.env.MERCADOPAGO_ACCESS_TOKEN_TERMINAL) {
             throw new AppError('Missing API Credentials', 500);
         }
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA}`
+            'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN_TERMINAL}`
         };
 
         try {
@@ -386,7 +386,7 @@ export class MercadoPagoService {
     }
 
     async createOrder(params: CreateOrderPaymentMP): Promise<CreateOrderType> {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT) {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_TERMINAL) {
             throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
 
@@ -407,7 +407,7 @@ export class MercadoPagoService {
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT ,
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_TERMINAL,
             'X-Idempotency-Key': v4()
         }
 
@@ -617,6 +617,46 @@ export class MercadoPagoService {
 
     }
 
+
+    async createTotemPayment(formData: any, amount: number, description: string) {
+        if (!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT) {
+            throw new AppError('Credenciais do Mercado Pago não configuradas', 500);
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT}`,
+            'X-Idempotency-Key': v4()
+        };
+
+        const paymentBody = {
+            ...formData,
+            transaction_amount: amount,
+            description
+        };
+
+        try {
+            const response = await axios.post(
+                'https://api.mercadopago.com/v1/payments',
+                paymentBody,
+                { headers }
+            );
+
+            const data = response.data;
+
+            return {
+                id: data.id,
+                status: data.status,
+                statusDetail: data.status_detail,
+                pixQrCode: data.point_of_interaction?.transaction_data?.qr_code ?? null,
+                pixQrCodeBase64: data.point_of_interaction?.transaction_data?.qr_code_base64 ?? null,
+                pixExpiresAt: data.date_of_expiration ?? null
+            };
+        } catch (err: any) {
+            const msg = err.response?.data?.message ?? 'Erro ao processar pagamento';
+            throw new AppError(msg, err.response?.status ?? 500);
+        }
+    }
 
     async processCardInfo(userId: string, token: string) {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {

@@ -26,22 +26,15 @@ export class Plan {
         nullable: false
     })
     price!: number
-
-    @Column({
-        type: 'varchar',
-        name: 'Frequencia',
-        nullable: false,
-        length: 100
-    })
-    frequency!: string
-
-    @Column({
-        type: 'varchar',
-        name: 'Features',
-        nullable: true
-    })
-    features?: string
     
+    @Column({
+        name: 'Frequencia',
+        type: 'varchar',
+        nullable: true,
+        length: 20
+    })
+    frequency?: string
+
     @OneToMany(() => Subscription, (subscription) => subscription.establishment)
-    subscriptions?: Subscription[]
+    subscriptions!: Subscription[]
 }

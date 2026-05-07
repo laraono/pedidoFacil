@@ -9,7 +9,7 @@ export class ProductVariationRepository extends Repository<ProductVariation>{
     }
 
     async createProductVariation(productVariation: CreateProductVariation) {
-        return await this.save(productVariation)
+        return await this.save(productVariation as any)
     }
 
     async getProductVariation(productVariationId: number) {
@@ -31,7 +31,7 @@ export class ProductVariationRepository extends Repository<ProductVariation>{
     }
 
     async updateProductVariation(variationId: number, params: ProductVariationParams) {
-        await this.update(variationId, params)
+        await this.update(variationId, params as any)
     }
 
     async deleteProductVariation(productId: number) {

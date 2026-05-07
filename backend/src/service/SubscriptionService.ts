@@ -195,22 +195,25 @@ export class SubscriptionService {
         const history: Array<any> = []
 
         for(const sub of subscriptions) {
-            const order = await this.mercadoPagoService.getOrder(sub.mercadoPagoId)
-            const payment = order.transactions.payments[0]
-            const statusKey = payment.status_detail?.toLowerCase() ?? ''
-            const data = {
-                amount: payment.paid_amount,
-                status: statusLabels[statusKey] ?? payment.status_detail,
-                type: payment.payment_method?.type === 'credit_card' ? 'Cartão de Crédito'
-                    : payment.payment_method?.type === 'debit_card' ? 'Cartão de Débito'
-                    : payment.payment_method?.type === 'bank_transfer' ? 'Pix'
-                    : 'Cartão',
-                installments: payment.payment_method?.installments,
-                name: sub.plan ? sub.plan.name : '',
-                date: order.last_updated_date
-            }
+            if (!sub.mercadoPagoId) continue
 
-            history.push(data)
+            try {
+                const order = await this.mercadoPagoService.getOrder(sub.mercadoPagoId)
+                const payment = order.transactions.payments[0]
+                const statusKey = payment.status_detail?.toLowerCase() ?? ''
+                const data = {
+                    amount: payment.paid_amount,
+                    status: statusLabels[statusKey] ?? payment.status_detail,
+                    type: payment.payment_method?.type === 'credit_card' ? 'Cartão de Crédito'
+                        : payment.payment_method?.type === 'debit_card' ? 'Cartão de Débito'
+                        : payment.payment_method?.type === 'bank_transfer' ? 'Pix'
+                        : 'Cartão',
+                    installments: payment.payment_method?.installments,
+                    name: sub.plan ? sub.plan.name : '',
+                    date: order.last_updated_date
+                }
+                history.push(data)
+            } catch {}
         }
 
         return history

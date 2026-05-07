@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, DeleteDateColumn } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm"
 import { SubscriptionStatus, UserStatus } from "../../enum"
 import { Plan } from "./Plan"
 import { Establishment } from "./Establishment"
@@ -29,7 +29,6 @@ export class Subscription {
         type: 'varchar',
         name: 'Status',
         nullable: false,
-        default: SubscriptionStatus.PENDENTE
     })
     status!: SubscriptionStatus
 
@@ -48,45 +47,31 @@ export class Subscription {
     receipt?: string
 
     @Column({
+        name: 'ID_MercadoPago',
         type: 'varchar',
-        name: 'Mercado_Pago_Id',
-        nullable: false,
-    })
-    mercadoPagoId!: string
-
-    @Column({
-        name: 'Valor_Assinatura',
-        type: "decimal",
-        precision: 10,
-        scale: 2,
-        nullable: false
-    })
-    price!: number
-
-    @CreateDateColumn({ 
-        name:  'Data_Hora_Criacao',
-        type: "timestamp", 
-        default: () => "CURRENT_TIMESTAMP(6)"
-        })
-    created_at!: Date;
-
-    @DeleteDateColumn({
-        name: 'Data_Hora_Delecao',
-        type: 'datetime',
         nullable: true
     })
-    deletedAt?: Date
+    mercadoPagoId?: string
+
+    @Column({
+        name: 'Valor',
+        type: 'decimal',
+        precision: 10,
+        scale: 2,
+        nullable: true
+    })
+    price?: number
 
     @ManyToOne(() => Establishment, (establishment) => establishment.subscriptions)
     @JoinColumn({
         name: 'ID_Estabelecimento'
     })
-    establishment?: Establishment
+    establishment!: Establishment
 
     @ManyToOne(() => Plan, (plan) => plan.subscriptions)
     @JoinColumn({
         name: 'ID_Plano'
     })
-    plan?: Plan
+    plan!: Plan
     
 }

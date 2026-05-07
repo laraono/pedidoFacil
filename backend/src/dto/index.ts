@@ -16,6 +16,7 @@ export {
     ItensArray,
     ProductOrderParams,
     ProductVariationOrderParams,
+    OrderParams,
     CancelOrder, CancelOrderParams,
 } from './order';
 export {

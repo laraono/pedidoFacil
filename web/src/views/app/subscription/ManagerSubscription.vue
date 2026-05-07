@@ -137,9 +137,6 @@ const openCardModal = async (restore) => {
     try { await cardPaymentBrickController.unmount(); } catch (_) {}
     cardPaymentBrickController = null;
   }
-
-  await nextTick();
-  requestAnimationFrame(() => { renderCardPaymentBrick(); });
 };
 
 const closePaymentModal = () => {
@@ -148,7 +145,13 @@ const closePaymentModal = () => {
 };
 
 const renderCardPaymentBrick = async () => {
-  if (!sub.value) return;
+  if (!sub.value || !mp) return;
+
+  const amount = parseFloat(sub.value.price ?? sub.value.plan?.price);
+  if (!amount || isNaN(amount)) {
+    error.value = "Valor da assinatura inválido. Contate o suporte.";
+    return;
+  }
 
   const container = document.getElementById("cardPaymentBrick_container");
   if (!container) {
@@ -161,7 +164,7 @@ const renderCardPaymentBrick = async () => {
 
     const settings = {
       initialization: {
-        amount: parseFloat(sub.value.price),
+        amount,
       },
       customization: {
         visual: { style: { theme: 'default' } },
@@ -357,7 +360,7 @@ const renderCardPaymentBrick = async () => {
 
     <!-- Modal de pagamento (Teleport) -->
     <Teleport to="body">
-      <Transition name="fade">
+      <Transition name="fade" @after-enter="renderCardPaymentBrick">
         <div v-if="paymentModal" class="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4">
           <div class="bg-white border border-[#E0E0E0] w-full max-w-lg rounded shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="p-6 border-b border-[#E0E0E0] flex justify-between items-center">

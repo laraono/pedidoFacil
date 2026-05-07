@@ -30,6 +30,7 @@ export const useKitchenStore = defineStore('kitchen', () => {
   async function fetchOrders() {
     try {
       const comandas = await comandaApi.listByStatus('Aberta');
+      if (!comandas) return;
       let allOrders = [];
 
       comandas.forEach(comanda => {

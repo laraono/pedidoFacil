@@ -2,12 +2,11 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { DataSource } from 'typeorm';
 import { Admin } from '../database/entity/Admin';
-import { LoginDTO } from '../dto';
+import { LoginDTO, RegisterDTO } from '../dto/auth/';
 import { UserStatus } from '../enum';
-import { AppError } from '../middleware';
-import { UserRepository } from '../repository';
-import { gerarTokens, gerarTokenAdmin } from '../config/crypto';
-import { MercadoPagoService } from './MercadoPagoService';
+import { AppError } from '../middleware/error/AppError';
+import { UserRepository, RefreshTokenRepository } from '../repository';
+import { gerarTokens, gerarTokenAdmin, hashToken } from '../config/crypto';
 
 const DUMMY_HASH = '$2b$12$eImiTXuWVxfM37uY4JANjQev3nHN.SBuNFa5UPSmKUVgwjBiCXhHu';
 
@@ -23,13 +22,12 @@ export class AuthService {
   constructor(
     private dataSource: DataSource,
     private userRepository: UserRepository,
-    private mercadoPagoService: MercadoPagoService
+    private refreshTokenRepository: RefreshTokenRepository, 
   ) {}
 
-  async registerManager(data: { nome_usuario: string; email: string; senha: string; }) {
+  async registerManager(data: RegisterDTO) {
     if (!data.nome_usuario?.trim()) throw new AppError('Nome do usuário é obrigatório.', 400);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new AppError('E-mail inválido.', 400);
-
+    
     const senhaErro = validarSenhaForte(data.senha);
     if (senhaErro) throw new AppError(senhaErro, 400);
 
@@ -43,16 +41,17 @@ export class AuthService {
       name: data.nome_usuario,
       email: data.email,
       password: passwordHash,
-      status: UserStatus.ATIVO
+      status: UserStatus.ATIVO,
     });
 
     const savedUser = await this.userRepository.save(user);
-
-    
-
     const { accessToken, refreshToken } = await gerarTokens(savedUser);
 
-    return { accessToken, refreshToken, usuario: { id: savedUser.id, nome: savedUser.name, email: savedUser.email } };
+    return { 
+      accessToken, 
+      refreshToken, 
+      usuario: { id: savedUser.id, nome: savedUser.name, email: savedUser.email } 
+    };
   }
 
   async login(data: LoginDTO) {
@@ -70,7 +69,8 @@ export class AuthService {
       const { accessToken, refreshToken } = await gerarTokens(user);
       
       return {
-        accessToken, refreshToken,
+        accessToken, 
+        refreshToken,
         usuario: { id: user.id, nome: user.name, email: user.email, status: user.status },
         cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions } : null,
         estabelecimentoId: user.establishment?.id ?? null,
@@ -90,7 +90,8 @@ export class AuthService {
     const { accessToken, refreshToken } = await gerarTokenAdmin(admin);
     
     return {
-      accessToken, refreshToken,
+      accessToken, 
+      refreshToken,
       usuario: { id: admin.id, nome: admin.name, email: admin.email },
       cargo: { id: 0, nome: 'Admin', permissoes: ['ALL'] },
       estabelecimentoId: null,
@@ -115,7 +116,8 @@ export class AuthService {
 
       const { accessToken, refreshToken } = await gerarTokenAdmin(admin);
       return {
-        accessToken, refreshToken,
+        accessToken, 
+        refreshToken,
         usuario: { id: admin.id, nome: admin.name, email: admin.email },
         cargo: { id: 0, nome: 'Admin', permissoes: ['ALL'] },
         estabelecimentoId: null,
@@ -127,21 +129,32 @@ export class AuthService {
       relations: { establishment: true, role: true },
     });
 
-    if (!user) {
-      throw new AppError('Usuário inválido ou desativado.', 403);
-    }
+    if (!user) throw new AppError('Usuário inválido ou desativado.', 403);
 
     const { accessToken, refreshToken } = await gerarTokens(user);
 
     return {
-      accessToken, refreshToken,
+      accessToken, 
+      refreshToken,
       usuario: { id: user.id, nome: user.name, email: user.email, status: user.status },
       cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions } : null,
       estabelecimentoId: user.establishment?.id ?? null,
     };
   }
 
-  async logout() {
+  /**
+   * Realiza o logout revogando o Refresh Token no banco (Segurança da 104)
+   */
+  async logout(tokenStr: string) {
+    if (!tokenStr) return { message: 'Logout realizado com sucesso.' };
+
+    const hash = hashToken(tokenStr);
+    const tokenEntity = await this.refreshTokenRepository.findByHash(hash);
+
+    if (tokenEntity) {
+      await this.refreshTokenRepository.revokeByHash(hash);
+    }
+
     return { message: 'Logout realizado com sucesso.' };
   }
 
@@ -150,21 +163,21 @@ export class AuthService {
       const admin = await this.dataSource.getRepository(Admin).findOne({ where: { id: userId } });
       if (!admin) throw new AppError('Admin não encontrado.', 401);
       return {
-        usuario: { id: admin.id, nome: admin.name, email: admin.email },
-        cargo: { id: 0, nome: 'Admin', permissoes: ['ALL'] },
+        usuario: { ...admin, isAdmin: true }, 
+        cargo: { nome: 'Admin', permissoes: ['ALL'] },
         estabelecimentoId: null,
       };
     }
 
-        const user = await this.userRepository.findOne({
-            where: { id: userId, status: UserStatus.ATIVO },
-            relations: { role: true, establishment: true }
-        })
+    const user = await this.userRepository.findOne({
+      where: { id: userId, status: UserStatus.ATIVO },
+      relations: { role: true, establishment: true },
+    });
 
-    if (!user) throw new AppError('Credenciais inválidas ou usuário inativo.', 401);
+    if (!user) throw new AppError('Usuário inválido.', 401);
 
     return {
-      usuario: { id: user.id, nome: user.name, email: user.email, status: user.status },
+      usuario: { ...user, isAdmin: false }, 
       cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions } : null,
       estabelecimentoId: user.establishment?.id ?? null,
     };

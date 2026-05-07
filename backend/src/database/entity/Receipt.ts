@@ -21,7 +21,7 @@ export class Receipt {
     receiptNumber!: string;
 
     @Column({ type: 'varchar', name: 'CPF_CNPJ_Cliente', nullable: true, length: 18 })
-    cpfcnpj?: string;
+    cpfcnpj!: string | null; 
 
     @Column({
         type: 'enum',
@@ -38,13 +38,13 @@ export class Receipt {
     createdAt!: Date;
 
     @DeleteDateColumn({ name: 'Data_Exclusao', nullable: true })
-    deletedAt?: Date;
+    deletedAt?: Date | null; 
 
     @ManyToOne(() => Establishment)
     @JoinColumn({ name: 'ID_Estabelecimento' })
-    establishment?: Establishment;
+    establishment!: Establishment;
 
     @OneToOne(() => Payment)
     @JoinColumn({ name: 'ID_Pagamento' })
-    payment?: Payment;
+    payment!: Payment;
 }

@@ -1,26 +1,16 @@
-import { API_URL } from '../services/apiConfig';
-import { useNavigation } from '@react-navigation/native';
+import { appConfig } from '../services/apiConfig';
 
-export async function fetchFullMenu(setErrorMessage) {
+export async function fetchFullMenu() {
     try {
-        const navigation = useNavigation()
+        const url = `${appConfig.API_URL}/menu?establishmentId=${appConfig.ESTABLISHMENT_ID}`;
+        console.log(`[MenuStore] Fazendo requisição para: ${url}`); 
 
-        const response = await fetch(`${API_URL}/menu?establishmentId=1`, {
+        const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
             }
         });
-
-        if (response.status === 402) {
-            response.json().then(data => {
-                setErrorMessage('Há um erro com a sua assinatura. Corrija ele para poder acessar o menu.');
-            });
-            navigation.navigate('Welcome');;
-            return
-        };
-
-        setErrorMessage(null)
 
         if (!response.ok) {
             const errorText = await response.text(); 

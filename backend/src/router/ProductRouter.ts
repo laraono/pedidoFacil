@@ -1,55 +1,100 @@
 import express, { Request, Response } from 'express';
-import multer from 'multer';
 import { productController } from '../controller';
-import { validateCreateProduct, validateDeleteProduct, validateListProducts, validateListProductsByCategories } from '../validator/product';
 import { catchAsync, subscriptionMiddleware } from '../middleware';
-import {checkPermission} from '../middleware/roleAccessControl'
+import { validateUpload } from '../middleware/validateUpload';
+import { validateRequest } from '../middleware/validateRequest';
+import { createProductSchema } from '../dto/product/CreateProductDTO';
+import { updateProductSchema } from '../dto/product/UpdateProductDTO';
+import { validateListProductsByCategories } from '../validator/product';
 const authenticate = require('../middleware/authenticate');
 const tenant = require('../middleware/tenant');
+const roleAccessControl = require('../middleware/roleAccessControl');
 
 export const productRouter = express.Router();
-const upload = multer()
 
-productRouter.use(authenticate, subscriptionMiddleware)
+productRouter.post(
+  '/products',
+  authenticate,
+  subscriptionMiddleware,
+  roleAccessControl.checkPermission('CARDAPIO'),
+  validateUpload.single('imagem'),
+  validateRequest(createProductSchema),
+  catchAsync((req: Request, res: Response) => productController.createProduct(req, res))
+);
 
-productRouter.post('/products', authenticate, checkPermission('CARDAPIO'), upload.single('image'), validateCreateProduct, catchAsync((req: Request, res: Response) => productController.createProduct(req, res)));
+productRouter.get(
+  '/products',
+  authenticate,
+  subscriptionMiddleware,
+  roleAccessControl.checkPermission('CARDAPIO'),
+  catchAsync((req: Request, res: Response) => productController.listProducts(req, res))
+);
 
-productRouter.get('/products', authenticate, checkPermission('CARDAPIO'), catchAsync((req: Request, res: Response) => productController.listProducts(req, res)));
+productRouter.get(
+  '/categories/:categoryId/products',
+  authenticate,
+  subscriptionMiddleware,
+  tenant.verifyTenancy('CATEGORIA', 'categoryId'),
+  roleAccessControl.checkPermission('CARDAPIO'),
+  catchAsync((req: Request, res: Response) => productController.listProductsByCategory(req, res))
+);
 
-productRouter.get('/categories/:categoryId/products', authenticate, checkPermission('CARDAPIO'), validateListProductsByCategories, catchAsync((req: Request, res: Response) => productController.listProductsByCategory(req, res)));
-
-productRouter.get('/categories/:categoryId/products/active', authenticate, checkPermission('CARDAPIO'), validateListProductsByCategories, catchAsync((req: Request, res: Response) => productController.listActiveProductsByCategory(req, res)));
-
-productRouter.put('/categories/:categoryId/products/:productId', authenticate, checkPermission('CARDAPIO'), upload.single('image'), catchAsync((req: Request, res: Response) => productController.updateProduct(req, res)));
-
-productRouter.put('/categories/:categoryId/products/:productId/status', authenticate, checkPermission('CARDAPIO'), catchAsync((req: Request, res: Response) => productController.updateProductStatus(req, res)));
-
-productRouter.delete('/categories/:categoryId/products/:productId', authenticate, checkPermission('CARDAPIO'), validateDeleteProduct, catchAsync((req: Request, res: Response) => productController.deleteProduct(req, res)));
+productRouter.get(
+  '/categories/:categoryId/products/active',
+  authenticate,
+  subscriptionMiddleware,
+  roleAccessControl.checkPermission('CARDAPIO'),
+  validateListProductsByCategories,
+  catchAsync((req: Request, res: Response) => productController.listProductsByCategory(req, res))
+);
 
 productRouter.put(
-  '/products/:id', 
-  authenticate, 
-  checkPermission('CARDAPIO'), 
+  '/categories/:categoryId/products/:productId',
+  authenticate,
+  subscriptionMiddleware,
+  roleAccessControl.checkPermission('CARDAPIO'),
+  validateUpload.single('imagem'),
+  catchAsync((req: Request, res: Response) => productController.updateProduct(req, res))
+);
+
+productRouter.put(
+  '/categories/:categoryId/products/:productId/status',
+  authenticate,
+  subscriptionMiddleware,
+  roleAccessControl.checkPermission('CARDAPIO'),
   catchAsync((req: Request, res: Response) => productController.updateProduct(req, res))
 );
 
 productRouter.delete(
-  '/products/:id', 
-  authenticate, 
-  checkPermission('CARDAPIO'), 
+  '/categories/:categoryId/products/:productId',
+  authenticate,
+  subscriptionMiddleware,
+  roleAccessControl.checkPermission('CARDAPIO'),
   catchAsync((req: Request, res: Response) => productController.deleteProduct(req, res))
 );
 
 productRouter.put(
-  '/products/:id', 
-  authenticate, 
-  checkPermission('CARDAPIO'), 
+  '/products/:id',
+  authenticate,
+  subscriptionMiddleware,
+  roleAccessControl.checkPermission('CARDAPIO'),
+  validateUpload.single('imagem'),
+  validateRequest(updateProductSchema),
   catchAsync((req: Request, res: Response) => productController.updateProduct(req, res))
 );
 
 productRouter.delete(
-  '/products/:id', 
-  authenticate, 
-  checkPermission('CARDAPIO'), 
+  '/products/:id',
+  authenticate,
+  subscriptionMiddleware,
+  roleAccessControl.checkPermission('CARDAPIO'),
   catchAsync((req: Request, res: Response) => productController.deleteProduct(req, res))
+);
+
+productRouter.patch(
+  '/products/:id/restore',
+  authenticate,
+  subscriptionMiddleware,
+  roleAccessControl.checkPermission('CARDAPIO'),
+  catchAsync((req: Request, res: Response) => productController.restoreProduct(req, res))
 );

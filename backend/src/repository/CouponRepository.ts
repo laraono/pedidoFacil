@@ -18,7 +18,7 @@ export class CouponRepository {
             establishment: { id: establishmentId }
         };
 
-        const coupon = this.repo.create(couponData);
+        const coupon = this.repo.create(couponData as any) as unknown as Coupon;
         
         return await this.repo.save(coupon);
     }

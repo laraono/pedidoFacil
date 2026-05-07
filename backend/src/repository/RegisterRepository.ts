@@ -40,4 +40,12 @@ export class RegisterRepository extends Repository<Register>{
         await this.update(registerId, {terminalId})
     }
 
+    async findTerminalByEstablishment(establishmentId: number): Promise<string | null> {
+        const register = await this.findOne({
+            where: { establishment: { id: establishmentId } },
+            order: { id: 'ASC' }
+        });
+        return register?.terminalId ?? null;
+    }
+
 }

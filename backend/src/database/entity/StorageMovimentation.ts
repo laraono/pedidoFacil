@@ -39,12 +39,12 @@ export class StorageMovimentation {
     @JoinColumn({
         name: 'ID_Estoque_Item'
     })
-    storageIten?: StorageIten
+    storageIten!: StorageIten
 
     @ManyToOne(() => User, (user) => user.movimentations)
     @JoinColumn({
         name: 'ID_Usuario_Responsavel'
     })
-    user?: User
+    user!: User
 
 }

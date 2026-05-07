@@ -8,11 +8,10 @@ const roleAccessControl = require('../middleware/roleAccessControl');
 
 export const comandaRouter = express.Router();
 
-comandaRouter.use(authenticate, subscriptionMiddleware)
-
 comandaRouter.get(
   '/commands',
   authenticate,
+  subscriptionMiddleware,
   roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'),
   catchAsync((req: Request, res: Response) => comandaController.listComandas(req, res)),
 );
@@ -20,6 +19,7 @@ comandaRouter.get(
 comandaRouter.get(
   '/commands/open',
   authenticate,
+  subscriptionMiddleware,
   roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'),
   catchAsync((req: Request, res: Response) => comandaController.listComandasByStatus(req, res)),
 );
@@ -27,6 +27,7 @@ comandaRouter.get(
 comandaRouter.get(
   '/commands/closed',
   authenticate,
+  subscriptionMiddleware,
   roleAccessControl.checkPermission('COMANDAS_FINALIZADAS'),
   catchAsync((req: Request, res: Response) => comandaController.listComandasByStatus(req, res)),
 );
@@ -34,6 +35,7 @@ comandaRouter.get(
 comandaRouter.post(
   '/commands',
   authenticate,
+  subscriptionMiddleware,
   roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO'),
   validateCreateComanda,
   catchAsync((req: Request, res: Response) => comandaController.createComanda(req, res)),
@@ -42,6 +44,7 @@ comandaRouter.post(
 comandaRouter.post(
   '/commands/:comandaId/cancel',
   authenticate,
+  subscriptionMiddleware,
   tenant.verifyTenancy('COMANDA', 'comandaId'),
   roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'),
   validateCancelComanda,
@@ -51,6 +54,7 @@ comandaRouter.post(
 comandaRouter.put(
   '/commands/:comandaId',
   authenticate,
+  subscriptionMiddleware,
   tenant.verifyTenancy('COMANDA', 'comandaId'),
   roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO'),
   catchAsync((req: Request, res: Response) => comandaController.updateComandaStatus(req, res)),
@@ -59,6 +63,7 @@ comandaRouter.put(
 comandaRouter.post(
   '/commands/:comandaId/checkout',
   authenticate,
+  subscriptionMiddleware,
   tenant.verifyTenancy('COMANDA', 'comandaId'),
   roleAccessControl.checkPermission('CAIXA'),
   catchAsync((req: Request, res: Response) => comandaController.checkout(req, res)),

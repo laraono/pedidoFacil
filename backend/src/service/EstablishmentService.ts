@@ -2,32 +2,24 @@ import { Establishment } from '../database/entity/Establishment';
 import { AppError } from '../middleware/error/AppError';
 import { ServiceType } from '../enum';
 import { gerarTokens } from '../config/crypto';
-
 import { EstablishmentRepository } from '../repository/EstablishmentRepository';
 import { ConfigurationRepository } from '../repository/ConfigurationRepository';
-import { UserRepository } from '../repository/UserRepository'; 
+import { UserRepository } from '../repository/UserRepository';
 import { RoleRepository } from '../repository/RoleRepository';
-
 import { SaveOnboardingStepDTO } from '../dto/establishment/SaveOnboardingStepDTO';
 import { FinalizeOnboardingDTO } from '../dto/establishment/FinalizeOnboardingDTO';
-import { UpdateEstablishmentDTO } from '../dto/establishment/UpdateEstablishmentDTO';
-import { RegisterRepository } from '../repository';
 import { MercadoPagoService } from './MercadoPagoService';
-import { DataSource } from 'typeorm';
-import { CreateStoreMP, CreateStoreParamsMP } from '../dto';
-import { Register, User } from '../database';
+import { User } from '../database/entity/User';
 
 export class EstablishmentService {
-  
+
   constructor(
-      private establishmentRepository: EstablishmentRepository,
-      private userRepository: UserRepository,
-      private configRepository: ConfigurationRepository,
-      private roleRepository: RoleRepository,
-      private registerRepository: RegisterRepository,
-      private mercadoPagoService: MercadoPagoService,
-      private dataSource: DataSource
-  ) {}
+    private establishmentRepository: EstablishmentRepository,
+    private userRepository: UserRepository,
+    private configRepository: ConfigurationRepository,
+    private roleRepository: RoleRepository,
+    private mercadoPagoService?: MercadoPagoService
+  ) { }
 
   private parsePermissions(permissions: any): string[] {
     if (Array.isArray(permissions)) return permissions;
@@ -50,9 +42,23 @@ export class EstablishmentService {
     }
   }
 
+  
+  async validateAccessCode(code: string): Promise<Establishment> {
+    const establishment = await this.establishmentRepository.findByAccessCode(code);
+
+    if (!establishment) {
+      throw new AppError('Código de acesso inválido.', 404);
+    }
+
+    if (!establishment.selfServiceEnabled) {
+      throw new AppError('O autoatendimento está desativado para este estabelecimento.', 403);
+    }
+
+    return establishment;
+  }
+
   async saveOnboardingStep(userId: number, stepData: SaveOnboardingStepDTO) {
     const user = await this.userRepository.findByIdWithEstablishment(userId);
-
     if (!user) throw new AppError('User not found.', 404);
 
     let establishment = await this.establishmentRepository.findByManagerId(userId);
@@ -62,7 +68,6 @@ export class EstablishmentService {
         const cnpjExists = await this.establishmentRepository.findByCnpj(stepData.cnpj);
         if (cnpjExists) throw new AppError('This CNPJ is already registered.', 400);
       }
-
       establishment = this.establishmentRepository.create({
         ...stepData,
         manager: user,
@@ -83,7 +88,6 @@ export class EstablishmentService {
 
   async finalizeOnboarding(userId: number, data: FinalizeOnboardingDTO) {
     const { roles: rolesToCreate, hasTotem } = data;
-      
     const user = await this.userRepository.findByIdWithEstablishment(userId);
 
     if (!user || !user.establishment) {
@@ -95,14 +99,9 @@ export class EstablishmentService {
 
     const managerRole = this.roleRepository.create({
       name: 'Gerente',
-      permissions: JSON.stringify([
-        'RELATORIOS', 'COZINHA', 'CARDAPIO', 'FUNCIONARIOS', 'CONFIGURACAO',
-        'ASSINATURA', 'CRIAR_PEDIDO', 'NOTIFICACOES', 'CAIXA',
-        'COMANDAS_FINALIZADAS', 'CUPONS', 'NOTA_FISCAL'
-      ]),
+      permissions: JSON.stringify(['ALL']),
       establishment: { id: establishmentId } as any,
     });
-
     const savedManagerRole = await this.roleRepository.save(managerRole);
 
     await this.userRepository.updateRoleId(userId, savedManagerRole.id);
@@ -118,7 +117,7 @@ export class EstablishmentService {
 
     if (hasTotem) {
       const currentTypes = this.parseServiceTypes(establishment.serviceTypes);
-      
+
       if (!currentTypes.includes(ServiceType.AUTOATENDIMENTO)) {
         currentTypes.push(ServiceType.AUTOATENDIMENTO);
         establishment.serviceTypes = JSON.stringify(currentTypes);
@@ -131,7 +130,7 @@ export class EstablishmentService {
 
     const { accessToken, refreshToken } = await gerarTokens(updatedUser);
 
-    return { 
+    return {
       message: 'Onboarding completed successfully.',
       accessToken,
       refreshToken,
@@ -151,12 +150,12 @@ export class EstablishmentService {
     return establishment;
   }
 
-  async updateEstablishment(establishmentId: number, updateData: UpdateEstablishmentDTO) {
+  async updateEstablishment(establishmentId: number, updateData: any) {
     const establishment = await this.getEstablishmentProfile(establishmentId);
-    
-    const paymentMethods = typeof updateData.paymentMethods !== 'string' 
-        ? JSON.stringify(updateData.paymentMethods) 
-        : updateData.paymentMethods;
+
+    const paymentMethods = typeof updateData.paymentMethods !== 'string'
+      ? JSON.stringify(updateData.paymentMethods)
+      : updateData.paymentMethods;
 
     this.establishmentRepository.merge(establishment, {
       name: updateData.name,
@@ -167,21 +166,26 @@ export class EstablishmentService {
       selfServiceEnabled: updateData.selfServiceEnabled,
       selfServiceCode: updateData.selfServiceCode,
     });
-    
+
     await this.establishmentRepository.save(establishment);
 
     if (updateData.configurations) {
-        const config = await this.configRepository.findByEstablishmentId(establishmentId);
-        if (config) {
-            this.configRepository.merge(config, {
-                logo: updateData.configurations.logo ?? config.logo,
-                backgroundColor: updateData.configurations.backgroundColor ?? config.backgroundColor,
-                cardsColor: updateData.configurations.cardsColor ?? config.cardsColor,
-                buttonsColor: updateData.configurations.buttonsColor ?? config.buttonsColor,
-                comandaLabel: updateData.configurations.comandaLabel ?? config.comandaLabel
-            });
-            await this.configRepository.save(config);
-        }
+      const config = await this.configRepository.findByEstablishmentId(establishmentId);
+      if (config) {
+        this.configRepository.merge(config, {
+          logo: updateData.configurations.logo !== undefined ? updateData.configurations.logo : config.logo,
+          backgroundColor: updateData.configurations.backgroundColor ?? config.backgroundColor,
+          cardsColor: updateData.configurations.cardsColor ?? config.cardsColor,
+          buttonsColor: updateData.configurations.buttonsColor ?? config.buttonsColor,
+          comandaLabel: updateData.configurations.comandaLabel ?? config.comandaLabel,
+          textsColor: updateData.configurations.textsColor ?? config.textsColor,
+          buttonsTextColor: updateData.configurations.buttonsTextColor ?? config.buttonsTextColor,
+          activeCateogryColor: updateData.configurations.activeCateogryColor ?? config.activeCateogryColor,
+          fontFamily: updateData.configurations.fontFamily ?? config.fontFamily,
+          allowObservations: updateData.configurations.allowObservations ?? config.allowObservations
+        });
+        await this.configRepository.save(config);
+      }
     }
 
     return await this.getEstablishmentProfile(establishmentId);
@@ -193,6 +197,23 @@ export class EstablishmentService {
     return { message: 'Establishment desativado com sucesso (Soft Delete).' };
   }
 
+  async createStore(params: { address: string; city: string; state: string; user: User }) {
+    const establishment = await this.establishmentRepository.getEstablishmentByUser(params.user);
+    if (!establishment || !this.mercadoPagoService) return;
+
+    const storeId = await this.mercadoPagoService.createStore({
+      name: establishment.name,
+      establishmentId: establishment.id,
+      address: params.address,
+      city: params.city,
+      state: params.state,
+    });
+
+    if (storeId) {
+      await this.establishmentRepository.addMercadoPagoId(establishment.id, storeId);
+    }
+  }
+
   private async ensureDefaultConfiguration(establishmentId: number) {
     const configExists = await this.configRepository.findByEstablishmentId(establishmentId);
     if (!configExists) {
@@ -202,95 +223,13 @@ export class EstablishmentService {
         cardsColor: '#FFFFFF',
         buttonsColor: '#E85D5D',
         comandaLabel: 'Comanda',
+        activeCateogryColor: '#E85D5D',
+        textsColor: '#333333',
+        buttonsTextColor: '#FFFFFF',
+        fontFamily: 'Inter',
+        allowObservations: true
       });
       await this.configRepository.save(defaultConfig);
     }
   }
-
-  async createStore({address, city, state, user} : {address: string, city: string, state: string, user: User}) {
-    const establishment = await this.establishmentRepository.getEstablishmentByUser(user)
-
-    if(!establishment) {
-      throw new AppError('Estabelecimento não encontrado', 404)
-    }
-    console.log('pre store')
-
-    const store = await this.mercadoPagoService.createStore({
-      address, city, state, establishmentId: establishment.id, name: establishment.name
-    })
-    console.log('pos store')
-
-
-    await this.establishmentRepository.addMercadoPagoId(establishment.id, store)
-
-  }
-
-  async createRegister(name: string, establishmentId: number) {
-    await this.dataSource.transaction(async (transactionalEntityManager) => {
-      const establishment = await transactionalEntityManager.findOne(Establishment, {
-        where: {
-          id: establishmentId
-        }
-      })
-
-      if(!establishment) {
-          throw new AppError('', 400)
-      }
-
-      if(!establishment.mercadoPagoId) {
-          throw new AppError('Termine de configurar seu estabelecimento', 400)
-      }
-
-      const register = await this.mercadoPagoService.createRegister({
-          mercadoPagoId: establishment.mercadoPagoId,
-          name
-      })
-
-      await transactionalEntityManager.save(Register, {
-        mercadoPagoId: register,
-        name
-      })
-
-      await this.mercadoPagoService.getTerminals({store: establishment.mercadoPagoId, pos: register })
-
-    })
-  }
-
-  async associateRegisterToTerminal({ establishmentId, registerId }: { establishmentId: number; registerId: number }) {
-    const establishment = await this.establishmentRepository.getEstablishment(establishmentId)
-
-    if(!establishment) {
-      throw new AppError('', 404)
-    }
-
-    const register = await this.registerRepository.getRegister(registerId)
-
-    if(!register) {
-      throw new AppError('Caixa não encontrado', 404)
-    }
-
-    const [terminal] = await this.mercadoPagoService.getTerminals({store: establishment.mercadoPagoId, pos: register.mercadoPagoId})
-
-    await this.registerRepository.associateToTerminal(registerId, terminal.id)
-  }
-
-  async getTerminals({ establishmentId, pos }: { establishmentId: number; pos: string }) {
-    const establishment = await this.establishmentRepository.getEstablishment(establishmentId)
-
-    if(!establishment) {
-      throw new AppError('Estabelecimento não encontrado', 404)
-    }
-
-    return await this.mercadoPagoService.getTerminals({store: establishment.mercadoPagoId, pos})
-  }
-
-  async getRegisters({ establishmentId }: { establishmentId: number }) {
-    const establishment = await this.establishmentRepository.getEstablishment(establishmentId)
-
-    if(!establishment) {
-      throw new AppError('', 404)
-    }
-    return await this.registerRepository.listRegistersByEstablishment(establishment)
-  }
-
 }

@@ -5,13 +5,11 @@ import { PERMISSIONS } from '@/utils/permissions';
 import LandingPage from "@/views/LandingPage.vue";
 import Login from "@/views/Login.vue";
 import RegisterManager from "@/views/RegisterManager.vue";
-
 import EstablishmentName from "@/views/onboarding/EstablishmentName.vue";
 import ServiceType from "@/views/onboarding/ServiceType.vue";
 import SubscriptionPage from "@/views/onboarding/SubscriptionPage.vue";
 
 import Header from "@/views/app/Header.vue";
-
 import Dashboard from '@/views/app/Dashboard.vue';
 import ManagerReports from '@/views/app/ManagerReports.vue';
 import EstablishmentInfo from '@/views/app/settings/EstablishmentInfo.vue';
@@ -20,7 +18,6 @@ import MenuProducts from '@/views/app/settings/ProductsManagement.vue';
 import MenuCategories from '@/views/app/settings/CategoriesManagement.vue';
 import Menu from '@/views/app/Menu.vue';
 import CreateUsers from '@/views/app/settings/UsersConfig.vue';
-
 import KitchenTerminal from "@/views/app/kitchen/KitchenTerminal.vue";
 
 const routes: RouteRecordRaw[] = [
@@ -29,10 +26,19 @@ const routes: RouteRecordRaw[] = [
   { path: '/forgot-password', name: 'forgot-password', component: () => import('@/views/ForgotPassword.vue') },
   { path: '/reset-password', name: 'reset-password', component: () => import('@/views/ResetPassword.vue') },
   { path: '/register', name: 'register', component: RegisterManager },
-  { path: '/onboarding/name', name: 'OnboardingName', component: EstablishmentName },
-  { path: '/onboarding/type', name: 'OnboardingType', component: ServiceType },
+  {
+    path: '/onboarding/name',
+    name: 'OnboardingName',
+    component: EstablishmentName,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/onboarding/type',
+    name: 'OnboardingType',
+    component: ServiceType,
+    meta: { requiresAuth: true }
+  },
   { path: '/onboarding/subscription', name: 'OnboardingSubscription', component: SubscriptionPage },
-
   {
     path: "/app",
     component: Header,
@@ -112,15 +118,12 @@ const routes: RouteRecordRaw[] = [
         component: ManagerReports,
         meta: { permission: PERMISSIONS.RELATORIOS },
       },
-
       {
         path: "subscription",
         name: "subscription",
-        component: () =>
-          import("@/views/app/subscription/ManagerSubscription.vue"),
+        component: () => import("@/views/app/subscription/ManagerSubscription.vue"),
         meta: { requiresAuth: true, permission: PERMISSIONS.ASSINATURA },
       },
-
       {
         path: "admin/subscriptions",
         name: "admin-subscriptions",
@@ -179,17 +182,29 @@ const ESTABLISHMENT_PREFIXES = [
   "/app/subscription",
 ];
 
-router.beforeEach(async (to, _from) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore();
   auth.loadSession();
 
   if (to.meta.requiresAuth) {
     const valid = await auth.validateSession();
-    if (!valid) return '/login';
+    if (!valid) return { path: '/login' };
+  }
+
+  if (auth.isAuthenticated) {
+    const hasEstablishment = auth.user?.estabelecimentoId != null;
+
+    if (!auth.isAdmin && !hasEstablishment && to.path.startsWith('/app')) {
+      return { path: "/onboarding/name" };
+    }
+
+    if ((hasEstablishment || auth.isAdmin) && to.path.startsWith('/onboarding') && to.path !== '/onboarding/subscription') {
+      return { name: "dashboard" };
+    }
   }
 
   if (auth.isAdmin && ESTABLISHMENT_PREFIXES.some(p => to.path.startsWith(p))) {
-    return { name: 'dashboard' };
+    return { name: 'admin-subscriptions' };
   }
 
   if (to.meta.requiresAdmin && !auth.isAdmin) {

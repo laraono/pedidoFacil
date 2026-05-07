@@ -16,8 +16,8 @@ import { Coupon } from "./Coupon"
 import { Comanda } from "./Comanda"
 import { Order } from "./Order"
 import { Payment } from "./Payment"
-import { Configuration } from "./Configuration" 
-import { Register } from "./Register"
+import { Configuration } from "./Configuration"
+import { Register } from "./Register" 
 
 @Entity({ name: 'ESTABELECIMENTO' })
 export class Establishment {
@@ -101,7 +101,7 @@ export class Establishment {
     @Column({
         type: 'varchar',
         name: 'Mercado_Pago_Id',
-        nullable: true
+        nullable: true,
     })
     mercadoPagoId?: string
 
@@ -115,38 +115,38 @@ export class Establishment {
     @JoinColumn({
         name: 'ID_Gerente_Responsavel'
     })
-    manager?: User
+    manager!: User
 
     @OneToOne(() => Configuration, (config) => config.establishment, { cascade: true, eager: true })
-    configurations?: Configuration
+    configurations!: Configuration
 
     @OneToMany(() => Role, (role) => role.establishment)
-    roles?: Role[]
+    roles!: Role[]
 
     @OneToMany(() => User, (user) => user.establishment)
-    users?: User[]
+    users!: User[]
 
     @OneToMany(() => Subscription, (subscription) => subscription.establishment)
-    subscriptions?: Subscription[]
+    subscriptions!: Subscription[]
 
     @OneToMany(() => Category, (category) => category.establishment)
-    categories?: Category[]
+    categories!: Category[]
 
     @OneToMany(() => Product, (product) => product.establishment)
-    products?: Product[]
+    products!: Product[]
 
     @OneToMany(() => Coupon, (coupon) => coupon.establishment)
-    coupons?: Coupon[]
+    coupons!: Coupon[]
 
     @OneToMany(() => Comanda, (comanda) => comanda.establishment)
-    comandas?: Comanda[]
+    comandas!: Comanda[]
 
     @OneToMany(() => Order, (order) => order.establishment)
-    orders?: Order[]
+    orders!: Order[]
 
     @OneToMany(() => Payment, (payment) => payment.establishment)
-    payments?: Payment[]
+    payments!: Payment[]
 
     @OneToMany(() => Register, (register) => register.establishment)
-    registers?: Register[]
+    registers!: Register[]
 }

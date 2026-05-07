@@ -136,9 +136,12 @@ const finalizeRegistration = async () => {
 
     router.push("/onboarding/subscription");
   } catch (err) {
-    console.error(err);
-    serverError.value =
-      err.message || "Erro ao configurar sistema. Tente novamente.";
+    const data = err.response?.data || err.data || err;
+    if (data?.errors && Array.isArray(data.errors)) {
+      serverError.value = data.errors[0].mensagem;
+    } else {
+      serverError.value = data?.message || "Erro ao configurar sistema. Tente novamente.";
+    }
   } finally {
     isLoading.value = false;
   }

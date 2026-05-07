@@ -1,61 +1,31 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useSubscriptionStore } from '@/stores/subscriptions';
 import {
-  ArrowLeft, ShieldAlert, Users, CheckCircle2, AlertTriangle, Edit,
+  ArrowLeft, ShieldAlert, Users, CheckCircle2, AlertTriangle,
   XCircle, Search, Calendar, CreditCard, UserCircle, X, Mail, Phone, MapPin, DollarSign, Save
 } from 'lucide-vue-next';
-import { subscriptionApi } from "@/services/subscriptionApi";
-import { planApi } from "@/services/planApi";
 
 const router = useRouter();
-
-const plans = ref([])
-const subscriptions = ref([])
-const chosenPlan = ref({})
-
-const form = ref({
-  id: 0,
-  name: '',
-  frequency: 'months',
-  repetitions: 0,
-  billingDay: 0,
-  billingDayProportional: true,
-  price: 0,
-})
-
-onMounted(async () => {
-  plans.value = await planApi.list()
-  subscriptionApi.value = await subscriptionApi.list()
-})
+const subscriptionStore = useSubscriptionStore();
 
 const editingPrices = ref(false);
-const priceForm = ref();
-
-const frequencies = ['days', 'months', 'anual']
-const frequenciesTranslation = ['Dias', 'Meses', 'Anual']
-
+const priceForm = ref({ monthly: subscriptionStore.planPrices.monthly, annual: subscriptionStore.planPrices.annual });
 const applyPriceMaskAdmin = (raw) => {
   let val = String(raw).replace(/[^\d,]/g, '');
   const ci = val.indexOf(',');
   if (ci !== -1) { val = val.slice(0, ci + 1) + val.slice(ci + 1).replace(/,/g, ''); val = val.slice(0, ci + 3); }
   const parts = val.split(','); parts[0] = parts[0].replace(/^0+(\d)/, '$1'); return parts.join(',');
 };
-
-const onPriceFormInput = (e) => { priceForm.value = applyPriceMaskAdmin(e.target.value); };
-
-const editPlan = async (plan) => {
-  editingPrices.value = true;
-  form.value = plan
-};
-
-const savePlanPrices = async () => {
-   const price = parseFloat(String(priceForm.value).replace(',', '.'));
-  if (isNaN(price) || price <= 0) return;
-  chosenPlan.value.price = price
-  await subscriptionApi.updateSubscription(chosenPlan.id, plan)
+const onPriceFormInput = (field, e) => { priceForm.value[field] = applyPriceMaskAdmin(e.target.value); };
+const savePlanPrices = () => {
+  const monthly = parseFloat(String(priceForm.value.monthly).replace(',', '.'));
+  const annual = parseFloat(String(priceForm.value.annual).replace(',', '.'));
+  if (isNaN(monthly) || monthly <= 0 || isNaN(annual) || annual <= 0) return;
+  subscriptionStore.updatePlanPrices({ monthly, annual });
   editingPrices.value = false;
-}
+};
 
 const search = ref('');
 const filterStatus = ref('todos');
@@ -64,48 +34,30 @@ const selectedManager = ref(null);
 const openManagerModal = (sub) => { selectedManager.value = sub; };
 const closeManagerModal = () => { selectedManager.value = null; };
 
-const allSubs = computed(() => {
-  return subscriptions.value.map(sub => ({
-    id: sub.id,
-    status: sub.status,
-    plan: sub.plan,
-    establishment: sub.establishment,
-    expirationDate: sub.expirationDate,
-    manager: sub.establishment?.users?.find(u => u.role === 'Gerente')?.name || 'N/A',
-    usersCount: sub.establishment?.users?.length || 0,
-    price: sub.plan?.price || 0
-  }));
-});
+const allSubs = computed(() => subscriptionStore.adminSubscriptions);
 
 const filtered = computed(() => {
   return allSubs.value.filter(s => {
     const matchSearch = !search.value ||
-      s.establishment_name.toLowerCase().includes(search.value.toLowerCase()) ||
+      s.establishment.toLowerCase().includes(search.value.toLowerCase()) ||
       s.manager.toLowerCase().includes(search.value.toLowerCase());
-    const matchStatus = filterStatus.value === 'todos' || 
-      (filterStatus.value === 'ativo' && (s.status === 'Pendente' || s.status === 'Paga')) ||
-      (filterStatus.value === 'expirada' && s.status === 'Expirada') ||
-      (filterStatus.value === 'cancelada' && s.status === 'Cancelada');
+    const matchStatus = filterStatus.value === 'todos' || s.status === filterStatus.value;
     return matchSearch && matchStatus;
   });
 });
 
 const counts = computed(() => ({
-  total: subscriptions.value.length,
-  ativo: subscriptions.value.filter(s => s.status === 'Pendente' || s.status === 'Paga').length,
-  expirada: subscriptions.value.filter(s => s.status === 'Expirada').length,
-  cancelada: subscriptions.value.filter(s => s.status === 'Cancelada').length,
-  anual: subscriptions.value.filter(s => s.plan?.name === 'Anual').length,
-  mensal: subscriptions.value.filter(s => s.plan?.name === 'months' || s.plan?.name === 'mensal').length,
+  total: allSubs.value.length,
+  ativo: allSubs.value.filter(s => s.status === 'ativo').length,
+  expirado: allSubs.value.filter(s => s.status === 'expirado').length,
+  desativado: allSubs.value.filter(s => s.status === 'desativado').length,
+  anual: allSubs.value.filter(s => s.plan === 'anual').length,
+  mensal: allSubs.value.filter(s => s.plan === 'mensal').length,
 }));
 
 const statusConfig = (status) => {
-  if (status === 'Pendente' || status === 'Paga') { 
-    return { label: 'Ativa', icon: CheckCircle2, color: 'text-accent', bg: 'bg-accent-light border-accent/25' }; 
-  }
-  if (status === 'Expirada') { 
-    return { label: 'Expirada', icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/25' }; 
-  }
+  if (status === 'ativo') return { label: 'Ativa', icon: CheckCircle2, color: 'text-accent', bg: 'bg-accent-light border-accent/25' };
+  if (status === 'expirado') return { label: 'Expirada', icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/25' };
   return { label: 'Desativada', icon: XCircle, color: 'text-[#757575]', bg: 'bg-gray-200/20 border-[#E0E0E0]' };
 };
 
@@ -143,41 +95,36 @@ const formatDate = (d) =>
             <p class="text-[#757575] text-xs">Atualiza Landing Page e telas de assinatura dos gerentes</p>
           </div>
         </div>
+        <button v-if="!editingPrices" @click="editingPrices = true; priceForm = { monthly: String(subscriptionStore.planPrices.monthly).replace('.', ','), annual: String(subscriptionStore.planPrices.annual).replace('.', ',') }"
+          class="px-4 py-2 rounded text-xs font-black border border-[#E0E0E0] bg-gray-50 text-[#757575] hover:text-[#212121] hover:border-[#E0E0E0] transition-all">
+          Editar
+        </button>
       </div>
       <div class="flex flex-wrap gap-4">
         <template v-if="!editingPrices">
-          <div v-for="plan in plans">
-            <div  class="flex-1 min-w-[120px] bg-gray-50 rounded p-4 text-center border border-[#E0E0E0]">
-              <p class="text-[10px] font-black uppercase tracking-widest text-[#757575] mb-1">{{plan.name}}</p>
-              <p class="text-[8px] font-black lowercase tracking-widest text-[#757575] mb-1">Frequência: {{plan.frequency}}</p>
-              <p class="text-[8px] font-black lowercase tracking-widest text-[#757575] mb-1">Dia de pagamento: {{plan.billingDay}}</p>
-              <p class="text-[8px] font-black lowercase tracking-widest text-[#757575] mb-1">Repetições: {{plan.billingDay}}</p>
-              <p class="text-2xl font-black text-[#212121]">R$ {{ plan.priceForm.toFixed(2).replace('.', ',') }}</p>
-              <p class="text-[10px] text-[#757575] mt-0.5">/mês</p>
-            </div>
-            <div class="flex gap-2">
-              <button @click="editPlan(plan)" class="py-2.5 px-5 rounded bg-primary text-white font-black text-sm hover:opacity-90 flex items-center gap-2">
-                <Edit :size="14" /> Editar
-              </button>
-            </div>
-            </div>
+          <div class="flex-1 min-w-[120px] bg-gray-50 rounded p-4 text-center border border-[#E0E0E0]">
+            <p class="text-[10px] font-black uppercase tracking-widest text-[#757575] mb-1">Mensal</p>
+            <p class="text-2xl font-black text-[#212121]">R$ {{ subscriptionStore.planPrices.monthly.toFixed(2).replace('.', ',') }}</p>
+            <p class="text-[10px] text-[#757575] mt-0.5">/mês</p>
+          </div>
+          <div class="flex-1 min-w-[120px] bg-gray-50 rounded p-4 text-center border border-[#E0E0E0]">
+            <p class="text-[10px] font-black uppercase tracking-widest text-[#757575] mb-1">Anual</p>
+            <p class="text-2xl font-black text-accent">R$ {{ subscriptionStore.planPrices.annual.toFixed(2).replace('.', ',') }}</p>
+            <p class="text-[10px] text-[#757575] mt-0.5">/mês</p>
+          </div>
         </template>
         <template v-else>
           <div class="flex flex-wrap gap-3 flex-1 items-end">
             <div class="flex flex-col gap-1">
-              <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-1">{{chosenPlan.name  }}</label>
-              <input :value="priceForm" @input="onPriceFormInput($event)" inputmode="numeric"
+              <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-1">Plano Mensal (R$)</label>
+              <input :value="priceForm.monthly" @input="onPriceFormInput('monthly', $event)" inputmode="numeric"
                 class="py-2.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] text-sm focus:outline-none focus:border-primary/50 w-36" />
             </div>
-            <select v-model="form.billingDay" 
-              class="py-2.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] text-sm focus:outline-none focus:border-primary/50">
-              <option v-for="n in 10" :key="n" :value="n">{{ n }}</option>
-            </select>
-            <select
-              v-model="form.frequency" 
-              class="py-2.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] text-sm focus:outline-none focus:border-primary/50">
-              <option v-for="(item, index) in frequenciesTranslation" :key="index" :value="frequencies[index]">{{ item }}</option>
-            </select>
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-1">Plano Anual (R$)</label>
+              <input :value="priceForm.annual" @input="onPriceFormInput('annual', $event)" inputmode="numeric"
+                class="py-2.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] text-sm focus:outline-none focus:border-primary/50 w-36" />
+            </div>
             <div class="flex gap-2">
               <button @click="editingPrices = false" class="py-2.5 px-4 rounded text-[#757575] font-bold text-sm border border-[#E0E0E0] hover:bg-gray-50 transition-colors">Cancelar</button>
               <button @click="savePlanPrices" class="py-2.5 px-5 rounded bg-primary text-white font-black text-sm hover:opacity-90 flex items-center gap-2">
@@ -199,12 +146,12 @@ const formatDate = (d) =>
         <p class="text-3xl font-black text-accent">{{ counts.ativo }}</p>
         <p class="text-[10px] font-black text-accent/60 uppercase tracking-widest mt-1">Ativas</p>
       </div>
-      <div class="bg-amber-500/5 border border-amber-500/20 rounded p-4 text-center cursor-pointer hover:bg-amber-500/10 transition-colors" @click="filterStatus = 'expirada'">
-        <p class="text-3xl font-black text-amber-400">{{ counts.expirada }}</p>
+      <div class="bg-amber-500/5 border border-amber-500/20 rounded p-4 text-center cursor-pointer hover:bg-amber-500/10 transition-colors" @click="filterStatus = 'expirado'">
+        <p class="text-3xl font-black text-amber-400">{{ counts.expirado }}</p>
         <p class="text-[10px] font-black text-amber-400/60 uppercase tracking-widest mt-1">Expiradas</p>
       </div>
-      <div class="bg-gray-50/50 border border-[#E0E0E0]/30 rounded p-4 text-center cursor-pointer hover:bg-gray-200/30 transition-colors" @click="filterStatus = 'cancelada'">
-        <p class="text-3xl font-black text-[#757575]">{{ counts.cancelada }}</p>
+      <div class="bg-gray-50/50 border border-[#E0E0E0]/30 rounded p-4 text-center cursor-pointer hover:bg-gray-200/30 transition-colors" @click="filterStatus = 'desativado'">
+        <p class="text-3xl font-black text-[#757575]">{{ counts.desativado }}</p>
         <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mt-1">Desativadas</p>
       </div>
       <div class="bg-primary/5 border border-primary/20 rounded p-4 text-center">
@@ -230,7 +177,7 @@ const formatDate = (d) =>
       </div>
       <div class="flex gap-2">
         <button
-          v-for="opt in [{ v: 'todos', l: 'Todos' }, { v: 'ativo', l: 'Ativas' }, { v: 'expirada', l: 'Expiradas' }, { v: 'cancelada', l: 'Desativadas' }]"
+          v-for="opt in [{ v: 'todos', l: 'Todos' }, { v: 'ativo', l: 'Ativas' }, { v: 'expirado', l: 'Expiradas' }, { v: 'desativado', l: 'Desativadas' }]"
           :key="opt.v"
           @click="filterStatus = opt.v"
           :class="filterStatus === opt.v
@@ -239,7 +186,7 @@ const formatDate = (d) =>
           class="px-4 py-2 rounded border text-xs font-black uppercase tracking-wider transition-all"
         >
           {{ opt.l }}
-        </button>priceForm
+        </button>
       </div>
     </div>
 
@@ -261,7 +208,7 @@ const formatDate = (d) =>
         <tbody class="divide-y divide-white/5">
           <tr v-for="sub in filtered" :key="sub.id" class="hover:bg-gray-50 transition-colors">
             <td class="px-6 py-4">
-              <span class="font-bold text-[#212121] text-sm">{{ sub.establishment.name }}</span>
+              <span class="font-bold text-[#212121] text-sm">{{ sub.establishment }}</span>
             </td>
             <td class="px-4 py-4 hidden md:table-cell">
               <span class="text-[#757575] text-sm">{{ sub.manager }}</span>
@@ -269,11 +216,11 @@ const formatDate = (d) =>
             <td class="px-4 py-4">
               <span
                 class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border"
-                :class="sub.plan.name === 'anual'
+                :class="sub.plan === 'anual'
                   ? 'text-purple-400 bg-primary/10 border-primary/20'
                   : 'text-blue-400 bg-blue-500/10 border-blue-500/20'"
               >
-                {{ sub.plan.name }}
+                {{ sub.plan }}
               </span>
             </td>
             <td class="px-4 py-4">
@@ -288,19 +235,19 @@ const formatDate = (d) =>
             <td class="px-4 py-4 hidden lg:table-cell">
               <div class="flex items-center gap-1.5 text-sm text-[#757575]">
                 <Calendar :size="13" class="text-[#757575]" />
-                {{ formatDate(sub.expirationDate) }}
+                {{ formatDate(sub.nextDueDate) }}
               </div>
             </td>
             <td class="px-6 py-4 text-right hidden sm:table-cell">
               <span class="text-sm font-black text-[#212121]">
-                {{ sub.plan.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
+                {{ sub.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
               </span>
               <span class="text-[10px] text-[#757575] block">/mês</span>
             </td>
             <td class="px-6 py-4 text-right hidden lg:table-cell">
               <div class="flex items-center justify-end gap-1.5 text-[#757575] text-sm">
                 <Users :size="13" class="text-[#757575]" />
-                {{ sub.usersCount }}
+                {{ sub.users }}
               </div>
             </td>
             <td class="px-4 py-4">

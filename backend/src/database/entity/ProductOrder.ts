@@ -1,15 +1,23 @@
-import { Entity, PrimaryGeneratedColumn, Column,  JoinColumn, CreateDateColumn, DeleteDateColumn, ManyToOne, OneToOne } from "typeorm"
+import { Entity, Column, OneToMany, PrimaryColumn, JoinColumn, CreateDateColumn, DeleteDateColumn, ManyToOne } from "typeorm"
+import { ProductVariation } from "./ProductVariation"
 import { Product } from "./Product"
 import { Order } from "./Order"
 import { ProductVariationOrder } from "./ProductVariationOrder"
 
-@Entity({name: 'ITEM_PEDIDO'})
+@Entity({name: 'ItemPedido'})
 export class ProductOrder {
 
-    @PrimaryGeneratedColumn({
-        name: "ID_Item_Pedido"
+    @PrimaryColumn({
+        name: 'ID_Pedido',
+        type: 'int'
     })
-    id!: number
+    orderId!: number
+
+    @PrimaryColumn({
+        name: 'ID_Produto',
+        type: 'int'
+    })
+    productId!: number
 
     @Column({
         type: 'varchar',
@@ -37,8 +45,8 @@ export class ProductOrder {
     @CreateDateColumn({ 
         type: "timestamp", 
         default: () => "CURRENT_TIMESTAMP(6)"
-        })
-    createdAt!: Date;
+    })
+    created_at!: Date;
 
     @DeleteDateColumn({
         name: 'deleted_at',
@@ -49,13 +57,13 @@ export class ProductOrder {
 
     @ManyToOne(() => Product, (product) => product.productOrders)
     @JoinColumn({name: 'ID_Produto'})
-    product?: Product
+    product!: Product
 
-    @ManyToOne(() => Order, (category) => category.productOrders)
+    @ManyToOne(() => Order, (order) => order.productOrders)
     @JoinColumn({name: 'ID_Pedido'})
-    order?: Order
+    order!: Order
 
-    @OneToOne(() => ProductVariationOrder, (pvo) => pvo.order) // Add the inverse side here
-    productVariationOrder?: ProductVariationOrder; // Recommended: fix the spelling to "Variation"
+    @OneToMany(() => ProductVariationOrder, (variation) => variation.productOrder)
+    variations!: ProductVariationOrder[]
 
 }

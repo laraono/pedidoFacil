@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { comandaApi } from '@/services/comandaApi.js';
+import { comandaApi } from '@/services/comandaApi';
 
 export interface ComandaOrder {
   price: number;
-  [key: string]: unknown;
+  [key: string]: any;
 }
 
 export interface Comanda {
@@ -12,6 +12,8 @@ export interface Comanda {
   label: string;
   orders: ComandaOrder[];
   total: number;
+  closedAt?: any;
+  paymentDetails?: any;
 }
 
 export const useComandaStore = defineStore('comanda', () => {
@@ -21,8 +23,9 @@ export const useComandaStore = defineStore('comanda', () => {
     async function loadComandas() {
         try {
             const response = await comandaApi.listByStatus('Aberta');
-            
-            comandas.value = response.map(c => ({
+            if (!response) return;
+
+            comandas.value = response.map((c: any) => ({
                 id: c.id,
                 label: c.description, 
                 total: Number(c.total),
@@ -33,7 +36,7 @@ export const useComandaStore = defineStore('comanda', () => {
         }
     }
 
-    function createComanda(label) {
+    function createComanda(label?: string): Comanda {
         const id = Date.now();
         const comanda: Comanda = { orders: [], id, label: label || `Comanda #${id}`, total: 0 };
         comandas.value.push(comanda);

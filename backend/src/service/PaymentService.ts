@@ -12,8 +12,8 @@ export class PaymentService {
         private dataSource: DataSource,
         private mercadoPagoService: MercadoPagoService,
         private paymentRepository: PaymentRepository,
-        private orderRepository: OrderRepository
-    ) {}
+        private orderRepository: OrderRepository,
+        ) {}
 
     async processCheckoutPayments(
         comandaId: number,
@@ -33,34 +33,35 @@ export class PaymentService {
 
         for (const paymentInput of paymentsData) {
 
+            const terminal = paymentInput.type !== 'Dinheiro'
+                ? (paymentInput.terminal ?? process.env.MERCADOPAGO_TERMINAL_ID ?? null)
+                : null;
+            const hasRealTerminal = terminal && terminal !== 'seu_terminal_id_aqui';
+
             const payment = manager.create(Payment, {
                 paymentType: paymentInput.type,
                 totalValue: paymentInput.amount,
-                serviceTax: 0, 
+                serviceTax: 0,
                 change: paymentInput.type === 'Dinheiro' ? remainingChange : 0,
-                status: PaymentStatus.PENDING,
+                status: hasRealTerminal ? PaymentStatus.PENDING : PaymentStatus.PAID,
                 establishment: { id: establishmentId },
                 user: { id: userId }
             });
 
             const savedPayment = await manager.save(Payment, payment);
 
-            if(paymentInput.type !== 'Dinheiro') {
-                if(!paymentInput.terminal) {
-                    throw new AppError('Escolha um terminal', 400)
-                }
-
+            if(hasRealTerminal) {
                 const answer = await this.processTerminalPayment({
-                    terminal: paymentInput.terminal, 
+                    terminal: terminal!,
                     amount: paymentInput.amount,
                     orderId: savedPayment.id
-                })
+                });
 
                 await this.paymentRepository.saveMercadoPagoInfo(
                     savedPayment.id,
                     answer.id,
                     answer.transactions.payments[0].id
-                )
+                );
             }
 
             registeredPayments.push(savedPayment);

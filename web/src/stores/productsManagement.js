@@ -112,24 +112,7 @@ export const useMenuStore = defineStore("menu", () => {
   };
 
   const addProduct = async (productData) => {
-    const payload = {
-      product: {
-        name: productData.name,
-        description: productData.description,
-        basePrice: productData.price,
-        categoryId: productData.categoryId,
-        image: productData.image,
-        status: productData.available ? "Ativo" : "Inativo",
-        estocavel: false,
-      },
-      productVariations: productData.sizes.map((s) => ({
-        name: s.name,
-        addPrice: s.price,
-        status: "Ativo",
-      })),
-    };
-
-    await productApi.create(payload);
+    await productApi.create(productData);
     await loadData();
   };
 

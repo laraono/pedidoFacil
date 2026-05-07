@@ -1,189 +1,48 @@
-import { Category, Establishment } from "../database";
-import { CreateCategory, EditCategory } from "../dto";
-import { CategoryStatus, ProductStatus } from "../enum";
-import { AppError } from "../middleware";
-import { CategoryRepository, EstablishmentRepository, ProductRepository } from "../repository";
-import { uploadToS3, generateUniqueImageKey, getImageContentType, ensureBucketExists, getFromS3, checkFileExists } from "./S3Service";
+import { CategoryRepository } from "../repository/CategoryRepository";
+import { CreateCategoryDTO } from "../dto/category/CreateCategoryDTO"; 
 
 export class CategoryService {
-
     private categoryRepository: CategoryRepository
-    private establishmentRepository: EstablishmentRepository
-    private productRepository: ProductRepository
 
-    constructor(
-        categoryRepository: CategoryRepository, 
-        establishmentRepository: EstablishmentRepository,
-        productRepository: ProductRepository
-    ) {
+    constructor(categoryRepository: CategoryRepository) {
         this.categoryRepository = categoryRepository
-        this.establishmentRepository = establishmentRepository
-        this.productRepository = productRepository
     }
 
-    /**
-     * Cria uma nova categoria. 
-     * Certifique-se de que o DTO CreateCategory agora aceite o campo 'image'.
-     */
-    async createCategory(category: CreateCategory) {
-
-        const establishment = await this.establishmentRepository.getEstablishment(category.establishmentId)
-    
-        if(!establishment) {
-            throw new AppError("Estabelecimento não encontrado", 400)
-        }
-
-        const imageUrl = await this.saveImage(category, establishment.name)
-
-        const categoryParams = { 
-            establishment,
-            name: category.name,
-            image: imageUrl
-        }
-
-        const {id} = await this.categoryRepository.createCategory(categoryParams) 
-
-        return id
+    async createCategory(categoryData: CreateCategoryDTO) {
+        const { id } = await this.categoryRepository.createCategory(categoryData); 
+        return id;
     }
 
-    async listCategories({establishmentId}:{establishmentId: number}) {
-        const categories =  await this.categoryRepository.listCategories(establishmentId)
-
-        const establishment = await this.establishmentRepository.getEstablishment(establishmentId)
-    
-        if(!establishment) {
-            throw new AppError("Estabelecimento não encontrado", 400)
-        }
-
-        categories.map( (category) => {
-            if(category.image) {
-                
-                const imageURL = this.getImage(establishment, category)
-
-                category.image = imageURL
-            }
-        })
-
-        return categories
+    async listCategories(establishmentId: number) {
+        return await this.categoryRepository.listCategories(establishmentId);
     }
 
-    async listActiveCategories({establishmentId}:{establishmentId: number}) {
-        const categories = await this.categoryRepository.listActiveCategories(establishmentId)
-
-        const establishment = await this.establishmentRepository.getEstablishment(establishmentId)
-    
-        if(!establishment) {
-            throw new AppError("Estabelecimento não encontrado", 400)
-        }
-
-        categories.map( (category) => {
-            if(category.image) {
-                
-                const imageURL = this.getImage(establishment, category)
-
-                category.image = imageURL
-            }
-        })
-
-        return categories
+    async listDeletedCategories(establishmentId: number) {
+        return await this.categoryRepository.listDeletedCategories(establishmentId);
     }
 
     async getCategory(categoryId: number) {
-        return await this.categoryRepository.getCategory(categoryId)
+        return await this.categoryRepository.getCategory(categoryId);
     }
 
-    getImage(establishment: Establishment, category: Category) {
-        const bucketName = establishment.name.toLocaleLowerCase()
+    async updateCategory(categoryId: number, data: any) {
+        const updateData: any = {};
 
-        const endpoint = process.env.LOCALSTACK_ENDPOINT || 'http://localhost:4566';
-        return `${endpoint}/${bucketName}/${category.image}`
+        if (data.name !== undefined) updateData.name = data.name;
+        if (data.image !== undefined) updateData.image = data.image;
+
+        if (Object.keys(updateData).length === 0) {
+            return; 
+        }
+
+        await this.categoryRepository.updateCategory(categoryId, updateData);
+    }
+
+    async softDeleteCategory(categoryId: number) {
+        await this.categoryRepository.softDeleteCategory(categoryId);
     }
 
     async restoreCategory(categoryId: number) {
-        const category = await this.categoryRepository.getCategory(categoryId)
-
-        if(category && category.products) {
-            category.products.forEach(async(product) => {
-                const productStatus = ProductStatus.ATIVO 
-
-                await this.productRepository.updateProductStatus(product.id, productStatus)
-            })
-        }     
-
-        await this.categoryRepository.restoreCategory(categoryId)
+        await this.categoryRepository.restoreCategory(categoryId);
     }
-
-    async updateCategory(categoryId: number, params: EditCategory) {
-
-        const establishment = await this.establishmentRepository.getEstablishment(params.establishmentId)
-    
-        if(!establishment) {
-            throw new AppError("Estabelecimento não encontrado", 400)
-        }
-
-        const imageUrl = await this.saveImage(params, establishment.name)
-
-        const categoryParams = { 
-            ...params,
-            image: imageUrl
-        }
-        await this.categoryRepository.updateCategory(categoryId, categoryParams)
-
-        const category = await this.categoryRepository.getCategory(categoryId)
-
-        if(category && category.products) {
-            category.products.forEach(async(product) => {
-                const productStatus = params.status === CategoryStatus.ATIVA 
-                ? ProductStatus.ATIVO 
-                : ProductStatus.ARQUIVADO
-
-                await this.productRepository.updateProductStatus(product.id, productStatus)
-            })
-        }         
-    }
-
-    async deleteCategory(categoryId: number) {
-        const category = await this.categoryRepository.getCategory(categoryId)
-
-        if(!category) {
-            throw new AppError('Categoria não encontrada', 404)
-        }
-
-        if(category.products) {
-            throw new AppError('Categoria possui produtos ligados a ela e não pode ser deletada', 409)
-        }
-
-        await this.categoryRepository.deleteCategory(categoryId)
-    }
-
-    async saveImage(category: CreateCategory, name: string) {
-        const bucketName = name.toLocaleLowerCase()
-
-        await ensureBucketExists(bucketName)
-
-        if(!category.image) return ''
-
-        try {
-            const imageKey = generateUniqueImageKey(category.image);
-
-            const doesImageExist = await checkFileExists(bucketName, imageKey)
-            
-            if(!doesImageExist) return imageKey
-
-            const result = await uploadToS3({
-                bucket: bucketName, 
-                key: imageKey, 
-                body: category.image,
-                contentType: getImageContentType(category.image)
-            })
-
-            if (!result.Location) 
-                throw new AppError("Falha ao obter URL da imagem", 500);
-
-            return imageKey
-
-        } catch(error) {
-            throw new AppError(`Erro ao salvar imagem: ${error}`, 500)
-        }
-    }  
 }

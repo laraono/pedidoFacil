@@ -1,7 +1,6 @@
 import { DataSource, Repository, IsNull, Not } from "typeorm";
 import { Product } from "../database";
-import { CreateProductParams, EditProductParams } from "../dto";
-import { ProductStatus } from "../enum";
+import { ProductParams } from "../dto";
 
 export class ProductRepository extends Repository<Product>{
 
@@ -9,115 +8,47 @@ export class ProductRepository extends Repository<Product>{
         super(Product, dataSource.createEntityManager());
     }
 
-    async createProduct(product: CreateProductParams) {
+    async createProduct(product: ProductParams) {
         return await this.save(product)
     }
 
-    async listProducts(establishmentId: number, status: ProductStatus) {
+    async listProducts(establishmentId: number) {
         return await this.find({
-            where: {
-                establishment: {
-                    id: establishmentId,
-                    status
-                }
-            },
-            select: {
-                category: {
-                    name: true,
-                    id: true
-                },
-                basePrice: true,
-                deletedAt: true,
-                description: true,
-                status: true,
-                id: true,
-                name: true,
-                productVariations: {
-                    addPrice: true,
-                    name: true,
-                    id: true
-                }
-            },
-            relations: {
-                category: true,
-                productVariations: true
-            },
-            order: {
-                name: 'ASC'
-            }
-        })
+            where: { establishment: { id: establishmentId } }, 
+            relations: ['category', 'productVariations']
+        });
     }
 
     async listProductsByCategory(categoryId: number, establishmentId: number) {
         return await this.find({
             where: {
-                category: {
-                    id: categoryId
-                },
-                establishment: {
-                    id: establishmentId
-                }
-            },
-            order: {
-                name: 'ASC'
+                category: { id: categoryId },
+                establishment: { id: establishmentId } 
             }
-        })
+        });
     }
 
-    async listActiveProductsByCategory(categoryId: number, establishmentId: number) {
+    async listDeletedProducts(establishmentId: number) {
         return await this.find({
-            where: {
-                category: {
-                    id: categoryId
-                },
-                establishment: {
-                    id: establishmentId
-                },
-                status: ProductStatus.ATIVO
+            where: { 
+                establishment: { id: establishmentId },
+                deletedAt: Not(IsNull()) 
             },
-            order: {
-                name: 'ASC'
-            },
-            relations: {
-                productVariations: true
-            },
-        })
+            withDeleted: true,
+            relations: { category: true, productVariations: true }
+        });
     }
 
     async getProduct(productId: number) {
         return await this.findOne({
             where: {
                 id: productId
-            },
-            relations: {
-                productVariations: true
             }
         })
     }
 
-    async updateProductStatus(productId: number, status: ProductStatus) {
-        await this.update(productId, {status})
-    }
-
-    async updateProduct(productId: number, params: EditProductParams) {
-        await this.update(productId, params)
-    }
-
-    async deleteProduct(productId: number) {
-        await this.softDelete(productId)
-    }
-
-    async listDeletedProducts() {
-        return await this.find({
-            where: { 
-                deletedAt: Not(IsNull()) 
-            },
-            withDeleted: true,
-            relations: {
-                category: true,
-                productVariations: true
-            }
-        });
+    async updateProduct(productId: number, data: Partial<Product>) {
+        await this.update(productId, data);
     }
 
     async softDeleteProduct(productId: number) {

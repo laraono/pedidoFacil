@@ -62,15 +62,16 @@ export interface LoginResponse {
 export interface UserProfile {
   usuario: {
     id: number;
-    nome: string;
+    name: string;
     email: string;
+    isAdmin: boolean;
   };
   estabelecimentoId: number | null;
   cargo: {
     id: number;
     nome: string;
     permissoes: string | string[];
-  };
+  } | null;
 }
 
 export const authApi = {

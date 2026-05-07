@@ -43,8 +43,8 @@ export class Role {
     @JoinColumn({
         name: 'ID_Estabelecimento'
     })
-    establishment?: Establishment
+    establishment!: Establishment
 
     @OneToMany(() => User, (user) => user.role)
-    users?: User[]
+    users!: User[]
 }

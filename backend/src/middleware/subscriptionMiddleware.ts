@@ -52,6 +52,6 @@ export async function subscriptionMiddleware(req, res: Response, next: NextFunct
         return res.status(402).json({message: 'Há problemas com o pagamento da sua assinatura'})
 
     } catch {
-        res.status(402).json({message: 'Há problemas com o pagamento da sua assinatura'})
+        return res.status(402).json({message: 'Há problemas com o pagamento da sua assinatura'})
     }
 }

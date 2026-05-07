@@ -5,12 +5,19 @@ import { checkPermission } from '../middleware/roleAccessControl';
 import { establishmentService } from '../service'; 
 import { 
     validateSaveOnboarding, 
-    validateFinalizeOnboarding, 
-    validateUpdateEstablishment 
+    validateFinalizeOnboarding 
 } from '../validator/establishment/establishmentSchema';
+import { validateRequest } from '../middleware/validateRequest';
+import { UpdateEstablishmentDTO } from '../dto/establishment/UpdateEstablishmentDTO';
+import { validateUpload } from '../middleware/validateUpload';
 
 const establishmentRouter = Router();
 const establishmentController = new EstablishmentController(establishmentService);
+
+establishmentRouter.get(
+  '/code/:code',
+  establishmentController.getByCode
+);
 
 establishmentRouter.get(
   '/:id/public',
@@ -42,8 +49,9 @@ establishmentRouter.put(
   '/profile',
   authenticate,
   checkPermission('ESTABELECIMENTO_EDIT', 'ALL'),
-  validateUpdateEstablishment,
-  establishmentController.update
+  validateUpload.single('logo'),   
+  validateRequest(UpdateEstablishmentDTO), 
+  establishmentController.update   
 );
 
 establishmentRouter.delete(
@@ -53,23 +61,6 @@ establishmentRouter.delete(
   establishmentController.disable
 );
 
-establishmentRouter.post(
-  '/registers',
-  authenticate,
-  establishmentController.postRegister
-);
-
-establishmentRouter.post(
-  '/registers/associate',
-  authenticate,
-  establishmentController.associateRegisterToTerminal 
-);
-
-establishmentRouter.get(
-  '/registers',
-  authenticate,
-  establishmentController.getRegisters
-);
 
 
 export { establishmentRouter };

@@ -16,13 +16,11 @@ function validarCNPJ(cnpj: string): boolean {
 }
 
 export const loginSchema = z.object({
-    email: z.string().email('E-mail inválido.'),
+    email: z.string().min(1, 'E-mail é obrigatório.'),
     senha: z.string().min(1, 'Senha é obrigatória.'),
 });
 
 export const registerSchema = z.object({
-    nome_estabelecimento: z.string().min(1, 'Nome do estabelecimento é obrigatório.'),
-    cnpj: z.string().refine(validarCNPJ, { message: 'CNPJ inválido.' }),
     nome_usuario: z.string().min(1, 'Nome do usuário é obrigatório.'),
     email: z.string().email('E-mail inválido.'),
     senha: z.string()
@@ -30,6 +28,9 @@ export const registerSchema = z.object({
         .regex(/[A-Z]/, 'A senha deve conter pelo menos uma letra maiúscula.')
         .regex(/[0-9]/, 'A senha deve conter pelo menos um número.')
         .regex(/[^A-Za-z0-9]/, 'A senha deve conter pelo menos um caractere especial.'),
+    cpf: z.string().optional(), 
+    nome_estabelecimento: z.string().optional(), 
+    cnpj: z.string().optional(), 
     cargos: z.array(z.object({
         nome: z.string().min(1),
         permissoes: z.array(z.string()),

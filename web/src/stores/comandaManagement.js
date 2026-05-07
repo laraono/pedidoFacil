@@ -9,7 +9,8 @@ export const useComandaStore = defineStore('comanda', () => {
     async function loadComandas() {
         try {
             const response = await comandaApi.listByStatus('Aberta');
-            
+            if (!response) return;
+
             comandas.value = response.map(c => ({
                 id: c.id,
                 label: c.description, 

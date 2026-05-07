@@ -57,9 +57,9 @@ export class Product {
         enum: ['Ativo', 'Inativo'],
         name: 'Status',
         nullable: false,
-        default: 'Ativo',
+        default: 'Ativo'
     })
-    status!: ProductStatus
+    status!: ProductStatus | string
 
     @DeleteDateColumn({
         name: 'Data_Exclusao',
@@ -69,21 +69,21 @@ export class Product {
     deletedAt?: Date
 
     @OneToMany(() => ProductOrder, (productOrders) => productOrders.product)
-    productOrders?: ProductOrder[]
+    productOrders!: ProductOrder[]
 
     @OneToMany(() => ProductVariation, (productVariation) => productVariation.product)
-    productVariations?: ProductVariation[]
+    productVariations!: ProductVariation[]
 
     @ManyToOne(() => Category, (category) => category.products)
     @JoinColumn({
         name: 'ID_Categoria'
     })
-    category?: Category
+    category!: Category
 
     @ManyToOne(() => Establishment, (establishment) => establishment.products)
     @JoinColumn({
         name: 'ID_Estabelecimento'
     })
-    establishment?: Establishment
+    establishment!: Establishment
 
 }

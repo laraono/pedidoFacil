@@ -1,34 +1,75 @@
-import { Comanda, Establishment, Order, Product, ProductVariation } from "../../database"
-import { OrderStatus } from "../../enum"
+import { z } from 'zod';
+import { OrderStatus } from '../../enum';
+import { safeString } from '../../utils/safeZod';
 
-export type CreateOrder = {
-    status: OrderStatus,
-    comandaId: number,
-    establishmentId: number,
-    itens: Array<ItensArray>
-}
+const orderStatusValues = Object.values(OrderStatus) as [string, ...string[]];
 
-export type ItensArray = {
-    productId: number,
-    quantity: number,
-    productVariationId?: number,
-    observation?: string
+export const createOrderSchema = z.object({
+  body: z.object({
+    status: z.enum(orderStatusValues),
+    serviceType: z.string().optional(),
+    establishmentId: z.number().int().positive().optional(), 
+    comandaId: z.number().int().positive(), 
+    itens: z.array(
+      z.object({
+        productId: z.number().int().positive(),
+        quantity: z.number().int().positive(),
+        productVariationId: z.number().int().positive().optional().nullable(),
+        observation: safeString(0, 255).optional().nullable()
+      }).strict()
+    ).min(1, "O pedido deve ter pelo menos um item")
+  }).strict()
+});
+
+export const createTotemOrderSchema = z.object({
+  body: z.object({
+    itens: z.array(
+      z.object({
+        productId: z.number().int().positive(),
+        quantity: z.number().int().positive(),
+        productVariationId: z.number().int().positive().optional().nullable(),
+        observation: safeString(0, 255).optional().nullable()
+      }).strict()
+    ).min(1, "O pedido deve ter pelo menos um item")
+  }).strict()
+});
+
+export const updateOrderStatusSchema = z.object({
+  body: z.object({
+    status: z.enum(orderStatusValues)
+  }).strict()
+});
+
+export type CreateOrderDTO = z.infer<typeof createOrderSchema>['body'];
+export type CreateTotemOrderDTO = z.infer<typeof createTotemOrderSchema>['body'];
+export type UpdateOrderStatusDTO = z.infer<typeof updateOrderStatusSchema>['body'];
+
+export type CreateOrder = CreateOrderDTO
+export type ItensArray = CreateOrderDTO['itens']
+
+export type OrderParams = {
+    status: OrderStatus
+    serviceType?: string
+    comanda: { id: number }
+    establishment: { id: number }
+    isDelivered: boolean
 }
 
 export type ProductOrderParams = {
-    order: Order,
-    observation?: string,
-    quantity: number,
-    price: number,
-    product: Product,
-    productVariation?: ProductVariation | null,
+    orderId: number
+    productId: number
+    quantity: number
+    price: number
+    observation?: string
+    order?: { id: number }
+    product?: { id: number }
 }
 
 export type ProductVariationOrderParams = {
-    productId: number,
-    orderId: number,
-    productVariationid: number,
+    orderId: number
+    productId: number
+    productVariationId: number
     price: number
+    productVariation?: { id: number }
+    productOrder?: { orderId: number; productId: number }
 }
-
-

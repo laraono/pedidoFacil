@@ -48,20 +48,26 @@ const selectPlan = async (plan) => {
 
 const renderCardPaymentBrick = async () => {
     
-    if (!selectedPlan.value) {
-        console.error("No selected plan");
+    if (!selectedPlan.value || !mp) {
+        console.error("No selected plan or MP not initialized");
         return;
     }
-    
+
+    const amount = parseFloat(selectedPlan.value.price) * 12;
+    if (!amount || isNaN(amount)) {
+        error.value = "Valor do plano inválido.";
+        return;
+    }
+
         const container = document.getElementById("cardPaymentBrick_container");
-        
+
         if (container) {
             try {
                 container.innerHTML = '';
-                
+
                 const settings = {
                     initialization: {
-                        amount: parseFloat(selectedPlan.value.price) * 12,
+                        amount,
                     },
                     customization: {
                         visual: {
@@ -138,8 +144,6 @@ const renderCardPaymentBrick = async () => {
             console.error("Container never found");
             error.value = "Payment form failed to load";
         }
-    
-    await renderCardPaymentBrick();
 };
 
 const goBack = () => {

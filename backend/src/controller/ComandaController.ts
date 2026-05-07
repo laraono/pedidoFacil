@@ -1,7 +1,5 @@
-import { ComandaStatus } from "../enum";
 import { ComandaService } from "../service";
-import {  Request, Response  } from 'express';
-import { getIO } from "../socket";
+import { Request, Response } from 'express';
 
 export class ComandaController {
     private comandaService: ComandaService
@@ -33,19 +31,15 @@ export class ComandaController {
     }
 
     async listComandas(req: Request, res: Response) {
-        const comandas = await this.comandaService.listComandas(req.body)
-
-        res.status(200).send(comandas)
-    }
-
-    async listOpenComandas(req, res: Response) {
-        const comandas = await this.comandaService.listComandasByStatus({status: ComandaStatus.ABERTA, establishmentId: req.body.establishmentId})
-        res.status(200).send(comandas)
+        const estabelecimentoId = (req as any).usuario.estabelecimento; 
+        const comandas = await this.comandaService.listComandas(estabelecimentoId);
+        res.status(200).send(comandas);
     }
 
     async listComandasByStatus(req: Request, res: Response) {
+        const estabelecimentoId = (req as any).usuario.estabelecimento; 
         const { status } = req.query;
-        const comandas = await this.comandaService.listComandasByStatus(status as any);
+        const comandas = await this.comandaService.listComandasByStatus(status as any, estabelecimentoId);
         res.status(200).send(comandas);
     }
     
@@ -54,10 +48,7 @@ export class ComandaController {
         const idNumero = Number(id || req.params.comandaId); 
 
         await this.comandaService.updateComandaStatus(idNumero, req.body.status);
-        getIO().to('kitchen').to('cashier').emit('comanda_status_updated', {
-            comandaId: idNumero,
-            status: req.body.status
-        })
+        
         res.sendStatus(204);
     }
 
@@ -68,21 +59,8 @@ export class ComandaController {
             comandaId: Number(comandaId), 
             ...req.body
         });
-
-        getIO().to('kitchen').to('cashier').emit('comanda_status_updated', {
-            comandaId: comandaId,
-            status: ComandaStatus.CANCELADA
-        })
-
+        
         res.sendStatus(204);
-    }
-
-    async getComanda(req, res: Response) {
-        const {comandaId} = req.params
-
-        const comanda = await this.comandaService.getComanda(comandaId)
-
-        res.status(200).send(comanda)
     }
 
     async checkout(req: Request, res: Response) {
@@ -98,7 +76,7 @@ export class ComandaController {
             const estabelecimentoId = user.estabelecimento || user.ID_Estabelecimento;
 
             if (!userId || !estabelecimentoId) {
-                console.error("🔥 Token JWT sem ID ou Estabelecimento:", user);
+                console.error("Token JWT sem ID ou Estabelecimento:", user);
                 return res.status(400).json({ error: "Token inválido ou incompleto." });
             }
 
@@ -108,11 +86,6 @@ export class ComandaController {
                 Number(estabelecimentoId),
                 req.body
             );
-
-            getIO().to('kitchen').to('cashier').emit('comanda_status_updated', {
-                comandaId,
-                status: ComandaStatus.FECHADA
-            })
 
             return res.status(200).json(payment);
 

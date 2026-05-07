@@ -143,10 +143,9 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   });
 
-  // Admin mock: all manager subscriptions
   const adminSubscriptions: AdminSubscription[] = [
     { id: 1, establishment: 'Burger Palace', manager: 'João Silva', email: 'joao.silva@burgerpalace.com', phone: '(11) 98765-4321', plan: 'anual', status: 'ativo', nextDueDate: '2026-10-15', amount: 49.90, users: 8 },
-    { id: 2, establishment: 'Pizza Viva', manager: 'Maria Costa', email: 'maria.costa@pizzaviva.com', phone: '(21) 99887-6543', plan: 'mensal', status: 'ativo', nextDueDate: '2026-03-28', amount: 79.90, users: 5 },
+    { id: 2, establishment: 'Pizza Viva', manager: 'Maria Costa', email: 'maria.costa@pizziviva.com', phone: '(21) 99887-6543', plan: 'mensal', status: 'ativo', nextDueDate: '2026-03-28', amount: 79.90, users: 5 },
     { id: 3, establishment: 'Tacos & Co', manager: 'Pedro Alves', email: 'pedro@tacosco.com', phone: '(31) 97654-3210', plan: 'mensal', status: 'expirado', nextDueDate: '2026-02-10', amount: 79.90, users: 3 },
     { id: 4, establishment: 'Sushi Express', manager: 'Ana Tanaka', email: 'ana.tanaka@sushiexpress.com', phone: '(11) 96543-2109', plan: 'anual', status: 'ativo', nextDueDate: '2026-11-05', amount: 49.90, users: 12 },
     { id: 5, establishment: 'Café Mooca', manager: 'Carlos Mendes', email: 'carlos@cafemooca.com', phone: '(11) 95432-1098', plan: 'mensal', status: 'desativado', nextDueDate: '2026-01-20', amount: 79.90, users: 2 },

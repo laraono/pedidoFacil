@@ -8,6 +8,7 @@ export const useClosedComandaStore = defineStore('closedComandas', () => {
   async function loadClosedComandas() {
     try {
       const response = await comandaApi.listByStatus('Fechada');
+      if (!response) return;
 
       const fetchedComandas = response.map(c => {
         const mappedOrders = (c.pedidos || []).map(p => {

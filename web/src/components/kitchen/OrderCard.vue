@@ -7,6 +7,8 @@ const props = defineProps({
   alertMinutes: { type: Number, default: 15 }
 });
 
+const unitLabel = localStorage.getItem('comandaUnitLabel') || 'Comanda';
+
 const emit = defineEmits(['move', 'cancel']);
 
 const elapsedTime = ref('00:00');
@@ -15,7 +17,7 @@ let timerInterval = null;
 
 const updateTimer = () => {
   const now = new Date();
-  const start = new Date(props.order.created_at);
+  const start = new Date(props.order.createdAt);
   const diff = Math.floor((now - start) / 1000);
 
   const h = Math.floor(diff / 3600).toString().padStart(2, '0');
@@ -51,11 +53,11 @@ const statusTheme = computed(() => {
   }
 
   switch (props.order.status) {
-    case 'Agurdando_Preparo':
+    case 'pending':
       return { color: 'bg-amber-500', border: 'border-[#E0E0E0]', bg: 'bg-white', label: 'PENDENTE', btn: 'bg-amber-500 text-white', barWidth: 'w-3' };
-    case 'Em_Preparo':
+    case 'preparing':
       return { color: 'bg-blue-500', border: 'border-[#E0E0E0]', bg: 'bg-white', label: 'PREPARO', btn: 'bg-blue-500 text-white', barWidth: 'w-3' };
-    case 'Pronto':
+    case 'ready':
       return { color: 'bg-accent', border: 'border-[#E0E0E0]', bg: 'bg-white', label: 'PRONTO', btn: 'bg-primary text-white', barWidth: 'w-3' };
     default:
       return { color: 'bg-gray-400', border: 'border-[#E0E0E0]', bg: 'bg-white', label: 'INFO', btn: 'bg-gray-400 text-white', barWidth: 'w-3' };
@@ -70,14 +72,14 @@ const statusTheme = computed(() => {
     :class="[
       statusTheme.bg,
       statusTheme.border,
-      isDelayed && order.status !== 'Pronto' ? 'animate-emergency' : ''
+      isDelayed && order.status !== 'ready' ? 'animate-emergency' : ''
     ]"
   >
     <div
       class="shrink-0 transition-all duration-300 flex items-center justify-center"
       :class="[statusTheme.color, statusTheme.barWidth]"
     >
-      <Flame v-if="isDelayed && order.status !== 'Pronto'" :size="16" class="text-white animate-bounce" />
+      <Flame v-if="isDelayed && order.status !== 'ready'" :size="16" class="text-white animate-bounce" />
     </div>
 
     <div class="flex-grow flex flex-col">
@@ -85,15 +87,15 @@ const statusTheme = computed(() => {
         <div class="flex items-center gap-3">
           <span class="font-black text-2xl text-[#212121] tracking-tighter">#{{ order.id }}</span>
           <div class="flex flex-col">
-            <span class="text-[#757575] text-[9px] font-black uppercase tracking-[0.2em] leading-none">Comanda</span>
-            <span class="text-[#212121] font-black text-base uppercase italic leading-none">{{ order.comanda.description }}</span>
+            <span class="text-[#757575] text-[9px] font-black uppercase tracking-[0.2em] leading-none">{{ unitLabel }}</span>
+            <span class="text-[#212121] font-black text-base uppercase italic leading-none">{{ order.comanda }}</span>
           </div>
         </div>
 
         <div class="flex items-center gap-2">
           <div
             class="flex items-center gap-2 font-mono text-xl font-black px-4 py-1.5 rounded border transition-colors"
-            :class="isDelayed && order.status !== 'Pronto'
+            :class="isDelayed && order.status !== 'ready'
               ? 'bg-red-600 text-white border-red-400'
               : 'bg-gray-100 text-[#212121] border-[#E0E0E0]'"
           >
@@ -103,8 +105,8 @@ const statusTheme = computed(() => {
 
           <!-- Cancel button -->
           <button
-            v-if="order.status !== 'Pronto'"
-            @click.stop="$emit('cancel', order.id, order.comanda.id)"
+            v-if="order.status !== 'ready'"
+            @click.stop="$emit('cancel', order.id)"
             class="p-2 rounded bg-danger-light border border-danger text-danger hover:bg-red-100 transition-all"
             title="Cancelar pedido"
           >
@@ -114,21 +116,21 @@ const statusTheme = computed(() => {
       </div>
 
       <div class="p-5 space-y-4">
-        <div v-for="(item, index) in order.productOrders" :key="index" class="flex flex-col border-b border-[#E0E0E0] pb-3 last:border-0 last:pb-0">
+        <div v-for="(item, index) in order.items" :key="index" class="flex flex-col border-b border-[#E0E0E0] pb-3 last:border-0 last:pb-0">
           <div class="flex items-start gap-4">
             <span
               class="font-black text-2xl min-w-[35px] transition-colors"
               :class="isDelayed && order.status !== 'ready' ? 'text-red-500' : 'text-accent'"
             >
-              {{ item.quantity }}x
+              {{ item.amount }}x
             </span>
-            <span class="font-black text-lg text-[#212121] uppercase tracking-tight pt-0.5">{{ item.product.name }}</span>
+            <span class="font-black text-lg text-[#212121] uppercase tracking-tight pt-0.5">{{ item.name }}</span>
           </div>
 
-          <div v-if="item.observation" class="ml-12 mt-2 p-3 rounded bg-amber-50 border border-amber-200 flex items-center gap-2">
+          <div v-if="item.obs" class="ml-12 mt-2 p-3 rounded bg-amber-50 border border-amber-200 flex items-center gap-2">
             <AlertTriangle :size="14" class="text-amber-500" />
             <p class="text-[11px] font-black text-amber-700 uppercase tracking-wider italic">
-              {{ item.observation }}
+              {{ item.obs }}
             </p>
           </div>
         </div>
@@ -136,8 +138,8 @@ const statusTheme = computed(() => {
 
       <div class="p-4 mt-auto">
         <button
-          v-if="order.status === 'Aguardando_Preparo'"
-          @click="$emit('move', order.comanda.id, order.id, 'Em_Preparo')"
+          v-if="order.status === 'pending'"
+          @click="$emit('move', order.id, 'preparing')"
           class="w-full py-4 rounded font-black uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-3 transition-all active:scale-95"
           :class="statusTheme.btn"
         >
@@ -145,8 +147,8 @@ const statusTheme = computed(() => {
         </button>
 
         <button
-          v-if="order.status === 'Em_Preparo'"
-          @click="$emit('move', order.comanda.id, order.id, 'Pronto')"
+          v-if="order.status === 'preparing'"
+          @click="$emit('move', order.id, 'ready')"
           class="w-full py-4 rounded font-black uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-3 transition-all active:scale-95"
           :class="statusTheme.btn"
         >
@@ -154,8 +156,8 @@ const statusTheme = computed(() => {
         </button>
 
         <button
-          v-if="order.status === 'Pronto'"
-          @click="$emit('move', order.comanda.id, order.id, 'Finalizado')"
+          v-if="order.status === 'ready'"
+          @click="$emit('move', order.id, 'finished')"
           class="w-full py-4 bg-gray-100 hover:bg-gray-200 text-[#212121] border border-[#E0E0E0] rounded font-black uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-3 transition-all"
         >
           Finalizar Entrega

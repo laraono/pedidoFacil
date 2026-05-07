@@ -31,7 +31,7 @@ export class PaymentOrder {
         name: 'Quantidade',
         nullable: false
     })
-    quantity?: number
+    quantity!: number
 
     @Column({
         name: 'Valor_Pago_Deste_Pedido',
@@ -44,10 +44,10 @@ export class PaymentOrder {
 
     @ManyToOne(() => Payment, (payment) => payment.paymentOrders)
     @JoinColumn({name: 'ID_Pagamento'})
-    payment?: Payment
+    payment!: Payment
 
     @ManyToOne(() => Order, (order) => order.paymentOrders)
     @JoinColumn({name: 'ID_Pedido'})
-    order?: Order
+    order!: Order
 
 }

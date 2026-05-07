@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, CreateDateColumn, DeleteDateColumn, JoinColumn } from "typeorm"
 import { Product } from "./Product"
 import { ProductOrder } from "./ProductOrder"
-import { ProductStatus, ProductVariationType } from "../../enum"
+import { ProductStatus } from "../../enum"
 import { ProductVariationOrder } from "./ProductVariationOrder"
 
 @Entity({name: 'PRODUTO_VARIACAO'})
@@ -33,8 +33,7 @@ export class ProductVariation {
         type: 'varchar',
         name: 'status',
         nullable: false,
-        length: 30,
-        default: ProductStatus.ATIVO
+        length: 30
     })
     status!: ProductStatus
 
@@ -49,9 +48,9 @@ export class ProductVariation {
     @JoinColumn({
         name: 'ID_Produto'
     })
-    product?: Product
+    product!: Product
 
     @OneToMany(() => ProductVariationOrder, (productVariationOrder) => productVariationOrder.productVariation)
-    productVariationOrders?: ProductVariationOrder[]
+    productVariationOrders!: ProductVariationOrder[]
 
 }

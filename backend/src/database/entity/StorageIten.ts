@@ -42,12 +42,12 @@ export class StorageIten {
     deletedAt?: Date
 
     @OneToMany(() => StorageMovimentation, (movimentation) => movimentation.storageIten)
-    movimentations?: StorageMovimentation[]
+    movimentations!: StorageMovimentation[]
 
     @OneToOne(() => Product)
     @JoinColumn({
         name: 'ID_Produto'
     })
-    product?: Product
+    product!: Product
 
 }

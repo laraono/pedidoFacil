@@ -69,11 +69,11 @@
                   <div>
                     <span
                       class="text-[#757575] text-[10px] font-black uppercase tracking-widest block mb-1"
-                      >Comanda</span
+                      >{{ comanda.description }}</span
                     >
                     <span
                       class="font-black text-[#212121] text-xl tracking-tighter group-hover:text-blue-400 transition-colors"
-                      >{{ comanda.label || "#" + comanda.id }}</span
+                      >{{ "#" + comanda.label }}</span
                     >
                   </div>
                   <span class="text-accent font-black text-lg tracking-tighter"
@@ -1176,7 +1176,7 @@ async function finishPaymentFlow() {
   try {
     await request(`/commands/${selectedComanda.value.id}/checkout`, {
       method: "POST",
-      body: JSON.stringify({
+      body: {
         payments: pendingPayments.value.map(p => ({ type: p.type, amount: p.amount })),
         totalValue: totalWithDiscount.value,
         change:
@@ -1185,7 +1185,7 @@ async function finishPaymentFlow() {
             : 0,
         discountType: discountType.value,
         discountValue: discountValue.value
-      }),
+      },
     });
 
     const closedComanda = {
@@ -1208,8 +1208,13 @@ async function finishPaymentFlow() {
 
     showToast("Comanda finalizada e NF emitida no servidor!", "success");
   } catch (error) {
-    console.error(error);
-    showToast("Erro ao processar o pagamento no servidor.", "error");
+    const data = error.response?.data || error.data || error;
+    
+    if (data?.errors && Array.isArray(data.errors)) {
+      showToast(data.errors[0].mensagem, "error");
+    } else {
+      showToast(data?.message || "Erro ao processar o pagamento no servidor.", "error");
+    }
   }
 }
 

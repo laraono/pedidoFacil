@@ -41,24 +41,24 @@ export class Coupon {
         name: 'Quantidade_Disponivel',
         nullable: true,
     })
-    quantity?: number
+    quantity!: number
 
     @Column({
         type: 'date',
         name: 'Data_Validade',
         nullable: true,
     })
-    expirationDate?: String
+    expirationDate!: String
 
     @DeleteDateColumn({
         name: 'Data_Exclusao',
         nullable: true,
     })
-    deletedAt?: Date
+    deletedAt!: Date
 
     @ManyToOne(() => Establishment, (establishment) => establishment.coupons)
     @JoinColumn({
         name: 'ID_Estabelecimento'
     })
-    establishment?: Establishment
+    establishment!: Establishment
 }

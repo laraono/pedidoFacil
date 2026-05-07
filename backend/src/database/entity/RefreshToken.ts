@@ -36,11 +36,11 @@ export class RefreshToken {
     @JoinColumn({
         name: 'ID_Usuario'
     })
-    user?: User | null
+    user!: User | null
 
     @ManyToOne(() => Admin, { nullable: true })
     @JoinColumn({
         name: 'ID_Admin'
     })
-    admin?: Admin | null
+    admin!: Admin | null
 }

@@ -1,7 +1,7 @@
-import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
-import imgFood from '@/assets/food.jpg';
-import imgHamburguer from '@/assets/hamburguer.png';
+import { defineStore } from "pinia";
+import { ref, computed } from "vue";
+import { categoryApi } from "@/services/categoryApi";
+import { productApi } from "@/services/productApi";
 
 export interface ProductSize {
   name: string;
@@ -19,16 +19,17 @@ export interface Product {
   description: string;
   image: string | null;
   categoryId: number;
-  isAvailable: boolean;
+  price: number;
+  available: boolean;
   deletedAt: string | null;
   sizes: ProductSize[];
-  addons: ProductAddon[];
+  addons?: ProductAddon[];
 }
 
 export interface Category {
   id: number;
   name: string;
-  image: string;
+  image: string | null;
   deletedAt: string | null;
 }
 
@@ -38,143 +39,128 @@ export interface OperationResult {
 }
 
 export const useMenuStore = defineStore("menu", () => {
-  const categories = ref([]);
-  const products = ref([]);
+  const categories = ref<Category[]>([]);
+  const products = ref<Product[]>([]);
 
-  const categories = ref<Category[]>([
-    { id: 1, name: 'Lanches', image: imgFood, deletedAt: null },
-    { id: 2, name: 'Bebidas', image: imgFood, deletedAt: null },
-    { id: 3, name: 'Sobremesas', image: imgFood, deletedAt: null }
-  ]);
+  const activeCategories = computed(() => categories.value.filter((c) => !c.deletedAt));
+  const activeProducts = computed(() => products.value.filter((p) => !p.deletedAt));
+  const deletedCategories = computed(() => categories.value.filter((c) => c.deletedAt));
+  const deletedProducts = computed(() => products.value.filter((p) => p.deletedAt));
 
-  const products = ref<Product[]>([
-    {
-      id: 1,
-      name: 'X-Bacon',
-      description: 'Hambúrguer com muito bacon crocante.',
-      image: imgHamburguer,
-      categoryId: 1,
-      isAvailable: true,
-      deletedAt: null,
-      sizes: [
-        { name: 'Padrão', price: 25.00 },
-        { name: 'Grande', price: 30.00 }
-      ],
-      addons: [
-        { name: 'Bacon Extra', price: 5.00 }
-      ]
-    }
-  ]);
+  const mapCategory = (c: any): Category => ({
+    id: c.id,
+    name: c.name,
+    image: c.image || null,
+    deletedAt: c.deletedAt,
+  });
 
-  const activeCategories = computed(() =>
-    categories.value.filter(c => !c.deletedAt)
-  );
+  const mapProduct = (p: any): Product => ({
+    id: p.id,
+    name: p.name,
+    description: p.description || "",
+    image: p.image || null,
+    price: Number(p.basePrice || 0),
+    available: p.status === "Ativo",
+    categoryId: p.category?.id,
+    deletedAt: p.deletedAt,
+    sizes: p.productVariations?.map((v: any) => ({
+        name: v.name,
+        price: Number(v.addPrice),
+    })) || [],
+  });
 
-  const activeProducts = computed(() =>
-    products.value.filter(p => !p.deletedAt)
-  );
+  const loadData = async () => {
+    try {
+      const [catActive, catDeleted, prodActive, prodDeleted] = await Promise.all([
+          categoryApi.list().catch(() => []),
+          categoryApi.listDeleted().catch(() => []),
+          productApi.list().catch(() => []),
+          productApi.listDeleted().catch(() => []),
+      ]);
 
-  const deletedCategories = computed(() =>
-    categories.value.filter(c => c.deletedAt)
-  );
-
-  const deletedProducts = computed(() =>
-    products.value.filter(p => p.deletedAt)
-  );
-
-  const toggleAvailability = (productId: number): void => {
-    const product = products.value.find(p => p.id === productId);
-    if (product) {
-      product.isAvailable = !product.isAvailable;
+      categories.value = [...catActive, ...catDeleted].map(mapCategory);
+      products.value = [...prodActive, ...prodDeleted].map(mapProduct);
+    } catch (error) {
+      console.error("Erro crítico ao sincronizar cardápio:", error);
     }
   };
 
-  const addCategory = (category: Omit<Category, 'id' | 'deletedAt'>): void => {
-    categories.value.push({
-      ...category,
-      id: Date.now(),
-      deletedAt: null
-    });
+  const addCategory = async (category: Partial<Category>) => {
+    const payload = { name: category.name, image: category.image };
+    await categoryApi.create(payload);
+    await loadData();
   };
 
-  const updateCategory = (updatedCategory: Partial<Category> & { id: number }): void => {
-    const index = categories.value.findIndex(c => c.id === updatedCategory.id);
-    if (index !== -1) {
-      categories.value[index] = {
-        ...categories.value[index],
-        ...updatedCategory,
-        deletedAt: categories.value[index].deletedAt
+  const updateCategory = async (updatedCategory: Partial<Category> & { id: number }) => {
+    const payload = { name: updatedCategory.name, image: updatedCategory.image };
+    await categoryApi.update(updatedCategory.id, payload);
+    await loadData();
+  };
+
+  const softDeleteCategory = async (id: number): Promise<OperationResult> => {
+    const hasActiveProducts = products.value.some((p) => String(p.categoryId) === String(id) && !p.deletedAt);
+
+    if (hasActiveProducts) {
+      return {
+        success: false,
+        message: "Esta categoria possui produtos ativos. Arquive ou mova os produtos primeiro.",
       };
     }
 
-  const softDeleteCategory = (id: number): OperationResult => {
-    const hasActiveProducts = products.value.some(
-      p => p.categoryId === id && !p.deletedAt
-    );
-
-    if (hasActiveProducts) {
-      return { success: false, message: 'Esta categoria possui produtos ativos. Arquivar ou mova os produtos primeiro.' };
-    }
-
-    const category = categories.value.find(c => c.id === id);
-    if (category) {
-      category.deletedAt = new Date().toISOString();
-    }
+    await categoryApi.delete(id);
+    await loadData();
     return { success: true };
   };
 
-  const restoreCategory = (id: number): void => {
-    const category = categories.value.find(c => c.id === id);
-    if (category) {
-      category.deletedAt = null;
-    }
+  const restoreCategory = async (id: number) => {
+    await categoryApi.restore(id);
+    await loadData();
   };
 
-  const permanentlyDeleteCategory = (id: number): void => {
-    categories.value = categories.value.filter(c => c.id !== id);
-    products.value = products.value.filter(p => p.categoryId !== id);
+  const permanentlyDeleteCategory = (id: number) => {
+    categories.value = categories.value.filter((c) => c.id !== id);
   };
 
-  const addProduct = (product: Omit<Product, 'id' | 'deletedAt'>): void => {
-    products.value.push({
-      ...product,
-      id: Date.now(),
-      deletedAt: null
-    });
+  const addProduct = async (formDataPayload: any) => {
+    await productApi.create(formDataPayload);
+    await loadData();
   };
 
-  const updateProduct = (updatedProduct: Partial<Product> & { id: number }): void => {
-    const index = products.value.findIndex(p => p.id === updatedProduct.id);
-    if (index !== -1) {
-      products.value[index] = {
-        ...products.value[index],
-        ...updatedProduct,
-        deletedAt: products.value[index].deletedAt
-      };
-    }
+  const updateProduct = async (formDataPayload: any) => {
+    const id = formDataPayload.id || (formDataPayload.get ? formDataPayload.get('id') : undefined);
+    
+    if (!id) throw new Error("ID do produto não encontrado na atualização.");
+
+    await productApi.update(id, formDataPayload);
+    await loadData();
   };
 
-  const softDeleteProduct = (id: number): void => {
-    const product = products.value.find(p => p.id === id);
+  const softDeleteProduct = async (id: number) => {
+    await productApi.delete(id);
+    await loadData();
+  };
+
+  const restoreProduct = async (id: number) => {
+    await productApi.restore(id);
+    await loadData();
+  };
+
+  const permanentlyDeleteProduct = (id: number) => {
+    products.value = products.value.filter((p) => p.id !== id);
+  };
+
+  const toggleAvailability = async (productId: number) => {
+    const product = products.value.find((p) => p.id === productId);
     if (product) {
-      product.deletedAt = new Date().toISOString();
+      const newStatus = !product.available;
+      await productApi.update(productId, { status: newStatus ? "Ativo" : "Inativo" });
+      await loadData();
     }
-  };
-
-  const restoreProduct = (id: number): void => {
-    const product = products.value.find(p => p.id === id);
-    if (product) {
-      product.deletedAt = null;
-    }
-  };
-
-  const permanentlyDeleteProduct = (id: number): void => {
-    products.value = products.value.filter(p => p.id !== id);
   };
 
   const getCategoryName = (id: number): string => {
-    const cat = categories.value.find(c => c.id === id);
-    return cat ? cat.name : 'Sem categoria';
+    const cat = categories.value.find((c) => String(c.id) === String(id));
+    return cat ? cat.name : "Sem categoria";
   };
 
   return {

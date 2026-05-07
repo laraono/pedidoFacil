@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { EstablishmentService } from '../service/EstablishmentService';
 import { catchAsync } from '../middleware';
 import { getIO } from '../socket';
+import { deleteFile } from '../utils/fileHelper';
 
 export class EstablishmentController {
   
@@ -36,13 +37,50 @@ export class EstablishmentController {
     return res.status(200).json({
       name: establishment.name,
       paymentMethods: establishment.paymentMethods,
-      selfServiceEnabled: establishment.selfServiceEnabled
+      selfServiceEnabled: establishment.selfServiceEnabled,
+      configurations: establishment.configurations 
+    });
+  });
+
+  getByCode = catchAsync(async (req: Request, res: Response) => {
+    const code = req.params.code as string;
+    
+    const establishment = await this.establishmentService.validateAccessCode(code);
+
+    return res.status(200).json({
+      id: establishment.id, 
+      name: establishment.name,
+      selfServiceCode: establishment.selfServiceCode,
+      configurations: establishment.configurations
     });
   });
 
   update = catchAsync(async (req: Request, res: Response) => {
     const establishmentId = (req as any).usuario.estabelecimento;
-    const updated = await this.establishmentService.updateEstablishment(establishmentId, req.body);
+    let updateData = { ...req.body };
+
+    if (typeof updateData.paymentMethods === 'string') {
+      updateData.paymentMethods = JSON.parse(updateData.paymentMethods);
+    }
+    
+    if (updateData.selfServiceEnabled === 'true' || updateData.selfServiceEnabled === 'false') {
+      updateData.selfServiceEnabled = updateData.selfServiceEnabled === 'true';
+    }
+
+    if (req.file) {
+      const oldProfile = await this.establishmentService.getEstablishmentProfile(establishmentId);
+      
+      if (oldProfile && oldProfile.configurations && oldProfile.configurations.logo) {
+        deleteFile(oldProfile.configurations.logo);
+      }
+      
+      updateData.configurations = {
+        ...updateData.configurations,
+        logo: req.file.filename
+      };
+    }
+
+    const updated = await this.establishmentService.updateEstablishment(establishmentId, updateData);
     
     getIO().emit('profile_updated');
 
@@ -55,23 +93,4 @@ export class EstablishmentController {
     return res.status(200).json(result);
   });
 
-  postRegister = catchAsync(async (req: Request, res: Response) => {
-    const establishmentId = (req as any).usuario.estabelecimento;
-    const {name} = req.body
-    const result = await this.establishmentService.createRegister(name, establishmentId);
-    return res.status(200).json(result);
-  });
-
-  getRegisters = catchAsync(async (req: Request, res: Response) => {
-    const establishmentId = (req as any).usuario.estabelecimento;
-    const result = await this.establishmentService.getRegisters(establishmentId);
-    return res.status(200).json(result);
-  });
-
-  associateRegisterToTerminal = catchAsync(async (req: Request, res: Response) => {
-    const establishmentId = (req as any).usuario.estabelecimento;
-    const {registerId} = req.body
-    const result = await this.establishmentService.associateRegisterToTerminal({establishmentId, registerId});
-    return res.status(200).json(result);
-  });
 }

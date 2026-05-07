@@ -1,21 +1,20 @@
 import { AppDataSource } from '../database';
 import {
-    categoryRepository,
-    comandaRepository,
-    orderRepository,
-    productRepository,
-    productVariationRepository,
-    userRepository,
-    couponRepository,
-    establishmentRepository,
-    configurationRepository,
-    roleRepository,
-    receiptRepository,
-    paymentRepository,
-    planRepository,
-    subscriptionRepository,
-    registerRepository,
-    refreshTokenRepository,
+  categoryRepository,
+  comandaRepository,
+  orderRepository,
+  productRepository,
+  productVariationRepository,
+  userRepository,
+  couponRepository,
+  establishmentRepository,
+  configurationRepository,
+  roleRepository,
+  receiptRepository,
+  paymentRepository,
+  refreshTokenRepository,
+  planRepository,
+  subscriptionRepository,
 } from '../repository';
 
 import { AuthService } from './AuthService';
@@ -32,114 +31,92 @@ import { ReceiptService } from './ReceiptService';
 import { MetricsService } from './MetricsService';
 import { MenuService } from './MenuService';
 import { PaymentService } from './PaymentService';
-import { SubscriptionService } from './SubscriptionService';
 import { MercadoPagoService } from './MercadoPagoService';
+import { SubscriptionService } from './SubscriptionService';
 import { PlanService } from './PlanService';
 
-const mercadoPagoService = new MercadoPagoService()
-
-const authService = new AuthService(AppDataSource, userRepository, mercadoPagoService);
-
-const categoryService = new CategoryService(categoryRepository, establishmentRepository, productRepository);
+const authService = new AuthService(AppDataSource, userRepository, refreshTokenRepository);
+const categoryService = new CategoryService(categoryRepository);
 
 const metricsService = new MetricsService(receiptRepository, AppDataSource);
+const mercadoPagoService = new MercadoPagoService();
 
 const receiptService = new ReceiptService(receiptRepository, paymentRepository, establishmentRepository);
 const paymentService = new PaymentService(AppDataSource, mercadoPagoService, paymentRepository, orderRepository);
 
 const comandaService = new ComandaService(
-    AppDataSource, 
+    AppDataSource,
+    comandaRepository,
     paymentService,
-    receiptService,
-    comandaRepository, 
-    establishmentRepository,
-    orderRepository,
-    userRepository
+    receiptService
 );
 
 const productService = new ProductService(
-    categoryService,
-    establishmentRepository,
-    productRepository,
-    productVariationRepository
+  categoryService,
+  productRepository,
+  productVariationRepository,
 );
 const orderService = new OrderService(
-    AppDataSource,
-    establishmentRepository,
-    orderRepository,
-    userRepository,
-    comandaService,
+  AppDataSource,
+  orderRepository,
+  comandaService,
 );
 const couponService = new CouponService(couponRepository);
 const roleService = new RoleService(roleRepository, userRepository);
 
 const establishmentService = new EstablishmentService(
-    establishmentRepository,
-    userRepository,
-    configurationRepository,
-    roleRepository,
-    registerRepository,
-    mercadoPagoService,
-    AppDataSource
+  establishmentRepository,
+  userRepository,
+  configurationRepository,
+  roleRepository,
+  mercadoPagoService,
 );
 
-
 const profileService = new ProfileService(userRepository, establishmentService);
-
 
 const employeeService = new EmployeeService(userRepository, roleRepository);
 
 const menuService = new MenuService(categoryRepository, productRepository);
 
-const subscriptionService = new SubscriptionService(
-    planRepository,
-    subscriptionRepository,
-    mercadoPagoService,
-    AppDataSource
-)
-const planService = new PlanService(
-    planRepository, 
-    subscriptionService, 
-    mercadoPagoService,
-    AppDataSource
-)
+const subscriptionService = new SubscriptionService(planRepository, subscriptionRepository, mercadoPagoService, AppDataSource);
+const planService = new PlanService(planRepository, subscriptionService, mercadoPagoService, AppDataSource);
 
 export {
-    authService,
-    categoryService,
-    comandaService,
-    orderService,
-    productService,
-    employeeService,
-    profileService,
-    couponService,
-    establishmentService,
-    roleService,
-    receiptService,
-    metricsService,
-    menuService,
-    paymentService,
-    planService,
-    subscriptionService,
-    mercadoPagoService
+  authService,
+  categoryService,
+  comandaService,
+  orderService,
+  productService,
+  employeeService,
+  profileService,
+  couponService,
+  establishmentService,
+  roleService,
+  receiptService,
+  metricsService,
+  menuService,
+  paymentService,
+  subscriptionService,
+  planService,
+  mercadoPagoService,
 };
 
 export {
-    AuthService,
-    CategoryService,
-    ComandaService,
-    OrderService,
-    ProductService,
-    EmployeeService,
-    ProfileService,
-    CouponService,
-    EstablishmentService,
-    RoleService,
-    ReceiptService,
-    MetricsService,
-    MenuService,
-    PaymentService,
-    PlanService,
-    SubscriptionService,
-    MercadoPagoService
+  AuthService,
+  CategoryService,
+  ComandaService,
+  OrderService,
+  ProductService,
+  EmployeeService,
+  ProfileService,
+  CouponService,
+  EstablishmentService,
+  RoleService,
+  ReceiptService,
+  MetricsService,
+  MenuService,
+  PaymentService,
+  MercadoPagoService,
+  SubscriptionService,
+  PlanService,
 };

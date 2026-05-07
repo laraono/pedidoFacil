@@ -5,14 +5,16 @@ export const categoryApi = {
   
   listDeleted: () => request('/categories?deleted=true', { method: 'GET' }),
   
-  create: (name) => request('/categories', { 
+  create: (data) => request('/categories', { 
     method: 'POST', 
-    body: JSON.stringify({name}) 
+    body: data,
+    isMultipart: true 
   }),
   
   update: (id, data) => request(`/categories/${id}`, { 
     method: 'PUT', 
-    body: JSON.stringify(data) 
+    body: data,
+    isMultipart: true 
   }),
   
   delete: (id) => request(`/categories/${id}`, { method: 'DELETE' }),

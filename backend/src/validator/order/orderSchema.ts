@@ -1,91 +1,123 @@
-import { z, ZodError } from 'zod';
-import { Response, NextFunction } from 'express';
+import { z } from 'zod';
+import { Request, Response, NextFunction } from 'express';
 import { OrderStatus, ServiceType } from '../../enum';
+import { safeString } from '../../utils/safeZod'; 
 
-const createOrderchema = z.object({
-    
-    params: z.object({
-        comandaId: z.coerce.number().int().positive()
-    }),
-    body: z.object({
-        status: z.enum(OrderStatus),
-        serviceType: z.enum(ServiceType).optional(),
-        tripPrice: z.coerce.number().positive().optional(),
-        establishmentId: z.coerce.number().int().positive(),
-        itens: z.object({
-            productId: z.coerce.number().int().positive(),
-            quantity: z.coerce.number().int().positive(),
-            productVariationId: z.coerce.number().int().positive().optional(),
-            observation: z.string().optional().nullable()
-        }).array()
-    })
-    
+const orderStatusValues = Object.values(OrderStatus) as [string, ...string[]];
+const serviceTypeValues = Object.values(ServiceType) as [string, ...string[]];
+
+export const createOrderSchema = z.object({
+  params: z.object({
+    comandaId: z.coerce.number().int().positive()
+  }),
+  body: z.object({
+    status: z.enum(orderStatusValues),
+    serviceType: z.enum(serviceTypeValues),
+    tripPrice: z.coerce.number().positive().optional(),
+    itens: z.array(
+      z.object({
+        productId: z.coerce.number().int().positive(),
+        quantity: z.coerce.number().int().positive(),
+        productVariationId: z.coerce.number().int().positive().optional(),
+        observation: safeString(0, 255).optional().nullable()
+      }).strict()
+    )
+  }).strict() 
 });
 
-const listOrdersSchema = z.object({
-    estblishmentId: z.coerce.number().int().positive()
-})
+export const createTotemOrderSchema = z.object({
+  body: z.object({
+    status: z.string().optional(),
+    source: z.string().optional(),
+    isPrePaid: z.boolean().optional(),
+    statusPagamento: z.string().optional(),
+    comandaLabel: z.string().optional(),
+    itens: z.array(
+      z.object({
+        productId: z.coerce.number().int().positive(),
+        quantity: z.coerce.number().int().positive(),
+        productVariationId: z.coerce.number().int().positive().optional().nullable(),
+        observation: safeString(0, 255).optional().nullable(),
+        productName: z.string().optional() 
+      }) 
+    ).min(1, "O pedido deve ter pelo menos um item")
+  }) 
+});
 
-const cancelOrderSchema = z.object({
-    params: z.object({
-        comandaId: z.coerce.number().int().positive(),
-        orderId: z.coerce.number().int().positive()
-    }),
-    body: z.object({
-        cancellationDescription: z.string().min(1).max(100),
-        establishmentId: z.coerce.number().int().positive(),
-        userId: z.coerce.number().int().positive(),
-    })
-})
+export const updateOrderStatusSchema = z.object({
+  params: z.object({
+    comandaId: z.coerce.number().int().positive(),
+    orderId: z.coerce.number().int().positive()
+  }),
+  body: z.object({
+    status: z.enum(orderStatusValues),
+    cancellationDescription: z.string().max(255).optional().nullable()
+  }).strict() 
+});
 
-export const validateCreateOrder = 
-    (req, res: Response, next: NextFunction) => {
-        try {
-            const order = {...req.body, establishmentId: req.usuario.estabelecimento}
+export const validateCreateOrder = (req: Request, res: Response, next: NextFunction) => {
+  const result = createOrderSchema.safeParse({
+    params: req.params,
+    body: req.body
+  });
 
-            const {params, body} = createOrderchema.parse({params: req.params, body: order})
+  if (!result.success) {
+    const formattedErrors = result.error.flatten();
+    
+    return res.status(400).json({
+      message: "Dados inválidos no pedido",
+      errors: formattedErrors.fieldErrors
+    });
+  }
 
-            req.params = params
-            req.body = body
+  req.params = result.data.params as any;
+  req.body = result.data.body;
 
-            next()
-        } catch (error) {
-            if (error instanceof ZodError) {
-                return res.status(400).send(error.message);
-            }
-            return res.status(500).send("Internal Server Error");
-        }
-    };
+  next();
+};
 
-export const validateListOrders = 
-    (req, res: Response, next: NextFunction) => {
-        try {
-            req.body = listOrdersSchema.parse({estblishmentId: req.usuario.estabelecimento})
+export const validateCreateTotemOrder = (req: Request, res: Response, next: NextFunction) => {
+  const result = createTotemOrderSchema.safeParse({
+    body: req.body
+  });
 
-            next()
-        } catch (error) {
-            if (error instanceof ZodError) {
-                return res.status(400).send(error.message);
-            }
-            return res.status(500).send("Internal Server Error");
-        }
-    }
-       
+  if (!result.success) {
+    const formattedErrors = result.error.flatten();
+    
+    return res.status(400).json({
+      message: "Dados inválidos no pedido do totem",
+      errors: formattedErrors.fieldErrors
+    });
+  }
+
+  req.body = result.data.body;
+
+  next();
+};
+
 export const validateCancelOrders =
-    (req, res: Response, next: NextFunction) => {
-        try {
-            const body = {...req.body, establishmentId: req.usuario.estabelecimento, userId: req.usuario.id}
+    (_req: Request, _res: Response, next: NextFunction) => next();
 
-            const validation = cancelOrderSchema.parse({params: req.params, body})
+export const validateListOrders =
+    (_req: Request, _res: Response, next: NextFunction) => next();
 
-            req.params = validation.params
-            req.body = validation.body
+export const validateUpdateOrderStatus = (req: Request, res: Response, next: NextFunction) => {
+  const result = updateOrderStatusSchema.safeParse({
+    params: req.params,
+    body: req.body
+  });
 
-            next()
-        } catch (error) {
-            if (error instanceof ZodError) {
-                return res.status(400).send(error.message);
-            }
-            return res.status(500).send("Internal Server Error");
-        }
-    }
+  if (!result.success) {
+    const formattedErrors = result.error.flatten();
+    
+    return res.status(400).json({
+      message: "Dados inválidos na atualização do status",
+      errors: formattedErrors.fieldErrors
+    });
+  }
+
+  req.params = result.data.params as any;
+  req.body = result.data.body;
+
+  next();
+};

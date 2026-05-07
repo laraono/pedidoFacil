@@ -1,7 +1,6 @@
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 
-export const errorHandler = (err: any, req, res: Response, next: NextFunction) => {
-
+export const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
     if (!err.isOperational) {
         console.error("🔥 ERRO FATAL NO BACKEND:", err);
     }

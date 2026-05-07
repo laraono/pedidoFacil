@@ -6,19 +6,21 @@ import {
   TouchableOpacity,
   Animated,
   Image,
+  StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
-import { useError } from "../contexts/ErrorContext";
 
 import imgLogo from "../../assets/logo.png";
 import patternOndas from "../../assets/ondas.png";
+import Colors from "../constants/Colors";
+
+const C = Colors.dark;
 
 export default function WelcomeScreen() {
   const { theme } = useTheme();
-  const { errorMessage, setErrorMessage } = useTheme();
   const navigation = useNavigation();
   const styles = useMemo(() => getStyles(theme), [theme]);
 
@@ -51,6 +53,12 @@ export default function WelcomeScreen() {
       activeOpacity={1}
       onPress={handleStart}
     >
+      {/* StatusBar mantido da feature-104 */}
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor={theme.fundoGeral || C.background} 
+      />
+      
       <Image
         source={patternOndas}
         style={styles.backgroundPattern}
@@ -74,20 +82,8 @@ export default function WelcomeScreen() {
           <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit>
             Peça aqui e{"\n"}evite filas
           </Text>
-
           <Text style={styles.subtitle}>Rápido, fácil e do seu jeito.</Text>
         </View>
-        {
-          errorMessage && (
-            <View style={styles.errorBanner}>
-              <Feather name="alert-circle" size={20} color="#FFF" />
-               <Text style={styles.errorText}>{errorMessage}</Text>
-              <TouchableOpacity onPress={() => setErrorMessage(null)}>
-                <Feather name="x" size={20} color="#FFF" />
-              </TouchableOpacity>
-            </View>
-          )
-        }
 
         <View style={styles.bottomContent}>
           <Animated.View
@@ -100,7 +96,7 @@ export default function WelcomeScreen() {
             <Feather
               name="arrow-right"
               size={24}
-              color={theme.textoBotoes}
+              color={theme.textoBotoes || "#FFFFFF"}
               style={styles.pointerIcon}
             />
           </Animated.View>
@@ -114,7 +110,7 @@ const getStyles = (theme) =>
   StyleSheet.create({
     fullScreenBtn: {
       flex: 1,
-      backgroundColor: theme.fundoGeral,
+      backgroundColor: theme.fundoGeral || C.background,
     },
     backgroundPattern: {
       position: "absolute",
@@ -150,12 +146,12 @@ const getStyles = (theme) =>
       backgroundColor: theme.corBotoes,
       alignItems: "center",
       justifyContent: "center",
-      borderWidth: 0.5,
-      borderColor: 'rgba(255, 255, 255, 0.1)',
+      borderWidth: 3,
+      borderColor: theme.borda || 'rgba(255, 255, 255, 0.1)',
       elevation: 15,
       shadowColor: "#000",
       shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.3, 
+      shadowOpacity: 0.1,
       shadowRadius: 12,
     },
     logoImage: {
@@ -165,7 +161,7 @@ const getStyles = (theme) =>
     title: {
       fontSize: 42,
       fontWeight: "900",
-      color: theme.corTextoPrincipal,
+      color: theme.corTextoPrincipal || C.text,
       textAlign: "center",
       marginBottom: 16,
       letterSpacing: -1.5,
@@ -174,14 +170,14 @@ const getStyles = (theme) =>
     subtitle: {
       fontSize: 20,
       fontWeight: "700",
-      color: theme.textoSecundario,
+      color: theme.textoSecundario || C.textMuted,
       textAlign: "center",
     },
     touchIndicator: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.corBotoes,
+      backgroundColor: theme.corBotoes || C.tint,
       width: "100%",
       maxWidth: 350,
       paddingVertical: 20,
@@ -198,36 +194,8 @@ const getStyles = (theme) =>
     touchText: {
       fontSize: 20,
       fontWeight: "900",
-      color: theme.textoBotoes,
+      color: theme.textoBotoes || "#FFFFFF",
       textTransform: "uppercase",
       letterSpacing: 1,
-    },
-    errorBanner: {
-      position: "absolute",
-      top: 60, // Positioned at the top of the SafeArea
-      left: 24,
-      right: 24,
-      zIndex: 10,
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: "#e74c3c", 
-      paddingVertical: 16,
-      paddingHorizontal: 20,
-      borderRadius: 20, 
-      borderWidth: 1,
-      borderColor: 'rgba(255, 255, 255, 0.2)',
-      elevation: 10,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
-    },
-    errorText: {
-      flex: 1,
-      fontSize: 16,
-      fontWeight: "700",
-      color: "#FFFFFF", /
-      marginLeft: 12,
-      lineHeight: 20,
     },
   });

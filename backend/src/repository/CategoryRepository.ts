@@ -1,7 +1,6 @@
 import { DataSource, Repository, Not, IsNull } from "typeorm";
-import { CreateCategoryParams, EditCategoryParams } from "../dto";
+import { CreateCategory } from "../dto";
 import { Category } from "../database";
-import { CategoryStatus } from "../enum";
 
 export class CategoryRepository extends Repository<Category>{
 
@@ -9,65 +8,42 @@ export class CategoryRepository extends Repository<Category>{
         super(Category, dataSource.createEntityManager());
     }
 
-    async createCategory(category: CreateCategoryParams) {
+    async createCategory(category: CreateCategory) {
         return await this.save(category)
     }
 
     async listCategories(establishmentId: number) {
         return await this.find({
-            where: {
-                establishment: {
-                    id: establishmentId
-                }
-            },
-            relations: {
-                products: true
-            }
-        })
+            where: { establishment: { id: establishmentId } }
+        });
     }
-
-    async listActiveCategories(establishmentId: number) {
+    
+    async listDeletedCategories(establishmentId: number) {
         return await this.find({
-            where: {
-                establishment: { id: establishmentId },
-                products: { id: Not(IsNull()) },
-                status: CategoryStatus.ATIVA
+            where: { 
+                establishment: { id: establishmentId }, 
+                deletedAt: Not(IsNull()) 
             },
-            relations: ["products"]
-        })
+            withDeleted: true 
+        });
     }
-
     async getCategory(categoryId: number) {
         return await this.findOne({
             where: {
                 id: categoryId
-            },
-            relations: {
-                products: true
             }
         })
     }
 
-    async updateCategory(categoryId: number, params: EditCategoryParams) {
-        await this.update(categoryId, params)
-    }
-
-    async restoreCategory(categoryId: number) {
-        await this.update(categoryId, {status: CategoryStatus.ATIVA})
-    }
-
-    async deleteCategory(categoryId: number) {
-        await this.softDelete(categoryId)
-    }
-
-    async listDeletedCategories() {
-        return await this.find({
-            where: { deletedAt: Not(IsNull()) },
-            withDeleted: true 
-        });
+    async updateCategory(categoryId: number, data: Partial<Category>) {
+        await this.update(categoryId, data);
     }
 
     async softDeleteCategory(categoryId: number) {
         await this.softDelete(categoryId);
+    }
+
+    async restoreCategory(categoryId: number) {
+        await this.restore(categoryId);
     }
 }

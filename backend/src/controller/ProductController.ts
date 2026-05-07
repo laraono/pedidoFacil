@@ -1,7 +1,7 @@
 import { ProductService } from '../service';
 import { Request, Response } from 'express';
-import { getIO } from '../socket'; 
-import { ProductStatus } from '../enum';
+import { getIO } from '../socket';
+import { deleteFile } from '../utils/fileHelper';
 
 export class ProductController {
   private productService: ProductService;
@@ -11,65 +11,69 @@ export class ProductController {
   }
 
   async createProduct(req: Request, res: Response) {
-    if (req.body.product) {
-      req.body.product.establishment = {
+    const productDTO = req.body;
+
+    productDTO.product.establishment = {
         id: (req as any).usuario.estabelecimento,
-      };
+    };
+    
+    productDTO.product.image = req.file ? req.file.filename : null;
+    productDTO.product.estocavel = false; 
+
+    const productId = await this.productService.createProduct(productDTO);
+
+    getIO().emit('menu_updated');
+    res.status(201).json(productId);
+  }
+
+  async listProducts(req: Request, res: Response) {
+    const estabelecimentoId = (req as any).usuario.estabelecimento;
+
+    if (req.query.deleted === 'true') {
+      const products = await this.productService.listDeletedProducts(estabelecimentoId);
+      return res.status(200).json(products);
     }
 
-    const productId = await this.productService.createProduct(req.body);
+    const products = await this.productService.listProducts(estabelecimentoId);
+    return res.status(200).json(products);
+  }
 
-        getIO().emit('menu_updated'); 
-        res.status(201).json(productId);
+  async listProductsByCategory(req: Request, res: Response) {
+    const categoryId = Number(req.params.categoryId || req.params.id);
+    const estabelecimentoId = (req as any).usuario.estabelecimento;
+    
+    const products = await this.productService.listProductsByCategory(categoryId, estabelecimentoId);
+    res.status(200).json(products);
+  }
+
+  async updateProduct(req: Request, res: Response) {
+    const id = Number(req.params.id);
+    
+    let productData = { ...req.body };
+
+    if (req.file) {
+      const oldProduct = await this.productService.getProduct(id);
+      if (oldProduct && oldProduct.image) {
+        deleteFile(oldProduct.image);
+      }
+      productData.image = req.file.filename;
     }
 
-    async listProducts(req: Request, res: Response) {
-        if (req.query.deleted === 'true') {
-            const products = await this.productService.listProducts(req.body.establishmentId, ProductStatus.ARQUIVADO);
-            return res.status(200).json(products);
-        } else {
-            const products = await this.productService.listProducts(req.body.establishmentId, ProductStatus.ATIVO)
+    await this.productService.updateProduct(id, productData);
 
-            return res.status(200).send(products)
-        }
-    }
+    getIO().emit('menu_updated');
+    res.status(200).json({ message: 'Produto atualizado com sucesso' });
+  }
 
-    async listProductsByCategory(req: Request, res: Response) {
-        const {categoryId, establishmentId} = req.body
+  async deleteProduct(req: Request, res: Response) {
+    await this.productService.softDeleteProduct(Number(req.params.id));
+    getIO().emit('menu_updated');
+    res.sendStatus(204);
+  }
 
-        const products = await this.productService.listProductsByCategory(categoryId, establishmentId)
-
-        res.status(200).send(products)
-    }
-
-    async listActiveProductsByCategory(req: Request, res: Response) {
-        const {categoryId, establishmentId} = req.body
-
-        const products = await this.productService.listActiveProductsByCategory(categoryId, establishmentId)
-
-        res.status(200).send(products)
-    }
-
-    async updateProduct(req, res: Response) {
-        const {productId} = req.params
-        await this.productService.updateProduct(productId, {...req.body, image: req.file.buffer})
-
-        res.sendStatus(204)
-    }
-
-    async updateProductStatus(req, res: Response) {
-        const {productId} = req.params
-        const {status} = req.body
-
-        await this.productService.updateProductStatus(productId, status)
-
-        res.sendStatus(204)
-    }
-
-    async deleteProduct(req, res: Response) {
-        await this.productService.deleteProduct(req.params)
-
-        res.sendStatus(204)
-    }
-     
+  async restoreProduct(req: Request, res: Response) {
+    await this.productService.restoreProduct(Number(req.params.id));
+    getIO().emit('menu_updated');
+    res.sendStatus(204);
+  }
 }
