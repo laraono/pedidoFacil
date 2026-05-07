@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { ConfigurationController } from '../controller/ConfigurationController';
 import { ConfigurationService } from '../service/ConfigurationService'; 
-import authenticate from '../middleware/authenticate';
+import { authenticate } from '../middleware/authenticate';
 import { validateUpload } from '../middleware/validateUpload'; 
 
 const configRouter = Router();

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import authenticate from '../middleware/authenticate';
+import { authenticate } from '../middleware/authenticate';
 import { paymentController } from '../controller';
 import { subscriptionMiddleware } from '../middleware';
 

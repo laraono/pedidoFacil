@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { receiptController } from '../controller';
-import authenticate from '../middleware/authenticate';
+import { authenticate } from '../middleware/authenticate';
 import { checkPermission } from '../middleware/roleAccessControl';
 import { subscriptionMiddleware } from '../middleware';
 

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { metricsController } from '../controller';
-import authenticate from '../middleware/authenticate';
+import { authenticate } from '../middleware/authenticate';
 import { subscriptionMiddleware } from '../middleware';
 
 const metricsRouter = Router();

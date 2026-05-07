@@ -6,9 +6,9 @@ import { catchAsync, subscriptionMiddleware } from '../middleware';
 import { totemAccess } from '../middleware/checkTotemAccess';
 import { MercadoPagoService } from '../service/MercadoPagoService';
 import rateLimit from 'express-rate-limit';
-const authenticate = require('../middleware/authenticate');
-const tenant = require('../middleware/tenant');
-const roleAccessControl = require('../middleware/roleAccessControl');
+import { authenticate } from '../middleware/authenticate';
+import { verifyTenancy } from '../middleware/tenant';
+import { checkPermission } from '../middleware/roleAccessControl';
 
 const mpService = new MercadoPagoService();
 
@@ -48,8 +48,8 @@ orderRouter.post(
   '/commands/:comandaId/orders',
   authenticate,
   subscriptionMiddleware,
-  tenant.verifyTenancy('COMANDA', 'comandaId'),
-  roleAccessControl.checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'),
+  verifyTenancy('COMANDA', 'comandaId'),
+  checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'),
   validateCreateOrder,
   catchAsync((req: Request, res: Response) => orderController.createOrder(req, res))
 );
@@ -58,8 +58,8 @@ orderRouter.get(
   '/commands/:comandaId/orders',
   authenticate,
   subscriptionMiddleware,
-  tenant.verifyTenancy('COMANDA', 'comandaId'),
-  roleAccessControl.checkPermission('CAIXA'),
+  verifyTenancy('COMANDA', 'comandaId'),
+  checkPermission('CAIXA'),
   catchAsync((req: Request, res: Response) => orderController.listOrdersByComanda(req, res))
 );
 
@@ -67,9 +67,9 @@ orderRouter.put(
   '/commands/:comandaId/orders/:orderId',
   authenticate,
   subscriptionMiddleware,
-  tenant.verifyTenancy('COMANDA', 'comandaId'),
-  tenant.verifyTenancy('PEDIDO', 'orderId'),
-  roleAccessControl.checkPermission('COZINHA'),
+  verifyTenancy('COMANDA', 'comandaId'),
+  verifyTenancy('PEDIDO', 'orderId'),
+  checkPermission('COZINHA'),
   validateUpdateOrderStatus,
   catchAsync((req: Request, res: Response) => orderController.updateOrderStatus(req, res))
 );
@@ -78,10 +78,10 @@ orderRouter.post(
   '/commands/:comandaId/orders/:orderId/cancel',
   authenticate,
   subscriptionMiddleware,
-  tenant.verifyTenancy('COMANDA', 'comandaId'),
-  tenant.verifyTenancy('PEDIDO', 'orderId'),
+  verifyTenancy('COMANDA', 'comandaId'),
+  verifyTenancy('PEDIDO', 'orderId'),
   validateCancelOrders,
-  roleAccessControl.checkPermission('COZINHA'),
+  checkPermission('COZINHA'),
   catchAsync((req: Request, res: Response) => orderController.cancelOrder(req, res))
 );
 
@@ -89,7 +89,7 @@ orderRouter.get(
   '/orders',
   authenticate,
   subscriptionMiddleware,
-  roleAccessControl.checkPermission('COZINHA'),
+  checkPermission('COZINHA'),
   validateListOrders,
   catchAsync((req: Request, res: Response) => orderController.listOrders(req, res))
 );

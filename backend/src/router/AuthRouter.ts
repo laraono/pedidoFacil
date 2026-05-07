@@ -5,7 +5,7 @@ import { AppDataSource } from '../database/data-source';
 import { UserRepository, RefreshTokenRepository } from '../repository';
 import { validateLogin, validateRegister } from '../validator';
 import { catchAsync } from '../middleware/error/catchAsync';
-import authenticate from '../middleware/authenticate';
+import { authenticate } from '../middleware/authenticate';
 
 const userRepository = new UserRepository(AppDataSource);
 const refreshTokenRepository = new RefreshTokenRepository(AppDataSource);

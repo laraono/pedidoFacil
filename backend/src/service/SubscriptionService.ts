@@ -103,6 +103,7 @@ export class SubscriptionService {
                 establishment,
                 expirationDate,
                 lastPayment: new Date(),
+                status: SubscriptionStatus.PENDENTE,
                 price: plan.price,
                 plan,
                 mercadoPagoId: createdSubscription.id

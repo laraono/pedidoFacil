@@ -1,6 +1,6 @@
 
 import express from 'express';
-import authenticate from '../middleware/authenticate';
+import { authenticate } from '../middleware/authenticate';
 import { subscriptionController } from '../controller';
 import { validateCreateSubscription, validateListSubscriptions, validateRestoreSubscription } from '../validator';
 

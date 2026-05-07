@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { EstablishmentController } from '../controller/EstablishmentController';
-import authenticate from '../middleware/authenticate';
+import { authenticate } from '../middleware/authenticate';
 import { checkPermission } from '../middleware/roleAccessControl';
 import { establishmentService } from '../service'; 
 import { 
