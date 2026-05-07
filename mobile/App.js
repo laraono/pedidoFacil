@@ -10,10 +10,12 @@ import { ThemeProvider } from "./src/contexts/ThemeContext";
 
 import MenuScreen from "./src/screens/MenuScreen";
 import CartReviewScreen from "./src/screens/CartReviewScreen";
+import NameInputScreen from "./src/screens/NameInputScreen";
 import PaymentScreen from "./src/screens/PaymentScreen";
 import MPBricksScreen from "./src/screens/MPBricksScreen";
 import WelcomeScreen from "./src/screens/WelcomeScreen";
 import ConfigScreen from "./src/screens/ConfigScreen";
+import OrderConfirmedScreen from "./src/screens/OrderConfirmedScreen";
 
 import { loadAppConfig } from "./src/services/apiConfig"; 
 
@@ -57,8 +59,10 @@ export default function App() {
                 <Stack.Screen name="Welcome" component={WelcomeScreen} />
                 <Stack.Screen name="Menu" component={MenuScreen} />
                 <Stack.Screen name="CartReview" component={CartReviewScreen} />
+                <Stack.Screen name="NameInput" component={NameInputScreen} />
                 <Stack.Screen name="Payment" component={PaymentScreen} />
                 <Stack.Screen name="MPBricks" component={MPBricksScreen} />
+                <Stack.Screen name="OrderConfirmed" component={OrderConfirmedScreen} />
               </Stack.Navigator>
             </NavigationContainer>
           )}

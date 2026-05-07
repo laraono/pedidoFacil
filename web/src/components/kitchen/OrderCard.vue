@@ -1,13 +1,15 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { Clock, ChefHat, CheckCircle2, AlertTriangle, Hash, Flame, XCircle } from 'lucide-vue-next';
+import localStorageService from '@/services/localStorageService';
 
 const props = defineProps({
   order: { type: Object, required: true },
   alertMinutes: { type: Number, default: 15 }
 });
 
-const unitLabel = localStorage.getItem('comandaUnitLabel') || 'Comanda';
+const unitLabel = localStorageService.getComandaUnitLabel();
+const isAutoatendimento = computed(() => props.order.source === 'totem' || (props.order.comanda || '').startsWith('Totem #'));
 
 const emit = defineEmits(['move', 'cancel']);
 
@@ -85,10 +87,15 @@ const statusTheme = computed(() => {
     <div class="flex-grow flex flex-col">
       <div class="p-4 flex justify-between items-center border-b border-[#E0E0E0] bg-gray-50">
         <div class="flex items-center gap-3">
-          <span class="font-black text-2xl text-[#212121] tracking-tighter">#{{ order.id }}</span>
+          <span class="font-black text-2xl text-[#212121] tracking-tighter">{{ order.id }}</span>
           <div class="flex flex-col">
-            <span class="text-[#757575] text-[9px] font-black uppercase tracking-[0.2em] leading-none">{{ unitLabel }}</span>
-            <span class="text-[#212121] font-black text-base uppercase italic leading-none">{{ order.comanda }}</span>
+            <span class="text-[9px] font-black uppercase tracking-[0.2em] leading-none"
+              :class="isAutoatendimento ? 'text-blue-500' : 'text-[#757575]'">
+              {{ isAutoatendimento ? 'Autoatendimento' : unitLabel }}
+            </span>
+            <span class="text-[#212121] font-black text-base uppercase italic leading-none">
+              {{ isAutoatendimento && order.customerName ? order.customerName : order.comanda }}
+            </span>
           </div>
         </div>
 

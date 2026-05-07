@@ -1,11 +1,17 @@
 import multer from 'multer';
 import path from 'path';
 import crypto from 'crypto';
+import fs from 'fs';
 import { Request } from 'express';
+
+const uploadDir = path.resolve(__dirname, '../../uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.resolve(__dirname, '../../uploads')); 
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     const hash = crypto.randomBytes(16).toString('hex');

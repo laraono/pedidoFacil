@@ -62,4 +62,11 @@ export class SubscriptionController {
         return res.sendStatus(204);
     });
 
+    schedulePlan = catchAsync(async (req, res: Response) => {
+        const establishmentId = req.usuario.estabelecimento;
+        const { planId } = req.body;
+        const updated = await this.subscriptionService.schedulePlan(establishmentId, planId ?? null);
+        return res.status(200).json(updated);
+    });
+
 }

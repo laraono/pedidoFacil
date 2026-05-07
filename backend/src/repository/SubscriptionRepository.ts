@@ -81,7 +81,8 @@ export class SubscriptionRepository extends Repository<Subscription>{
             },
             relations: {
                 establishment: true,
-                plan: true
+                plan: true,
+                scheduledPlan: true
             }
         })
     }

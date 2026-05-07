@@ -17,5 +17,6 @@ subscriptionRouter.post('/plans/:planId/subscriptions/:subscriptionId/cancel', a
 subscriptionRouter.get('/process-oauth', subscriptionController.processCardInfo)
 subscriptionRouter.get('/subscriptions/establishment', authenticate, validateListSubscriptions, subscriptionController.getEstablishmentSubscription)
 subscriptionRouter.get('/subscriptions/history', authenticate, validateListSubscriptions, subscriptionController.getEstablishmentHistory)
+subscriptionRouter.patch('/subscriptions/schedule-plan', authenticate, subscriptionController.schedulePlan)
 
 export { subscriptionRouter };

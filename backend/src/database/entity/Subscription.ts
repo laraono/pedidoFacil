@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToOne } from "typeorm"
 import { SubscriptionStatus, UserStatus } from "../../enum"
 import { Plan } from "./Plan"
 import { Establishment } from "./Establishment"
@@ -73,5 +73,11 @@ export class Subscription {
         name: 'ID_Plano'
     })
     plan!: Plan
-    
+
+    @ManyToOne(() => Plan, { nullable: true, eager: false })
+    @JoinColumn({
+        name: 'ID_Plano_Agendado'
+    })
+    scheduledPlan?: Plan | null
+
 }

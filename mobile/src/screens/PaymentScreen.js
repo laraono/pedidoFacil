@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Modal,
   ActivityIndicator,
   ScrollView,
   Dimensions,
@@ -19,7 +18,7 @@ import { useIdleTimer } from "../hooks/useIdleTimer";
 import BrandHeader from "../components/ui/BrandHeader";
 
 import { submitOrder } from "../services/orderService";
-import { connectMobileSocket, listenOrderStatus, stopListeningOrderStatus } from "../services/socketService";
+import { connectMobileSocket } from "../services/socketService";
 
 import { appConfig } from "../services/apiConfig";
 
@@ -42,17 +41,14 @@ export default function PaymentScreen() {
   const panHandlers = useIdleTimer(120);
 
   const desconto = route.params?.descontoAplicado || 0;
+  const customerName = route.params?.customerName || null;
   const totalComDesconto = Math.max(0, cartTotal - desconto);
 
   const [availableMethods, setAvailableMethods] = useState([]);
   const [isLoadingMethods, setIsLoadingMethods] = useState(true);
 
   const [selectedMethod, setSelectedMethod] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState("");
-  const [isApproved, setIsApproved] = useState(false);
-  
-  const [orderId, setOrderId] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadEstablishmentData = useCallback(async () => {
     try {
@@ -98,39 +94,23 @@ export default function PaymentScreen() {
     };
   }, [loadEstablishmentData]);
 
-  useEffect(() => {
-    if (!orderId) return;
-    connectMobileSocket();
-    listenOrderStatus(orderId, (data) => {
-    });
-    return () => stopListeningOrderStatus();
-  }, [orderId]);
-
   const styles = useMemo(() => getStyles(theme, width), [theme, width]);
 
   const handleConfirm = async () => {
-    if (!selectedMethod) return;
+    if (!selectedMethod || isSubmitting) return;
 
-    setIsProcessing(true);
-    setPaymentStatus("Enviando pedido para a cozinha...");
+    setIsSubmitting(true);
 
     try {
-      const orderData = await submitOrder({ cartItems });
-
-      setOrderId(orderData.id);
-      
-      const successMessage = `Pedido #${orderData.ticket} enviado!`;
+      const orderData = await submitOrder({ cartItems, customerName });
 
       if (selectedMethod === "Dinheiro" || selectedMethod === "MISTO") {
-        setPaymentStatus(`${successMessage} Pague no caixa ao retirar.`);
-        setIsApproved(true);
-        setTimeout(() => {
-          setIsProcessing(false);
-          clearCart();
-          navigation.navigate("Welcome");
-        }, 4500);
+        clearCart();
+        navigation.navigate("OrderConfirmed", {
+          ticket: orderData.ticket,
+          label: orderData.label,
+        });
       } else {
-        setIsProcessing(false);
         navigation.navigate("MPBricks", {
           amount: totalComDesconto,
           method: selectedMethod,
@@ -139,9 +119,7 @@ export default function PaymentScreen() {
       }
     } catch (error) {
       console.error("[PaymentScreen] Erro:", error);
-      setPaymentStatus("Erro ao processar. Tente novamente.");
-      setIsProcessing(false);
-      setIsApproved(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -223,14 +201,20 @@ export default function PaymentScreen() {
         </View>
 
         <TouchableOpacity
-          style={[styles.btnConfirm, !selectedMethod && styles.btnDisabled]}
-          disabled={!selectedMethod}
+          style={[styles.btnConfirm, (!selectedMethod || isSubmitting) && styles.btnDisabled]}
+          disabled={!selectedMethod || isSubmitting}
           onPress={handleConfirm}
         >
-          <Text style={styles.btnConfirmText}>
-            {selectedMethod === "Dinheiro" || selectedMethod === "MISTO" ? "Gerar Ficha" : "Finalizar Pedido"}
-          </Text>
-          <Feather name="arrow-right" size={20} color={theme.textoBotoes} />
+          {isSubmitting ? (
+            <ActivityIndicator size="small" color={theme.textoBotoes} />
+          ) : (
+            <>
+              <Text style={styles.btnConfirmText}>
+                {selectedMethod === "Dinheiro" || selectedMethod === "MISTO" ? "Gerar Ficha" : "Finalizar Pedido"}
+              </Text>
+              <Feather name="arrow-right" size={20} color={theme.textoBotoes} />
+            </>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.btnCancel} onPress={handleCancelOrder}>
@@ -238,18 +222,6 @@ export default function PaymentScreen() {
         </TouchableOpacity>
       </View>
 
-      <Modal visible={isProcessing} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            {isApproved ? (
-              <Feather name="check-circle" size={80} color={theme.corCategorias} style={styles.modalIcon} />
-            ) : (
-              <ActivityIndicator size={80} color={theme.corBotoes} style={styles.modalIcon} />
-            )}
-            <Text style={styles.modalStatusText}>{paymentStatus}</Text>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -313,8 +285,4 @@ const getStyles = (theme, width) =>
     btnConfirmText: { color: theme.textoBotoes, fontSize: 18, fontWeight: "900", textTransform: "uppercase" },
     btnCancel: { alignSelf: "center", marginTop: 16 },
     btnCancelText: { color: "#E53935", fontSize: 14, fontWeight: "900", textTransform: "uppercase", textDecorationLine: "underline" },
-    modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.85)", justifyContent: "center", alignItems: "center" },
-    modalContent: { width: "80%", backgroundColor: theme.fundoProdutos, borderRadius: 32, padding: 40, alignItems: "center" },
-    modalIcon: { marginBottom: 24 },
-    modalStatusText: { fontSize: 20, fontWeight: "900", color: theme.corTextoPrincipal, textAlign: "center" },
   });

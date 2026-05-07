@@ -45,9 +45,13 @@ function formatCurrency(value) {
 }
 
 function formatFrequency(frequency) {
-  const map = { months: 'mês', anual: 'ano', days: 'dia' };
+  const map = { months: 'mês', anual: 'ano', mensal: 'mês', monthly: 'mês', days: 'dia', diario: 'dia' };
   return map[frequency] || frequency || 'mês';
 }
+
+const effectivePrice = computed(() =>
+  sub.value?.price ?? sub.value?.plan?.price ?? 0
+);
 
 function parsedFeatures(features) {
   if (!features) return [];
@@ -94,31 +98,45 @@ const formattedDueDate = computed(() => {
 // ── Plano agendado ────────────────────────────────────────────────────────────
 
 const isPlanModalOpen = ref(false);
-const selectedNewPlan = ref(null);   // plano confirmado para o próximo ciclo
-const tempSelectedPlan = ref(null);  // seleção dentro do modal (pré-confirmação)
+const tempSelectedPlan = ref(null);
+const isScheduling = ref(false);
+
+const scheduledPlan = computed(() => sub.value?.scheduledPlan ?? null);
 
 const openPlanModal = () => {
-  // Pré-seleciona no modal o plano já agendado (se houver) ou o plano atual
-  tempSelectedPlan.value = selectedNewPlan.value
+  tempSelectedPlan.value = scheduledPlan.value
     ?? plans.value.find(p => p.id === sub.value?.plan?.id)
     ?? null;
   isPlanModalOpen.value = true;
 };
 
-const confirmPlanChange = () => {
-  if (!tempSelectedPlan.value || tempSelectedPlan.value?.id === sub.value?.plan?.id) {
+const confirmPlanChange = async () => {
+  if (!tempSelectedPlan.value) { isPlanModalOpen.value = false; return; }
+
+  const isSameAsCurrent = tempSelectedPlan.value.id === sub.value?.plan?.id;
+  const isSameAsScheduled = tempSelectedPlan.value.id === scheduledPlan.value?.id;
+
+  if (isSameAsCurrent && !scheduledPlan.value) { isPlanModalOpen.value = false; return; }
+  if (isSameAsScheduled) { isPlanModalOpen.value = false; return; }
+
+  try {
+    isScheduling.value = true;
+    const planIdToSchedule = isSameAsCurrent ? null : tempSelectedPlan.value.id;
+    sub.value = await subscriptionApi.schedulePlan(planIdToSchedule);
+  } catch (err) {
+    error.value = err.message || 'Erro ao agendar plano';
+  } finally {
+    isScheduling.value = false;
     isPlanModalOpen.value = false;
-    return;
   }
-  selectedNewPlan.value = tempSelectedPlan.value;
-  subscriptionStore.setPlanToBeSubscribed(tempSelectedPlan.value.id);
-  isPlanModalOpen.value = false;
-  // Não cobra imediatamente — o novo plano entra apenas no próximo ciclo
 };
 
-const cancelPendingPlan = () => {
-  selectedNewPlan.value = null;
-  subscriptionStore.setPendingPlan(null);
+const cancelPendingPlan = async () => {
+  try {
+    sub.value = await subscriptionApi.schedulePlan(null);
+  } catch (err) {
+    error.value = err.message || 'Erro ao cancelar agendamento';
+  }
 };
 
 // ── Pagamento (Brick) ─────────────────────────────────────────────────────────
@@ -147,7 +165,7 @@ const closePaymentModal = () => {
 const renderCardPaymentBrick = async () => {
   if (!sub.value || !mp) return;
 
-  const amount = parseFloat(sub.value.price ?? sub.value.plan?.price);
+  const amount = parseFloat(String(sub.value.price ?? sub.value.plan?.price ?? 0));
   if (!amount || isNaN(amount)) {
     error.value = "Valor da assinatura inválido. Contate o suporte.";
     return;
@@ -252,18 +270,19 @@ const renderCardPaymentBrick = async () => {
     <div v-if="sub" class="space-y-6">
 
       <!-- 1. Nota de plano agendado (topo) -->
-      <div v-if="selectedNewPlan" class="bg-amber-50 border border-amber-400/50 rounded p-5 flex items-start gap-4">
+      <div v-if="scheduledPlan" class="bg-amber-50 border border-amber-400/50 rounded p-5 flex items-start gap-4">
         <Info :size="18" class="text-amber-500 shrink-0 mt-0.5" />
         <div class="flex-1">
           <p class="text-sm font-bold text-[#212121]">Alteração de plano agendada</p>
           <p class="text-xs text-[#757575] mt-1">
-            Seu plano será alterado para
-            <span class="font-black text-[#212121]">{{ selectedNewPlan.name }}</span>
-            ({{ formatCurrency(selectedNewPlan.price) }}/{{ formatFrequency(selectedNewPlan.frequency) }})
-            a partir da próxima renovação.
+            Na renovação de <span class="font-black text-[#212121]">{{ formattedDueDate }}</span>,
+            seu plano será alterado para
+            <span class="font-black text-[#212121]">{{ scheduledPlan.name }}</span>
+            — <span class="font-black text-[#212121]">{{ formatCurrency(scheduledPlan.price) }}/{{ formatFrequency(scheduledPlan.frequency) }}</span>.
+            O plano atual (<span class="font-semibold">{{ currentPlan?.name }}</span>) permanece ativo até lá.
           </p>
         </div>
-        <button @click="cancelPendingPlan" class="text-[#757575] hover:text-red-500 transition-colors shrink-0">
+        <button @click="cancelPendingPlan" class="text-[#757575] hover:text-red-500 transition-colors shrink-0" title="Cancelar agendamento">
           <X :size="16" />
         </button>
       </div>
@@ -282,7 +301,7 @@ const renderCardPaymentBrick = async () => {
             </div>
             <span class="text-xs text-[#757575] font-bold uppercase tracking-wider">Plano {{ currentPlan?.name }}</span>
           </div>
-          <p class="text-4xl font-black text-[#212121]">{{ formatCurrency(sub?.price) }}</p>
+          <p class="text-4xl font-black text-[#212121]">{{ formatCurrency(effectivePrice) }}</p>
           <p class="text-[#757575] text-sm mt-1">cobrado por {{ formatFrequency(currentPlan?.frequency) }}</p>
         </div>
 
@@ -299,17 +318,24 @@ const renderCardPaymentBrick = async () => {
 
       <!-- 3. Alternar plano -->
       <div class="bg-white border border-[#E0E0E0] rounded p-6 flex items-center justify-between gap-4">
-        <div>
+        <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#757575] mb-1">
             <ArrowLeftRight :size="14" />
             Plano Atual
           </div>
           <p class="text-lg font-black text-[#212121]">{{ currentPlan?.name }}</p>
-          <p class="text-xs text-[#757575] mt-0.5">{{ formatCurrency(sub?.price) }}/{{ formatFrequency(currentPlan?.frequency) }}</p>
+          <p class="text-xs text-[#757575] mt-0.5">{{ formatCurrency(effectivePrice) }}/{{ formatFrequency(currentPlan?.frequency) }}</p>
+
+          <div v-if="scheduledPlan" class="mt-3 flex items-center gap-2 text-xs text-amber-600 font-bold">
+            <Clock :size="12" class="shrink-0" />
+            Em {{ formattedDueDate }}: muda para
+            <span class="font-black text-[#212121]">{{ scheduledPlan.name }}</span>
+            ({{ formatCurrency(scheduledPlan.price) }}/{{ formatFrequency(scheduledPlan.frequency) }})
+          </div>
         </div>
         <button
           @click="openPlanModal"
-          class="flex items-center gap-2 px-4 py-2.5 rounded border border-[#E0E0E0] text-[#757575] font-bold text-sm hover:border-accent hover:text-accent transition-all"
+          class="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded border border-[#E0E0E0] text-[#757575] font-bold text-sm hover:border-accent hover:text-accent transition-all"
         >
           <ArrowLeftRight :size="14" />
           Alterar Plano
@@ -448,13 +474,13 @@ const renderCardPaymentBrick = async () => {
               </button>
               <button
                 @click="confirmPlanChange"
-                :disabled="!tempSelectedPlan || tempSelectedPlan?.id === sub?.plan?.id"
+                :disabled="isScheduling || !tempSelectedPlan || tempSelectedPlan?.id === scheduledPlan?.id"
                 class="flex-1 py-3 rounded font-black text-sm uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-2"
-                :class="(tempSelectedPlan && tempSelectedPlan?.id !== sub?.plan?.id)
+                :class="(!isScheduling && tempSelectedPlan && tempSelectedPlan?.id !== scheduledPlan?.id)
                   ? 'bg-primary text-white hover:bg-primary-dark'
                   : 'bg-gray-200 text-[#757575] cursor-not-allowed'"
               >
-                Confirmar
+                {{ isScheduling ? 'Agendando...' : 'Confirmar' }}
               </button>
             </div>
           </div>

@@ -27,6 +27,8 @@ export const useClosedComandaStore = defineStore('closedComandas', () => {
         return {
           id: c.id,
           label: c.description || `Comanda #${c.id}`,
+          customerName: c.customerName ?? undefined,
+          isAutoatendimento: !!c.customerName || (c.description || '').startsWith('Totem #'),
           closedAt: c.deleted_at || c.created_at || new Date(),
           total: Number(c.total),
           orders: mappedOrders,

@@ -176,6 +176,18 @@ export class SubscriptionService {
         return subscription
     }
 
+    async schedulePlan(establishmentId: number, planId: number | null) {
+        const [subscription] = await this.subscriptionRepository.getSubscriptionByEstablishment(establishmentId)
+        if (!subscription) throw new Error('Assinatura não encontrada')
+
+        await this.subscriptionRepository.update(subscription.id, {
+            scheduledPlan: planId ? { id: planId } : null
+        } as any)
+
+        const [updated] = await this.subscriptionRepository.getSubscriptionByEstablishment(establishmentId)
+        return updated
+    }
+
     async getEstablishmentHistory(establishmentId: number) {
         const subscriptions = await this.subscriptionRepository.getSubscriptionByEstablishment(establishmentId)
 

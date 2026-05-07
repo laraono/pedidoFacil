@@ -63,7 +63,8 @@ export class OrderController {
             const order = await this.orderService.createTotemOrder({
                 ...req.body,
                 establishmentId: usuario.estabelecimento,
-                comandaLabel: comandaLabel
+                comandaLabel: comandaLabel,
+                customerName: req.body.customerName ?? null
             });
 
             const fullOrder = await this.orderService.getOrderWithDetails(order.id);
@@ -75,8 +76,9 @@ export class OrderController {
 
             getIO().to('kitchen').emit('new_order', {
                 orderId:      order.id,
-                comandaId:    order.comanda.id, 
+                comandaId:    order.comanda.id,
                 comandaLabel: comandaLabel,
+                customerName: req.body.customerName ?? null,
                 items:        mappedItems,
                 createdAt:    new Date().toISOString(),
                 source:       'totem',

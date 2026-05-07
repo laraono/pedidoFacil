@@ -49,7 +49,7 @@ establishmentRouter.put(
   '/profile',
   authenticate,
   checkPermission('ESTABELECIMENTO_EDIT', 'ALL'),
-  validateUpload.single('logo'),   
+  validateUpload.fields([{ name: 'logo', maxCount: 1 }, { name: 'pixQrCode', maxCount: 1 }]),
   validateRequest(UpdateEstablishmentDTO), 
   establishmentController.update   
 );

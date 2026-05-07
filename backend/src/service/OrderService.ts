@@ -54,7 +54,8 @@ export class OrderService {
     return await this.dataSource.transaction(async (manager) => {
       const comanda = await manager.save(Comanda, {
         description: data.comandaLabel,
-        status: ComandaStatus.FECHADA,
+        customerName: data.customerName ?? null,
+        status: ComandaStatus.ABERTA,
         total: 0,
         establishment: { id: data.establishmentId },
       });

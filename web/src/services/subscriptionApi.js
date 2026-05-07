@@ -26,8 +26,12 @@ export const subscriptionApi = {
     updateSubscription: async (subscriptionId, amount) => 
         await request(`/subscriptions/${subscriptionId}`, {method: 'PUT', body: JSON.stringify({amount})}),
 
-    cancelSubscription: async (subscriptionId) => 
+    cancelSubscription: async (subscriptionId) =>
         await request(`/subscriptions/${subscriptionId}/cancel`, {method: 'POST'}),
 
-
+    schedulePlan: async (planId) =>
+        await request(`/subscriptions/schedule-plan`, {
+            method: 'PATCH',
+            body: JSON.stringify({ planId })
+        }),
 };

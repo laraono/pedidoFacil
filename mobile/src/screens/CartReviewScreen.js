@@ -207,7 +207,7 @@ export default function CartReviewScreen() {
               <TouchableOpacity
                 style={styles.btnPrimary}
                 onPress={() =>
-                  navigation.navigate("Payment", { descontoAplicado: desconto })
+                  navigation.navigate("NameInput", { descontoAplicado: desconto })
                 }
                 activeOpacity={0.8}
               >

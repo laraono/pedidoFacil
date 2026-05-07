@@ -13,6 +13,7 @@ import {
   CheckCheck,
   RefreshCw,
   Banknote,
+  QrCode,
 } from "lucide-vue-next";
 
 const router = useRouter();
@@ -39,6 +40,12 @@ const selfService = ref(false);
 const originalSelfService = ref(false);
 const selfServiceCode = ref("");
 const originalSelfServiceCode = ref("");
+const pixStaticEnabled = ref(false);
+const originalPixStaticEnabled = ref(false);
+const pixQrCodeUrl = ref("");
+const originalPixQrCodeUrl = ref("");
+const pixQrFile = ref(null);
+const pixQrPreview = ref(null);
 const codeCopied = ref(false);
 
 const generateCode = () => {
@@ -61,7 +68,9 @@ const isDirty = computed(() =>
     logoPreview.value !== originalLogo.value ||
     JSON.stringify([...paymentMethods.value].sort()) !== JSON.stringify([...originalPaymentMethods.value].sort()) ||
     selfService.value !== originalSelfService.value ||
-    selfServiceCode.value !== originalSelfServiceCode.value
+    selfServiceCode.value !== originalSelfServiceCode.value ||
+    pixStaticEnabled.value !== originalPixStaticEnabled.value ||
+    pixQrFile.value !== null
   )
 );
 
@@ -117,13 +126,19 @@ onMounted(async () => {
     }
 
     selfService.value = isAuto;
-    selfServiceCode.value = data.selfServiceCode || Math.floor(100000 + Math.random() * 900000).toString();
+    const savedCode = data.selfServiceCode || '';
+    selfServiceCode.value = savedCode || Math.floor(100000 + Math.random() * 900000).toString();
+    pixStaticEnabled.value = !!data.pixStaticEnabled;
+    pixQrCodeUrl.value = data.pixQrCodeUrl || '';
+    pixQrPreview.value = data.pixQrCodeUrl ? getImageUrl(data.pixQrCodeUrl) : null;
 
     originalForm.value = { ...form.value };
     originalLogo.value = logoPreview.value;
     originalPaymentMethods.value = [...paymentMethods.value];
-    originalSelfService.value = selfService.value;
-    originalSelfServiceCode.value = selfServiceCode.value;
+    originalSelfService.value = !!data.selfServiceEnabled;
+    originalSelfServiceCode.value = savedCode;
+    originalPixStaticEnabled.value = pixStaticEnabled.value;
+    originalPixQrCodeUrl.value = pixQrCodeUrl.value;
   } catch (error) {
     console.error("🔎 Erro ao carregar dados:", error);
     showToast("Erro ao carregar dados do estabelecimento.", "error");
@@ -141,6 +156,19 @@ const validateAll = () => {
   if (form.value.phone.trim() && form.value.phone.replace(/\D/g, "").length < 10) errors.value.phone = "Telefone incompleto.";
 
   return Object.keys(errors.value).length === 0;
+};
+
+const handlePixQrUpload = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  const maxSize = 2 * 1024 * 1024;
+  if (file.size > maxSize) {
+    showToast("Arquivo muito grande! O limite é 2MB.", "error");
+    event.target.value = "";
+    return;
+  }
+  pixQrFile.value = file;
+  pixQrPreview.value = URL.createObjectURL(file);
 };
 
 const handleLogoUpload = (event) => {
@@ -175,19 +203,29 @@ const saveSettings = async () => {
     formData.append('paymentMethods', JSON.stringify(paymentMethods.value));
     formData.append('selfServiceEnabled', selfService.value);
     formData.append('selfServiceCode', selfServiceCode.value);
-    
+    formData.append('pixStaticEnabled', pixStaticEnabled.value);
+    if (pixQrFile.value) formData.append('pixQrCode', pixQrFile.value);
+
     if (logoFile.value) {
       formData.append('logo', logoFile.value);
     }
 
-    await establishmentApi.updateProfile(formData);
+    const updatedData = await establishmentApi.updateProfile(formData);
+    if (updatedData?.pixQrCodeUrl !== undefined) {
+      pixQrCodeUrl.value = updatedData.pixQrCodeUrl || '';
+      pixQrPreview.value = updatedData.pixQrCodeUrl ? getImageUrl(updatedData.pixQrCodeUrl) : null;
+    }
 
     originalForm.value = { ...form.value };
     originalLogo.value = logoPreview.value;
-    logoFile.value = null; 
+    logoFile.value = null;
+    pixQrFile.value = null;
     originalPaymentMethods.value = [...paymentMethods.value];
     originalSelfService.value = selfService.value;
     originalSelfServiceCode.value = selfServiceCode.value;
+    originalPixStaticEnabled.value = pixStaticEnabled.value;
+    originalPixQrCodeUrl.value = pixQrCodeUrl.value;
+
 
     showToast("Dados atualizados com sucesso!", "success");
   } catch (error) {
@@ -346,6 +384,51 @@ const saveSettings = async () => {
             {{ method }}
           </button>
         </div>
+      </div>
+    </div>
+
+    <div v-if="!isFetching" class="mt-8">
+      <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-accent-light border border-accent/30 rounded flex items-center justify-center">
+              <QrCode :size="20" class="text-accent" />
+            </div>
+            <div>
+              <h3 class="text-base font-black text-[#212121]">PIX Estático</h3>
+              <p class="text-sm text-[#757575] mt-0.5">Exibe um QR Code fixo no caixa, substituindo a integração automática do terminal.</p>
+            </div>
+          </div>
+          <button
+            @click="pixStaticEnabled = !pixStaticEnabled"
+            class="relative w-14 h-7 rounded transition-colors duration-300 flex items-center shrink-0"
+            :class="pixStaticEnabled ? 'bg-accent' : 'bg-gray-100'"
+          >
+            <span class="absolute w-5 h-5 bg-white rounded shadow transition-all duration-300" :class="pixStaticEnabled ? 'left-8' : 'left-1'" />
+          </button>
+        </div>
+
+        <Transition name="slide-down">
+          <div v-if="pixStaticEnabled" class="mt-6 border-t border-[#E0E0E0] pt-6">
+            <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1 mb-3 block">Imagem do QR Code PIX</label>
+            <div class="flex items-start gap-6">
+              <div class="relative group cursor-pointer w-36 h-36 shrink-0">
+                <div class="relative w-full h-full bg-gray-50 border-2 border-dashed border-[#E0E0E0] rounded overflow-hidden flex flex-col items-center justify-center group-hover:border-accent/50 transition-all">
+                  <img v-if="pixQrPreview" :src="pixQrPreview" class="w-full h-full object-contain p-2" alt="QR Code PIX" />
+                  <div v-else class="flex flex-col items-center text-[#757575]">
+                    <QrCode :size="32" class="mb-1" />
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-center px-2">Subir QR Code</span>
+                  </div>
+                  <input type="file" @change="handlePixQrUpload" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" />
+                </div>
+              </div>
+              <div class="flex-1">
+                <p class="text-xs text-[#757575] leading-relaxed">Faça upload da imagem do seu QR Code PIX estático. Ela será exibida no caixa quando o cliente escolher pagar via PIX.</p>
+                <p class="text-[10px] text-[#757575] mt-2 font-bold uppercase tracking-widest">Clique na imagem para alterar · Máx. 2MB</p>
+              </div>
+            </div>
+          </div>
+        </Transition>
       </div>
     </div>
 

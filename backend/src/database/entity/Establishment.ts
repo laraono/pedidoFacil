@@ -105,6 +105,20 @@ export class Establishment {
     })
     mercadoPagoId?: string
 
+    @Column({
+        type: 'boolean',
+        name: 'Pix_Estatico_Ativo',
+        default: false
+    })
+    pixStaticEnabled?: boolean
+
+    @Column({
+        type: 'text',
+        name: 'Pix_QR_Code_URL',
+        nullable: true,
+    })
+    pixQrCodeUrl?: string
+
     @DeleteDateColumn({
         name: 'Data_Exclusao',
         nullable: true

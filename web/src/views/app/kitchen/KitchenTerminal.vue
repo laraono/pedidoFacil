@@ -52,6 +52,8 @@ const playAlert = () => {
   }
 };
 
+let pollInterval = null;
+
 onMounted(async () => {
   if (!authStore.hasPermission(PERMISSIONS.COZINHA)) {
     router.push("/app/dashboard");
@@ -60,10 +62,13 @@ onMounted(async () => {
 
   await kitchenStore.fetchOrders();
   kitchenStore.initKitchenSocket(playAlert);
+
+  pollInterval = setInterval(() => kitchenStore.fetchOrders(), 30_000);
 });
 
 onUnmounted(() => {
   kitchenStore.destroyKitchenSocket();
+  clearInterval(pollInterval);
 });
 
 const handleMove = (id, status) => {

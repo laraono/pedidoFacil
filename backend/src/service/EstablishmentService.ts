@@ -50,7 +50,10 @@ export class EstablishmentService {
       throw new AppError('Código de acesso inválido.', 404);
     }
 
-    if (!establishment.selfServiceEnabled) {
+    const serviceTypes = this.parseServiceTypes(establishment.serviceTypes);
+    const hasAutoatendimento = serviceTypes.includes('Autoatendimento');
+
+    if (!establishment.selfServiceEnabled && !hasAutoatendimento) {
       throw new AppError('O autoatendimento está desativado para este estabelecimento.', 403);
     }
 
@@ -157,6 +160,13 @@ export class EstablishmentService {
       ? JSON.stringify(updateData.paymentMethods)
       : updateData.paymentMethods;
 
+    let serviceTypes = this.parseServiceTypes(establishment.serviceTypes);
+    if (updateData.selfServiceEnabled === true && !serviceTypes.includes(ServiceType.AUTOATENDIMENTO)) {
+      serviceTypes.push(ServiceType.AUTOATENDIMENTO);
+    } else if (updateData.selfServiceEnabled === false) {
+      serviceTypes = serviceTypes.filter((t) => t !== ServiceType.AUTOATENDIMENTO);
+    }
+
     this.establishmentRepository.merge(establishment, {
       name: updateData.name,
       cnpj: updateData.cnpj,
@@ -165,6 +175,9 @@ export class EstablishmentService {
       paymentMethods: paymentMethods,
       selfServiceEnabled: updateData.selfServiceEnabled,
       selfServiceCode: updateData.selfServiceCode,
+      serviceTypes: JSON.stringify(serviceTypes),
+      pixStaticEnabled: updateData.pixStaticEnabled,
+      ...(updateData.pixQrCodeUrl !== undefined && { pixQrCodeUrl: updateData.pixQrCodeUrl }),
     });
 
     await this.establishmentRepository.save(establishment);

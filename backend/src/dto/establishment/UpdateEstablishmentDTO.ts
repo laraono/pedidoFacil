@@ -4,9 +4,9 @@ import { safeString } from '../../utils/safeZod';
 export const UpdateEstablishmentDTO = z.object({
   body: z.object({
     name: safeString(2, 100).optional(),
-    cnpj: safeString(14, 18).optional(),
-    phone: safeString(10, 15).optional(),
-    address: safeString(5, 255).optional(),
+    cnpj: z.preprocess((v) => v === '' ? undefined : v, safeString(14, 18).optional()),
+    phone: z.preprocess((v) => v === '' ? undefined : v, safeString(10, 15).optional()),
+    address: z.preprocess((v) => v === '' ? undefined : v, safeString(5, 255).optional()),
     
     paymentMethods: z.preprocess((val) => {
       if (typeof val === 'string') {
@@ -21,6 +21,13 @@ export const UpdateEstablishmentDTO = z.object({
     }, z.boolean().optional()),
     
     selfServiceCode: safeString(0, 20).optional(),
+
+    pixStaticEnabled: z.preprocess((val) => {
+      if (typeof val === 'string') return val === 'true';
+      return val;
+    }, z.boolean().optional()),
+
+    pixQrCodeUrl: z.string().optional(),
     
     configurations: z.preprocess((val) => {
       if (typeof val === 'string') {
