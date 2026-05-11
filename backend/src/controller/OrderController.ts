@@ -26,20 +26,27 @@ export class OrderController {
             });
 
             const fullOrder = await this.orderService.getOrderWithDetails(order.id);
-            
-            const mappedItems = fullOrder?.productOrders.map(po => ({
-                name: po.product?.name || "Produto",
-                quantity: po.quantity,
-                observation: po.observation
-            })) || [];
+
+            const mappedItems = fullOrder?.productOrders?.map(po => {
+                const variationName = po.variations
+                    ?.map(v => v.productVariation?.name)
+                    .filter(Boolean)
+                    .join(', ') || '';
+                return {
+                    name: po.product?.name || 'Produto',
+                    variationName,
+                    quantity: po.quantity,
+                    observation: po.observation,
+                };
+            }) ?? [];
 
             getIO().to('kitchen').emit('new_order', {
-                orderId:      order.id, 
+                orderId:      order.id,
                 comandaId:    Number(comandaId),
                 comandaLabel: req.body.comandaLabel || `Comanda #${comandaId}`,
-                items:        mappedItems, 
+                items:        mappedItems,
                 createdAt:    new Date().toISOString(),
-                source:       req.body.source || 'web', 
+                source:       req.body.source || 'web',
             });
 
             return res.status(201).json(order);
@@ -68,11 +75,18 @@ export class OrderController {
             });
 
             const fullOrder = await this.orderService.getOrderWithDetails(order.id);
-            const mappedItems = fullOrder?.productOrders.map(po => ({
-                name: po.product?.name || "Produto",
-                quantity: po.quantity,
-                observation: po.observation
-            })) || [];
+            const mappedItems = fullOrder?.productOrders?.map(po => {
+                const variationName = po.variations
+                    ?.map(v => v.productVariation?.name)
+                    .filter(Boolean)
+                    .join(', ') || '';
+                return {
+                    name: po.product?.name || 'Produto',
+                    variationName,
+                    quantity: po.quantity,
+                    observation: po.observation,
+                };
+            }) ?? [];
 
             getIO().to('kitchen').emit('new_order', {
                 orderId:      order.id,

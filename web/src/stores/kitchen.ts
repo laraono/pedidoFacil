@@ -23,6 +23,7 @@ const frontToDbMap: Record<string, string> = {
 
 export interface KitchenOrderItem {
   name: string;
+  variationName: string;
   amount: number;
   obs: string;
 }
@@ -61,11 +62,18 @@ export const useKitchenStore = defineStore('kitchen', () => {
             waiter: pedido.serviceType === 'AUTOATENDIMENTO' || pedido.serviceType === 'TOTEM' ? 'Totem' : (pedido.serviceType || 'Balcão'),
             status: mappedStatus,
             createdAt: pedido.created_at ? new Date(pedido.created_at) : new Date(),
-            items: pedido.productOrders?.map((po: any) => ({
-              name: po.product?.name || 'Produto Excluído',
-              amount: po.quantity, 
-              obs: po.observation || ''
-            })) || []
+            items: pedido.productOrders?.map((po: any) => {
+              const variationName = po.variations
+                ?.map((v: any) => v.productVariation?.name)
+                .filter(Boolean)
+                .join(', ') || '';
+              return {
+                name: po.product?.name || 'Produto Excluído',
+                variationName,
+                amount: po.quantity,
+                obs: po.observation || '',
+              };
+            }) || []
           });
         }
       });
@@ -150,7 +158,8 @@ export const useKitchenStore = defineStore('kitchen', () => {
         status: 'pending',
         createdAt: new Date(data.createdAt),
         items: (data.items || []).map((i: any) => ({
-          name: i.name || "Produto", 
+          name: i.name || 'Produto',
+          variationName: i.variationName || '',
           amount: i.quantity || 1,
           obs: i.observation || '',
         })),

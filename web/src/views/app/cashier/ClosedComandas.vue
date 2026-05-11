@@ -271,7 +271,7 @@ function paymentSummary(comanda) {
                         <div
                           v-else
                           v-for="item in order.items"
-                          :key="item.name + item.amount"
+                          :key="item.name + item.variationName + item.amount"
                           class="flex items-center justify-between"
                         >
                           <div class="flex items-center gap-3">
@@ -280,16 +280,16 @@ function paymentSummary(comanda) {
                             >
                               {{ item.amount || 1 }}x
                             </span>
-                            <span class="text-[#212121] text-sm font-bold">{{
-                              item.name
-                            }}</span>
+                            <div class="flex flex-col">
+                              <span class="text-[#212121] text-sm font-bold">{{ item.name }}</span>
+                              <span
+                                v-if="item.variationName"
+                                class="text-[10px] font-black text-blue-500 uppercase tracking-wide"
+                              >{{ item.variationName }}</span>
+                            </div>
                           </div>
                           <span class="text-[#757575] text-sm font-bold">
-                            {{
-                              formatCurrency(
-                                (item.price || 0) * (item.amount || 1),
-                              )
-                            }}
+                            {{ formatCurrency((item.price || 0) * (item.amount || 1)) }}
                           </span>
                         </div>
                       </div>

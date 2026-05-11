@@ -39,6 +39,7 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   { path: '/onboarding/subscription', name: 'OnboardingSubscription', component: SubscriptionPage },
+  { path: '/totem/:code', name: 'totem', component: () => import('@/views/Totem.vue') },
   {
     path: "/app",
     component: Header,

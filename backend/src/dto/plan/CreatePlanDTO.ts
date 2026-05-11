@@ -6,6 +6,7 @@ export type CreatePlanParams = {
     billingDay: number,
     billingDayProportional: boolean,
     price: number,
+    features?: string,
 }
 
 export type CreatePlanMercadoPago = {
@@ -27,7 +28,8 @@ export type CreatePlan = {
     name: string,
     billingDay: number,
     price: number,
-    frequency: string
+    frequency: string,
+    features?: string,
 }
 
 export type UpdatePlanParams = {
@@ -37,6 +39,7 @@ export type UpdatePlanParams = {
     billingDay: number,
     billingDayProportional: boolean,
     price: number,
+    features?: string,
 }
 
 export type UpdatePlanMercadoPago = {
@@ -58,5 +61,6 @@ export type UpdatePlan = {
     name: string,
     billingDay: number,
     price: number,
-    frequency: string
+    frequency: string,
+    features?: string,
 }

@@ -13,11 +13,18 @@ export const useClosedComandaStore = defineStore('closedComandas', () => {
 
       const fetchedComandas = response.map((c: any) => {
         const mappedOrders = (c.pedidos || []).map((p: any) => {
-          const items = (p.productOrders || []).map((po: any) => ({
-            name: po.product?.name || 'Item',
-            amount: po.quantity || 1,
-            price: Number(po.price || po.Preco_Unitario_Momento || 0)
-          }));
+          const items = (p.productOrders || []).map((po: any) => {
+            const variationName = po.variations
+              ?.map((v: any) => v.productVariation?.name)
+              .filter(Boolean)
+              .join(', ') || '';
+            return {
+              name: po.product?.name || 'Item',
+              variationName,
+              amount: po.quantity || 1,
+              price: Number(po.price || 0),
+            };
+          });
           
           const orderPrice = items.reduce((sum: number, idx: any) => sum + (idx.price * idx.amount), 0);
           

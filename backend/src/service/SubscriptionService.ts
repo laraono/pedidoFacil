@@ -1,10 +1,10 @@
 import { SubscriptionStatus } from "../enum"
-import { EstablishmentRepository, PlanRepository, SubscriptionRepository } from "../repository"
+import { PlanRepository, SubscriptionRepository } from "../repository"
 import { AppError } from "../middleware"
 import { MercadoPagoService } from "./MercadoPagoService"
-import { CreateOrderSubscriptionMP, CreateSubscriptionParams, RestoreOrderSubscriptionMP } from "../dto"
-import { DataSource, EntityManager } from "typeorm"
-import { Establishment, Plan, Subscription, User } from "../database"
+import { CreateOrderSubscriptionMP, RestoreOrderSubscriptionMP } from "../dto"
+import { DataSource } from "typeorm"
+import { Establishment, Plan, Subscription } from "../database"
 
 export class SubscriptionService {
 
@@ -22,7 +22,6 @@ export class SubscriptionService {
             throw new AppError('Assinatura não encontrada', 404)
         }
 
-        await this.mercadoPagoService.cancelSubscription(subscription.mercadoPagoId)
         await this.subscriptionRepository.updateSubscriptionStatus(subscriptionId, SubscriptionStatus.CANCELADA)
     }
 
@@ -221,9 +220,11 @@ export class SubscriptionService {
                         : payment.payment_method?.type === 'debit_card' ? 'Cartão de Débito'
                         : payment.payment_method?.type === 'bank_transfer' ? 'Pix'
                         : 'Cartão',
-                    installments: payment.payment_method?.installments,
+                    installments: payment.payment_method?.installments ?? null,
                     name: sub.plan ? sub.plan.name : '',
-                    date: order.last_updated_date
+                    date: order.last_updated_date,
+                    receipt: sub.receipt ?? null,
+                    mercadoPagoId: sub.mercadoPagoId ?? null,
                 }
                 history.push(data)
             } catch {}

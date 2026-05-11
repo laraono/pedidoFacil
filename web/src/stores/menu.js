@@ -38,7 +38,7 @@ export const useMenuOrderingStore = defineStore("menuOrdering", () => {
         sizes: p.productVariations?.map(v => ({
           id: v.id,
           name: v.name,
-          price: Number(v.addPrice),
+          price: Number(p.basePrice) + Number(v.addPrice),
         })) || [],
       }));
 

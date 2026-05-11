@@ -891,17 +891,20 @@ onUnmounted(() => {
 
 function getOrderItems(order) {
   const items = order.items || order.productOrders || [];
-  return items.map((i) => ({
-    name: i.name || i.product?.name || "Item",
-    amount: i.amount || i.quantity || 1,
-    price: Number(i.price || i.Preco_Unitario_Momento || 0),
-  }));
+  return items.map((i) => {
+    const variationName = i.variations?.[0]?.productVariation?.name || '';
+    const baseName = i.name || i.product?.name || 'Item';
+    return {
+      name: baseName + (variationName ? ` (${variationName})` : ''),
+      amount: Number(i.amount || i.quantity || 1),
+      price: Number(i.price ?? i.Preco_Unitario_Momento ?? 0),
+    };
+  });
 }
 
 function getOrderTotal(order) {
-  if (order.price !== undefined && !order.productOrders)
-    return Number(order.price);
   const items = getOrderItems(order);
+  if (items.length === 0) return Number(order.price ?? 0);
   return items.reduce((sum, item) => sum + item.price * item.amount, 0);
 }
 
@@ -994,7 +997,18 @@ const hasPreparing = computed(() =>
 const hasPending = computed(() =>
   ordersWithStatus.value.some((o) => o.status === "pending"),
 );
-const subtotal = computed(() => selectedComanda.value?.total || 0);
+const subtotal = computed(() => {
+  if (!selectedComanda.value) return 0;
+  const orders = selectedComanda.value.orders || [];
+  const hasItems = orders.some(o => (o.productOrders || o.items || []).length > 0);
+  if (!hasItems) return Number(selectedComanda.value.total) || 0;
+  const sum = orders.reduce((acc, order) => {
+    const kitchenOrder = kitchenStore.orders.find(k => k.id === order.id);
+    if (kitchenOrder?.status === 'cancelled') return acc;
+    return acc + getOrderTotal(order);
+  }, 0);
+  return Math.round(sum * 100) / 100;
+});
 
 const totalWithDiscount = computed(() => {
   const sub = subtotal.value;

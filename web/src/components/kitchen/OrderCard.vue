@@ -131,7 +131,15 @@ const statusTheme = computed(() => {
             >
               {{ item.amount }}x
             </span>
-            <span class="font-black text-lg text-[#212121] uppercase tracking-tight pt-0.5">{{ item.name }}</span>
+            <div class="flex flex-col gap-1 pt-0.5">
+              <span class="font-black text-lg text-[#212121] uppercase tracking-tight leading-none">{{ item.name }}</span>
+              <span
+                v-if="item.variationName"
+                class="inline-block self-start px-2 py-0.5 rounded bg-blue-50 border border-blue-200 text-blue-600 text-[11px] font-black uppercase tracking-wide"
+              >
+                {{ item.variationName }}
+              </span>
+            </div>
           </div>
 
           <div v-if="item.obs" class="ml-12 mt-2 p-3 rounded bg-amber-50 border border-amber-200 flex items-center gap-2">

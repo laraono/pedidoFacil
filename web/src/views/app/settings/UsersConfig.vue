@@ -91,8 +91,8 @@ const fetchRoles = async () => {
 
 const fetchUsers = async () => {
   try {
-    users.value = await employeeApi.list();
-    inactiveUsers.value = await employeeApi.listInactive();
+    users.value = (await employeeApi.list()) ?? [];
+    inactiveUsers.value = (await employeeApi.listInactive()) ?? [];
   } catch (e) {
     showToast("Erro ao carregar a equipe.", "error");
   }

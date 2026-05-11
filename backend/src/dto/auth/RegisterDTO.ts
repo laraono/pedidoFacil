@@ -8,6 +8,7 @@ export const registerSchema = z.object({
     nome_usuario: safeString(2, 100),
     email: z.email("E-mail inválido").trim().toLowerCase(),
     senha: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
+    cpf: safeString(11, 14).optional().nullable(),
     
     cargos: z.array(
       z.object({

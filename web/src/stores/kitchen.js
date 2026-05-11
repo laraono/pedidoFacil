@@ -44,11 +44,14 @@ export const useKitchenStore = defineStore('kitchen', () => {
                 waiter: pedido.serviceType || 'Garçom',
                 status: dbToFrontMap[pedido.status],
                 createdAt: pedido.created_at || new Date(),
-                items: pedido.productOrders?.map(po => ({
-                  name: po.product?.name || 'Item',
-                  amount: po.quantity,
-                  obs: po.observation
-                })) || []
+                items: pedido.productOrders?.map(po => {
+                  const variation = po.variations?.[0]?.productVariation?.name || '';
+                  return {
+                    name: (po.product?.name || 'Item') + (variation ? ` (${variation})` : ''),
+                    amount: po.quantity,
+                    obs: po.observation || ''
+                  };
+                }) || []
               });
             }
           });
@@ -131,8 +134,8 @@ export const useKitchenStore = defineStore('kitchen', () => {
         status: 'pending',
         createdAt: new Date(data.createdAt),
         items: (data.items || []).map(i => ({
-          name: i.productName || `Produto #${i.productId}`,
-          amount: i.quantity,
+          name: i.name || i.productName || 'Produto',
+          amount: i.quantity || 1,
           obs: i.observation || '',
         })),
       };

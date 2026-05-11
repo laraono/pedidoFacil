@@ -35,6 +35,13 @@ export class Plan {
     })
     frequency?: string
 
+    @Column({
+        name: 'Funcionalidades',
+        type: 'text',
+        nullable: true
+    })
+    features?: string
+
     @OneToMany(() => Subscription, (subscription) => subscription.establishment)
     subscriptions!: Subscription[]
 }

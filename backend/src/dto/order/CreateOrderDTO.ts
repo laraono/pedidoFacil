@@ -66,10 +66,7 @@ export type ProductOrderParams = {
 }
 
 export type ProductVariationOrderParams = {
-    orderId: number
-    productId: number
+    productOrderId: number
     productVariationId: number
     price: number
-    productVariation?: { id: number }
-    productOrder?: { orderId: number; productId: number }
 }

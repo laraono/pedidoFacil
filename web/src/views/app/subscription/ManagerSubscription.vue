@@ -7,7 +7,8 @@ import { planApi } from '@/services/planApi';
 import { loadMercadoPago } from "@mercadopago/sdk-js";
 import {
   ArrowLeft, CreditCard, CheckCircle2, AlertTriangle,
-  Clock, History, Banknote, X, ArrowLeftRight, Info
+  Clock, History, Banknote, X, ArrowLeftRight, Info,
+  XCircle, FileText, ExternalLink
 } from 'lucide-vue-next';
 
 const error = ref('')
@@ -44,9 +45,17 @@ function formatCurrency(value) {
   return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+function normalizeFrequency(frequency) {
+  const f = String(frequency ?? '').trim().toLowerCase();
+  if (['anual', '12', 'annual', 'yearly'].includes(f)) return 'anual';
+  if (['months', '1', 'mensal', 'monthly', 'month'].includes(f)) return 'mensal';
+  if (['days', '30', 'diario', 'daily'].includes(f)) return 'diario';
+  return f;
+}
+
 function formatFrequency(frequency) {
-  const map = { months: 'mês', anual: 'ano', mensal: 'mês', monthly: 'mês', days: 'dia', diario: 'dia' };
-  return map[frequency] || frequency || 'mês';
+  const norm = normalizeFrequency(frequency);
+  return { anual: 'ano', mensal: 'mês', diario: 'dia' }[norm] ?? 'mês';
 }
 
 const effectivePrice = computed(() =>
@@ -139,6 +148,27 @@ const cancelPendingPlan = async () => {
   }
 };
 
+// ── Cancelamento ──────────────────────────────────────────────────────────────
+
+const showCancelModal = ref(false);
+const isCancelling = ref(false);
+const cancelError = ref('');
+
+const confirmCancel = async () => {
+  if (!sub.value?.id) return;
+  isCancelling.value = true;
+  cancelError.value = '';
+  try {
+    await subscriptionApi.cancelSubscription(sub.value.id);
+    sub.value = await subscriptionApi.getEstablishmentSubscription();
+    showCancelModal.value = false;
+  } catch (err) {
+    cancelError.value = err.message || 'Erro ao cancelar assinatura';
+  } finally {
+    isCancelling.value = false;
+  }
+};
+
 // ── Pagamento (Brick) ─────────────────────────────────────────────────────────
 
 let mp = null;
@@ -188,7 +218,7 @@ const renderCardPaymentBrick = async () => {
         visual: { style: { theme: 'default' } },
         paymentMethods: {
           minInstallments: 1,
-          maxInstallments: 1,
+          maxInstallments: normalizeFrequency(sub.value?.plan?.frequency) === 'anual' ? 12 : 1,
         },
       },
       callbacks: {
@@ -305,15 +335,26 @@ const renderCardPaymentBrick = async () => {
           <p class="text-[#757575] text-sm mt-1">cobrado por {{ formatFrequency(currentPlan?.frequency) }}</p>
         </div>
 
-        <button
-          v-if="sub?.status !== 'Pendente'"
-          @click="openCardModal(true)"
-          class="shrink-0 flex items-center gap-2 px-6 py-3.5 rounded font-black text-sm uppercase tracking-wider transition-all active:scale-95"
-          :class="isActive ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-danger text-white hover:bg-red-700'"
-        >
-          <CreditCard :size="16" />
-          {{ isActive ? 'Mudar Cartão de Pagamento' : 'Reativar Assinatura' }}
-        </button>
+        <div class="flex flex-col sm:flex-row gap-3 shrink-0">
+          <button
+            v-if="sub?.status !== 'Pendente'"
+            @click="openCardModal(true)"
+            class="flex items-center gap-2 px-6 py-3.5 rounded font-black text-sm uppercase tracking-wider transition-all active:scale-95"
+            :class="isActive ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-danger text-white hover:bg-red-700'"
+          >
+            <CreditCard :size="16" />
+            {{ isActive ? 'Mudar Cartão' : 'Reativar Assinatura' }}
+          </button>
+
+          <button
+            v-if="isActive"
+            @click="showCancelModal = true"
+            class="flex items-center gap-2 px-6 py-3.5 rounded font-black text-sm uppercase tracking-wider border border-danger text-danger hover:bg-danger-light transition-all active:scale-95"
+          >
+            <XCircle :size="16" />
+            Cancelar Assinatura
+          </button>
+        </div>
       </div>
 
       <!-- 3. Alternar plano -->
@@ -366,13 +407,27 @@ const renderCardPaymentBrick = async () => {
                 </p>
               </div>
             </div>
-            <div class="text-right">
+            <div class="text-right flex flex-col items-end gap-1">
               <p class="text-sm font-black text-[#212121]">
                 {{ formatCurrency(payment.amount) }}
               </p>
               <span class="text-[10px] font-black uppercase tracking-wider text-accent">
                 {{ translateStatus(payment.status) }}
               </span>
+              <p v-if="payment.installments && payment.installments > 1" class="text-[10px] text-[#757575]">
+                {{ payment.installments }}x de {{ formatCurrency(payment.amount / payment.installments) }}
+              </p>
+              <a
+                v-if="payment.receipt"
+                :href="payment.receipt"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 text-[10px] font-bold text-primary hover:underline"
+              >
+                <FileText :size="11" />
+                Ver fatura
+                <ExternalLink :size="10" />
+              </a>
             </div>
           </div>
         </div>
@@ -383,6 +438,50 @@ const renderCardPaymentBrick = async () => {
       </div>
 
     </div>
+
+    <!-- Modal de cancelamento (Teleport) -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showCancelModal" class="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4">
+          <div class="bg-white border border-[#E0E0E0] w-full max-w-sm rounded shadow-2xl">
+            <div class="p-6 border-b border-[#E0E0E0] flex justify-between items-center">
+              <h2 class="text-lg font-black text-[#212121] flex items-center gap-2">
+                <XCircle :size="18" class="text-danger" />
+                Cancelar Assinatura
+              </h2>
+              <button @click="showCancelModal = false" class="p-2 text-[#757575] hover:text-[#212121] transition-colors">
+                <X :size="18" />
+              </button>
+            </div>
+            <div class="p-6">
+              <p class="text-sm text-[#757575] leading-relaxed">
+                Tem certeza que deseja cancelar sua assinatura?
+                O acesso permanece ativo até o vencimento em
+                <span class="font-bold text-[#212121]">{{ formattedDueDate }}</span>.
+              </p>
+              <div v-if="cancelError" class="mt-4 bg-danger-light border border-danger text-danger p-3 rounded text-sm font-medium">
+                {{ cancelError }}
+              </div>
+            </div>
+            <div class="p-6 pt-0 flex gap-3">
+              <button
+                @click="showCancelModal = false"
+                class="flex-1 py-3 rounded text-[#757575] font-bold hover:bg-gray-50 border border-[#E0E0E0] transition-colors"
+              >
+                Manter Plano
+              </button>
+              <button
+                @click="confirmCancel"
+                :disabled="isCancelling"
+                class="flex-1 py-3 rounded font-black text-sm uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-2 bg-danger text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {{ isCancelling ? 'Cancelando...' : 'Confirmar Cancelamento' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
     <!-- Modal de pagamento (Teleport) -->
     <Teleport to="body">

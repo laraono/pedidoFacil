@@ -21,7 +21,8 @@ export class PlanService {
                 name: params.name,
                 frequency: params.frequency,
                 billingDay: params.billingDay,
-                price: params.price
+                price: params.price,
+                features: params.features,
             }
 
             const plan = await transactionalEntityManager.save(Plan, localRepositoryParams)
@@ -69,7 +70,8 @@ export class PlanService {
                 name: params.name,
                 frequency: params.frequency,
                 billingDay: params.billingDay,
-                price: params.price
+                price: params.price,
+                features: params.features,
             }
 
             await transactionalEntityManager.update(Plan, planId, localRepositoryParams)

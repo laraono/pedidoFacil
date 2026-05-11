@@ -13,9 +13,11 @@ export const useComandaStore = defineStore('comanda', () => {
 
             comandas.value = response.map(c => ({
                 id: c.id,
-                label: c.description, 
+                label: c.description,
+                customerName: c.customerName ?? undefined,
+                isAutoatendimento: !!c.customerName || (c.description || '').startsWith('Totem #'),
                 total: Number(c.total),
-                orders: c.pedidos || [] 
+                orders: c.pedidos || []
             }));
         } catch (error) {
             console.error("Erro ao carregar comandas do banco:", error);

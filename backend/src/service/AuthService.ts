@@ -42,6 +42,7 @@ export class AuthService {
       email: data.email,
       password: passwordHash,
       status: UserStatus.ATIVO,
+      cpf: data.cpf ?? null,
     });
 
     const savedUser = await this.userRepository.save(user);

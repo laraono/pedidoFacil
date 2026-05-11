@@ -16,26 +16,32 @@ export class OrderRepository extends Repository<Order> {
     async getOrderWithDetails(id: number) {
         return await this.findOne({
             where: { id },
-            relations: ["productOrders", "productOrders.product", "productOrders.productVariation"]
+            relations: ["productOrders", "productOrders.product", "productOrders.variations", "productOrders.variations.productVariation"]
         });
     }
 
     async listOrders(establishmentId: number) {
-        return await this.find({
-            where: {
-                establishment: { id: establishmentId }
-            },
-            relations: ["comanda", "productOrders", "productOrders.product"]
-        });
+        return await this.createQueryBuilder('order')
+            .leftJoinAndSelect('order.comanda', 'comanda')
+            .leftJoinAndSelect('order.productOrders', 'po')
+            .leftJoinAndSelect('po.product', 'product')
+            .leftJoinAndSelect('po.variations', 'variation')
+            .leftJoinAndSelect('variation.productVariation', 'pv')
+            .where('order.establishment = :id', { id: establishmentId })
+            .getMany();
     }
 
     async listOrdersByComanda(comandaId: number) {
         return await this.find({
             where: {
-                comanda: {
-                    id: comandaId
-                }
-            }
+                comanda: { id: comandaId }
+            },
+            relations: [
+                'productOrders',
+                'productOrders.product',
+                'productOrders.variations',
+                'productOrders.variations.productVariation',
+            ]
         });
     }
 

@@ -52,8 +52,10 @@ const generateCode = () => {
   selfServiceCode.value = Math.floor(100000 + Math.random() * 900000).toString();
 };
 
+const totemUrl = computed(() => `${window.location.origin}/totem/${selfServiceCode.value}`);
+
 const copyCode = () => {
-  navigator.clipboard.writeText(selfServiceCode.value);
+  navigator.clipboard.writeText(totemUrl.value);
   codeCopied.value = true;
   setTimeout(() => { codeCopied.value = false; }, 2000);
 };
@@ -474,12 +476,13 @@ const saveSettings = async () => {
                 <div class="flex items-center gap-3">
                   <div class="flex-1 bg-gray-100 border border-accent/30 rounded px-6 py-4 text-center">
                     <span class="text-4xl font-black text-accent tracking-[0.3em]">{{ selfServiceCode }}</span>
+                    <p class="text-[10px] text-[#757575] mt-2 font-mono break-all">{{ totemUrl }}</p>
                   </div>
                 </div>
                 <div class="flex gap-2">
                   <button @click="copyCode" class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-accent-light border border-accent/30 rounded text-xs font-black transition-all text-accent">
                     <component :is="codeCopied ? CheckCheck : Copy" :size="14" />
-                    {{ codeCopied ? "Copiado!" : "Copiar código" }}
+                    {{ codeCopied ? "Copiado!" : "Copiar link" }}
                   </button>
                   <button @click="generateCode" class="p-2.5 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121]" title="Gerar novo código">
                     <RefreshCw :size="14" />
