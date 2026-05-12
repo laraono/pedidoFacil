@@ -272,10 +272,10 @@ const submitContato = async () => {
                  <div class="absolute top-0 right-0 bg-primary text-white font-black text-[10px] px-4 py-2 rounded uppercase tracking-wider">RECOMENDADO</div>
                  <h3 class="text-primary text-3xl font-black mb-4">{{ annualPlan?.name ?? 'Anual' }}</h3>
                  <div class="text-[#212121] text-5xl lg:text-6xl font-black mb-1 tracking-tighter">
-                   {{ annualPlan ? Number(annualPlan.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : `R$${planPrices.annual.toFixed(2).replace('.',',')}` }}<span class="text-xl font-normal text-[#757575] tracking-normal">/mês</span>
+                   {{ annualPlan ? Number(annualPlan.price/12).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : `R$${planPrices.annual.toFixed(2).replace('.',',')}` }}<span class="text-xl font-normal text-[#757575] tracking-normal">/mês</span>
                  </div>
                  <p class="text-xs text-primary font-bold mb-2">
-                   Preço total anual: {{ annualPlan ? Number(annualPlan.price * 12).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : `R$${(planPrices.annual * 12).toFixed(2).replace('.',',')}` }}
+                   Preço total anual: {{ annualPlan ? Number(annualPlan.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : `R$${(planPrices.annual * 12).toFixed(2).replace('.',',')}` }}
                  </p>
                  <p class="text-xs text-[#757575] mb-1">Parcele em até 12× no cartão</p>
                  <div class="w-full h-px bg-primary/20 my-8"></div>
