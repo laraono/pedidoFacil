@@ -22,6 +22,7 @@ import {
     subscriptionRouter,
     contactRouter,
     webhookRouter,
+    paymentRouter,
 } from './router';
 import { AppDataSource } from './database';
 import { errorHandler } from './middleware';
@@ -82,6 +83,7 @@ AppDataSource.initialize().then(async () => {
     app.use('/api/v1/conta', profileRouter)
     app.use('/api/v1/cupons', couponRouter)
     app.use('/api/v1/contato', contactRouter)
+    app.use('/api/v1', paymentRouter)
     app.use('/webhook', webhookRouter)
     app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
     app.use((req, res) => {

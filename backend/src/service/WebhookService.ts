@@ -1,6 +1,7 @@
 import { SubscriptionRepository } from '../repository';
 import { MercadoPagoService } from './MercadoPagoService';
 import { SubscriptionStatus } from '../enum';
+import { auditLog } from '../utils/logger';
 
 export class WebhookService {
     constructor(
@@ -30,8 +31,11 @@ export class WebhookService {
                     scheduledPlan: null as any
                 });
             }
+
+            auditLog('subscription.renewal_success', { subscriptionId: subscription.id, mercadoPagoId });
         } else if (statusDetail === 'canceled') {
             await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.CANCELADA);
+            auditLog('subscription.renewal_failed', { subscriptionId: subscription.id, mercadoPagoId, statusDetail });
         }
     }
 }
