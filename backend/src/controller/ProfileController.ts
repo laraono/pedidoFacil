@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { ProfileService } from '../service/ProfileService';
 import { catchAsync } from '../middleware/error/catchAsync';
+import { auditLog } from '../utils/logger';
 
 export class ProfileController {
   
@@ -21,6 +22,7 @@ export class ProfileController {
   changePassword = catchAsync(async (req: Request, res: Response) => {
     const userId = (req as any).usuario.id;
     const result = await this.profileService.changePassword(userId, req.body);
+    auditLog('password.changed', { userId });
     return res.json(result);
   });
 }

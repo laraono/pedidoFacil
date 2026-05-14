@@ -38,10 +38,7 @@ export class CategoryController {
     }
 
     async updateCategory(req: Request, res: Response) {
-        console.log("=== INICIANDO UPDATE DE CATEGORIA ===");
-        console.log("Body recebido:", req.body);
-        console.log("Arquivo (File) recebido:", req.file ? req.file.filename : "NENHUM ARQUIVO");
-
+     
         const id = Number(req.params.id);
         let categoryData = { ...req.body };
 

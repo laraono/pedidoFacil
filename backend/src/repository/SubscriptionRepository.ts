@@ -92,7 +92,11 @@ export class SubscriptionRepository extends Repository<Subscription>{
     }
 
     async updateSubscriptionStatus(subscriptionId: number, status: SubscriptionStatus) {
-        await this.update(subscriptionId, {status})
+        if (status === SubscriptionStatus.PAGA) {
+            await this.update(subscriptionId, {status, lastPayment: new Date(), expirationDate: new Date(new Date().getTime() + (1000 * 60 * 60 * 24 * 30))})
+        } else {
+            await this.update(subscriptionId, {status})
+        }
     }
 
     async updateSubscriptionPrice(subscriptionId: number, price: number) {

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { RoleService } from '../service/RoleService';
 import { catchAsync } from '../middleware/error/catchAsync';
+import { auditLog } from '../utils/logger';
 
 export class RoleController {
     constructor(private roleService: RoleService) {}
@@ -21,6 +22,14 @@ export class RoleController {
         const { id } = req.params;
         const establishmentId = (req as any).usuario.estabelecimento;
         const updated = await this.roleService.updateRole(Number(id), establishmentId, req.body);
+        
+        auditLog('role.updated', {
+            roleId: id,
+            userId: (req as any).usuario.id,
+            establishmentId,
+            changes: req.body,
+        });
+        
         return res.json(updated);
     });
 
@@ -28,6 +37,12 @@ export class RoleController {
         const { id } = req.params;
         const establishmentId = (req as any).usuario.estabelecimento;
         await this.roleService.deleteRole(Number(id), establishmentId);
+        auditLog('role.deleted', {
+            roleId: id,
+            userId: (req as any).usuario.id,
+            establishmentId
+        });
+
         return res.status(204).send();
     });
 }

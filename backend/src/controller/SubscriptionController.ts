@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { SubscriptionService } from '../service/SubscriptionService';
 import { catchAsync } from '../middleware/error/catchAsync';
 import { MercadoPagoService } from '../service';
+import { auditLog } from '../utils/logger';
 
 export class SubscriptionController {
     private subscriptionService: SubscriptionService;
@@ -38,12 +39,16 @@ export class SubscriptionController {
     });
 
     cancelSubcription = catchAsync(async (req, res: Response) => {
-        await this.subscriptionService.cancelSubscription(req.params.subscriptionId);
+        const { subscriptionId } = req.params;
+        await this.subscriptionService.cancelSubscription(subscriptionId);
+        auditLog('subscription.cancelled', { subscriptionId, userId: (req as any).usuario?.id });
         return res.sendStatus(204)
     });
 
     deleteSubcription = catchAsync(async (req, res: Response) => {
-        await this.subscriptionService.deleteSubscription(req.params.subscriptionId);
+        const { subscriptionId } = req.params;
+        await this.subscriptionService.deleteSubscription(subscriptionId);
+        auditLog('subscription.deleted', { subscriptionId, userId: (req as any).usuario?.id });
         return res.sendStatus(204)
     });
 
@@ -54,11 +59,14 @@ export class SubscriptionController {
 
     restoreSubscription  = catchAsync(async (req, res: Response) => {
         await this.subscriptionService.restoreSubscription(req.body, req.params);
+        auditLog('subscription.restored', { subscriptionId: req.params.subscriptionId, userId: (req as any).usuario?.id });
         return res.sendStatus(204);
     });
 
     updateSubscriptionPrice =  catchAsync(async (req, res: Response) => {
-        const result = await this.subscriptionService.updateSubscriptionPrice(req.params.subscriptionId, req.body.amount);
+        const { subscriptionId } = req.params;
+        await this.subscriptionService.updateSubscriptionPrice(subscriptionId, req.body.amount);
+        auditLog('subscription.price_updated', { subscriptionId, amount: req.body.amount, userId: (req as any).usuario?.id });
         return res.sendStatus(204);
     });
 
