@@ -71,6 +71,14 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('user', JSON.stringify(user));
     },
 
+    async forgotPassword(email: string) {
+      return await authApi.forgotPassword(email);
+    },
+
+    async resetPassword(data: any) {
+      return await authApi.resetPassword(data);
+    },
+
     loadSession(): void {
       const token = localStorage.getItem('accessToken');
       const userRaw = localStorage.getItem('user');

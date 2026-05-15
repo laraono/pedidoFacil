@@ -86,4 +86,10 @@ export const authApi = {
   refresh: (): Promise<LoginResponse> => request<LoginResponse>('/refresh', { method: 'POST' }),
 
   me: (): Promise<UserProfile> => request<UserProfile>('/me'),
+
+  forgotPassword: (email: string): Promise<{ success: boolean }> =>
+    request('/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+
+  resetPassword: (data: any): Promise<{ message: string }> =>
+    request('/reset-password', { method: 'POST', body: JSON.stringify(data) }),
 };

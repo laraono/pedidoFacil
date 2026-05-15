@@ -89,4 +89,16 @@ export class AuthController {
         const result = await this.authService.perfil(id, isAdmin === true)
         res.json(result)
     }
+
+    async forgotPassword(req: Request, res: Response) {
+        const { email } = req.body
+        const result = await this.authService.forgotPassword(email)
+        res.json(result)
+    }
+
+    async resetPassword(req: Request, res: Response) {
+        const { token, email, novaSenha } = req.body
+        const result = await this.authService.resetPassword(token, email, novaSenha)
+        res.json(result)
+    }
 }
