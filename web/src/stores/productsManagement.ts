@@ -3,16 +3,6 @@ import { ref, computed } from "vue";
 import { categoryApi } from "@/services/categoryApi";
 import { productApi } from "@/services/productApi";
 
-export interface ProductSize {
-  name: string;
-  price: number;
-}
-
-export interface ProductAddon {
-  name: string;
-  price: number;
-}
-
 export interface Product {
   id: number;
   name: string;
@@ -22,8 +12,7 @@ export interface Product {
   price: number;
   available: boolean;
   deletedAt: string | null;
-  sizes: ProductSize[];
-  addons?: ProductAddon[];
+  sizes: Array<{ name: string; price: number }>;
 }
 
 export interface Category {
@@ -33,26 +22,17 @@ export interface Category {
   deletedAt: string | null;
 }
 
-export interface OperationResult {
-  success: boolean;
-  message?: string;
-}
-
 export const useMenuStore = defineStore("menu", () => {
   const categories = ref<Category[]>([]);
   const products = ref<Product[]>([]);
+  
+  const totalProducts = ref(0);
+  const totalPages = ref(0);
+  const currentPage = ref(1);
 
   const activeCategories = computed(() => categories.value.filter((c) => !c.deletedAt));
-  const activeProducts = computed(() => products.value.filter((p) => !p.deletedAt));
   const deletedCategories = computed(() => categories.value.filter((c) => c.deletedAt));
-  const deletedProducts = computed(() => products.value.filter((p) => p.deletedAt));
-
-  const mapCategory = (c: any): Category => ({
-    id: c.id,
-    name: c.name,
-    image: c.image || null,
-    deletedAt: c.deletedAt,
-  });
+  const activeProducts = computed(() => products.value); 
 
   const mapProduct = (p: any): Product => ({
     id: p.id,
@@ -69,110 +49,102 @@ export const useMenuStore = defineStore("menu", () => {
     })) || [],
   });
 
-  const loadData = async () => {
+  const loadCategories = async () => {
     try {
-      const [catActive, catDeleted, prodActive, prodDeleted] = await Promise.all([
-          categoryApi.list().catch(() => []),
-          categoryApi.listDeleted().catch(() => []),
-          productApi.list().catch(() => []),
-          productApi.listDeleted().catch(() => []),
+      const [active, deleted] = await Promise.all([
+        categoryApi.list(),
+        categoryApi.listDeleted()
       ]);
-
-      categories.value = [...catActive, ...catDeleted].map(mapCategory);
-      products.value = [...prodActive, ...prodDeleted].map(mapProduct);
+      categories.value = [...active, ...deleted];
     } catch (error) {
-      console.error("Erro crítico ao sincronizar cardápio:", error);
+      console.error("Erro ao carregar categorias:", error);
     }
   };
 
-  const addCategory = async (category: Partial<Category>) => {
-    const payload = { name: category.name, image: category.image };
-    await categoryApi.create(payload);
-    await loadData();
-  };
-
-  const updateCategory = async (updatedCategory: Partial<Category> & { id: number }) => {
-    const payload = { name: updatedCategory.name, image: updatedCategory.image };
-    await categoryApi.update(updatedCategory.id, payload);
-    await loadData();
-  };
-
-  const softDeleteCategory = async (id: number): Promise<OperationResult> => {
-    const hasActiveProducts = products.value.some((p) => String(p.categoryId) === String(id) && !p.deletedAt);
-
-    if (hasActiveProducts) {
-      return {
-        success: false,
-        message: "Esta categoria possui produtos ativos. Arquive ou mova os produtos primeiro.",
-      };
+  const loadProducts = async (page = 1, limit = 100, showDeleted = false, search = "") => {
+    try {
+      const response = await productApi.list({ page, limit, deleted: showDeleted, search });
+      products.value = response.products.map(mapProduct);
+      totalProducts.value = response.total;
+      totalPages.value = response.totalPages;
+      currentPage.value = page;
+    } catch (error) {
+      console.error("Erro ao carregar produtos:", error);
+      products.value = [];
     }
+  };
 
-    await categoryApi.delete(id);
-    await loadData();
-    return { success: true };
+  const loadData = async () => {
+    await Promise.all([loadCategories(), loadProducts(1, 100)]);
+  };
+
+  const softDeleteCategory = async (id: number) => {
+    try {
+      await categoryApi.delete(id);
+      await loadCategories();
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, message: error.message };
+    }
   };
 
   const restoreCategory = async (id: number) => {
-    await categoryApi.restore(id);
-    await loadData();
+    try {
+      await categoryApi.restore(id);
+      await loadCategories();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const permanentlyDeleteCategory = (id: number) => {
-    categories.value = categories.value.filter((c) => c.id !== id);
+    categories.value = categories.value.filter(c => c.id !== id);
   };
 
-  const addProduct = async (formDataPayload: any) => {
-    await productApi.create(formDataPayload);
-    await loadData();
+  const addProduct = async (formData: FormData) => {
+    await productApi.create(formData);
+    await loadProducts(currentPage.value); 
   };
-
-  const updateProduct = async (formDataPayload: any) => {
-    const id = formDataPayload.id || (formDataPayload.get ? formDataPayload.get('id') : undefined);
-    
-    if (!id) throw new Error("ID do produto não encontrado na atualização.");
-
-    await productApi.update(id, formDataPayload);
-    await loadData();
+  
+  const updateProduct = async (data: FormData | any) => {
+    let id: number | null = null;
+    if (data instanceof FormData) {
+      id = Number(data.get('id'));
+    } else {
+      id = data.id;
+    }
+    if (!id) throw new Error("ID do produto não encontrado.");
+    await productApi.update(id, data);
+    await loadProducts(currentPage.value);
   };
 
   const softDeleteProduct = async (id: number) => {
     await productApi.delete(id);
-    await loadData();
+    await loadProducts(currentPage.value);
   };
 
   const restoreProduct = async (id: number) => {
     await productApi.restore(id);
-    await loadData();
-  };
-
-  const permanentlyDeleteProduct = (id: number) => {
-    products.value = products.value.filter((p) => p.id !== id);
-  };
-
-  const toggleAvailability = async (productId: number) => {
-    const product = products.value.find((p) => p.id === productId);
-    if (product) {
-      const newStatus = !product.available;
-      await productApi.update(productId, { status: newStatus ? "Ativo" : "Inativo" });
-      await loadData();
-    }
+    await loadProducts(currentPage.value);
   };
 
   const getCategoryName = (id: number): string => {
-    const cat = categories.value.find((c) => String(c.id) === String(id));
+    const cat = categories.value.find((c) => Number(c.id) === Number(id));
     return cat ? cat.name : "Sem categoria";
   };
 
   return {
     categories,
     products,
+    totalProducts,
+    totalPages,
+    currentPage,
     activeCategories,
-    activeProducts,
     deletedCategories,
-    deletedProducts,
+    activeProducts,
+    loadCategories,
+    loadProducts,
     loadData,
-    addCategory,
-    updateCategory,
     softDeleteCategory,
     restoreCategory,
     permanentlyDeleteCategory,
@@ -180,8 +152,6 @@ export const useMenuStore = defineStore("menu", () => {
     updateProduct,
     softDeleteProduct,
     restoreProduct,
-    permanentlyDeleteProduct,
-    getCategoryName,
-    toggleAvailability,
+    getCategoryName
   };
 });
