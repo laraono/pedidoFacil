@@ -27,16 +27,18 @@ export class ProductService {
             throw new AppError('Categoria não existe', 400)
         }
 
-        const createdProduct = await this.productRepository.createProduct({
+        const result: any = await this.productRepository.createProduct({
             ...product,
             category: category
         } as any) 
+
+        const createdProduct = Array.isArray(result) ? result[0] : result;
 
         if (createdProduct && productVariations) { 
             for (const variation of productVariations) {
                 await this.productVariationRepository.createProductVariation({
                     ...variation,
-                    product: createdProduct,
+                    product: { id: createdProduct.id },
                     status: 'Ativo'
                 } as any)
             }
@@ -45,16 +47,16 @@ export class ProductService {
         return createdProduct.id
     }
 
-    async listProducts(establishmentId: number) {
-        return await this.productRepository.listProducts(establishmentId);
+    async listProducts(establishmentId: number, page: number = 1, limit: number = 10) {
+        return await this.productRepository.listProducts(establishmentId, page, limit);
     }
 
-    async listProductsByCategory(categoryId: number, establishmentId: number) {
-        return await this.productRepository.listProductsByCategory(categoryId, establishmentId);
+    async listProductsByCategory(categoryId: number, establishmentId: number, page: number = 1, limit: number = 10) {
+        return await this.productRepository.listProductsByCategory(categoryId, establishmentId, page, limit);
     }
 
-    async listDeletedProducts(establishmentId: number) {
-        return await this.productRepository.listDeletedProducts(establishmentId);
+    async listDeletedProducts(establishmentId: number, page: number = 1, limit: number = 10) {
+        return await this.productRepository.listDeletedProducts(establishmentId, page, limit);
     }
  
     async getProduct(productId: number) {
