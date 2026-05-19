@@ -6,7 +6,6 @@ import {
 import type { Component } from 'vue';
 import { PERMISSIONS, type Permission } from '@/utils/permissions';
 
-// Importação das imagens para os Cards do Dashboard
 import establishmentImage from '@/assets/estabelecimento.png';
 import rolesImage from '@/assets/cargos.png';
 import menuImage from '@/assets/atendimento1.png';
@@ -184,7 +183,7 @@ export const adminMenuItems: AdminMenuItem[] = [
     label: 'Planos',
     route: '/app/admin/plans',
     icon: Package,
-    description: 'CRUD de planos (máx. 2).',
+    description: 'CRUD de planos.',
     callToAction: 'Gerenciar Planos',
     adminOnly: true
   },
