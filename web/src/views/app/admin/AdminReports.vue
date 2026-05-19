@@ -22,7 +22,6 @@ const allSubs = computed(() => subscriptionStore.adminSubscriptions);
 const metrics = computed(() => subscriptionStore.adminMetrics);
 const isLoading = computed(() => subscriptionStore.adminDataLoading);
 
-// KPIs — prefer the dedicated metrics endpoint when available
 const totalActive = computed(() =>
   metrics.value ? metrics.value.totalAtivas : allSubs.value.filter(s => s.status === 'ativo').length
 );
@@ -33,7 +32,6 @@ const totalMRR = computed(() =>
     .reduce((acc, s) => acc + s.amount, 0)
 );
 
-// Plan distribution from metrics.porPlano when available
 const totalAnnual = computed(() => {
   if (metrics.value?.porPlano?.length) {
     return metrics.value.porPlano
@@ -62,7 +60,6 @@ const avgUsers = computed(() => {
   return Math.round(active.reduce((a, s) => a + s.users, 0) / active.length);
 });
 
-// Monthly revenue chart — use novosPorMes from metrics if available, otherwise a simple flat line
 const monthlyRevenue = computed(() => {
   if (metrics.value?.novosPorMes?.length) {
     return metrics.value.novosPorMes.map(row => {
@@ -79,7 +76,6 @@ const monthlyRevenue = computed(() => {
 const maxRevenue = computed(() => Math.max(...monthlyRevenue.value.map(d => d.value), 1));
 const revenueHeight = (val) => isLoaded.value ? `${(val / maxRevenue.value) * 100}%` : '4%';
 
-// Plan distribution percentages
 const planShare = computed(() => {
   const total = (totalAnnual.value + totalMonthly.value) || 1;
   return {
@@ -88,14 +84,12 @@ const planShare = computed(() => {
   };
 });
 
-// Ticket médio por plano from porPlano metrics
 const ticketAnual = computed(() => {
   if (!metrics.value?.porPlano?.length) return null;
   const anualPlan = metrics.value.porPlano.find(p => p.planName?.toLowerCase().includes('anual'));
-  return anualPlan ? null : null; // price comes from the subscription amount
+  return anualPlan ? null : null;
 });
 
-// Per-establishment table sorted by users
 const establishmentData = computed(() =>
   [...allSubs.value]
     .filter(s => s.status === 'ativo')
@@ -104,7 +98,6 @@ const establishmentData = computed(() =>
 
 const maxUsers = computed(() => Math.max(...establishmentData.value.map(e => e.users), 1));
 
-// Label helper for plan column
 const planLabel = (sub) => {
   const freq = String(sub.planFrequency ?? sub.plan ?? '').toLowerCase();
   if (freq.includes('anual')) return 'anual';
@@ -314,7 +307,6 @@ const handleExport = () => window.print();
 
   </main>
 
-  <!-- Layout de impressão -->
   <div class="admin-print-root" style="font-family: Inter, Arial, sans-serif; color: #111; background: white; padding: 0;">
     <div style="border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
       <div>
