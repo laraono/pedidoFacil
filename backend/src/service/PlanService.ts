@@ -33,13 +33,11 @@ export class PlanService {
 
     async listPlans() {
         const plans = await this.planRepository.listPlans()
-
         return plans
     }
 
     async getPlan(planId: number) {
         const plan = await this.planRepository.getPlan(planId)
-
         return plan
     }
 

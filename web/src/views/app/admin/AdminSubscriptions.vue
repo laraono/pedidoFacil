@@ -1,197 +1,193 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useSubscriptionStore } from '@/stores/subscriptions';
+import { useToast } from '@/composables/useToast';
 import {
   ArrowLeft, ShieldAlert, Users, CheckCircle2, AlertTriangle,
-  XCircle, Search, Calendar, CreditCard, UserCircle, X, Mail, Phone, MapPin, DollarSign, Save
+  XCircle, Search, Calendar, CreditCard, UserCircle, X,
+  Mail, DollarSign, Package, BarChart3, ClipboardList, Settings
 } from 'lucide-vue-next';
+import { adminSubscriptionApi } from '@/services/adminApi';
 
 const router = useRouter();
-const subscriptionStore = useSubscriptionStore();
+const { showToast } = useToast();
 
-const editingPrices = ref(false);
-const priceForm = ref({ monthly: subscriptionStore.planPrices.monthly, annual: subscriptionStore.planPrices.annual });
-const applyPriceMaskAdmin = (raw) => {
-  let val = String(raw).replace(/[^\d,]/g, '');
-  const ci = val.indexOf(',');
-  if (ci !== -1) { val = val.slice(0, ci + 1) + val.slice(ci + 1).replace(/,/g, ''); val = val.slice(0, ci + 3); }
-  const parts = val.split(','); parts[0] = parts[0].replace(/^0+(\d)/, '$1'); return parts.join(',');
-};
-const onPriceFormInput = (field, e) => { priceForm.value[field] = applyPriceMaskAdmin(e.target.value); };
-const savePlanPrices = () => {
-  const monthly = parseFloat(String(priceForm.value.monthly).replace(',', '.'));
-  const annual = parseFloat(String(priceForm.value.annual).replace(',', '.'));
-  if (isNaN(monthly) || monthly <= 0 || isNaN(annual) || annual <= 0) return;
-  subscriptionStore.updatePlanPrices({ monthly, annual });
-  editingPrices.value = false;
-};
-
+const subscriptions = ref([]);
+const loading = ref(true);
 const search = ref('');
 const filterStatus = ref('todos');
+const selectedSub = ref(null);
+const editingPrice = ref(false);
+const newPrice = ref('');
+const savingPrice = ref(false);
 
-const selectedManager = ref(null);
-const openManagerModal = (sub) => { selectedManager.value = sub; };
-const closeManagerModal = () => { selectedManager.value = null; };
+async function load() {
+  loading.value = true;
+  try {
+    subscriptions.value = await adminSubscriptionApi.list();
+  } catch (e) {
+    showToast('Erro ao carregar assinaturas.', 'error');
+  } finally {
+    loading.value = false;
+  }
+}
 
-const allSubs = computed(() => subscriptionStore.adminSubscriptions);
+onMounted(load);
 
 const filtered = computed(() => {
-  return allSubs.value.filter(s => {
+  return subscriptions.value.filter(s => {
     const matchSearch = !search.value ||
-      s.establishment.toLowerCase().includes(search.value.toLowerCase()) ||
-      s.manager.toLowerCase().includes(search.value.toLowerCase());
-    const matchStatus = filterStatus.value === 'todos' || s.status === filterStatus.value;
+      s.establishment?.name?.toLowerCase().includes(search.value.toLowerCase()) ||
+      s.establishment?.users?.some(u => u.name?.toLowerCase().includes(search.value.toLowerCase()));
+    const matchStatus = filterStatus.value === 'todos' || s.status?.toLowerCase() === filterStatus.value;
     return matchSearch && matchStatus;
   });
 });
 
 const counts = computed(() => ({
-  total: allSubs.value.length,
-  ativo: allSubs.value.filter(s => s.status === 'ativo').length,
-  expirado: allSubs.value.filter(s => s.status === 'expirado').length,
-  desativado: allSubs.value.filter(s => s.status === 'desativado').length,
-  anual: allSubs.value.filter(s => s.plan === 'anual').length,
-  mensal: allSubs.value.filter(s => s.plan === 'mensal').length,
+  total: subscriptions.value.length,
+  paga: subscriptions.value.filter(s => s.status === 'Paga').length,
+  pendente: subscriptions.value.filter(s => s.status === 'Pendente').length,
+  cancelada: subscriptions.value.filter(s => s.status === 'Cancelada').length,
+  expirada: subscriptions.value.filter(s => s.status === 'Expirada').length,
 }));
 
-const statusConfig = (status) => {
-  if (status === 'ativo') return { label: 'Ativa', icon: CheckCircle2, color: 'text-accent', bg: 'bg-accent-light border-accent/25' };
-  if (status === 'expirado') return { label: 'Expirada', icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/25' };
-  return { label: 'Desativada', icon: XCircle, color: 'text-[#757575]', bg: 'bg-gray-200/20 border-[#E0E0E0]' };
+const getManager = (sub) => {
+  const users = sub.establishment?.users || [];
+  return users.find(u => u.role?.name?.toLowerCase().includes('gerente')) || users[0] || null;
 };
 
-const formatDate = (d) =>
-  new Date(d + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+function statusConfig(status) {
+  const s = (status || '').toLowerCase();
+  if (s === 'paga') return { label: 'Paga', icon: CheckCircle2, color: 'text-accent', bg: 'bg-accent-light border-accent/25' };
+  if (s === 'pendente') return { label: 'Pendente', icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/25' };
+  if (s === 'cancelada') return { label: 'Cancelada', icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' };
+  return { label: 'Expirada', icon: AlertTriangle, color: 'text-[#757575]', bg: 'bg-gray-200/20 border-[#E0E0E0]' };
+}
+
+const formatDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+const formatCurrency = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+function openDetail(sub) {
+  selectedSub.value = sub;
+  editingPrice.value = false;
+  newPrice.value = '';
+}
+
+async function cancelSub(sub) {
+  if (!confirm(`Cancelar assinatura do estabelecimento "${sub.establishment?.name}"?`)) return;
+  try {
+    await adminSubscriptionApi.cancel(sub.id);
+    showToast('Assinatura cancelada.', 'success');
+    await load();
+    if (selectedSub.value?.id === sub.id) selectedSub.value = null;
+  } catch {
+    showToast('Erro ao cancelar assinatura.', 'error');
+  }
+}
+
+async function deleteSub(sub) {
+  if (!confirm(`Deletar assinatura? Esta ação é irreversível.`)) return;
+  try {
+    await adminSubscriptionApi.delete(sub.id);
+    showToast('Assinatura removida.', 'success');
+    await load();
+    if (selectedSub.value?.id === sub.id) selectedSub.value = null;
+  } catch {
+    showToast('Erro ao remover assinatura.', 'error');
+  }
+}
+
+async function savePrice() {
+  const amount = parseFloat(String(newPrice.value).replace(',', '.'));
+  if (!amount || amount <= 0) { showToast('Valor inválido.', 'error'); return; }
+  savingPrice.value = true;
+  try {
+    await adminSubscriptionApi.updatePrice(selectedSub.value.id, amount);
+    showToast('Valor atualizado!', 'success');
+    editingPrice.value = false;
+    await load();
+    selectedSub.value = subscriptions.value.find(s => s.id === selectedSub.value.id) || null;
+  } catch {
+    showToast('Erro ao atualizar valor.', 'error');
+  } finally {
+    savingPrice.value = false;
+  }
+}
 </script>
 
 <template>
   <main class="max-w-7xl mx-auto py-12 px-6 font-inter">
 
-    <!-- Header -->
-    <header class="flex items-center gap-4 mb-10">
-      <button @click="router.push('/app/dashboard')" class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] transition-colors">
-        <ArrowLeft :size="20" />
-      </button>
-      <div>
-        <div class="flex items-center gap-2 mb-1">
-          <ShieldAlert :size="16" class="text-accent" />
-          <span class="text-xs font-black text-accent uppercase tracking-widest">Painel Admin</span>
+    <header class="flex items-center justify-between gap-4 mb-10 flex-wrap">
+      <div class="flex items-center gap-4">
+        <button @click="router.push('/app/dashboard')" class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] transition-colors">
+          <ArrowLeft :size="20" />
+        </button>
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <ShieldAlert :size="16" class="text-accent" />
+            <span class="text-xs font-black text-accent uppercase tracking-widest">Painel Admin</span>
+          </div>
+          <h1 class="text-3xl font-black text-[#212121]">Assinaturas</h1>
+          <p class="text-[#757575] text-sm">Controle de todos os gerentes e seus planos</p>
         </div>
-        <h1 class="text-3xl font-black text-[#212121]">Assinaturas</h1>
-        <p class="text-[#757575] text-sm">Controle de todos os gerentes e seus planos</p>
+      </div>
+      <div class="flex gap-3 flex-wrap">
+        <button @click="router.push('/app/admin/plans')" class="flex items-center gap-2 px-4 py-2.5 border border-[#E0E0E0] bg-white text-[#757575] font-black rounded text-sm hover:text-[#212121] hover:border-primary/30 transition-all">
+          <Package :size="15" /> Planos
+        </button>
+        <button @click="router.push('/app/admin/users')" class="flex items-center gap-2 px-4 py-2.5 border border-[#E0E0E0] bg-white text-[#757575] font-black rounded text-sm hover:text-[#212121] hover:border-primary/30 transition-all">
+          <Settings :size="15" /> Admins
+        </button>
+        <button @click="router.push('/app/admin/metrics')" class="flex items-center gap-2 px-4 py-2.5 bg-primary text-white font-black rounded text-sm hover:bg-primary-dark transition-all">
+          <BarChart3 :size="15" /> Métricas
+        </button>
       </div>
     </header>
 
-    <!-- Plan price editor -->
-    <div class="bg-white border border-[#E0E0E0] rounded p-6 mb-8">
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-3">
-          <div class="p-2 bg-accent-light border border-accent/30 rounded">
-            <DollarSign :size="16" class="text-accent" />
-          </div>
-          <div>
-            <p class="text-[#212121] font-black text-sm">Preços dos Planos</p>
-            <p class="text-[#757575] text-xs">Atualiza Landing Page e telas de assinatura dos gerentes</p>
-          </div>
-        </div>
-        <button v-if="!editingPrices" @click="editingPrices = true; priceForm = { monthly: String(subscriptionStore.planPrices.monthly).replace('.', ','), annual: String(subscriptionStore.planPrices.annual).replace('.', ',') }"
-          class="px-4 py-2 rounded text-xs font-black border border-[#E0E0E0] bg-gray-50 text-[#757575] hover:text-[#212121] hover:border-[#E0E0E0] transition-all">
-          Editar
-        </button>
-      </div>
-      <div class="flex flex-wrap gap-4">
-        <template v-if="!editingPrices">
-          <div class="flex-1 min-w-[120px] bg-gray-50 rounded p-4 text-center border border-[#E0E0E0]">
-            <p class="text-[10px] font-black uppercase tracking-widest text-[#757575] mb-1">Mensal</p>
-            <p class="text-2xl font-black text-[#212121]">R$ {{ subscriptionStore.planPrices.monthly.toFixed(2).replace('.', ',') }}</p>
-            <p class="text-[10px] text-[#757575] mt-0.5">/mês</p>
-          </div>
-          <div class="flex-1 min-w-[120px] bg-gray-50 rounded p-4 text-center border border-[#E0E0E0]">
-            <p class="text-[10px] font-black uppercase tracking-widest text-[#757575] mb-1">Anual</p>
-            <p class="text-2xl font-black text-accent">R$ {{ subscriptionStore.planPrices.annual.toFixed(2).replace('.', ',') }}</p>
-            <p class="text-[10px] text-[#757575] mt-0.5">/mês</p>
-          </div>
-        </template>
-        <template v-else>
-          <div class="flex flex-wrap gap-3 flex-1 items-end">
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-1">Plano Mensal (R$)</label>
-              <input :value="priceForm.monthly" @input="onPriceFormInput('monthly', $event)" inputmode="numeric"
-                class="py-2.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] text-sm focus:outline-none focus:border-primary/50 w-36" />
-            </div>
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-1">Plano Anual (R$)</label>
-              <input :value="priceForm.annual" @input="onPriceFormInput('annual', $event)" inputmode="numeric"
-                class="py-2.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] text-sm focus:outline-none focus:border-primary/50 w-36" />
-            </div>
-            <div class="flex gap-2">
-              <button @click="editingPrices = false" class="py-2.5 px-4 rounded text-[#757575] font-bold text-sm border border-[#E0E0E0] hover:bg-gray-50 transition-colors">Cancelar</button>
-              <button @click="savePlanPrices" class="py-2.5 px-5 rounded bg-primary text-white font-black text-sm hover:opacity-90 flex items-center gap-2">
-                <Save :size="14" /> Salvar
-              </button>
-            </div>
-          </div>
-        </template>
-      </div>
-    </div>
-
-    <!-- KPI cards -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-      <div class="bg-white border border-[#E0E0E0] rounded p-4 text-center">
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
+      <div class="bg-white border border-[#E0E0E0] rounded-xl p-4 text-center cursor-pointer" @click="filterStatus = 'todos'">
         <p class="text-3xl font-black text-[#212121]">{{ counts.total }}</p>
         <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mt-1">Total</p>
       </div>
-      <div class="bg-accent-light border border-accent/30 rounded p-4 text-center cursor-pointer hover:bg-primary-dark/10 transition-colors" @click="filterStatus = 'ativo'">
-        <p class="text-3xl font-black text-accent">{{ counts.ativo }}</p>
-        <p class="text-[10px] font-black text-accent/60 uppercase tracking-widest mt-1">Ativas</p>
+      <div class="bg-accent-light border border-accent/30 rounded-xl p-4 text-center cursor-pointer hover:bg-primary-dark/10 transition-colors" @click="filterStatus = 'paga'">
+        <p class="text-3xl font-black text-accent">{{ counts.paga }}</p>
+        <p class="text-[10px] font-black text-accent/60 uppercase tracking-widest mt-1">Pagas</p>
       </div>
-      <div class="bg-amber-500/5 border border-amber-500/20 rounded p-4 text-center cursor-pointer hover:bg-amber-500/10 transition-colors" @click="filterStatus = 'expirado'">
-        <p class="text-3xl font-black text-amber-400">{{ counts.expirado }}</p>
-        <p class="text-[10px] font-black text-amber-400/60 uppercase tracking-widest mt-1">Expiradas</p>
+      <div class="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 text-center cursor-pointer hover:bg-amber-500/10 transition-colors" @click="filterStatus = 'pendente'">
+        <p class="text-3xl font-black text-amber-400">{{ counts.pendente }}</p>
+        <p class="text-[10px] font-black text-amber-400/60 uppercase tracking-widest mt-1">Pendentes</p>
       </div>
-      <div class="bg-gray-50/50 border border-[#E0E0E0]/30 rounded p-4 text-center cursor-pointer hover:bg-gray-200/30 transition-colors" @click="filterStatus = 'desativado'">
-        <p class="text-3xl font-black text-[#757575]">{{ counts.desativado }}</p>
-        <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mt-1">Desativadas</p>
+      <div class="bg-red-500/5 border border-red-500/20 rounded-xl p-4 text-center cursor-pointer hover:bg-red-500/10 transition-colors" @click="filterStatus = 'cancelada'">
+        <p class="text-3xl font-black text-red-400">{{ counts.cancelada }}</p>
+        <p class="text-[10px] font-black text-red-400/60 uppercase tracking-widest mt-1">Canceladas</p>
       </div>
-      <div class="bg-primary/5 border border-primary/20 rounded p-4 text-center">
-        <p class="text-3xl font-black text-purple-400">{{ counts.anual }}</p>
-        <p class="text-[10px] font-black text-purple-400/60 uppercase tracking-widest mt-1">Anuais</p>
-      </div>
-      <div class="bg-blue-500/5 border border-blue-500/20 rounded p-4 text-center">
-        <p class="text-3xl font-black text-blue-400">{{ counts.mensal }}</p>
-        <p class="text-[10px] font-black text-blue-400/60 uppercase tracking-widest mt-1">Mensais</p>
+      <div class="bg-gray-50 border border-[#E0E0E0] rounded-xl p-4 text-center cursor-pointer hover:bg-gray-100 transition-colors" @click="filterStatus = 'expirada'">
+        <p class="text-3xl font-black text-[#757575]">{{ counts.expirada }}</p>
+        <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mt-1">Expiradas</p>
       </div>
     </div>
 
-    <!-- Filters -->
     <div class="flex flex-col sm:flex-row gap-3 mb-6">
       <div class="relative flex-1">
         <Search :size="16" class="absolute left-4 top-1/2 -translate-y-1/2 text-[#757575]" />
-        <input
-          v-model="search"
-          type="text"
-          placeholder="Buscar por estabelecimento ou gerente..."
-          class="w-full bg-white border border-[#E0E0E0] rounded pl-10 pr-4 py-3 text-sm text-[#212121] outline-none focus:border-primary/40 placeholder:text-[#757575]"
-        />
+        <input v-model="search" type="text" placeholder="Buscar por estabelecimento ou gerente..."
+          class="w-full bg-white border border-[#E0E0E0] rounded pl-10 pr-4 py-3 text-sm text-[#212121] outline-none focus:border-primary/40 placeholder:text-[#757575]" />
       </div>
-      <div class="flex gap-2">
-        <button
-          v-for="opt in [{ v: 'todos', l: 'Todos' }, { v: 'ativo', l: 'Ativas' }, { v: 'expirado', l: 'Expiradas' }, { v: 'desativado', l: 'Desativadas' }]"
-          :key="opt.v"
-          @click="filterStatus = opt.v"
-          :class="filterStatus === opt.v
-            ? 'bg-primary text-[#212121] border-accent'
-            : 'bg-gray-50 text-[#757575] border-[#E0E0E0] hover:border-[#E0E0E0]'"
-          class="px-4 py-2 rounded border text-xs font-black uppercase tracking-wider transition-all"
-        >
+      <div class="flex gap-2 flex-wrap">
+        <button v-for="opt in [{ v: 'todos', l: 'Todos' }, { v: 'paga', l: 'Pagas' }, { v: 'pendente', l: 'Pendentes' }, { v: 'cancelada', l: 'Canceladas' }]"
+          :key="opt.v" @click="filterStatus = opt.v"
+          :class="filterStatus === opt.v ? 'bg-primary text-white border-primary' : 'bg-gray-50 text-[#757575] border-[#E0E0E0]'"
+          class="px-4 py-2 rounded border text-xs font-black uppercase tracking-wider transition-all">
           {{ opt.l }}
         </button>
       </div>
     </div>
 
-    <!-- Table -->
-    <div class="bg-white border border-[#E0E0E0] rounded overflow-hidden">
+    <div v-if="loading" class="py-20 text-center text-[#757575]">Carregando...</div>
+
+    <div v-else class="bg-white border border-[#E0E0E0] rounded-xl overflow-hidden">
       <table class="w-full">
         <thead>
           <tr class="border-b border-[#E0E0E0] bg-gray-100">
@@ -201,148 +197,146 @@ const formatDate = (d) =>
             <th class="text-left px-4 py-4 text-[10px] font-black uppercase tracking-widest text-[#757575]">Status</th>
             <th class="text-left px-4 py-4 text-[10px] font-black uppercase tracking-widest text-[#757575] hidden lg:table-cell">Vencimento</th>
             <th class="text-right px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[#757575] hidden sm:table-cell">Valor</th>
-            <th class="text-right px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[#757575] hidden lg:table-cell">Usuários</th>
             <th class="px-4 py-4"></th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-white/5">
+        <tbody class="divide-y divide-[#E0E0E0]">
           <tr v-for="sub in filtered" :key="sub.id" class="hover:bg-gray-50 transition-colors">
             <td class="px-6 py-4">
-              <span class="font-bold text-[#212121] text-sm">{{ sub.establishment }}</span>
+              <span class="font-bold text-[#212121] text-sm">{{ sub.establishment?.name || '—' }}</span>
             </td>
             <td class="px-4 py-4 hidden md:table-cell">
-              <span class="text-[#757575] text-sm">{{ sub.manager }}</span>
+              <span class="text-[#757575] text-sm">{{ getManager(sub)?.name || '—' }}</span>
             </td>
             <td class="px-4 py-4">
-              <span
-                class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border"
-                :class="sub.plan === 'anual'
-                  ? 'text-purple-400 bg-primary/10 border-primary/20'
-                  : 'text-blue-400 bg-blue-500/10 border-blue-500/20'"
-              >
-                {{ sub.plan }}
+              <span class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border text-blue-400 bg-blue-500/10 border-blue-500/20">
+                {{ sub.plan?.name || '—' }}
               </span>
             </td>
             <td class="px-4 py-4">
-              <div
-                class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border"
-                :class="statusConfig(sub.status).bg + ' ' + statusConfig(sub.status).color"
-              >
+              <div class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border"
+                :class="statusConfig(sub.status).bg + ' ' + statusConfig(sub.status).color">
                 <component :is="statusConfig(sub.status).icon" :size="10" />
                 {{ statusConfig(sub.status).label }}
               </div>
             </td>
             <td class="px-4 py-4 hidden lg:table-cell">
               <div class="flex items-center gap-1.5 text-sm text-[#757575]">
-                <Calendar :size="13" class="text-[#757575]" />
-                {{ formatDate(sub.nextDueDate) }}
+                <Calendar :size="13" /> {{ formatDate(sub.expirationDate) }}
               </div>
             </td>
             <td class="px-6 py-4 text-right hidden sm:table-cell">
-              <span class="text-sm font-black text-[#212121]">
-                {{ sub.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
-              </span>
-              <span class="text-[10px] text-[#757575] block">/mês</span>
-            </td>
-            <td class="px-6 py-4 text-right hidden lg:table-cell">
-              <div class="flex items-center justify-end gap-1.5 text-[#757575] text-sm">
-                <Users :size="13" class="text-[#757575]" />
-                {{ sub.users }}
-              </div>
+              <span class="text-sm font-black text-[#212121]">{{ formatCurrency(sub.price || sub.plan?.price) }}</span>
             </td>
             <td class="px-4 py-4">
-              <button
-                @click="openManagerModal(sub)"
-                class="p-2 rounded text-[#757575] hover:text-accent hover:bg-primary-dark/10 transition-all"
-                title="Ver dados do gerente"
-              >
+              <button @click="openDetail(sub)" class="p-2 rounded text-[#757575] hover:text-accent hover:bg-primary-dark/10 transition-all" title="Ver detalhes">
                 <UserCircle :size="18" />
               </button>
             </td>
           </tr>
-
-          <tr v-if="filtered.length === 0">
+          <tr v-if="!filtered.length">
             <td colspan="7" class="px-6 py-16 text-center">
-              <CreditCard :size="32" class="mx-auto mb-3 text-[#757575]" />
+              <CreditCard :size="32" class="mx-auto mb-3 text-[#757575] opacity-30" />
               <p class="text-[#757575] text-sm font-bold">Nenhuma assinatura encontrada</p>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-
   </main>
 
-  <!-- Manager contact modal -->
   <Teleport to="body">
     <Transition name="fade">
-      <div v-if="selectedManager" class="fixed inset-0 bg-black/50  z-[100] flex items-center justify-center p-4">
-        <div class="bg-white border border-[#E0E0E0] w-full max-w-md rounded shadow-2xl">
-          <div class="p-8 border-b border-[#E0E0E0] flex justify-between items-center bg-gray-100">
+      <div v-if="selectedSub" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white border border-[#E0E0E0] w-full max-w-lg rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div class="p-6 border-b border-[#E0E0E0] flex justify-between items-center bg-gray-50 sticky top-0">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded bg-accent-light border border-accent/30 flex items-center justify-center">
-                <UserCircle :size="20" class="text-accent" />
+                <ClipboardList :size="18" class="text-accent" />
               </div>
               <div>
-                <h2 class="text-lg font-black text-[#212121]">Dados do Gerente</h2>
-                <p class="text-xs text-[#757575]">{{ selectedManager.establishment }}</p>
+                <h2 class="text-lg font-black text-[#212121]">Detalhes da Assinatura</h2>
+                <p class="text-xs text-[#757575]">{{ selectedSub.establishment?.name }}</p>
               </div>
             </div>
-            <button @click="closeManagerModal" class="p-2 text-[#757575] hover:text-[#212121] transition-colors">
-              <X :size="20" />
-            </button>
+            <button @click="selectedSub = null" class="p-2 text-[#757575] hover:text-[#212121]"><X :size="20" /></button>
           </div>
 
-          <div class="p-8 space-y-4">
-            <div class="flex items-center gap-3 p-4 bg-gray-50 rounded">
-              <UserCircle :size="16" class="text-[#757575] shrink-0" />
-              <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-[#757575] mb-0.5">Nome</p>
-                <p class="text-sm font-bold text-[#212121]">{{ selectedManager.manager }}</p>
+          <div class="p-6 space-y-4">
+            <div class="p-4 bg-gray-50 rounded-lg border border-[#E0E0E0]">
+              <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mb-3">Gerente Responsável</p>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <UserCircle :size="15" class="text-[#757575]" />
+                  <span class="text-sm font-bold text-[#212121]">{{ getManager(selectedSub)?.name || '—' }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <Mail :size="15" class="text-[#757575]" />
+                  <span class="text-sm text-[#757575]">{{ getManager(selectedSub)?.email || '—' }}</span>
+                </div>
               </div>
             </div>
 
-            <div class="flex items-center gap-3 p-4 bg-gray-50 rounded">
-              <Mail :size="16" class="text-[#757575] shrink-0" />
-              <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-[#757575] mb-0.5">E-mail</p>
-                <p class="text-sm font-bold text-[#212121]">{{ selectedManager.email || 'Não informado' }}</p>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="p-4 bg-gray-50 rounded-lg border border-[#E0E0E0]">
+                <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mb-2">Status</p>
+                <div class="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider px-2.5 py-1 rounded border"
+                  :class="statusConfig(selectedSub.status).bg + ' ' + statusConfig(selectedSub.status).color">
+                  {{ statusConfig(selectedSub.status).label }}
+                </div>
+              </div>
+              <div class="p-4 bg-gray-50 rounded-lg border border-[#E0E0E0]">
+                <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mb-2">Plano</p>
+                <span class="text-sm font-black text-[#212121]">{{ selectedSub.plan?.name || '—' }}</span>
               </div>
             </div>
 
-            <div class="flex items-center gap-3 p-4 bg-gray-50 rounded">
-              <Phone :size="16" class="text-[#757575] shrink-0" />
-              <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-[#757575] mb-0.5">Telefone</p>
-                <p class="text-sm font-bold text-[#212121]">{{ selectedManager.phone || 'Não informado' }}</p>
+            <div class="p-4 bg-gray-50 rounded-lg border border-[#E0E0E0]">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest">Valor da Assinatura</p>
+                <button v-if="!editingPrice" @click="editingPrice = true; newPrice = String(selectedSub.price || selectedSub.plan?.price || '').replace('.', ',')"
+                  class="text-[10px] font-black text-primary uppercase tracking-wider hover:underline">Editar</button>
+              </div>
+              <div v-if="!editingPrice">
+                <span class="text-2xl font-black text-[#212121]">{{ formatCurrency(selectedSub.price || selectedSub.plan?.price) }}</span>
+                <span class="text-[#757575] text-sm ml-1">/mês</span>
+              </div>
+              <div v-else class="flex gap-2">
+                <div class="relative flex-1">
+                  <DollarSign :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-[#757575]" />
+                  <input v-model="newPrice" type="text" inputmode="decimal" placeholder="79,90"
+                    class="w-full bg-white border border-[#E0E0E0] rounded pl-8 pr-3 py-2 text-sm text-[#212121] outline-none focus:border-primary/40" />
+                </div>
+                <button @click="savePrice" :disabled="savingPrice" class="px-4 py-2 bg-primary text-white font-black rounded text-sm hover:bg-primary-dark disabled:opacity-50">
+                  {{ savingPrice ? '...' : 'Salvar' }}
+                </button>
+                <button @click="editingPrice = false" class="px-3 py-2 text-[#757575] font-bold rounded border border-[#E0E0E0] text-sm hover:bg-gray-50">
+                  <X :size="14" />
+                </button>
               </div>
             </div>
 
-            <div class="flex items-center gap-3 p-4 bg-gray-50 rounded">
-              <CreditCard :size="16" class="text-[#757575] shrink-0" />
-              <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-[#757575] mb-0.5">Plano / Valor</p>
-                <p class="text-sm font-bold text-[#212121] capitalize">
-                  {{ selectedManager.plan }} —
-                  {{ selectedManager.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}/mês
-                </p>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="p-4 bg-gray-50 rounded-lg border border-[#E0E0E0]">
+                <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mb-2">Início</p>
+                <span class="text-sm font-bold text-[#212121]">{{ formatDate(selectedSub.initialDate) }}</span>
+              </div>
+              <div class="p-4 bg-gray-50 rounded-lg border border-[#E0E0E0]">
+                <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mb-2">Vencimento</p>
+                <span class="text-sm font-bold text-[#212121]">{{ formatDate(selectedSub.expirationDate) }}</span>
               </div>
             </div>
 
-            <div class="flex items-center gap-3 p-4 bg-gray-50 rounded">
-              <Calendar :size="16" class="text-[#757575] shrink-0" />
-              <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-[#757575] mb-0.5">Próximo Vencimento</p>
-                <p class="text-sm font-bold text-[#212121]">{{ formatDate(selectedManager.nextDueDate) }}</p>
-              </div>
+            <div class="flex gap-3 pt-2">
+              <button v-if="selectedSub.status !== 'Cancelada'" @click="cancelSub(selectedSub)"
+                class="flex-1 py-2.5 rounded-lg border border-amber-300 text-amber-600 font-black text-sm hover:bg-amber-50 transition-colors">
+                Cancelar Assinatura
+              </button>
+              <button @click="deleteSub(selectedSub)"
+                class="flex-1 py-2.5 rounded-lg border border-red-300 text-red-500 font-black text-sm hover:bg-red-50 transition-colors">
+                Deletar
+              </button>
             </div>
-          </div>
-
-          <div class="p-8 pt-0">
-            <button @click="closeManagerModal"
-              class="w-full py-3 rounded text-[#757575] font-bold hover:bg-gray-50 transition-colors">
-              Fechar
-            </button>
           </div>
         </div>
       </div>

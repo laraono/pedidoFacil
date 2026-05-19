@@ -1,4 +1,4 @@
-import { 
+import {
     authService, 
     categoryService, 
     comandaService, 
@@ -90,3 +90,4 @@ export {
 }
 
 export { loginLimiter } from './AuthController'
+export { AdminController } from './AdminController'

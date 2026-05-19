@@ -171,7 +171,6 @@ export const allMenuItems: MenuItem[] = [
   },
 ];
 
-// Itens exclusivos do painel Admin (não filtrados por permission, mas por isAdmin)
 export const adminMenuItems: AdminMenuItem[] = [
   {
     label: 'Assinaturas',
@@ -182,11 +181,19 @@ export const adminMenuItems: AdminMenuItem[] = [
     adminOnly: true
   },
   {
-    label: 'Relatórios Admin',
-    route: '/app/admin/reports',
+    label: 'Planos',
+    route: '/app/admin/plans',
+    icon: Package,
+    description: 'CRUD de planos (máx. 2).',
+    callToAction: 'Gerenciar Planos',
+    adminOnly: true
+  },
+  {
+    label: 'Métricas',
+    route: '/app/admin/metrics',
     icon: BarChart2,
-    description: 'Faturamento da plataforma.',
-    callToAction: 'Ver Relatórios',
+    description: 'KPIs e métricas de assinaturas.',
+    callToAction: 'Ver Métricas',
     adminOnly: true
   },
   {
@@ -195,6 +202,14 @@ export const adminMenuItems: AdminMenuItem[] = [
     icon: UserCog,
     description: 'Gerenciar contas com acesso ao painel admin.',
     callToAction: 'Gerenciar',
+    adminOnly: true
+  },
+  {
+    label: 'Relatórios Admin',
+    route: '/app/admin/reports',
+    icon: BarChart2,
+    description: 'Faturamento da plataforma.',
+    callToAction: 'Ver Relatórios',
     adminOnly: true
   },
 ];
