@@ -2,9 +2,10 @@ import { UserRepository } from '../repository/UserRepository';
 import { AppError } from '../middleware/error/AppError';
 import * as bcrypt from 'bcrypt';
 import { UpdateProfileDTO, ChangePasswordDTO } from '../dto/profile/ProfileDTO';
+import { EstablishmentService } from './EstablishmentService';
 
 export class ProfileService {
-  constructor(private userRepository: UserRepository) {}
+  constructor(private userRepository: UserRepository, private establishmentService: EstablishmentService) {}
 
   async getProfile(userId: number) {
     const user = await this.userRepository.findOne({
@@ -43,6 +44,13 @@ export class ProfileService {
     };
 
     await this.userRepository.update(userId, updateData);
+
+    if(data.address && data.city && data.state) {
+       await this.establishmentService.createStore({
+        address: data.address, city: data.city, state: data.state, user
+      })
+    }
+   
     
     return { ...user, ...updateData };
   }

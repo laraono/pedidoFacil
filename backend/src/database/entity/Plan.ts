@@ -27,6 +27,21 @@ export class Plan {
     })
     price!: number
     
+    @Column({
+        name: 'Frequencia',
+        type: 'varchar',
+        nullable: true,
+        length: 20
+    })
+    frequency?: string
+
+    @Column({
+        name: 'Funcionalidades',
+        type: 'text',
+        nullable: true
+    })
+    features?: string
+
     @OneToMany(() => Subscription, (subscription) => subscription.establishment)
     subscriptions!: Subscription[]
 }

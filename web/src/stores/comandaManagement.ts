@@ -10,6 +10,8 @@ export interface ComandaOrder {
 export interface Comanda {
   id: number;
   label: string;
+  customerName?: string;
+  isAutoatendimento?: boolean;
   orders: ComandaOrder[];
   total: number;
   closedAt?: any;
@@ -23,12 +25,15 @@ export const useComandaStore = defineStore('comanda', () => {
     async function loadComandas() {
         try {
             const response = await comandaApi.listByStatus('Aberta');
-            
+            if (!response) return;
+
             comandas.value = response.map((c: any) => ({
                 id: c.id,
-                label: c.description, 
+                label: c.description,
+                customerName: c.customerName ?? undefined,
+                isAutoatendimento: !!c.customerName || (c.description || '').startsWith('Totem #'),
                 total: Number(c.total),
-                orders: c.pedidos || [] 
+                orders: c.pedidos || []
             }));
         } catch (error) {
             console.error("Erro ao carregar comandas do banco:", error);
@@ -37,7 +42,7 @@ export const useComandaStore = defineStore('comanda', () => {
 
     function createComanda(label?: string): Comanda {
         const id = Date.now();
-        const comanda: Comanda = { orders: [], id, label: label || `Comanda #${id}`, total: 0 };
+        const comanda: Comanda = { orders: [], id, label: label || `#${id}`, total: 0 };
         comandas.value.push(comanda);
         return comanda;
     }

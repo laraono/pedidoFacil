@@ -23,6 +23,14 @@ export class Comanda {
 
     @Column({
         type: 'varchar',
+        name: 'Nome_Cliente',
+        nullable: true,
+        length: 100
+    })
+    customerName?: string
+
+    @Column({
+        type: 'varchar',
         name: 'Status',
         nullable: false,
         length: 30

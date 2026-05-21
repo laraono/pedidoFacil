@@ -35,7 +35,7 @@
               <h2
                 class="font-black text-[#212121] text-base md:text-lg uppercase tracking-widest"
               >
-                Comandas Ativas
+                {{ comandaUnitLabel }}s Ativas
               </h2>
             </div>
             <span
@@ -52,7 +52,7 @@
             >
               <FileText :size="48" class="mb-4" />
               <p class="font-black uppercase tracking-widest text-sm">
-                Nenhuma comanda ativa
+                Nenhuma {{ comandaUnitLabel.toLowerCase() }} ativa
               </p>
             </div>
             <div
@@ -68,12 +68,13 @@
                 <div class="flex justify-between items-start mb-4">
                   <div>
                     <span
-                      class="text-[#757575] text-[10px] font-black uppercase tracking-widest block mb-1"
-                      >Comanda</span
+                      class="text-[10px] font-black uppercase tracking-widest block mb-1"
+                      :class="comanda.isAutoatendimento ? 'text-blue-500' : 'text-[#757575]'"
+                      >{{ getComandaTypeLabel(comanda) }}</span
                     >
                     <span
                       class="font-black text-[#212121] text-xl tracking-tighter group-hover:text-blue-400 transition-colors"
-                      >{{ comanda.label || "#" + comanda.id }}</span
+                      >{{ getComandaMainLabel(comanda) }}</span
                     >
                   </div>
                   <span class="text-accent font-black text-lg tracking-tighter"
@@ -112,14 +113,13 @@
                 <h2
                   class="text-2xl font-black text-[#212121] uppercase tracking-tighter"
                 >
-                  {{
-                    selectedComanda.label || "Comanda #" + selectedComanda.id
-                  }}
+                  {{ getComandaMainLabel(selectedComanda) }}
                 </h2>
                 <p
-                  class="text-[#757575] text-[10px] font-black uppercase tracking-widest"
+                  class="font-black uppercase tracking-widest text-[10px]"
+                  :class="selectedComanda.isAutoatendimento ? 'text-blue-500' : 'text-[#757575]'"
                 >
-                  Processamento Financeiro
+                  {{ selectedComanda.isAutoatendimento ? 'Autoatendimento' : 'Processamento Financeiro' }}
                 </p>
               </div>
             </div>
@@ -522,6 +522,13 @@
                 Cancelar
               </button>
               <button
+                @click="emitReceiptForSelected"
+                class="px-6 py-3 bg-gray-50 border border-[#E0E0E0] text-[#757575] font-black uppercase tracking-widest text-xs rounded hover:bg-gray-100 transition-all flex items-center gap-2"
+              >
+                <Printer :size="16" />
+                Cupom Fiscal
+              </button>
+              <button
                 @click="handleFinalize"
                 :disabled="isFinalizeDisabled"
                 class="flex-grow sm:flex-none px-12 py-3 bg-primary text-white font-black uppercase tracking-widest text-xs rounded hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-20 disabled:grayscale disabled:cursor-not-allowed"
@@ -764,6 +771,40 @@
         </div>
       </div>
     </div>
+    <div
+      v-if="showReceiptModal"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[130]"
+    >
+      <div
+        class="bg-white border border-[#E0E0E0] rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden"
+      >
+        <div class="p-8 flex flex-col items-center gap-4">
+          <div class="p-4 bg-accent-light rounded-full border border-accent/20">
+            <Printer :size="32" class="text-accent" />
+          </div>
+          <h2 class="text-xl font-black text-[#212121] uppercase tracking-tight text-center">
+            Deseja imprimir o cupom fiscal?
+          </h2>
+          <p class="text-[#757575] text-xs text-center font-bold uppercase tracking-widest">
+            Um comprovante será aberto para impressão
+          </p>
+        </div>
+        <div class="flex border-t border-[#E0E0E0]">
+          <button
+            @click="showReceiptModal = false"
+            class="flex-1 py-4 text-[#757575] font-black uppercase tracking-widest text-xs hover:bg-gray-50 transition-all border-r border-[#E0E0E0]"
+          >
+            Não
+          </button>
+          <button
+            @click="() => { emitReceipt(pendingReceiptData.comanda, pendingReceiptData.paymentInfo); showReceiptModal = false; }"
+            class="flex-1 py-4 text-primary font-black uppercase tracking-widest text-xs hover:bg-accent-light transition-all flex items-center justify-center gap-2"
+          >
+            <Printer :size="16" /> Imprimir
+          </button>
+        </div>
+      </div>
+    </div>
   </SubscriptionGuard>
 </template>
 
@@ -787,8 +828,10 @@ import {
   AlertCircle,
   Tag,
   XCircle,
+  Printer,
 } from "lucide-vue-next";
 import { initCashierSocket, destroyCashierSocket } from '@/stores/cashierSocket';
+import localStorageService from "@/services/localStorageService";
 
 const comandaStore = useComandaStore();
 const closedComandaStore = useClosedComandaStore();
@@ -796,6 +839,17 @@ const kitchenStore = useKitchenStore();
 const couponStore = useCouponStore();
 const utils = useUtils();
 const { showToast } = useToast();
+
+const comandaUnitLabel = localStorageService.getComandaUnitLabel();
+
+function getComandaTypeLabel(comanda) {
+  return comanda.isAutoatendimento ? 'Autoatendimento' : comandaUnitLabel;
+}
+
+function getComandaMainLabel(comanda) {
+  if (comanda.isAutoatendimento && comanda.customerName) return comanda.customerName;
+  return comanda.label;
+}
 
 const BACKEND_TO_LOCAL_STATUS = {
     'Aguardando_Preparo': 'pending',
@@ -805,8 +859,12 @@ const BACKEND_TO_LOCAL_STATUS = {
     'Cancelado': 'cancelled',
 };
 
+let pollInterval = null;
+
 onMounted(async () => {
   await comandaStore.loadComandas();
+
+  pollInterval = setInterval(() => comandaStore.loadComandas(), 30_000);
 
   initCashierSocket((data) => {
       const localStatus = BACKEND_TO_LOCAL_STATUS[data.status] || data.status;
@@ -828,21 +886,25 @@ onMounted(async () => {
 
 onUnmounted(() => {
     destroyCashierSocket();
+    clearInterval(pollInterval);
 });
 
 function getOrderItems(order) {
   const items = order.items || order.productOrders || [];
-  return items.map((i) => ({
-    name: i.name || i.product?.name || "Item",
-    amount: i.amount || i.quantity || 1,
-    price: Number(i.price || i.Preco_Unitario_Momento || 0),
-  }));
+  return items.map((i) => {
+    const variationName = i.variations?.[0]?.productVariation?.name || '';
+    const baseName = i.name || i.product?.name || 'Item';
+    return {
+      name: baseName + (variationName ? ` (${variationName})` : ''),
+      amount: Number(i.amount || i.quantity || 1),
+      price: Number(i.price ?? i.Preco_Unitario_Momento ?? 0),
+    };
+  });
 }
 
 function getOrderTotal(order) {
-  if (order.price !== undefined && !order.productOrders)
-    return Number(order.price);
   const items = getOrderItems(order);
+  if (items.length === 0) return Number(order.price ?? 0);
   return items.reduce((sum, item) => sum + item.price * item.amount, 0);
 }
 
@@ -935,7 +997,18 @@ const hasPreparing = computed(() =>
 const hasPending = computed(() =>
   ordersWithStatus.value.some((o) => o.status === "pending"),
 );
-const subtotal = computed(() => selectedComanda.value?.total || 0);
+const subtotal = computed(() => {
+  if (!selectedComanda.value) return 0;
+  const orders = selectedComanda.value.orders || [];
+  const hasItems = orders.some(o => (o.productOrders || o.items || []).length > 0);
+  if (!hasItems) return Number(selectedComanda.value.total) || 0;
+  const sum = orders.reduce((acc, order) => {
+    const kitchenOrder = kitchenStore.orders.find(k => k.id === order.id);
+    if (kitchenOrder?.status === 'cancelled') return acc;
+    return acc + getOrderTotal(order);
+  }, 0);
+  return Math.round(sum * 100) / 100;
+});
 
 const totalWithDiscount = computed(() => {
   const sub = subtotal.value;
@@ -1204,9 +1277,23 @@ async function finishPaymentFlow() {
     closedComandaStore.addClosedComanda(closedComanda);
     comandaStore.removeComanda(selectedComanda.value.id);
     paymentFlowActive.value = false;
+
+    pendingReceiptData.value = {
+      comanda: { ...closedComanda },
+      paymentInfo: {
+        totalFinal: totalWithDiscount.value,
+        coupon: appliedCoupon.value ? appliedCoupon.value.code : null,
+        couponDiscount: couponDiscount.value,
+        manualDiscount: discountType.value === "percent"
+          ? subtotal.value * (discountValue.value / 100)
+          : discountValue.value,
+        payments: pendingPayments.value,
+      },
+    };
+    showReceiptModal.value = true;
     closeDetails();
 
-    showToast("Comanda finalizada e NF emitida no servidor!", "success");
+    showToast(`${comandaUnitLabel} finalizada com sucesso!`, "success");
   } catch (error) {
     const data = error.response?.data || error.data || error;
     
@@ -1221,6 +1308,127 @@ async function finishPaymentFlow() {
 function cancelPaymentFlow() {
   paymentFlowActive.value = false;
   showDetails.value = true;
+}
+
+const showReceiptModal = ref(false);
+const pendingReceiptData = ref(null);
+
+function buildReceiptHtml(comanda, paymentInfo) {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("pt-BR");
+  const timeStr = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+  const allItems = [];
+  (comanda.orders || []).forEach((order) => {
+    const items = getOrderItems(order);
+    items.forEach((item) => {
+      const existing = allItems.find((i) => i.name === item.name);
+      if (existing) {
+        existing.amount += item.amount;
+        existing.total += item.price * item.amount;
+      } else {
+        allItems.push({ name: item.name, amount: item.amount, unitPrice: item.price, total: item.price * item.amount });
+      }
+    });
+  });
+
+  const subtotalVal = comanda.total || 0;
+  const totalFinal = paymentInfo ? paymentInfo.totalFinal : subtotalVal;
+  const coupon = paymentInfo?.coupon || null;
+  const couponDisc = paymentInfo?.couponDiscount || 0;
+  const manualDisc = paymentInfo?.manualDiscount || 0;
+  const payments = paymentInfo?.payments || [];
+
+  const itemRows = allItems.map((i) => `
+    <tr>
+      <td style="padding:5px 4px;">${i.amount}x</td>
+      <td style="padding:5px 4px;">${i.name}</td>
+      <td style="padding:5px 4px;text-align:right;">R$ ${i.unitPrice.toFixed(2)}</td>
+      <td style="padding:5px 4px;text-align:right;">R$ ${i.total.toFixed(2)}</td>
+    </tr>`).join("");
+
+  const discountSection = (manualDisc > 0 || couponDisc > 0) ? `
+    <tr style="color:#555;">
+      <td colspan="3" style="padding:4px;border-top:1px dashed #ccc;padding-top:8px;">Subtotal</td>
+      <td style="padding:4px;text-align:right;border-top:1px dashed #ccc;padding-top:8px;">R$ ${subtotalVal.toFixed(2)}</td>
+    </tr>
+    ${manualDisc > 0 ? `<tr style="color:#c00;"><td colspan="3" style="padding:3px 4px;">Desconto aplicado</td><td style="padding:3px 4px;text-align:right;">− R$ ${manualDisc.toFixed(2)}</td></tr>` : ""}
+    ${couponDisc > 0 ? `<tr style="color:#c00;"><td colspan="3" style="padding:3px 4px;">Cupom ${coupon ? `(${coupon})` : ""}</td><td style="padding:3px 4px;text-align:right;">− R$ ${couponDisc.toFixed(2)}</td></tr>` : ""}` : "";
+
+  const paymentSection = payments.length ? payments.map((p) =>
+    `<tr><td colspan="3" style="padding:3px 4px;color:#555;">${p.type}</td><td style="padding:3px 4px;text-align:right;">R$ ${Number(p.amount).toFixed(2)}</td></tr>`
+  ).join("") : "";
+
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>Cupom Fiscal</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:monospace;font-size:13px;color:#111;background:#fff;padding:16px;}
+    .wrap{max-width:320px;margin:0 auto;}
+    h2{text-align:center;font-size:16px;letter-spacing:1px;margin-bottom:2px;}
+    .sub{text-align:center;color:#555;font-size:11px;margin-bottom:12px;}
+    hr{border:none;border-top:1px dashed #aaa;margin:10px 0;}
+    table{width:100%;border-collapse:collapse;}
+    th{text-align:left;font-size:10px;text-transform:uppercase;color:#888;padding:4px;}
+    th:last-child,th:nth-child(3){text-align:right;}
+    .total-row td{font-weight:bold;font-size:15px;border-top:2px solid #111;padding-top:8px;padding-bottom:4px;}
+    .footer{text-align:center;margin-top:14px;color:#888;font-size:10px;}
+    @media print{body{padding:0;}button{display:none!important;}}
+  </style></head><body>
+  <div class="wrap">
+    <h2>CUPOM FISCAL</h2>
+    <p class="sub">${dateStr} às ${timeStr}</p>
+    <hr>
+    <p style="font-size:11px;margin-bottom:6px;">${comandaUnitLabel}: <strong>${comanda.isAutoatendimento && comanda.customerName ? comanda.customerName : comanda.label}</strong></p>
+    <hr>
+    <table>
+      <thead><tr>
+        <th>Qtd</th><th>Descrição</th><th>Unit.</th><th>Total</th>
+      </tr></thead>
+      <tbody>
+        ${itemRows}
+        ${discountSection}
+        <tr class="total-row">
+          <td colspan="3">TOTAL</td>
+          <td style="text-align:right;">R$ ${Number(totalFinal).toFixed(2)}</td>
+        </tr>
+        ${paymentSection}
+      </tbody>
+    </table>
+    <hr>
+    <p class="footer">Obrigado pela preferência!</p>
+    <div style="text-align:center;margin-top:16px;">
+      <button onclick="window.print()" style="padding:8px 20px;background:#1976d2;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">Imprimir</button>
+    </div>
+  </div>
+  </body></html>`;
+}
+
+function emitReceipt(comanda, paymentInfo = null) {
+  const html = buildReceiptHtml(comanda, paymentInfo);
+  const win = window.open("", "_blank", "width=400,height=600");
+  if (!win) {
+    showToast("Permita pop-ups para imprimir o cupom.", "error");
+    return;
+  }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 400);
+}
+
+function emitReceiptForSelected() {
+  const hasDiscount = discountValue.value > 0 || couponDiscount.value > 0;
+  const paymentInfo = hasDiscount ? {
+    totalFinal: totalWithDiscount.value,
+    coupon: appliedCoupon.value ? appliedCoupon.value.code : null,
+    couponDiscount: couponDiscount.value,
+    manualDiscount: discountType.value === "percent"
+      ? subtotal.value * (discountValue.value / 100)
+      : discountValue.value,
+    payments: [],
+  } : null;
+  emitReceipt(selectedComanda.value, paymentInfo);
 }
 
 function applyMask(event, method) {

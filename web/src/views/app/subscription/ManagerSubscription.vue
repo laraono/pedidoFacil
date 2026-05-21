@@ -1,75 +1,280 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSubscriptionStore } from '@/stores/subscriptions';
+import { subscriptionApi } from '@/services/subscriptionApi';
+import { planApi } from '@/services/planApi';
+import { loadMercadoPago } from "@mercadopago/sdk-js";
 import {
-  ArrowLeft, CreditCard, Calendar, CheckCircle2, AlertTriangle,
-  Clock, History, Banknote, RefreshCw, X, ChevronRight, ArrowLeftRight, Info
+  ArrowLeft, CreditCard, CheckCircle2, AlertTriangle,
+  Clock, History, Banknote, X, ArrowLeftRight, Info,
+  XCircle, FileText, ExternalLink
 } from 'lucide-vue-next';
 
+const error = ref('')
+const serverError = ref(null)
+const plans = ref([])
+const sub = ref(null)
+const currentPlan = ref({})
+const isLoading = ref(true)
+const history = ref([])
+
+onMounted(async () => {
+  try {
+    plans.value = await planApi.list()
+    sub.value = await subscriptionApi.getEstablishmentSubscription()
+    history.value = await subscriptionApi.getSubscriptionHistory()
+    currentPlan.value = sub.value?.plan ?? {}
+    error.value = localStorage.getItem('subscriptionError') || ''
+    await loadMercadoPago();
+    mp = new window.MercadoPago('APP_USR-639449eb-f800-4563-9304-f64989497a7a');
+  } catch (err) {
+    console.error("Init error:", err);
+    error.value = "Erro ao carregar dados da assinatura";
+  } finally {
+    isLoading.value = false
+  }
+})
+
 const router = useRouter();
-const subscriptionStore = useSubscriptionStore();
+const subscriptionStore = useSubscriptionStore()
 
-const sub = computed(() => subscriptionStore.subscription);
-const isActive = computed(() => subscriptionStore.isActive);
-const daysUntilDue = computed(() => subscriptionStore.daysUntilDue);
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-const isPaymentModalOpen = ref(false);
-const selectedMethod = ref('');
+function formatCurrency(value) {
+  return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
 
-const PAYMENT_METHODS = ['Cartão de Crédito', 'Pix', 'Boleto Bancário'];
+function normalizeFrequency(frequency) {
+  const f = String(frequency ?? '').trim().toLowerCase();
+  if (['anual', '12', 'annual', 'yearly'].includes(f)) return 'anual';
+  if (['months', '1', 'mensal', 'monthly', 'month'].includes(f)) return 'mensal';
+  if (['days', '30', 'diario', 'daily'].includes(f)) return 'diario';
+  return f;
+}
+
+function formatFrequency(frequency) {
+  const norm = normalizeFrequency(frequency);
+  return { anual: 'ano', mensal: 'mês', diario: 'dia' }[norm] ?? 'mês';
+}
+
+const effectivePrice = computed(() =>
+  sub.value?.price ?? sub.value?.plan?.price ?? 0
+);
+
+function parsedFeatures(features) {
+  if (!features) return [];
+  try { return JSON.parse(features); }
+  catch { return features.split(',').map(f => f.trim()).filter(Boolean); }
+}
+
+const STATUS_PT = {
+  ACCREDITED: 'Aprovado', IN_PROCESS: 'Em processamento',
+  CANCELED: 'Cancelado', CANCELLED: 'Cancelado',
+  PENDING_CAPTURE: 'Aguardando captura', AUTHORIZED: 'Autorizado',
+  REJECTED: 'Recusado', REFUNDED: 'Estornado',
+  CHARGED_BACK: 'Contestado', PENDING: 'Pendente',
+};
+
+function translateStatus(status) {
+  return STATUS_PT[status?.toUpperCase()] ?? status ?? '—';
+}
+
+// ── Status ────────────────────────────────────────────────────────────────────
+
+const isActive = computed(() => sub.value?.status === 'Paga');
 
 const statusConfig = computed(() => {
   const s = sub.value?.status;
-  if (s === 'ativo') return { label: 'Ativa', color: 'text-accent', bg: 'bg-accent-light border-accent/30' };
-  if (s === 'expirado') return { label: 'Expirada', color: 'text-danger', bg: 'bg-danger-light border-danger' };
-  return { label: 'Desativada', color: 'text-[#757575]', bg: 'bg-gray-200/20 border-[#E0E0E0]' };
+  if (s === 'Paga')      return { label: 'Ativa',     color: 'text-accent',        bg: 'bg-accent-light border-accent/30' };
+  if (s === 'Pendente')  return { label: 'Pendente',  color: 'text-amber-600',     bg: 'bg-amber-50 border-amber-400/30' };
+  if (s === 'Expirada')  return { label: 'Expirada',  color: 'text-danger',        bg: 'bg-danger-light border-danger' };
+  if (s === 'Cancelada') return { label: 'Cancelada', color: 'text-danger',        bg: 'bg-danger-light border-danger' };
+  return                        { label: 'Inativa',   color: 'text-[#757575]',     bg: 'bg-gray-200/20 border-[#E0E0E0]' };
 });
 
-const planLabel = computed(() => sub.value?.plan === 'anual' ? 'Anual' : 'Mensal');
-const planPrice = computed(() => {
-  const prices = subscriptionStore.planPrices;
-  const val = sub.value?.plan === 'anual' ? prices.annual : prices.monthly;
-  return 'R$ ' + val.toFixed(2).replace('.', ',') + '/mês';
+const daysUntilDue = computed(() => {
+  if (!sub.value?.expirationDate) return null;
+  const diff = new Date(sub.value.expirationDate).getTime() - new Date().getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
 });
 
 const formattedDueDate = computed(() => {
-  if (!sub.value?.nextDueDate) return '—';
-  return new Date(sub.value.nextDueDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+  if (!sub.value?.expirationDate) return '—';
+  return new Date(sub.value.expirationDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 });
 
-const dueDateWarning = computed(() => {
-  if (!isActive.value) return false;
-  return daysUntilDue.value !== null && daysUntilDue.value <= 7;
-});
+// ── Plano agendado ────────────────────────────────────────────────────────────
 
-const confirmPayment = () => {
-  if (!selectedMethod.value) return;
-  subscriptionStore.recordPayment(selectedMethod.value);
-  isPaymentModalOpen.value = false;
-  selectedMethod.value = '';
-};
-
-// Plan switching
 const isPlanModalOpen = ref(false);
-const selectedNewPlan = ref('');
+const tempSelectedPlan = ref(null);
+const isScheduling = ref(false);
+
+const scheduledPlan = computed(() => sub.value?.scheduledPlan ?? null);
 
 const openPlanModal = () => {
-  selectedNewPlan.value = sub.value?.pendingPlan || sub.value?.plan || 'mensal';
+  tempSelectedPlan.value = scheduledPlan.value
+    ?? plans.value.find(p => p.id === sub.value?.plan?.id)
+    ?? null;
   isPlanModalOpen.value = true;
 };
 
-const confirmPlanChange = () => {
-  if (!selectedNewPlan.value || selectedNewPlan.value === sub.value?.plan) {
+const confirmPlanChange = async () => {
+  if (!tempSelectedPlan.value) { isPlanModalOpen.value = false; return; }
+
+  const isSameAsCurrent = tempSelectedPlan.value.id === sub.value?.plan?.id;
+  const isSameAsScheduled = tempSelectedPlan.value.id === scheduledPlan.value?.id;
+
+  if (isSameAsCurrent && !scheduledPlan.value) { isPlanModalOpen.value = false; return; }
+  if (isSameAsScheduled) { isPlanModalOpen.value = false; return; }
+
+  try {
+    isScheduling.value = true;
+    const planIdToSchedule = isSameAsCurrent ? null : tempSelectedPlan.value.id;
+    sub.value = await subscriptionApi.schedulePlan(planIdToSchedule);
+  } catch (err) {
+    error.value = err.message || 'Erro ao agendar plano';
+  } finally {
+    isScheduling.value = false;
     isPlanModalOpen.value = false;
-    return;
   }
-  subscriptionStore.setPendingPlan(selectedNewPlan.value);
-  isPlanModalOpen.value = false;
 };
 
-const cancelPendingPlan = () => {
-  subscriptionStore.setPendingPlan(null);
+const cancelPendingPlan = async () => {
+  try {
+    sub.value = await subscriptionApi.schedulePlan(null);
+  } catch (err) {
+    error.value = err.message || 'Erro ao cancelar agendamento';
+  }
+};
+
+// ── Cancelamento ──────────────────────────────────────────────────────────────
+
+const showCancelModal = ref(false);
+const isCancelling = ref(false);
+const cancelError = ref('');
+
+const confirmCancel = async () => {
+  if (!sub.value?.id) return;
+  isCancelling.value = true;
+  cancelError.value = '';
+  try {
+    await subscriptionApi.cancelSubscription(sub.value.id);
+    sub.value = await subscriptionApi.getEstablishmentSubscription();
+    showCancelModal.value = false;
+  } catch (err) {
+    cancelError.value = err.message || 'Erro ao cancelar assinatura';
+  } finally {
+    isCancelling.value = false;
+  }
+};
+
+// ── Pagamento (Brick) ─────────────────────────────────────────────────────────
+
+let mp = null;
+let cardPaymentBrickController = null;
+
+const paymentModal = ref(false);
+const isRestoring = ref(false);
+
+const openCardModal = async (restore) => {
+  paymentModal.value = true;
+  isRestoring.value = restore;
+
+  if (cardPaymentBrickController) {
+    try { await cardPaymentBrickController.unmount(); } catch (_) {}
+    cardPaymentBrickController = null;
+  }
+};
+
+const closePaymentModal = () => {
+  paymentModal.value = false;
+  isRestoring.value = false;
+};
+
+const renderCardPaymentBrick = async () => {
+  if (!sub.value || !mp) return;
+
+  const amount = parseFloat(String(sub.value.price ?? sub.value.plan?.price ?? 0));
+  if (!amount || isNaN(amount)) {
+    error.value = "Valor da assinatura inválido. Contate o suporte.";
+    return;
+  }
+
+  const container = document.getElementById("cardPaymentBrick_container");
+  if (!container) {
+    error.value = "Formulário de pagamento não pôde ser carregado";
+    return;
+  }
+
+  try {
+    container.innerHTML = '';
+
+    const settings = {
+      initialization: {
+        amount,
+      },
+      customization: {
+        visual: { style: { theme: 'default' } },
+        paymentMethods: {
+          minInstallments: 1,
+          maxInstallments: normalizeFrequency(sub.value?.plan?.frequency) === 'anual' ? 12 : 1,
+        },
+      },
+      callbacks: {
+        onReady: () => {},
+        onSubmit: async (formData, additionalData) => {
+          try {
+            serverError.value = null;
+            const submitData = {
+              type: "online",
+              total_amount: String(formData.transaction_amount),
+              external_reference: crypto.randomUUID(),
+              processing_mode: "automatic",
+              transactions: {
+                payments: [{
+                  amount: String(formData.transaction_amount),
+                  payment_method: {
+                    id: formData.payment_method_id,
+                    type: additionalData.paymentTypeId,
+                    token: formData.token,
+                    installments: formData.installments,
+                  },
+                }],
+              },
+              payer: {
+                email: formData.payer.email,
+                identification: formData.payer.identification,
+              }
+            };
+
+            if (isRestoring.value) {
+              await subscriptionApi.restoreSubscription(sub.value.id, submitData);
+            } else {
+              await subscriptionApi.post(submitData, subscriptionStore.getPlanToBeSubscribed());
+            }
+            closePaymentModal();
+          } catch (err) {
+            console.error("Payment error:", err);
+            serverError.value = err.message || "Erro ao processar pagamento. Tente novamente.";
+          }
+        },
+        onError: (err) => {
+          console.error("Brick error:", err);
+          error.value = "Erro no sistema de pagamento";
+        },
+      },
+    };
+
+    cardPaymentBrickController = await mp.bricks().create(
+      "cardPayment",
+      "cardPaymentBrick_container",
+      settings
+    );
+  } catch (err) {
+    console.error("Render error:", err);
+    error.value = err.message;
+  }
 };
 </script>
 
@@ -86,13 +291,34 @@ const cancelPendingPlan = () => {
       </div>
     </header>
 
+    <transition enter-active-class="transition duration-300" enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0">
+      <div v-if="error" class="bg-danger-light border border-danger text-danger p-3 rounded mb-6 inline-block font-medium text-sm">
+        {{ error }}
+      </div>
+    </transition>
+
     <div v-if="sub" class="space-y-6">
 
-      <!-- Status card -->
-      <div
-        class="rounded p-8 border flex flex-col sm:flex-row sm:items-center gap-6"
-        :class="isActive ? 'bg-accent-light border-accent/30' : 'bg-red-950/20 border-danger'"
-      >
+      <!-- 1. Nota de plano agendado (topo) -->
+      <div v-if="scheduledPlan" class="bg-amber-50 border border-amber-400/50 rounded p-5 flex items-start gap-4">
+        <Info :size="18" class="text-amber-500 shrink-0 mt-0.5" />
+        <div class="flex-1">
+          <p class="text-sm font-bold text-[#212121]">Alteração de plano agendada</p>
+          <p class="text-xs text-[#757575] mt-1">
+            Na renovação de <span class="font-black text-[#212121]">{{ formattedDueDate }}</span>,
+            seu plano será alterado para
+            <span class="font-black text-[#212121]">{{ scheduledPlan.name }}</span>
+            — <span class="font-black text-[#212121]">{{ formatCurrency(scheduledPlan.price) }}/{{ formatFrequency(scheduledPlan.frequency) }}</span>.
+            O plano atual (<span class="font-semibold">{{ currentPlan?.name }}</span>) permanece ativo até lá.
+          </p>
+        </div>
+        <button @click="cancelPendingPlan" class="text-[#757575] hover:text-red-500 transition-colors shrink-0" title="Cancelar agendamento">
+          <X :size="16" />
+        </button>
+      </div>
+
+      <!-- 2. Card de status e cobrança -->
+      <div class="rounded p-8 border border-[#E0E0E0] bg-white flex flex-col sm:flex-row sm:items-center gap-6">
         <div class="flex-1">
           <div class="flex items-center gap-3 mb-3">
             <div
@@ -103,103 +329,71 @@ const cancelPendingPlan = () => {
               <AlertTriangle v-else :size="12" />
               {{ statusConfig.label }}
             </div>
-            <span class="text-xs text-[#757575] font-bold uppercase tracking-wider">Plano {{ planLabel }}</span>
+            <span class="text-xs text-[#757575] font-bold uppercase tracking-wider">Plano {{ currentPlan?.name }}</span>
           </div>
-          <p class="text-4xl font-black text-[#212121]">{{ planPrice }}</p>
-          <p class="text-[#757575] text-sm mt-1">cobrado {{ sub.plan === 'anual' ? 'anualmente' : 'mensalmente' }}</p>
+          <p class="text-4xl font-black text-[#212121]">{{ formatCurrency(effectivePrice) }}</p>
+          <p class="text-[#757575] text-sm mt-1">cobrado por {{ formatFrequency(currentPlan?.frequency) }}</p>
         </div>
 
-        <button
-          @click="isPaymentModalOpen = true"
-          class="shrink-0 flex items-center gap-2 px-6 py-3.5 rounded font-black text-sm uppercase tracking-wider transition-all active:scale-95"
-          :class="isActive ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-danger text-white hover:bg-red-600'"
-        >
-          <CreditCard :size="16" />
-          {{ isActive ? 'Realizar Pagamento' : 'Reativar Assinatura' }}
-        </button>
-      </div>
+        <div class="flex flex-col sm:flex-row gap-3 shrink-0">
+          <button
+            v-if="sub?.status !== 'Pendente'"
+            @click="openCardModal(true)"
+            class="flex items-center gap-2 px-6 py-3.5 rounded font-black text-sm uppercase tracking-wider transition-all active:scale-95"
+            :class="isActive ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-danger text-white hover:bg-red-700'"
+          >
+            <CreditCard :size="16" />
+            {{ isActive ? 'Mudar Cartão' : 'Reativar Assinatura' }}
+          </button>
 
-      <!-- Troca de plano pendente -->
-      <div v-if="sub.pendingPlan" class="bg-amber-50 border border-amber-400/50 rounded p-5 flex items-start gap-4">
-        <Info :size="18" class="text-amber-500 shrink-0 mt-0.5" />
-        <div class="flex-1">
-          <p class="text-sm font-bold text-[#212121]">Alteração de plano agendada</p>
-          <p class="text-xs text-[#757575] mt-1">
-            Seu plano será alterado para
-            <span class="font-black text-[#212121]">{{ sub.pendingPlan === 'anual' ? 'Anual' : 'Mensal' }}</span>
-            a partir da próxima renovação em {{ formattedDueDate }}.
-          </p>
+          <button
+            v-if="isActive"
+            @click="showCancelModal = true"
+            class="flex items-center gap-2 px-6 py-3.5 rounded font-black text-sm uppercase tracking-wider border border-danger text-danger hover:bg-danger-light transition-all active:scale-95"
+          >
+            <XCircle :size="16" />
+            Cancelar Assinatura
+          </button>
         </div>
-        <button @click="cancelPendingPlan" class="text-[#757575] hover:text-red-500 transition-colors shrink-0">
-          <X :size="16" />
-        </button>
       </div>
 
-      <!-- Alternar plano -->
+      <!-- 3. Alternar plano -->
       <div class="bg-white border border-[#E0E0E0] rounded p-6 flex items-center justify-between gap-4">
-        <div>
+        <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#757575] mb-1">
             <ArrowLeftRight :size="14" />
             Plano Atual
           </div>
-          <p class="text-lg font-black text-[#212121]">{{ planLabel }}</p>
-          <p class="text-xs text-[#757575] mt-0.5">{{ planPrice }}</p>
+          <p class="text-lg font-black text-[#212121]">{{ currentPlan?.name }}</p>
+          <p class="text-xs text-[#757575] mt-0.5">{{ formatCurrency(effectivePrice) }}/{{ formatFrequency(currentPlan?.frequency) }}</p>
+
+          <div v-if="scheduledPlan" class="mt-3 flex items-center gap-2 text-xs text-amber-600 font-bold">
+            <Clock :size="12" class="shrink-0" />
+            Em {{ formattedDueDate }}: muda para
+            <span class="font-black text-[#212121]">{{ scheduledPlan.name }}</span>
+            ({{ formatCurrency(scheduledPlan.price) }}/{{ formatFrequency(scheduledPlan.frequency) }})
+          </div>
         </div>
         <button
           @click="openPlanModal"
-          class="flex items-center gap-2 px-4 py-2.5 rounded border border-[#E0E0E0] text-[#757575] font-bold text-sm hover:border-accent hover:text-accent transition-all"
+          class="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded border border-[#E0E0E0] text-[#757575] font-bold text-sm hover:border-accent hover:text-accent transition-all"
         >
           <ArrowLeftRight :size="14" />
           Alterar Plano
         </button>
       </div>
 
-      <!-- Vencimento & método -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div
-          class="bg-white border rounded p-6"
-          :class="dueDateWarning ? 'border-amber-500/40 bg-amber-950/10' : 'border-[#E0E0E0]'"
-        >
-          <div class="flex items-center gap-2 text-xs font-black uppercase tracking-widest mb-3"
-               :class="dueDateWarning ? 'text-amber-400' : 'text-[#757575]'">
-            <Calendar :size="14" />
-            Próximo Vencimento
-          </div>
-          <p class="text-xl font-black text-[#212121]">{{ formattedDueDate }}</p>
-          <p v-if="dueDateWarning" class="text-amber-400 text-xs font-bold mt-1 flex items-center gap-1">
-            <AlertTriangle :size="12" /> Vence em {{ daysUntilDue }} dias
-          </p>
-          <p v-else-if="isActive" class="text-[#757575] text-xs mt-1">
-            {{ daysUntilDue }} dias restantes
-          </p>
-        </div>
-
-        <div class="bg-white border border-[#E0E0E0] rounded p-6">
-          <div class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#757575] mb-3">
-            <CreditCard :size="14" />
-            Método de Pagamento
-          </div>
-          <p class="text-xl font-black text-[#212121]">{{ sub.paymentMethod || '—' }}</p>
-          <button
-            @click="isPaymentModalOpen = true"
-            class="text-accent text-xs font-bold mt-1 flex items-center gap-1 hover:underline"
-          >
-            Alterar <ChevronRight :size="12" />
-          </button>
-        </div>
-      </div>
-
-      <!-- Histórico -->
+      <!-- 4. Histórico de pagamentos -->
       <div class="bg-white border border-[#E0E0E0] rounded overflow-hidden">
         <div class="p-6 border-b border-[#E0E0E0] flex items-center gap-3">
           <History :size="18" class="text-accent" />
           <h2 class="font-black text-[#212121]">Histórico de Pagamentos</h2>
         </div>
 
-        <div v-if="sub.history?.length" class="divide-y divide-white/5">
+        <div v-if="history?.length" class="divide-y divide-[#E0E0E0]">
           <div
-            v-for="payment in sub.history"
-            :key="payment.id"
+            v-for="payment in history"
+            :key="payment.date"
             class="px-6 py-4 flex items-center justify-between"
           >
             <div class="flex items-center gap-4">
@@ -207,17 +401,33 @@ const cancelPendingPlan = () => {
                 <Banknote :size="16" class="text-accent" />
               </div>
               <div>
-                <p class="text-sm font-bold text-[#212121]">{{ payment.method }}</p>
+                <p class="text-sm font-bold text-[#212121]">{{ payment.type }}</p>
                 <p class="text-xs text-[#757575]">
-                  {{ new Date(payment.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) }}
+                  {{ new Date(payment.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) }}
                 </p>
               </div>
             </div>
-            <div class="text-right">
+            <div class="text-right flex flex-col items-end gap-1">
               <p class="text-sm font-black text-[#212121]">
-                {{ payment.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
+                {{ formatCurrency(payment.amount) }}
               </p>
-              <span class="text-[10px] font-black uppercase tracking-wider text-accent">{{ payment.status }}</span>
+              <span class="text-[10px] font-black uppercase tracking-wider text-accent">
+                {{ translateStatus(payment.status) }}
+              </span>
+              <p v-if="payment.installments && payment.installments > 1" class="text-[10px] text-[#757575]">
+                {{ payment.installments }}x de {{ formatCurrency(payment.amount / payment.installments) }}
+              </p>
+              <a
+                v-if="payment.receipt"
+                :href="payment.receipt"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 text-[10px] font-bold text-primary hover:underline"
+              >
+                <FileText :size="11" />
+                Ver fatura
+                <ExternalLink :size="10" />
+              </a>
             </div>
           </div>
         </div>
@@ -229,7 +439,75 @@ const cancelPendingPlan = () => {
 
     </div>
 
-    <!-- Modal de alteração de plano -->
+    <!-- Modal de cancelamento (Teleport) -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showCancelModal" class="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4">
+          <div class="bg-white border border-[#E0E0E0] w-full max-w-sm rounded shadow-2xl">
+            <div class="p-6 border-b border-[#E0E0E0] flex justify-between items-center">
+              <h2 class="text-lg font-black text-[#212121] flex items-center gap-2">
+                <XCircle :size="18" class="text-danger" />
+                Cancelar Assinatura
+              </h2>
+              <button @click="showCancelModal = false" class="p-2 text-[#757575] hover:text-[#212121] transition-colors">
+                <X :size="18" />
+              </button>
+            </div>
+            <div class="p-6">
+              <p class="text-sm text-[#757575] leading-relaxed">
+                Tem certeza que deseja cancelar sua assinatura?
+                O acesso permanece ativo até o vencimento em
+                <span class="font-bold text-[#212121]">{{ formattedDueDate }}</span>.
+              </p>
+              <div v-if="cancelError" class="mt-4 bg-danger-light border border-danger text-danger p-3 rounded text-sm font-medium">
+                {{ cancelError }}
+              </div>
+            </div>
+            <div class="p-6 pt-0 flex gap-3">
+              <button
+                @click="showCancelModal = false"
+                class="flex-1 py-3 rounded text-[#757575] font-bold hover:bg-gray-50 border border-[#E0E0E0] transition-colors"
+              >
+                Manter Plano
+              </button>
+              <button
+                @click="confirmCancel"
+                :disabled="isCancelling"
+                class="flex-1 py-3 rounded font-black text-sm uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-2 bg-danger text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {{ isCancelling ? 'Cancelando...' : 'Confirmar Cancelamento' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Modal de pagamento (Teleport) -->
+    <Teleport to="body">
+      <Transition name="fade" @after-enter="renderCardPaymentBrick">
+        <div v-if="paymentModal" class="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4">
+          <div class="bg-white border border-[#E0E0E0] w-full max-w-lg rounded shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-[#E0E0E0] flex justify-between items-center">
+              <h2 class="text-xl font-black text-[#212121]">
+                {{ isRestoring ? 'Mudar Cartão de Pagamento' : 'Confirmar Pagamento' }}
+              </h2>
+              <button @click="closePaymentModal" class="p-2 text-[#757575] hover:text-[#212121] transition-colors">
+                <X :size="20" />
+              </button>
+            </div>
+            <div class="p-6">
+              <div v-if="serverError" class="bg-danger-light border border-danger text-danger p-3 rounded mb-4 text-sm font-medium">
+                {{ serverError }}
+              </div>
+              <div id="cardPaymentBrick_container" style="min-height: 450px; width: 100%;"></div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Modal de seleção de plano (Teleport) -->
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="isPlanModalOpen" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
@@ -246,39 +524,45 @@ const cancelPendingPlan = () => {
 
             <div class="p-8 space-y-4">
               <div
-                v-for="plan in ['mensal', 'anual']"
-                :key="plan"
-                @click="selectedNewPlan = plan"
-                :class="selectedNewPlan === plan
+                v-for="plan in plans"
+                :key="plan.id"
+                @click="tempSelectedPlan = plan"
+                :class="tempSelectedPlan?.id === plan.id
                   ? 'border-accent bg-accent-light'
-                  : 'border-[#E0E0E0] bg-gray-50 hover:border-[#E0E0E0]'"
-                class="flex items-center justify-between p-4 rounded border cursor-pointer transition-all"
+                  : 'border-[#E0E0E0] bg-gray-50 hover:border-accent/40'"
+                class="p-4 rounded border cursor-pointer transition-all"
               >
-                <div class="flex items-center gap-3">
-                  <div class="w-5 h-5 rounded border-2 flex items-center justify-center"
-                    :class="selectedNewPlan === plan ? 'border-accent' : 'border-zinc-400'">
-                    <div v-if="selectedNewPlan === plan" class="w-2.5 h-2.5 rounded bg-accent" />
+                <div class="flex items-center justify-between mb-1">
+                  <div class="flex items-center gap-3">
+                    <div class="w-5 h-5 rounded border-2 flex items-center justify-center"
+                      :class="tempSelectedPlan?.id === plan.id ? 'border-accent' : 'border-zinc-400'">
+                      <div v-if="tempSelectedPlan?.id === plan.id" class="w-2.5 h-2.5 rounded bg-accent" />
+                    </div>
+                    <p class="font-bold text-sm" :class="tempSelectedPlan?.id === plan.id ? 'text-accent' : 'text-[#212121]'">
+                      {{ plan?.name }}
+                    </p>
                   </div>
-                  <div>
-                    <p class="font-bold text-sm" :class="selectedNewPlan === plan ? 'text-accent' : 'text-[#212121]'">
-                      {{ plan === 'anual' ? 'Anual' : 'Mensal' }}
-                    </p>
-                    <p class="text-xs text-[#757575]">
-                      R$ {{ plan === 'anual'
-                        ? subscriptionStore.planPrices.annual.toFixed(2).replace('.', ',')
-                        : subscriptionStore.planPrices.monthly.toFixed(2).replace('.', ',') }}/mês
-                    </p>
+                  <div class="flex items-center gap-2">
+                    <p class="text-xs text-[#757575]">{{ formatCurrency(plan.price) }}/{{ formatFrequency(plan.frequency) }}</p>
+                    <span v-if="plan.id === sub?.plan?.id" class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-accent-light text-accent rounded border border-accent/30">Atual</span>
                   </div>
                 </div>
-                <span v-if="plan === sub?.plan" class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-accent-light text-accent rounded border border-accent/30">Atual</span>
-                <span v-else-if="plan === 'anual'" class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-gray-50 text-[#757575] rounded border border-[#E0E0E0]">Economize</span>
+                <ul v-if="parsedFeatures(plan.features).length" class="mt-2 space-y-1 pl-8">
+                  <li
+                    v-for="feat in parsedFeatures(plan.features)"
+                    :key="feat"
+                    class="text-xs text-[#757575] flex items-center gap-1.5"
+                  >
+                    <span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>
+                    {{ feat }}
+                  </li>
+                </ul>
               </div>
 
               <div class="p-4 bg-amber-50 border border-amber-400/40 rounded flex items-start gap-3">
                 <Info :size="15" class="text-amber-500 shrink-0 mt-0.5" />
                 <p class="text-xs text-[#757575] leading-relaxed">
-                  A alteração de plano <strong class="text-[#212121]">só entrará em vigor na próxima renovação</strong>,
-                  após o vencimento do plano atual em {{ formattedDueDate }}.
+                  A alteração de plano <strong class="text-[#212121]">só entrará em vigor na próxima renovação</strong>.
                 </p>
               </div>
             </div>
@@ -289,78 +573,13 @@ const cancelPendingPlan = () => {
               </button>
               <button
                 @click="confirmPlanChange"
-                :disabled="selectedNewPlan === sub?.plan && !sub?.pendingPlan"
+                :disabled="isScheduling || !tempSelectedPlan || tempSelectedPlan?.id === scheduledPlan?.id"
                 class="flex-1 py-3 rounded font-black text-sm uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-2"
-                :class="(selectedNewPlan !== sub?.plan)
+                :class="(!isScheduling && tempSelectedPlan && tempSelectedPlan?.id !== scheduledPlan?.id)
                   ? 'bg-primary text-white hover:bg-primary-dark'
                   : 'bg-gray-200 text-[#757575] cursor-not-allowed'"
               >
-                Confirmar
-              </button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
-
-    <!-- Modal de pagamento -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="isPaymentModalOpen" class="fixed inset-0 bg-black/50  z-[100] flex items-center justify-center p-4">
-          <div class="bg-white border border-[#E0E0E0] w-full max-w-md rounded shadow-2xl">
-            <div class="p-8 border-b border-[#E0E0E0] flex justify-between items-center">
-              <h2 class="text-xl font-black text-[#212121] flex items-center gap-3">
-                <CreditCard :size="20" class="text-accent" />
-                Realizar Pagamento
-              </h2>
-              <button @click="isPaymentModalOpen = false" class="p-2 text-[#757575] hover:text-[#212121]">
-                <X :size="20" />
-              </button>
-            </div>
-
-            <div class="p-8 space-y-4">
-              <p class="text-sm text-[#757575]">Selecione o método de pagamento para este ciclo:</p>
-
-              <div
-                v-for="method in PAYMENT_METHODS"
-                :key="method"
-                @click="selectedMethod = method"
-                :class="selectedMethod === method
-                  ? 'border-accent bg-accent-light text-accent'
-                  : 'border-[#E0E0E0] bg-gray-50 text-[#757575] hover:border-[#E0E0E0]'"
-                class="flex items-center gap-3 p-4 rounded border cursor-pointer transition-all"
-              >
-                <div
-                  class="w-5 h-5 rounded border-2 flex items-center justify-center"
-                  :class="selectedMethod === method ? 'border-accent' : 'border-zinc-600'"
-                >
-                  <div v-if="selectedMethod === method" class="w-2.5 h-2.5 rounded bg-accent" />
-                </div>
-                <span class="font-bold text-sm">{{ method }}</span>
-              </div>
-
-              <div class="pt-2 border-t border-[#E0E0E0] flex items-center justify-between text-sm">
-                <span class="text-[#757575]">Valor</span>
-                <span class="font-black text-[#212121]">
-                  R$ {{ sub?.plan === 'anual'
-                    ? subscriptionStore.planPrices.annual.toFixed(2).replace('.', ',')
-                    : subscriptionStore.planPrices.monthly.toFixed(2).replace('.', ',') }}
-                </span>
-              </div>
-            </div>
-
-            <div class="p-8 pt-0 flex gap-3">
-              <button @click="isPaymentModalOpen = false" class="flex-1 py-3 rounded text-[#757575] font-bold hover:bg-gray-50 transition-colors">
-                Cancelar
-              </button>
-              <button
-                @click="confirmPayment"
-                :disabled="!selectedMethod"
-                class="flex-1 py-3 rounded font-black text-sm uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-2"
-                :class="selectedMethod ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-gray-200 text-[#757575] cursor-not-allowed'"
-              >
-                <RefreshCw :size="14" />
-                Confirmar
+                {{ isScheduling ? 'Agendando...' : 'Confirmar' }}
               </button>
             </div>
           </div>

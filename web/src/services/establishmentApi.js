@@ -8,7 +8,7 @@ export const establishmentApi = {
     }),
 
   finalizeOnboarding: (data) =>
-    request("/estabelecimento/onboarding/finalize", {
+    request("/estabelecimento/finalize", {
       method: "POST",
       body: data, 
     }),

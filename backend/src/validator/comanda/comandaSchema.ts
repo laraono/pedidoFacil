@@ -35,7 +35,7 @@ export const validateCreateComanda =
         }
     };
 
-export const validateCancelComanda = 
+export const validateCancelComanda =
     (req: Request, res: Response, next: NextFunction) => {
         try {
             const validation = cancelComandaSchema.parse({ params: req.params, body: req.body });
@@ -51,3 +51,9 @@ export const validateCancelComanda =
             return res.status(500).send("Internal Server Error");
         }
     };
+
+export const validateListComandas =
+    (_req: Request, _res: Response, next: NextFunction) => next();
+
+export const validateListComandasByStatus =
+    (_req: Request, _res: Response, next: NextFunction) => next();

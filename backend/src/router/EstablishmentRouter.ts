@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { EstablishmentController } from '../controller/EstablishmentController';
-import authenticate from '../middleware/authenticate';
+import { authenticate } from '../middleware/authenticate';
 import { checkPermission } from '../middleware/roleAccessControl';
 import { establishmentService } from '../service'; 
 import { 
@@ -41,7 +41,7 @@ establishmentRouter.post(
 establishmentRouter.get(
   '/profile',
   authenticate,
-  checkPermission('ESTABELECIMENTO_VIEW', 'ALL'),
+  checkPermission('ESTABELECIMENTO_VIEW', 'CONFIGURACAO'),
   establishmentController.getProfile
 );
 
@@ -49,7 +49,7 @@ establishmentRouter.put(
   '/profile',
   authenticate,
   checkPermission('ESTABELECIMENTO_EDIT', 'ALL'),
-  validateUpload.single('logo'),   
+  validateUpload.fields([{ name: 'logo', maxCount: 1 }, { name: 'pixQrCode', maxCount: 1 }]),
   validateRequest(UpdateEstablishmentDTO), 
   establishmentController.update   
 );
@@ -60,5 +60,7 @@ establishmentRouter.delete(
   checkPermission('ESTABELECIMENTO_DELETE', 'ALL'),
   establishmentController.disable
 );
+
+
 
 export { establishmentRouter };

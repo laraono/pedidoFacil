@@ -54,7 +54,8 @@ export class OrderService {
     return await this.dataSource.transaction(async (manager) => {
       const comanda = await manager.save(Comanda, {
         description: data.comandaLabel,
-        status: ComandaStatus.FECHADA,
+        customerName: data.customerName ?? null,
+        status: ComandaStatus.ABERTA,
         total: 0,
         establishment: { id: data.establishmentId },
       });
@@ -99,9 +100,8 @@ export class OrderService {
       if (validated.productVariation && iten.productVariationId) {
         try {
           await manager.save(ProductVariationOrder, {
-            productId: productOrder.productId,
-            orderId: productOrder.orderId,
-            productVariationid: validated.productVariation.id,
+            productOrderId: productOrder.id,
+            productVariationId: validated.productVariation.id,
             price: addPrice,
           });
         } catch (vError) {
@@ -157,9 +157,13 @@ export class OrderService {
   }
 
   async getOrderWithDetails(orderId: number) {
-    return await this.dataSource.getRepository(Order).findOne({
-      where: { id: orderId },
-      relations: ['productOrders', 'productOrders.product'],
-    });
+    return await this.dataSource.getRepository(Order)
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.productOrders', 'po')
+      .leftJoinAndSelect('po.product', 'product')
+      .leftJoinAndSelect('po.variations', 'variation')
+      .leftJoinAndSelect('variation.productVariation', 'pv')
+      .where('order.id = :id', { id: orderId })
+      .getOne();
   }
 }

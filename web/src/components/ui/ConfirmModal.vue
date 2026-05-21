@@ -42,7 +42,7 @@ const handleConfirm = () => {
             </button>
             <button
               @click="handleConfirm"
-              class="flex-1 py-3 rounded font-black transition-colors"
+              class="flex-1 py-3 rounded font-black transition-colors bg-primary"
               :class="confirmModal.isError ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-danger text-white hover:bg-red-400'"
             >
               {{ confirmModal.isError ? 'Entendi' : 'Confirmar' }}

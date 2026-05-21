@@ -11,7 +11,7 @@ export const createProductSchema = z.object({
     sizes: z.string().optional() 
 });
 
-export const validateCreateProduct = 
+export const validateCreateProduct =
     (req: Request, res: Response, next: NextFunction) => {
         try {
             req.body = createProductSchema.parse(req.body);
@@ -29,3 +29,12 @@ export const validateCreateProduct =
             return res.status(500).send("Internal Server Error");
         }
     };
+
+export const validateListProducts =
+    (_req: Request, _res: Response, next: NextFunction) => next();
+
+export const validateListProductsByCategories =
+    (_req: Request, _res: Response, next: NextFunction) => next();
+
+export const validateDeleteProduct =
+    (_req: Request, _res: Response, next: NextFunction) => next();

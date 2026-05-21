@@ -73,8 +73,22 @@ export class Payment {
     })
     createdAt!: Date
 
+    @Column({
+        name: 'ID_Pedido_MercadoPago',
+        type: 'varchar',
+        nullable: true
+    })
+    mercadoPagoOrderId?: string
+
+    @Column({
+        name: 'ID_Pagamento_MercadoPago',
+        type: 'varchar',
+        nullable: true
+    })
+    mercadoPagoPaymentId?: string
+
     @DeleteDateColumn({
-        name: 'Data_Exclusao', 
+        name: 'Data_Exclusao',
         type: 'datetime',
         nullable: true
     })

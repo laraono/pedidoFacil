@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useClosedComandaStore } from "@/stores/closedComandas";
 import SubscriptionGuard from "@/components/SubscriptionGuard.vue";
+import localStorageService from "@/services/localStorageService";
 import {
   ArrowLeft,
   Receipt,
@@ -20,6 +21,16 @@ const closedStore = useClosedComandaStore();
 
 const search = ref("");
 const expandedId = ref(null);
+const comandaUnitLabel = localStorageService.getComandaUnitLabel();
+
+function getComandaTypeLabel(comanda) {
+  return comanda.isAutoatendimento ? 'Autoatendimento' : comandaUnitLabel;
+}
+
+function getComandaMainLabel(comanda) {
+  if (comanda.isAutoatendimento && comanda.customerName) return comanda.customerName;
+  return comanda.label || '#' + comanda.id;
+}
 
 onMounted(async () => {
   await closedStore.loadClosedComandas();
@@ -87,7 +98,7 @@ function paymentSummary(comanda) {
 </script>
 
 <template>
-  <SubscriptionGuard featureName="O Histórico de Comandas">
+  <SubscriptionGuard :featureName="`O Histórico de ${comandaUnitLabel}s`">
     <main class="max-w-6xl mx-auto py-12 px-6 font-inter">
       <header
         class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-10 gap-4"
@@ -101,7 +112,7 @@ function paymentSummary(comanda) {
           </button>
           <div>
             <h1 class="text-3xl font-black text-[#212121] tracking-tight">
-              Comandas Finalizadas
+              {{ comandaUnitLabel }}s Finalizadas
             </h1>
             <p class="text-[#757575] text-sm mt-1">
               Histórico completo de pedidos e pagamentos
@@ -116,7 +127,7 @@ function paymentSummary(comanda) {
           />
           <input
             v-model="search"
-            placeholder="Buscar comanda ou produto..."
+            :placeholder="`Buscar ${comandaUnitLabel.toLowerCase()} ou produto...`"
             class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#212121] text-sm placeholder-gray-600 focus:outline-none focus:border-primary/30 transition-all"
           />
         </div>
@@ -130,8 +141,8 @@ function paymentSummary(comanda) {
         <p class="font-black uppercase tracking-widest text-sm opacity-40">
           {{
             search
-              ? "Nenhuma comanda encontrada"
-              : "Nenhuma comanda finalizada ainda"
+              ? `Nenhuma ${comandaUnitLabel.toLowerCase()} encontrada`
+              : `Nenhuma ${comandaUnitLabel.toLowerCase()} finalizada ainda`
           }}
         </p>
       </div>
@@ -155,10 +166,16 @@ function paymentSummary(comanda) {
 
               <div class="min-w-0">
                 <div class="flex items-center gap-3 flex-wrap">
-                  <span
-                    class="text-[#212121] font-black text-lg tracking-tight"
-                    >{{ comanda.label || "#" + comanda.id }}</span
-                  >
+                  <div class="flex flex-col leading-none">
+                    <span
+                      class="text-[9px] font-black uppercase tracking-widest mb-0.5"
+                      :class="comanda.isAutoatendimento ? 'text-blue-500' : 'text-[#757575]'"
+                      >{{ getComandaTypeLabel(comanda) }}</span
+                    >
+                    <span class="text-[#212121] font-black text-lg tracking-tight">
+                      {{ getComandaMainLabel(comanda) }}
+                    </span>
+                  </div>
                   <span
                     class="px-2 py-0.5 bg-accent-light border border-accent/30 text-accent text-[9px] font-black uppercase tracking-widest rounded"
                   >
@@ -215,7 +232,7 @@ function paymentSummary(comanda) {
                   <h3
                     class="text-[10px] font-black uppercase tracking-widest text-[#757575] mb-4"
                   >
-                    Pedidos da Comanda
+                    Pedidos da {{ comandaUnitLabel }}
                   </h3>
 
                   <div
@@ -254,7 +271,7 @@ function paymentSummary(comanda) {
                         <div
                           v-else
                           v-for="item in order.items"
-                          :key="item.name + item.amount"
+                          :key="item.name + item.variationName + item.amount"
                           class="flex items-center justify-between"
                         >
                           <div class="flex items-center gap-3">
@@ -263,16 +280,16 @@ function paymentSummary(comanda) {
                             >
                               {{ item.amount || 1 }}x
                             </span>
-                            <span class="text-[#212121] text-sm font-bold">{{
-                              item.name
-                            }}</span>
+                            <div class="flex flex-col">
+                              <span class="text-[#212121] text-sm font-bold">{{ item.name }}</span>
+                              <span
+                                v-if="item.variationName"
+                                class="text-[10px] font-black text-blue-500 uppercase tracking-wide"
+                              >{{ item.variationName }}</span>
+                            </div>
                           </div>
                           <span class="text-[#757575] text-sm font-bold">
-                            {{
-                              formatCurrency(
-                                (item.price || 0) * (item.amount || 1),
-                              )
-                            }}
+                            {{ formatCurrency((item.price || 0) * (item.amount || 1)) }}
                           </span>
                         </div>
                       </div>

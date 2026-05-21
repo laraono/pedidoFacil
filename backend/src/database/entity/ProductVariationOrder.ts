@@ -6,16 +6,10 @@ import { ProductOrder } from "./ProductOrder"
 export class ProductVariationOrder {
 
     @PrimaryColumn({
-        name: 'ID_Item_Pedido',
+        name: 'ID_Item_Produto',
         type: 'int'
     })
-    orderId!: number
-
-    @PrimaryColumn({
-        name: 'ID_Produto',
-        type: 'int'
-    })
-    productId!: number
+    productOrderId!: number
 
     @PrimaryColumn({
         name: 'ID_Variacao',
@@ -32,8 +26,8 @@ export class ProductVariationOrder {
     })
     price!: number
 
-    @CreateDateColumn({ 
-        type: "timestamp", 
+    @CreateDateColumn({
+        type: "timestamp",
         default: () => "CURRENT_TIMESTAMP(6)"
     })
     created_at!: Date;
@@ -50,10 +44,7 @@ export class ProductVariationOrder {
     productVariation!: ProductVariation
 
     @ManyToOne(() => ProductOrder, (productOrder) => productOrder.variations)
-    @JoinColumn([
-        { name: 'ID_Item_Pedido', referencedColumnName: 'orderId' },
-        { name: 'ID_Produto', referencedColumnName: 'productId' }
-    ])
+    @JoinColumn({name: 'ID_Item_Produto'})
     productOrder!: ProductOrder
 
 }

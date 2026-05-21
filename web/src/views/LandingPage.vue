@@ -1,8 +1,9 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSubscriptionStore } from '@/stores/subscriptions';
 import { request } from '@/services/api.js';
+import { planApi } from '@/services/planApi';
 import { User, Menu, X, Check } from 'lucide-vue-next';
 
 import imgLogo from '@/assets/light-logo.png'; 
@@ -15,6 +16,28 @@ const router = useRouter();
 const isMenuOpen = ref(false);
 const subscriptionStore = useSubscriptionStore();
 const planPrices = computed(() => subscriptionStore.planPrices);
+
+const plans = ref([]);
+
+function normalizeFrequency(frequency) {
+  const f = String(frequency ?? '').trim().toLowerCase();
+  if (['anual', '12', 'annual', 'yearly'].includes(f)) return 'anual';
+  if (['months', '1', 'mensal', 'monthly', 'month'].includes(f)) return 'mensal';
+  return f;
+}
+
+function parsedFeatures(features) {
+  if (!features) return [];
+  try { return JSON.parse(features); }
+  catch { return features.split(',').map(f => f.trim()).filter(Boolean); }
+}
+
+const annualPlan = computed(() => plans.value.find(p => normalizeFrequency(p.frequency) === 'anual') ?? null);
+const monthlyPlan = computed(() => plans.value.find(p => normalizeFrequency(p.frequency) === 'mensal') ?? null);
+
+onMounted(async () => {
+  try { plans.value = await planApi.list(); } catch (_) {}
+});
 
 const form = ref({
   nome: '',
@@ -218,41 +241,62 @@ const submitContato = async () => {
         <section id="planos" class="w-full max-w-[1000px] px-5 lg:px-0 py-24 text-center">
            <h2 class="text-[#212121] text-3xl lg:text-[42px] font-bold mb-16 tracking-tight">Escolha seu plano</h2>
            <div class="flex flex-col lg:flex-row gap-8 justify-center items-stretch">
-              <div class="flex-1 bg-white px-8 py-12 rounded border border-[#E0E0E0] flex flex-col items-center hover:border-primary/30 transition-all max-w-md mx-auto w-full h-full hover:shadow-md">
-                 <h3 class="text-[#212121] text-3xl font-black mb-4">Mensal</h3>
-                 <div class="text-[#212121] text-5xl lg:text-6xl font-black mb-1 tracking-tighter">R${{ planPrices.monthly.toFixed(2).replace('.',',') }}<span class="text-xl font-normal text-[#757575] tracking-normal">/mês</span></div>
+
+              <!-- Plano Mensal -->
+              <div class="flex-1 bg-white px-8 py-12 rounded border border-[#E0E0E0] flex flex-col items-center hover:border-primary/30 transition-all max-w-md mx-auto w-full hover:shadow-md">
+                 <h3 class="text-[#212121] text-3xl font-black mb-4">{{ monthlyPlan?.name ?? 'Mensal' }}</h3>
+                 <div class="text-[#212121] text-5xl lg:text-6xl font-black mb-1 tracking-tighter">
+                   {{ monthlyPlan ? Number(monthlyPlan.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : `R$${planPrices.monthly.toFixed(2).replace('.',',')}` }}<span class="text-xl font-normal text-[#757575] tracking-normal">/mês</span>
+                 </div>
                  <p class="text-xs text-[#757575] mb-2">cobrado mensalmente</p>
                  <div class="w-full h-px bg-[#E0E0E0] my-8"></div>
                  <div class="flex flex-col gap-5 mb-10 w-full px-2 text-left">
-                    <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Suporte ao Usuário</div>
-                    <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Relatórios de Desempenho</div>
-                    <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Automação do Sistema</div>
-                    <div class="flex items-center gap-4 text-transparent opacity-0 select-none"><Check class="w-5 h-5 flex-shrink-0" /> Maior Estabilidade</div>
+                    <template v-if="parsedFeatures(monthlyPlan?.features).length">
+                      <div v-for="feat in parsedFeatures(monthlyPlan?.features)" :key="feat" class="flex items-center gap-4 text-[#757575] font-medium">
+                        <Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> {{ feat }}
+                      </div>
+                    </template>
+                    <template v-else>
+                      <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Suporte ao Usuário</div>
+                      <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Relatórios de Desempenho</div>
+                      <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Automação do Sistema</div>
+                    </template>
                  </div>
                  <button @click="navigateToRegister" class="bg-primary text-white font-black py-4 px-12 rounded w-full hover:bg-primary-dark transition-colors mt-auto text-base active:scale-95">
                     Contratar Mensal
                  </button>
               </div>
-              <div class="flex-1 bg-primary-light px-8 py-12 rounded border-2 border-primary/30 flex flex-col items-center hover:border-primary/60 transition-all max-w-md mx-auto w-full h-full hover:shadow-lg relative">
+
+              <!-- Plano Anual -->
+              <div class="flex-1 bg-primary-light px-8 py-12 rounded border-2 border-primary/30 flex flex-col items-center hover:border-primary/60 transition-all max-w-md mx-auto w-full hover:shadow-lg relative">
                  <div class="absolute top-0 right-0 bg-primary text-white font-black text-[10px] px-4 py-2 rounded uppercase tracking-wider">RECOMENDADO</div>
-                 <h3 class="text-primary text-3xl font-black mb-4">Anual</h3>
-                 <div class="text-[#212121] text-5xl lg:text-6xl font-black mb-1 tracking-tighter">R${{ planPrices.annual.toFixed(2).replace('.',',') }}<span class="text-xl font-normal text-[#757575] tracking-normal">/mês</span></div>
-                 <div class="flex items-center gap-2 mb-1">
-                   <span class="text-xs line-through text-[#757575]">R${{ (planPrices.monthly * 12).toFixed(2).replace('.',',') }}/ano</span>
-                   <span class="text-[10px] font-black text-white bg-accent px-2 py-0.5 rounded uppercase tracking-wide">Promoção</span>
+                 <h3 class="text-primary text-3xl font-black mb-4">{{ annualPlan?.name ?? 'Anual' }}</h3>
+                 <div class="text-[#212121] text-5xl lg:text-6xl font-black mb-1 tracking-tighter">
+                   {{ annualPlan ? Number(annualPlan.price/12).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : `R$${planPrices.annual.toFixed(2).replace('.',',')}` }}<span class="text-xl font-normal text-[#757575] tracking-normal">/mês</span>
                  </div>
-                 <p class="text-xs text-primary font-bold mb-2">Total anual: R${{ (planPrices.annual * 12).toFixed(2).replace('.',',') }}</p>
+                 <p class="text-xs text-primary font-bold mb-2">
+                   Preço total anual: {{ annualPlan ? Number(annualPlan.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : `R$${(planPrices.annual * 12).toFixed(2).replace('.',',')}` }}
+                 </p>
+                 <p class="text-xs text-[#757575] mb-1">Parcele em até 12× no cartão</p>
                  <div class="w-full h-px bg-primary/20 my-8"></div>
                  <div class="flex flex-col gap-5 mb-10 w-full px-2 text-left">
-                    <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Suporte ao Usuário</div>
-                    <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Relatórios de Desempenho</div>
-                    <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Automação do Sistema</div>
-                    <div class="flex items-center gap-4 text-[#212121] font-bold"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Maior Estabilidade</div>
+                    <template v-if="parsedFeatures(annualPlan?.features).length">
+                      <div v-for="feat in parsedFeatures(annualPlan?.features)" :key="feat" class="flex items-center gap-4 text-[#757575] font-medium">
+                        <Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> {{ feat }}
+                      </div>
+                    </template>
+                    <template v-else>
+                      <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Suporte ao Usuário</div>
+                      <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Relatórios de Desempenho</div>
+                      <div class="flex items-center gap-4 text-[#757575] font-medium"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Automação do Sistema</div>
+                      <div class="flex items-center gap-4 text-[#212121] font-bold"><Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" /> Maior Estabilidade</div>
+                    </template>
                  </div>
                  <button @click="navigateToRegister" class="bg-primary text-white font-black py-4 px-12 rounded w-full hover:bg-primary-dark transition-colors mt-auto text-base shadow-md shadow-primary/20 active:scale-95">
                     Contratar Anual
                  </button>
               </div>
+
            </div>
         </section>
         

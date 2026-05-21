@@ -12,7 +12,9 @@ import {
   roleRepository,
   receiptRepository,
   paymentRepository,
-  refreshTokenRepository, 
+  refreshTokenRepository,
+  planRepository,
+  subscriptionRepository,
 } from '../repository';
 
 import { AuthService } from './AuthService';
@@ -29,19 +31,23 @@ import { ReceiptService } from './ReceiptService';
 import { MetricsService } from './MetricsService';
 import { MenuService } from './MenuService';
 import { PaymentService } from './PaymentService';
+import { MercadoPagoService } from './MercadoPagoService';
+import { SubscriptionService } from './SubscriptionService';
+import { PlanService } from './PlanService';
 
 const authService = new AuthService(AppDataSource, userRepository, refreshTokenRepository);
 const categoryService = new CategoryService(categoryRepository);
 
 const metricsService = new MetricsService(receiptRepository, AppDataSource);
+const mercadoPagoService = new MercadoPagoService();
 
 const receiptService = new ReceiptService(receiptRepository, paymentRepository, establishmentRepository);
-const paymentService = new PaymentService(AppDataSource);
+const paymentService = new PaymentService(AppDataSource, mercadoPagoService, paymentRepository, orderRepository);
 
 const comandaService = new ComandaService(
-    AppDataSource, 
-    comandaRepository, 
-    paymentService, 
+    AppDataSource,
+    comandaRepository,
+    paymentService,
     receiptService
 );
 
@@ -57,18 +63,23 @@ const orderService = new OrderService(
 );
 const couponService = new CouponService(couponRepository);
 const roleService = new RoleService(roleRepository, userRepository);
-const profileService = new ProfileService(userRepository);
 
 const establishmentService = new EstablishmentService(
   establishmentRepository,
   userRepository,
   configurationRepository,
   roleRepository,
+  mercadoPagoService,
 );
+
+const profileService = new ProfileService(userRepository, establishmentService);
 
 const employeeService = new EmployeeService(userRepository, roleRepository);
 
 const menuService = new MenuService(categoryRepository, productRepository);
+
+const subscriptionService = new SubscriptionService(planRepository, subscriptionRepository, mercadoPagoService, AppDataSource);
+const planService = new PlanService(planRepository, subscriptionService, mercadoPagoService, AppDataSource);
 
 export {
   authService,
@@ -84,7 +95,10 @@ export {
   receiptService,
   metricsService,
   menuService,
-  paymentService
+  paymentService,
+  subscriptionService,
+  planService,
+  mercadoPagoService,
 };
 
 export {
@@ -101,5 +115,8 @@ export {
   ReceiptService,
   MetricsService,
   MenuService,
-  PaymentService
+  PaymentService,
+  MercadoPagoService,
+  SubscriptionService,
+  PlanService,
 };

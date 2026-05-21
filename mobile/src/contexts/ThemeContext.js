@@ -1,5 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { appConfig } from "../services/apiConfig"; 
+import { appConfig } from "../services/apiConfig";
+
+function isLightColor(hex) {
+  if (!hex || !hex.startsWith("#") || hex.length < 7) return true;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
+}
 
 const defaultTheme = {
   fundoGeral: "#F5F6FA",
@@ -11,10 +19,13 @@ const defaultTheme = {
   textoBotoes: "#FFFFFF",
   textoSecundario: "#757575",
   borda: "#E0E0E0",
+  bordaCard: "#E0E0E0",
   headerGeral: "#FFFFFF",
   nomeUnidade: "Comanda",
   permitirObservacoes: true,
   fonte: "System",
+  logoUrl: null,
+  nomeEstabelecimento: null,
 };
 
 export const ThemeContext = createContext({});
@@ -25,28 +36,41 @@ export function ThemeProvider({ children }) {
   const loadTheme = async () => {
     try {
       const response = await fetch(
-        `${appConfig.API_URL}/estabelecimento/${appConfig.ESTABLISHMENT_ID}/config`
+        `${appConfig.API_URL}/estabelecimento/${appConfig.ESTABLISHMENT_ID}/public`
       );
 
       if (response.ok) {
-        const config = await response.json();
+        const data = await response.json();
+        const config = data.configurations || {};
+        const logoPath = config.logo;
+        const logoUrl = logoPath
+          ? `${appConfig.BASE_IP}/uploads/${logoPath}`
+          : null;
+
+        const bgColor = config.backgroundColor || defaultTheme.fundoGeral;
+        const cardColor = config.cardsColor || defaultTheme.fundoProdutos;
+        const bgIsLight = isLightColor(bgColor);
+        const cardIsLight = isLightColor(cardColor);
 
         setTheme({
-          fundoGeral: config.backgroundColor || defaultTheme.fundoGeral,
-          fundoProdutos: config.cardsColor || defaultTheme.fundoProdutos,
+          fundoGeral: bgColor,
+          fundoProdutos: cardColor,
           corTextoPrincipal: config.textsColor || defaultTheme.corTextoPrincipal,
           categoriaAtiva: config.activeCateogryColor || defaultTheme.categoriaAtiva,
           corCategorias: config.activeCateogryColor || defaultTheme.corCategorias,
           corBotoes: config.buttonsColor || defaultTheme.corBotoes,
           textoBotoes: config.buttonsTextColor || defaultTheme.textoBotoes,
-          
+
           nomeUnidade: config.comandaLabel || defaultTheme.nomeUnidade,
           permitirObservacoes: config.allowObservations !== false,
           fonte: config.fontFamily || defaultTheme.fonte,
-          
-          textoSecundario: "#757575",
-          borda: "#E0E0E0",
-          headerGeral: config.cardsColor || defaultTheme.headerGeral,
+
+          textoSecundario: bgIsLight ? "#757575" : "rgba(255,255,255,0.5)",
+          borda: bgIsLight ? "#E0E0E0" : "rgba(255,255,255,0.12)",
+          bordaCard: cardIsLight ? "#E0E0E0" : "rgba(255,255,255,0.12)",
+          headerGeral: cardColor,
+          logoUrl,
+          nomeEstabelecimento: data.name || null,
         });
         console.log("[ThemeContext] Tema sincronizado via API.");
       }

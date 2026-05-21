@@ -67,17 +67,29 @@ export class EstablishmentController {
       updateData.selfServiceEnabled = updateData.selfServiceEnabled === 'true';
     }
 
-    if (req.file) {
+    if (updateData.pixStaticEnabled === 'true' || updateData.pixStaticEnabled === 'false') {
+      updateData.pixStaticEnabled = updateData.pixStaticEnabled === 'true';
+    }
+
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+
+    if (files?.logo?.[0]) {
       const oldProfile = await this.establishmentService.getEstablishmentProfile(establishmentId);
-      
-      if (oldProfile && oldProfile.configurations && oldProfile.configurations.logo) {
+      if (oldProfile?.configurations?.logo) {
         deleteFile(oldProfile.configurations.logo);
       }
-      
       updateData.configurations = {
         ...updateData.configurations,
-        logo: req.file.filename
+        logo: files.logo[0].filename
       };
+    }
+
+    if (files?.pixQrCode?.[0]) {
+      const oldProfile = await this.establishmentService.getEstablishmentProfile(establishmentId);
+      if (oldProfile?.pixQrCodeUrl && !oldProfile.pixQrCodeUrl.startsWith('http')) {
+        deleteFile(oldProfile.pixQrCodeUrl);
+      }
+      updateData.pixQrCodeUrl = files.pixQrCode[0].filename;
     }
 
     const updated = await this.establishmentService.updateEstablishment(establishmentId, updateData);
@@ -92,4 +104,5 @@ export class EstablishmentController {
     const result = await this.establishmentService.softDeleteEstablishment(establishmentId);
     return res.status(200).json(result);
   });
+
 }

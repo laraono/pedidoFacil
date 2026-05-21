@@ -16,8 +16,6 @@ const senha = ref('');
 const isLoading = ref(false);
 const serverError = ref(null);
 
-if (authStore.isAuthenticated) router.push('/app/dashboard');
-
 onMounted(() => window.scrollTo(0, 0));
 
 const handleLogin = async () => {

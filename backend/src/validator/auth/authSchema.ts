@@ -16,7 +16,7 @@ function validarCNPJ(cnpj: string): boolean {
 }
 
 export const loginSchema = z.object({
-    email: z.string().email('E-mail inválido.'),
+    email: z.string().min(1, 'E-mail é obrigatório.'),
     senha: z.string().min(1, 'Senha é obrigatória.'),
 });
 

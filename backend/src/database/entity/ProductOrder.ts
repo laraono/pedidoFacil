@@ -1,5 +1,4 @@
-import { Entity, Column, OneToMany, PrimaryColumn, JoinColumn, CreateDateColumn, DeleteDateColumn, ManyToOne } from "typeorm"
-import { ProductVariation } from "./ProductVariation"
+import { Entity, Column, OneToMany, PrimaryGeneratedColumn, JoinColumn, CreateDateColumn, DeleteDateColumn, ManyToOne } from "typeorm"
 import { Product } from "./Product"
 import { Order } from "./Order"
 import { ProductVariationOrder } from "./ProductVariationOrder"
@@ -7,13 +6,19 @@ import { ProductVariationOrder } from "./ProductVariationOrder"
 @Entity({name: 'ItemPedido'})
 export class ProductOrder {
 
-    @PrimaryColumn({
+    @PrimaryGeneratedColumn({
+        name: 'ID_Item',
+        type: 'int'
+    })
+    id!: number
+
+    @Column({
         name: 'ID_Pedido',
         type: 'int'
     })
     orderId!: number
 
-    @PrimaryColumn({
+    @Column({
         name: 'ID_Produto',
         type: 'int'
     })
@@ -42,8 +47,8 @@ export class ProductOrder {
     })
     price!: number
 
-    @CreateDateColumn({ 
-        type: "timestamp", 
+    @CreateDateColumn({
+        type: "timestamp",
         default: () => "CURRENT_TIMESTAMP(6)"
     })
     created_at!: Date;

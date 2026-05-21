@@ -8,6 +8,8 @@ import { UserRepository } from '../repository/UserRepository';
 import { RoleRepository } from '../repository/RoleRepository';
 import { SaveOnboardingStepDTO } from '../dto/establishment/SaveOnboardingStepDTO';
 import { FinalizeOnboardingDTO } from '../dto/establishment/FinalizeOnboardingDTO';
+import { MercadoPagoService } from './MercadoPagoService';
+import { User } from '../database/entity/User';
 
 export class EstablishmentService {
 
@@ -15,7 +17,8 @@ export class EstablishmentService {
     private establishmentRepository: EstablishmentRepository,
     private userRepository: UserRepository,
     private configRepository: ConfigurationRepository,
-    private roleRepository: RoleRepository
+    private roleRepository: RoleRepository,
+    private mercadoPagoService?: MercadoPagoService
   ) { }
 
   private parsePermissions(permissions: any): string[] {
@@ -47,7 +50,10 @@ export class EstablishmentService {
       throw new AppError('Código de acesso inválido.', 404);
     }
 
-    if (!establishment.selfServiceEnabled) {
+    const serviceTypes = this.parseServiceTypes(establishment.serviceTypes);
+    const hasAutoatendimento = serviceTypes.includes('Autoatendimento');
+
+    if (!establishment.selfServiceEnabled && !hasAutoatendimento) {
       throw new AppError('O autoatendimento está desativado para este estabelecimento.', 403);
     }
 
@@ -154,6 +160,13 @@ export class EstablishmentService {
       ? JSON.stringify(updateData.paymentMethods)
       : updateData.paymentMethods;
 
+    let serviceTypes = this.parseServiceTypes(establishment.serviceTypes);
+    if (updateData.selfServiceEnabled === true && !serviceTypes.includes(ServiceType.AUTOATENDIMENTO)) {
+      serviceTypes.push(ServiceType.AUTOATENDIMENTO);
+    } else if (updateData.selfServiceEnabled === false) {
+      serviceTypes = serviceTypes.filter((t) => t !== ServiceType.AUTOATENDIMENTO);
+    }
+
     this.establishmentRepository.merge(establishment, {
       name: updateData.name,
       cnpj: updateData.cnpj,
@@ -162,6 +175,9 @@ export class EstablishmentService {
       paymentMethods: paymentMethods,
       selfServiceEnabled: updateData.selfServiceEnabled,
       selfServiceCode: updateData.selfServiceCode,
+      serviceTypes: JSON.stringify(serviceTypes),
+      pixStaticEnabled: updateData.pixStaticEnabled,
+      ...(updateData.pixQrCodeUrl !== undefined && { pixQrCodeUrl: updateData.pixQrCodeUrl }),
     });
 
     await this.establishmentRepository.save(establishment);
@@ -192,6 +208,23 @@ export class EstablishmentService {
     const establishment = await this.getEstablishmentProfile(establishmentId);
     await this.establishmentRepository.softRemove(establishment);
     return { message: 'Establishment desativado com sucesso (Soft Delete).' };
+  }
+
+  async createStore(params: { address: string; city: string; state: string; user: User }) {
+    const establishment = await this.establishmentRepository.getEstablishmentByUser(params.user);
+    if (!establishment || !this.mercadoPagoService) return;
+
+    const storeId = await this.mercadoPagoService.createStore({
+      name: establishment.name,
+      establishmentId: establishment.id,
+      address: params.address,
+      city: params.city,
+      state: params.state,
+    });
+
+    if (storeId) {
+      await this.establishmentRepository.addMercadoPagoId(establishment.id, storeId);
+    }
   }
 
   private async ensureDefaultConfiguration(establishmentId: number) {

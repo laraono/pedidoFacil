@@ -1,1 +1,2 @@
-export { CreateCategoryDTO } from './CreateCategoryDTO'
+export { CreateCategoryDTO, CreateCategory, CreateCategoryParams } from './CreateCategoryDTO'
+export { EditCategory, EditCategoryParams } from './EditCategoryDTO'

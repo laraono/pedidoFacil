@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToOne } from "typeorm"
 import { SubscriptionStatus, UserStatus } from "../../enum"
 import { Plan } from "./Plan"
 import { Establishment } from "./Establishment"
@@ -46,6 +46,22 @@ export class Subscription {
     })
     receipt?: string
 
+    @Column({
+        name: 'ID_MercadoPago',
+        type: 'varchar',
+        nullable: true
+    })
+    mercadoPagoId?: string
+
+    @Column({
+        name: 'Valor',
+        type: 'decimal',
+        precision: 10,
+        scale: 2,
+        nullable: true
+    })
+    price?: number
+
     @ManyToOne(() => Establishment, (establishment) => establishment.subscriptions)
     @JoinColumn({
         name: 'ID_Estabelecimento'
@@ -57,5 +73,11 @@ export class Subscription {
         name: 'ID_Plano'
     })
     plan!: Plan
-    
+
+    @ManyToOne(() => Plan, { nullable: true, eager: false })
+    @JoinColumn({
+        name: 'ID_Plano_Agendado'
+    })
+    scheduledPlan?: Plan | null
+
 }

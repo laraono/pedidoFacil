@@ -16,7 +16,8 @@ import { Coupon } from "./Coupon"
 import { Comanda } from "./Comanda"
 import { Order } from "./Order"
 import { Payment } from "./Payment"
-import { Configuration } from "./Configuration" 
+import { Configuration } from "./Configuration"
+import { Register } from "./Register" 
 
 @Entity({ name: 'ESTABELECIMENTO' })
 export class Establishment {
@@ -97,6 +98,27 @@ export class Establishment {
     })
     serviceTypes?: string
 
+    @Column({
+        type: 'varchar',
+        name: 'Mercado_Pago_Id',
+        nullable: true,
+    })
+    mercadoPagoId?: string
+
+    @Column({
+        type: 'boolean',
+        name: 'Pix_Estatico_Ativo',
+        default: false
+    })
+    pixStaticEnabled?: boolean
+
+    @Column({
+        type: 'text',
+        name: 'Pix_QR_Code_URL',
+        nullable: true,
+    })
+    pixQrCodeUrl?: string
+
     @DeleteDateColumn({
         name: 'Data_Exclusao',
         nullable: true
@@ -138,4 +160,7 @@ export class Establishment {
 
     @OneToMany(() => Payment, (payment) => payment.establishment)
     payments!: Payment[]
+
+    @OneToMany(() => Register, (register) => register.establishment)
+    registers!: Register[]
 }

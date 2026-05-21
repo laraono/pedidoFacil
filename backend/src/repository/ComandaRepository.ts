@@ -10,7 +10,7 @@ export class ComandaRepository extends Repository<Comanda>{
     }
 
     async createComanda(comanda: CreateComanda) {
-        return await this.save(comanda)
+        return await this.save(comanda as any)
     }
 
     async listComandas(establishmentId: number) {

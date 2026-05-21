@@ -13,3 +13,6 @@ export const createComandaSchema = z.object({
 });
 
 export type CreateComandaDTO = z.infer<typeof createComandaSchema>['body'];
+
+export type CreateComanda = CreateComandaDTO
+export type CreateComandaParams = CreateComandaDTO

@@ -64,14 +64,14 @@ export interface UserProfile {
     id: number;
     name: string;
     email: string;
-    isAdmin: boolean; 
+    isAdmin: boolean;
   };
   estabelecimentoId: number | null;
   cargo: {
     id: number;
-    name: string;
+    nome: string;
     permissoes: string | string[];
-  };
+  } | null;
 }
 
 export const authApi = {

@@ -61,7 +61,7 @@ export const useAuthStore = defineStore('auth', {
         isAdmin: !!perfil.usuario.isAdmin,
         cargo: perfil.cargo ? {
           id: perfil.cargo.id,
-          name: perfil.cargo.name,
+          name: perfil.cargo.nome,
           permissoes,
         } : null
       };
@@ -74,17 +74,29 @@ export const useAuthStore = defineStore('auth', {
     loadSession(): void {
       const token = localStorage.getItem('accessToken');
       const userRaw = localStorage.getItem('user');
-      const user: AuthUser | null = userRaw ? JSON.parse(userRaw) : null;
-      
+
+      let user: AuthUser | null = null;
+      try {
+        user = userRaw ? JSON.parse(userRaw) : null;
+      } catch {
+        localStorage.removeItem('user');
+        localStorage.removeItem('accessToken');
+        return;
+      }
+
       if (!token || !user) return;
 
       this.user = user;
       this.isAuthenticated = true;
 
       const configStatusRaw = localStorage.getItem('configStatus');
-      const savedConfigStatus: ConfigStatus | null = configStatusRaw ? JSON.parse(configStatusRaw) : null;
-      if (savedConfigStatus) {
-        this.configStatus = savedConfigStatus;
+      try {
+        const savedConfigStatus: ConfigStatus | null = configStatusRaw ? JSON.parse(configStatusRaw) : null;
+        if (savedConfigStatus) {
+          this.configStatus = savedConfigStatus;
+        }
+      } catch {
+        localStorage.removeItem('configStatus');
       }
     },
 
@@ -114,10 +126,10 @@ export const useAuthStore = defineStore('auth', {
           email: perfil.usuario.email,
           estabelecimentoId: perfil.estabelecimentoId ?? null,
           isAdmin: !!perfil.usuario.isAdmin,
-          cargo: perfil.cargo ? { 
-            id: perfil.cargo.id, 
-            name: perfil.cargo.name, 
-            permissoes 
+          cargo: perfil.cargo ? {
+            id: perfil.cargo.id,
+            name: perfil.cargo.nome,
+            permissoes
           } : null,
         };
 

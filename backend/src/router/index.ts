@@ -13,4 +13,6 @@ export { couponRouter } from './CouponRouter'
 export { menuRouter } from './MenuRouter';
 export { configRouter } from './ConfigurationRouter'
 export { paymentRouter } from './PaymentRouter'
-export { contactRouter } from './ContactRouter' 
+export { planRouter } from './PlanRouter'
+export { subscriptionRouter } from './SubscriptionRouter'
+export { contactRouter } from './ContactRouter'

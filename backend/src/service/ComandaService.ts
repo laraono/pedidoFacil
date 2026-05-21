@@ -32,25 +32,28 @@ export class ComandaService {
   }
 
   async listComandas(establishmentId: number): Promise<Comanda[]> {
-    return await this.comandaRepository.find({
-      where: { establishment: { id: establishmentId } }, 
-      relations: [
-        'pedidos',
-        'pedidos.productOrders',
-        'pedidos.productOrders.product',
-      ],
-    });
+    return await this.dataSource.getRepository(Comanda)
+      .createQueryBuilder('comanda')
+      .leftJoinAndSelect('comanda.pedidos', 'pedido')
+      .leftJoinAndSelect('pedido.productOrders', 'po')
+      .leftJoinAndSelect('po.product', 'product')
+      .leftJoinAndSelect('po.variations', 'variation')
+      .leftJoinAndSelect('variation.productVariation', 'pv')
+      .where('comanda.establishment = :id', { id: establishmentId })
+      .getMany();
   }
 
   async listComandasByStatus(status: ComandaStatus, establishmentId: number): Promise<Comanda[]> {
-    return await this.comandaRepository.find({
-      where: { status, establishment: { id: establishmentId } }, 
-      relations: [
-        'pedidos',
-        'pedidos.productOrders',
-        'pedidos.productOrders.product',
-      ],
-    });
+    return await this.dataSource.getRepository(Comanda)
+      .createQueryBuilder('comanda')
+      .leftJoinAndSelect('comanda.pedidos', 'pedido')
+      .leftJoinAndSelect('pedido.productOrders', 'po')
+      .leftJoinAndSelect('po.product', 'product')
+      .leftJoinAndSelect('po.variations', 'variation')
+      .leftJoinAndSelect('variation.productVariation', 'pv')
+      .where('comanda.status = :status', { status })
+      .andWhere('comanda.establishment = :id', { id: establishmentId })
+      .getMany();
   }
 
   async updateComandaStatus(

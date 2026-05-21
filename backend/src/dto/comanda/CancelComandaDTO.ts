@@ -13,6 +13,8 @@ export const cancelComandaSchema = z.object({
 
 export type CancelComandaDTO = z.infer<typeof cancelComandaSchema>['body'];
 
+export type CancelComanda = CancelComandaDTO
+
 export type CancelComandaParams = {
     user: User,
     reason: string,

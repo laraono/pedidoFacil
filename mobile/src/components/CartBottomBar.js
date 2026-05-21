@@ -97,7 +97,7 @@ const getStyles = (theme) =>
       shadowOpacity: 0.1,
       shadowRadius: 10,
       borderTopWidth: 1,
-      borderColor: theme.borda,
+      borderColor: theme.bordaCard,
       position: "absolute",
       bottom: 0,
       left: 0,

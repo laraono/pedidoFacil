@@ -95,6 +95,12 @@ export const validateCreateTotemOrder = (req: Request, res: Response, next: Next
   next();
 };
 
+export const validateCancelOrders =
+    (_req: Request, _res: Response, next: NextFunction) => next();
+
+export const validateListOrders =
+    (_req: Request, _res: Response, next: NextFunction) => next();
+
 export const validateUpdateOrderStatus = (req: Request, res: Response, next: NextFunction) => {
   const result = updateOrderStatusSchema.safeParse({
     params: req.params,

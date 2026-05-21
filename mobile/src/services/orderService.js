@@ -1,16 +1,16 @@
 import { appConfig } from './apiConfig';
 
-export async function submitOrder({ cartItems }) {
+export async function submitOrder({ cartItems, customerName = null }) {
 
     const itens = cartItems.map(item => ({
         productId: item.id,
         productVariationId: item.size?.id || null,
-        productName: item.name, 
+        productName: item.name,
         quantity: item.quantity,
         observation: item.observation || '',
     }));
 
-    const body = { itens };
+    const body = { itens, customerName };
 
     const headers = {
         'Content-Type': 'application/json',

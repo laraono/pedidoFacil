@@ -15,3 +15,6 @@ export const createCategorySchema = z.object({
 });
 
 export type CreateCategoryDTO = z.infer<typeof createCategorySchema>['body'];
+
+export type CreateCategory = CreateCategoryDTO
+export type CreateCategoryParams = CreateCategoryDTO

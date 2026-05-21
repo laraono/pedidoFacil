@@ -1,5 +1,6 @@
 import { OrderService } from "../service";
 import { Request, Response } from 'express';
+import { OrderStatus } from '../enum';
 import { getIO } from '../socket';
 
 export class OrderController {
@@ -25,20 +26,27 @@ export class OrderController {
             });
 
             const fullOrder = await this.orderService.getOrderWithDetails(order.id);
-            
-            const mappedItems = fullOrder?.productOrders.map(po => ({
-                name: po.product?.name || "Produto",
-                quantity: po.quantity,
-                observation: po.observation
-            })) || [];
+
+            const mappedItems = fullOrder?.productOrders?.map(po => {
+                const variationName = po.variations
+                    ?.map(v => v.productVariation?.name)
+                    .filter(Boolean)
+                    .join(', ') || '';
+                return {
+                    name: po.product?.name || 'Produto',
+                    variationName,
+                    quantity: po.quantity,
+                    observation: po.observation,
+                };
+            }) ?? [];
 
             getIO().to('kitchen').emit('new_order', {
-                orderId:      order.id, 
+                orderId:      order.id,
                 comandaId:    Number(comandaId),
                 comandaLabel: req.body.comandaLabel || `Comanda #${comandaId}`,
-                items:        mappedItems, 
+                items:        mappedItems,
                 createdAt:    new Date().toISOString(),
-                source:       req.body.source || 'web', 
+                source:       req.body.source || 'web',
             });
 
             return res.status(201).json(order);
@@ -62,20 +70,29 @@ export class OrderController {
             const order = await this.orderService.createTotemOrder({
                 ...req.body,
                 establishmentId: usuario.estabelecimento,
-                comandaLabel: comandaLabel
+                comandaLabel: comandaLabel,
+                customerName: req.body.customerName ?? null
             });
 
             const fullOrder = await this.orderService.getOrderWithDetails(order.id);
-            const mappedItems = fullOrder?.productOrders.map(po => ({
-                name: po.product?.name || "Produto",
-                quantity: po.quantity,
-                observation: po.observation
-            })) || [];
+            const mappedItems = fullOrder?.productOrders?.map(po => {
+                const variationName = po.variations
+                    ?.map(v => v.productVariation?.name)
+                    .filter(Boolean)
+                    .join(', ') || '';
+                return {
+                    name: po.product?.name || 'Produto',
+                    variationName,
+                    quantity: po.quantity,
+                    observation: po.observation,
+                };
+            }) ?? [];
 
             getIO().to('kitchen').emit('new_order', {
                 orderId:      order.id,
-                comandaId:    order.comanda.id, 
+                comandaId:    order.comanda.id,
                 comandaLabel: comandaLabel,
+                customerName: req.body.customerName ?? null,
                 items:        mappedItems,
                 createdAt:    new Date().toISOString(),
                 source:       'totem',
@@ -122,5 +139,18 @@ export class OrderController {
         const { comandaId } = req.params;
         const orders = await this.orderService.listOrdersByComanda(Number(comandaId));
         res.status(200).send(orders);
+    }
+
+    async cancelOrder(req: Request, res: Response) {
+        const { orderId } = req.params;
+        const { cancellationDescription } = req.body;
+        const usuario = (req as any).usuario;
+        await this.orderService.updateOrderStatus(
+            Number(orderId),
+            OrderStatus.CANCELADO,
+            usuario.id,
+            cancellationDescription
+        );
+        res.sendStatus(204);
     }
 }

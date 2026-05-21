@@ -3,27 +3,29 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { 
-    categoryRouter, 
-    comandaRouter, 
-    orderRouter, 
-    productRouter, 
-    authRouter, 
-    establishmentRouter, 
-    metricsRouter, 
-    receiptRouter, 
-    roleRouter, 
-    employeeRouter, 
-    profileRouter, 
+import {
+    categoryRouter,
+    comandaRouter,
+    orderRouter,
+    productRouter,
+    authRouter,
+    establishmentRouter,
+    metricsRouter,
+    receiptRouter,
+    roleRouter,
+    employeeRouter,
+    profileRouter,
     couponRouter,
     menuRouter,
     configRouter,
-    contactRouter 
+    planRouter,
+    subscriptionRouter,
+    contactRouter
 } from './router';
 import { AppDataSource } from './database';
 import { errorHandler } from './middleware';
 import { initSocket } from './socket';
-import path from 'path'; 
+import path from 'path';
 
 dotenv.config();
 
@@ -50,14 +52,15 @@ app.use(cookieParser());
 const httpServer = http.createServer(app);
 
 AppDataSource.initialize().then(async () => {
+    app.use('/api/v1', planRouter)
+    app.use('/api/v1', subscriptionRouter)
     app.use('/api/v1', authRouter)
+    app.use('/api/v1', configRouter)
     app.use('/api/v1', categoryRouter)
     app.use('/api/v1', comandaRouter)
     app.use('/api/v1', orderRouter)
     app.use('/api/v1', productRouter)
-    
     app.use('/api/v1', menuRouter)
-
     app.use('/api/v1/estabelecimento', establishmentRouter)
     app.use('/api/v1/metrics', metricsRouter)
     app.use('/api/v1/receipts', receiptRouter)
@@ -65,10 +68,9 @@ AppDataSource.initialize().then(async () => {
     app.use('/api/v1/funcionario', employeeRouter)
     app.use('/api/v1/conta', profileRouter)
     app.use('/api/v1/cupons', couponRouter)
-    app.use('/api/v1', configRouter)
     app.use('/api/v1/contato', contactRouter)
     app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
-    
+
     app.use(errorHandler)
 
     const PORT = 3000;

@@ -43,3 +43,30 @@ export const updateOrderStatusSchema = z.object({
 export type CreateOrderDTO = z.infer<typeof createOrderSchema>['body'];
 export type CreateTotemOrderDTO = z.infer<typeof createTotemOrderSchema>['body'];
 export type UpdateOrderStatusDTO = z.infer<typeof updateOrderStatusSchema>['body'];
+
+export type CreateOrder = CreateOrderDTO
+export type ItensArray = CreateOrderDTO['itens']
+
+export type OrderParams = {
+    status: OrderStatus
+    serviceType?: string
+    comanda: { id: number }
+    establishment: { id: number }
+    isDelivered: boolean
+}
+
+export type ProductOrderParams = {
+    orderId: number
+    productId: number
+    quantity: number
+    price: number
+    observation?: string
+    order?: { id: number }
+    product?: { id: number }
+}
+
+export type ProductVariationOrderParams = {
+    productOrderId: number
+    productVariationId: number
+    price: number
+}

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { appConfig, saveAppConfig } from '../services/apiConfig';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function ConfigScreen({ onFinishConfig }) {
+  const { loadTheme } = useTheme();
   const [ipAddress, setIpAddress] = useState(appConfig.BASE_IP);
   const [selfServiceCode, setSelfServiceCode] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -36,10 +38,11 @@ export default function ConfigScreen({ onFinishConfig }) {
         throw new Error('O servidor não retornou um ID válido.');
       }
 
-      await saveAppConfig(cleanIp, fetchedEstablishmentId, selfServiceCode);  
-          
+      await saveAppConfig(cleanIp, fetchedEstablishmentId, selfServiceCode);
+      await loadTheme();
+
       Alert.alert('Sucesso!', `Conectado ao estabelecimento: ${data.name || 'ID ' + fetchedEstablishmentId}`);
-      onFinishConfig(); 
+      onFinishConfig();
 
     } catch (error) {
       if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 
 const SUBSCRIPTION_KEY = 'subscription';
+const PLAN_KEY = 'plan';
 
 export type SubscriptionStatus = 'ativo' | 'expirado' | 'desativado';
 export type SubscriptionPlan = 'mensal' | 'anual';
@@ -83,6 +84,14 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     }
   }
 
+  function setPlanToBeSubscribed(id: number) {
+    localStorage.setItem(PLAN_KEY, JSON.stringify(id))
+  }
+
+  function getPlanToBeSubscribed() {
+    return localStorage.getItem(PLAN_KEY)
+  }
+
   function updatePaymentMethod(method: string): void {
     if (subscription.value) {
       subscription.value.paymentMethod = method;
@@ -159,6 +168,8 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     updatePlan,
     setPendingPlan,
     updatePlanPrices,
+    setPlanToBeSubscribed,
+    getPlanToBeSubscribed,
     recordPayment
   };
 });

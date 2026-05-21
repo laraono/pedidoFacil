@@ -1,5 +1,6 @@
 import { DataSource, Repository } from "typeorm";
 import { Establishment } from "../database/entity/Establishment";
+import { User } from "../database";
 
 export class EstablishmentRepository extends Repository<Establishment> {
 
@@ -28,4 +29,27 @@ export class EstablishmentRepository extends Repository<Establishment> {
             relations: ['manager', 'configurations']
         });
     }
+
+    async getEstablishment(establishmetnId: number) {
+        return await this.findOne({
+            where: {
+                id: establishmetnId
+            }
+        })
+    }
+
+    async getEstablishmentByUser(user: User) {
+        return await this.findOne({
+            where: {
+                users: {
+                    id: user.id
+                }
+            }
+        })
+    }
+
+    async addMercadoPagoId(establishmentId: number, mercadoPagoId: string) {
+        await this.update(establishmentId, {mercadoPagoId})
+    }
+
 }

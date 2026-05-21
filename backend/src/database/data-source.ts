@@ -4,7 +4,7 @@ import {
     Admin, Category, Comanda, Configuration, Coupon, Establishment,
     Order, Payment, PaymentOrder, Plan, Product, ProductOrder,
     ProductVariation, ProductVariationOrder, Receipt, RefreshToken, Role, StorageIten,
-    StorageMovimentation, Subscription, User
+    StorageMovimentation, Subscription, User, Register
 } from "./entity/"
 
 export const AppDataSource = new DataSource({
@@ -20,8 +20,8 @@ export const AppDataSource = new DataSource({
         Admin, Category, Comanda, Configuration, Coupon, Establishment,
         Order, Payment, PaymentOrder, Plan, Product, ProductOrder,
         ProductVariation, ProductVariationOrder, Receipt, RefreshToken, Role, StorageIten,
-        StorageMovimentation, Subscription, User
+        StorageMovimentation, Subscription, User, Register
     ],
-    migrations: ['build/database/migration/*.js'],
+    migrations: [__dirname + '/migration/*.js'],
     subscribers: [],
 })
