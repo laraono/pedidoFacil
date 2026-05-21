@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useMenuStore } from "@/stores/productsManagement.js";
-import { categoryApi } from "@/services/categoryApi"; // IMPORT DA API
+import { categoryApi } from "@/services/categoryApi"; 
 import { useToast } from "@/composables/useToast";
 import BaseInput from "@/components/ui/BaseInput.vue";
 import BaseButton from "@/components/ui/BaseButton.vue";
