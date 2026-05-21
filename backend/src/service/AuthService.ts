@@ -2,22 +2,19 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { DataSource } from 'typeorm';
 import { Admin } from '../database/entity/Admin';
-import { LoginDTO, RegisterDTO } from '../dto';
+import { LoginDTO, RegisterDTO } from '../dto/auth/';
 import { UserStatus } from '../enum';
 import { AppError } from '../middleware/error/AppError';
 import { UserRepository, RefreshTokenRepository } from '../repository';
 import { gerarTokens, gerarTokenAdmin, hashToken } from '../config/crypto';
 
-const DUMMY_HASH =
-  '$2b$12$eImiTXuWVxfM37uY4JANjQev3nHN.SBuNFa5UPSmKUVgwjBiCXhHu';
+const DUMMY_HASH = '$2b$12$eImiTXuWVxfM37uY4JANjQev3nHN.SBuNFa5UPSmKUVgwjBiCXhHu';
 
 function validarSenhaForte(senha: string): string | null {
   if (senha.length < 8) return 'A senha deve ter pelo menos 8 caracteres.';
-  if (!/[A-Z]/.test(senha))
-    return 'A senha deve conter pelo menos uma letra maiúscula.';
+  if (!/[A-Z]/.test(senha)) return 'A senha deve conter pelo menos uma letra maiúscula.';
   if (!/[0-9]/.test(senha)) return 'A senha deve conter pelo menos um número.';
-  if (!/[^A-Za-z0-9]/.test(senha))
-    return 'A senha deve conter pelo menos um caractere especial.';
+  if (!/[^A-Za-z0-9]/.test(senha)) return 'A senha deve conter pelo menos um caractere especial.';
   return null;
 }
 
@@ -25,21 +22,16 @@ export class AuthService {
   constructor(
     private dataSource: DataSource,
     private userRepository: UserRepository,
-    private refreshTokenRepository: RefreshTokenRepository,
+    private refreshTokenRepository: RefreshTokenRepository, 
   ) {}
 
   async registerManager(data: RegisterDTO) {
-    if (!data.nome_usuario?.trim())
-      throw new AppError('Nome do usuário é obrigatório.', 400);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email))
-      throw new AppError('E-mail inválido.', 400);
-
+    if (!data.nome_usuario?.trim()) throw new AppError('Nome do usuário é obrigatório.', 400);
+    
     const senhaErro = validarSenhaForte(data.senha);
     if (senhaErro) throw new AppError(senhaErro, 400);
 
-    const emailExiste = await this.userRepository.findOne({
-      where: { email: data.email },
-    });
+    const emailExiste = await this.userRepository.findOne({ where: { email: data.email } });
     if (emailExiste) throw new AppError('Este e-mail já está cadastrado.', 409);
 
     const salt = await bcrypt.genSalt(12);
@@ -53,17 +45,12 @@ export class AuthService {
     });
 
     const savedUser = await this.userRepository.save(user);
-
     const { accessToken, refreshToken } = await gerarTokens(savedUser);
 
-    return {
-      accessToken,
-      refreshToken,
-      usuario: {
-        id: savedUser.id,
-        nome: savedUser.name,
-        email: savedUser.email,
-      },
+    return { 
+      accessToken, 
+      refreshToken, 
+      usuario: { id: savedUser.id, nome: savedUser.name, email: savedUser.email } 
     };
   }
 
@@ -74,38 +61,24 @@ export class AuthService {
     });
 
     if (user) {
-      if (user.status !== UserStatus.ATIVA)
-        throw new AppError('Esta conta foi desativada.', 403);
+      if (user.status !== UserStatus.ATIVA) throw new AppError('Esta conta foi desativada.', 403);
 
       const senhaValida = await bcrypt.compare(data.senha, user.password);
       if (!senhaValida) throw new AppError('Credenciais inválidas.', 401);
 
       const { accessToken, refreshToken } = await gerarTokens(user);
-
+      
       return {
-        accessToken,
+        accessToken, 
         refreshToken,
-        usuario: {
-          id: user.id,
-          nome: user.name,
-          email: user.email,
-          status: user.status,
-        },
-        cargo: user.role
-          ? {
-              id: user.role.id,
-              nome: user.role.name,
-              permissoes: user.role.permissions,
-            }
-          : null,
+        usuario: { id: user.id, nome: user.name, email: user.email, status: user.status },
+        cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions } : null,
         estabelecimentoId: user.establishment?.id ?? null,
       };
     }
 
-    const admin = await this.dataSource
-      .getRepository(Admin)
-      .findOne({ where: { email: data.email } });
-
+    const admin = await this.dataSource.getRepository(Admin).findOne({ where: { email: data.email } });
+      
     if (!admin) {
       await bcrypt.compare(data.senha, DUMMY_HASH);
       throw new AppError('Credenciais inválidas.', 401);
@@ -115,9 +88,9 @@ export class AuthService {
     if (!senhaAdminValida) throw new AppError('Credenciais inválidas.', 401);
 
     const { accessToken, refreshToken } = await gerarTokenAdmin(admin);
-
+    
     return {
-      accessToken,
+      accessToken, 
       refreshToken,
       usuario: { id: admin.id, nome: admin.name, email: admin.email },
       cargo: { id: 0, nome: 'Admin', permissoes: ['ALL'] },
@@ -134,21 +107,16 @@ export class AuthService {
     }
 
     if (!decoded.isRefresh) {
-      throw new AppError(
-        'Token fornecido não é válido para esta operação.',
-        403,
-      );
+      throw new AppError('Token fornecido não é válido para esta operação.', 403);
     }
 
     if (decoded.isAdmin) {
-      const admin = await this.dataSource
-        .getRepository(Admin)
-        .findOne({ where: { id: decoded.id } });
+      const admin = await this.dataSource.getRepository(Admin).findOne({ where: { id: decoded.id } });
       if (!admin) throw new AppError('Admin inválido.', 403);
 
       const { accessToken, refreshToken } = await gerarTokenAdmin(admin);
       return {
-        accessToken,
+        accessToken, 
         refreshToken,
         usuario: { id: admin.id, nome: admin.name, email: admin.email },
         cargo: { id: 0, nome: 'Admin', permissoes: ['ALL'] },
@@ -161,54 +129,41 @@ export class AuthService {
       relations: { establishment: true, role: true },
     });
 
-    if (!user) {
-      throw new AppError('Usuário inválido ou desativado.', 403);
-    }
+    if (!user) throw new AppError('Usuário inválido ou desativado.', 403);
 
     const { accessToken, refreshToken } = await gerarTokens(user);
 
     return {
-      accessToken,
+      accessToken, 
       refreshToken,
-      usuario: {
-        id: user.id,
-        nome: user.name,
-        email: user.email,
-        status: user.status,
-      },
-      cargo: user.role
-        ? {
-            id: user.role.id,
-            nome: user.role.name,
-            permissoes: user.role.permissions,
-          }
-        : null,
+      usuario: { id: user.id, nome: user.name, email: user.email, status: user.status },
+      cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions } : null,
       estabelecimentoId: user.establishment?.id ?? null,
     };
   }
 
+  /**
+   * Realiza o logout revogando o Refresh Token no banco (Segurança da 104)
+   */
   async logout(tokenStr: string) {
     if (!tokenStr) return { message: 'Logout realizado com sucesso.' };
 
     const hash = hashToken(tokenStr);
     const tokenEntity = await this.refreshTokenRepository.findByHash(hash);
 
-    if (!tokenEntity) {
-      throw new AppError('Refresh token inválido.', 403);
+    if (tokenEntity) {
+      await this.refreshTokenRepository.revokeByHash(hash);
     }
 
-    await this.refreshTokenRepository.revokeByHash(hash);
     return { message: 'Logout realizado com sucesso.' };
   }
 
   async perfil(userId: number, isAdmin = false) {
     if (isAdmin) {
-      const admin = await this.dataSource
-        .getRepository(Admin)
-        .findOne({ where: { id: userId } });
+      const admin = await this.dataSource.getRepository(Admin).findOne({ where: { id: userId } });
       if (!admin) throw new AppError('Admin não encontrado.', 401);
       return {
-        usuario: { ...admin, isAdmin: true },
+        usuario: { ...admin, isAdmin: true }, 
         cargo: { nome: 'Admin', permissoes: ['ALL'] },
         estabelecimentoId: null,
       };
@@ -222,14 +177,8 @@ export class AuthService {
     if (!user) throw new AppError('Usuário inválido.', 401);
 
     return {
-      usuario: { ...user, isAdmin: false },
-      cargo: user.role
-        ? {
-            id: user.role.id,
-            nome: user.role.name,
-            permissoes: user.role.permissions,
-          }
-        : null,
+      usuario: { ...user, isAdmin: false }, 
+      cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions } : null,
       estabelecimentoId: user.establishment?.id ?? null,
     };
   }

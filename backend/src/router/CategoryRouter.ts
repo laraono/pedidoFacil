@@ -1,7 +1,11 @@
 import express, { Request, Response } from 'express';
 import { categoryController } from '../controller';
-import { validateCreateCategory } from '../validator';
 import { catchAsync } from '../middleware';
+import { validateUpload } from '../middleware/validateUpload'; 
+import { validateRequest } from '../middleware/validateRequest';
+import { createCategorySchema } from '../dto/category/CreateCategoryDTO';
+import { updateCategorySchema } from '../dto/category/UpdateCategoryDTO'; 
+
 const authenticate = require('../middleware/authenticate');
 const roleAccessControl = require('../middleware/roleAccessControl');
 
@@ -20,7 +24,8 @@ categoryRouter.post(
   '/categories',
   authenticate,
   roleAccessControl.checkPermission('CARDAPIO'),
-  validateCreateCategory,
+  validateUpload.single('imagem'), 
+  validateRequest(createCategorySchema), 
   catchAsync((req: Request, res: Response) =>
     categoryController.createCategory(req, res),
   ),
@@ -30,6 +35,8 @@ categoryRouter.put(
   '/categories/:id',
   authenticate,
   roleAccessControl.checkPermission('CARDAPIO'),
+  validateUpload.single('imagem'), 
+  validateRequest(updateCategorySchema), 
   catchAsync((req: Request, res: Response) =>
     categoryController.updateCategory(req, res),
   ),

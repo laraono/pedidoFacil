@@ -1,10 +1,9 @@
-import { CreateProduct } from "../dto";
-import { AppError } from "../middleware";
+import { CreateProductDTO } from "../dto/product/CreateProductDTO"; 
+import { AppError } from "../middleware/error/AppError";
 import { ProductRepository, ProductVariationRepository } from "../repository";
 import { CategoryService } from "./CategoryService";
 
 export class ProductService {
-
     private categoryService: CategoryService
     private productRepository: ProductRepository
     private productVariationRepository: ProductVariationRepository
@@ -19,12 +18,12 @@ export class ProductService {
         this.productVariationRepository = productVariationRepository
     }
 
-    async createProduct(params: CreateProduct) {
-        const {product, productVariations} = params
+    async createProduct(params: CreateProductDTO) {
+        const { product, productVariations } = params
 
         const category = await this.categoryService.getCategory(product.categoryId)
 
-        if(!category) {
+        if (!category) {
             throw new AppError('Categoria não existe', 400)
         }
 
@@ -33,7 +32,7 @@ export class ProductService {
             category: category
         } as any) 
 
-        if(createdProduct && productVariations) { 
+        if (createdProduct && productVariations) { 
             for (const variation of productVariations) {
                 await this.productVariationRepository.createProductVariation({
                     ...variation,
@@ -61,7 +60,6 @@ export class ProductService {
     async getProduct(productId: number) {
         return await this.productRepository.getProduct(productId)
     }
-
 
     async updateProduct(productId: number, data: any) {
         const updateData: any = {};

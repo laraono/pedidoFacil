@@ -13,6 +13,7 @@ employeeRouter.get('/inactive', checkPermission('USUARIO_VIEW', 'ALL'), employee
 
 employeeRouter.post('/', checkPermission('USUARIO_CREATE', 'ALL'), validateCreateEmployee, employeeController.create);
 employeeRouter.put('/:id', checkPermission('USUARIO_EDIT', 'ALL'), validateUpdateEmployee, employeeController.update);
+
 employeeRouter.delete('/:id', checkPermission('USUARIO_DELETE', 'ALL'), employeeController.delete);
 employeeRouter.patch('/:id/reactivate', checkPermission('USUARIO_EDIT', 'ALL'), employeeController.reactivate);
 

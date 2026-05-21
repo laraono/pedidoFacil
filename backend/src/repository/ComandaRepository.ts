@@ -1,5 +1,5 @@
 import { DataSource, Repository } from "typeorm";
-import { Comanda } from "../database";
+import { Comanda } from "../database/entity/Comanda"; 
 import { CancelComandaParams, CreateComanda } from "../dto";
 import { ComandaStatus } from "../enum";
 

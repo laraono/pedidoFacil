@@ -2,24 +2,21 @@ import { Establishment } from '../database/entity/Establishment';
 import { AppError } from '../middleware/error/AppError';
 import { ServiceType } from '../enum';
 import { gerarTokens } from '../config/crypto';
-
 import { EstablishmentRepository } from '../repository/EstablishmentRepository';
 import { ConfigurationRepository } from '../repository/ConfigurationRepository';
-import { UserRepository } from '../repository/UserRepository'; 
+import { UserRepository } from '../repository/UserRepository';
 import { RoleRepository } from '../repository/RoleRepository';
-
 import { SaveOnboardingStepDTO } from '../dto/establishment/SaveOnboardingStepDTO';
 import { FinalizeOnboardingDTO } from '../dto/establishment/FinalizeOnboardingDTO';
-import { UpdateEstablishmentDTO } from '../dto/establishment/UpdateEstablishmentDTO';
 
 export class EstablishmentService {
-  
+
   constructor(
-      private establishmentRepository: EstablishmentRepository,
-      private userRepository: UserRepository,
-      private configRepository: ConfigurationRepository,
-      private roleRepository: RoleRepository
-  ) {}
+    private establishmentRepository: EstablishmentRepository,
+    private userRepository: UserRepository,
+    private configRepository: ConfigurationRepository,
+    private roleRepository: RoleRepository
+  ) { }
 
   private parsePermissions(permissions: any): string[] {
     if (Array.isArray(permissions)) return permissions;
@@ -44,7 +41,6 @@ export class EstablishmentService {
 
   async saveOnboardingStep(userId: number, stepData: SaveOnboardingStepDTO) {
     const user = await this.userRepository.findByIdWithEstablishment(userId);
-
     if (!user) throw new AppError('User not found.', 404);
 
     let establishment = await this.establishmentRepository.findByManagerId(userId);
@@ -54,7 +50,6 @@ export class EstablishmentService {
         const cnpjExists = await this.establishmentRepository.findByCnpj(stepData.cnpj);
         if (cnpjExists) throw new AppError('This CNPJ is already registered.', 400);
       }
-
       establishment = this.establishmentRepository.create({
         ...stepData,
         manager: user,
@@ -75,7 +70,6 @@ export class EstablishmentService {
 
   async finalizeOnboarding(userId: number, data: FinalizeOnboardingDTO) {
     const { roles: rolesToCreate, hasTotem } = data;
-      
     const user = await this.userRepository.findByIdWithEstablishment(userId);
 
     if (!user || !user.establishment) {
@@ -105,7 +99,7 @@ export class EstablishmentService {
 
     if (hasTotem) {
       const currentTypes = this.parseServiceTypes(establishment.serviceTypes);
-      
+
       if (!currentTypes.includes(ServiceType.AUTOATENDIMENTO)) {
         currentTypes.push(ServiceType.AUTOATENDIMENTO);
         establishment.serviceTypes = JSON.stringify(currentTypes);
@@ -118,7 +112,7 @@ export class EstablishmentService {
 
     const { accessToken, refreshToken } = await gerarTokens(updatedUser);
 
-    return { 
+    return {
       message: 'Onboarding completed successfully.',
       accessToken,
       refreshToken,
@@ -138,12 +132,12 @@ export class EstablishmentService {
     return establishment;
   }
 
-  async updateEstablishment(establishmentId: number, updateData: UpdateEstablishmentDTO) {
+  async updateEstablishment(establishmentId: number, updateData: any) {
     const establishment = await this.getEstablishmentProfile(establishmentId);
-    
-    const paymentMethods = typeof updateData.paymentMethods !== 'string' 
-        ? JSON.stringify(updateData.paymentMethods) 
-        : updateData.paymentMethods;
+
+    const paymentMethods = typeof updateData.paymentMethods !== 'string'
+      ? JSON.stringify(updateData.paymentMethods)
+      : updateData.paymentMethods;
 
     this.establishmentRepository.merge(establishment, {
       name: updateData.name,
@@ -154,21 +148,26 @@ export class EstablishmentService {
       selfServiceEnabled: updateData.selfServiceEnabled,
       selfServiceCode: updateData.selfServiceCode,
     });
-    
+
     await this.establishmentRepository.save(establishment);
 
     if (updateData.configurations) {
-        const config = await this.configRepository.findByEstablishmentId(establishmentId);
-        if (config) {
-            this.configRepository.merge(config, {
-                logo: updateData.configurations.logo ?? config.logo,
-                backgroundColor: updateData.configurations.backgroundColor ?? config.backgroundColor,
-                cardsColor: updateData.configurations.cardsColor ?? config.cardsColor,
-                buttonsColor: updateData.configurations.buttonsColor ?? config.buttonsColor,
-                comandaLabel: updateData.configurations.comandaLabel ?? config.comandaLabel
-            });
-            await this.configRepository.save(config);
-        }
+      const config = await this.configRepository.findByEstablishmentId(establishmentId);
+      if (config) {
+        this.configRepository.merge(config, {
+          logo: updateData.configurations.logo !== undefined ? updateData.configurations.logo : config.logo,
+          backgroundColor: updateData.configurations.backgroundColor ?? config.backgroundColor,
+          cardsColor: updateData.configurations.cardsColor ?? config.cardsColor,
+          buttonsColor: updateData.configurations.buttonsColor ?? config.buttonsColor,
+          comandaLabel: updateData.configurations.comandaLabel ?? config.comandaLabel,
+          textsColor: updateData.configurations.textsColor ?? config.textsColor,
+          buttonsTextColor: updateData.configurations.buttonsTextColor ?? config.buttonsTextColor,
+          activeCateogryColor: updateData.configurations.activeCateogryColor ?? config.activeCateogryColor,
+          fontFamily: updateData.configurations.fontFamily ?? config.fontFamily,
+          allowObservations: updateData.configurations.allowObservations ?? config.allowObservations
+        });
+        await this.configRepository.save(config);
+      }
     }
 
     return await this.getEstablishmentProfile(establishmentId);

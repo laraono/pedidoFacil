@@ -4,6 +4,8 @@ import { OrderStatus, ComandaStatus } from '../enum';
 import { AppError } from '../middleware/error/AppError';
 import { PaymentService } from './PaymentService';
 import { ReceiptService } from './ReceiptService';
+import { CreateComandaDTO } from '../dto/comanda/CreateComandaDTO';
+import { CancelComandaDTO } from '../dto/comanda/CancelComandaDTO';
 
 export class ComandaService {
   constructor(
@@ -19,7 +21,7 @@ export class ComandaService {
     });
   }
 
-  async createComanda(comandaData: any): Promise<Comanda> {
+  async createComanda(comandaData: CreateComandaDTO): Promise<Comanda> {
     const novaComanda = this.comandaRepository.create({
       ...comandaData,
       status: ComandaStatus.ABERTA,
@@ -29,9 +31,9 @@ export class ComandaService {
     return await this.comandaRepository.save(novaComanda);
   }
 
-  async listComandas(establishmentId: number): Promise<Comanda[]> { // 👈 Recebe o ID
+  async listComandas(establishmentId: number): Promise<Comanda[]> {
     return await this.comandaRepository.find({
-      where: { establishment: { id: establishmentId } }, // 🛡️ BLINDAGEM AQUI
+      where: { establishment: { id: establishmentId } }, 
       relations: [
         'pedidos',
         'pedidos.productOrders',
@@ -40,9 +42,9 @@ export class ComandaService {
     });
   }
 
-  async listComandasByStatus(status: ComandaStatus, establishmentId: number): Promise<Comanda[]> { // 👈 Recebe o ID
+  async listComandasByStatus(status: ComandaStatus, establishmentId: number): Promise<Comanda[]> {
     return await this.comandaRepository.find({
-      where: { status, establishment: { id: establishmentId } }, // 🛡️ BLINDAGEM AQUI
+      where: { status, establishment: { id: establishmentId } }, 
       relations: [
         'pedidos',
         'pedidos.productOrders',
@@ -50,7 +52,6 @@ export class ComandaService {
       ],
     });
   }
-
 
   async updateComandaStatus(
     comandaId: number,
@@ -65,11 +66,7 @@ export class ComandaService {
     await this.comandaRepository.save(comanda);
   }
 
-  async cancelComanda(data: {
-    comandaId: number;
-    userId: number;
-    reason: string;
-  }): Promise<void> {
+  async cancelComanda(data: CancelComandaDTO): Promise<void> {
     const comanda = await this.comandaRepository.findOne({
       where: { id: data.comandaId },
     });

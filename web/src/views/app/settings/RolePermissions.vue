@@ -94,7 +94,6 @@ const saveRole = async () => {
   if (!Array.isArray(currentRole.value.permissions)) {
     currentRole.value.permissions = [];
   }
-
   if (!validateAll(currentRole.value)) {
     const msg = !currentRole.value.permissions.length
       ? "Selecione ao menos uma permissão antes de salvar o cargo."
@@ -110,16 +109,20 @@ const saveRole = async () => {
     } else {
       await roleApi.create(currentRole.value);
     }
-
     await fetchRoles();
-    showToast(
-      `Cargo "${currentRole.value.name}" salvo com sucesso!`,
-      "success",
-    );
+    showToast(`Cargo "${currentRole.value.name}" salvo com sucesso!`, "success");
     isModalOpen.value = false;
   } catch (error) {
-    const msg = error.response?.data?.message || "Erro ao salvar cargo.";
-    showToast(msg, "error");
+    const data = error.response?.data || error.data || error;
+    if (data?.errors && Array.isArray(data.errors)) {
+      data.errors.forEach((err) => {
+        let field = err.campo.replace("body.", "");
+        errors.value[field] = err.mensagem;
+      });
+      showToast("Corrija os erros destacados no formulário.", "error");
+    } else {
+      showToast(data?.message || "Erro ao salvar cargo.", "error");
+    }
   } finally {
     isLoading.value = false;
   }

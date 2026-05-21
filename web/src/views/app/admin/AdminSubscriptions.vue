@@ -10,7 +10,6 @@ import {
 const router = useRouter();
 const subscriptionStore = useSubscriptionStore();
 
-// Plan price editing
 const editingPrices = ref(false);
 const priceForm = ref({ monthly: subscriptionStore.planPrices.monthly, annual: subscriptionStore.planPrices.annual });
 const applyPriceMaskAdmin = (raw) => {

@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import { comandaController } from '../controller';
 import { validateCancelComanda, validateCreateComanda } from '../validator';
 import { catchAsync } from '../middleware';
+
 const authenticate = require('../middleware/authenticate');
 const tenant = require('../middleware/tenant');
 const roleAccessControl = require('../middleware/roleAccessControl');

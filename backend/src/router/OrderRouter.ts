@@ -1,7 +1,8 @@
 import express, { Request, Response } from 'express';
 import { orderController } from '../controller';
-import { validateCreateOrder } from '../validator';
+import { validateCreateOrder, validateUpdateOrderStatus } from '../validator/order';
 import { catchAsync } from '../middleware';
+
 const authenticate = require('../middleware/authenticate');
 const tenant = require('../middleware/tenant');
 const roleAccessControl = require('../middleware/roleAccessControl');
@@ -31,6 +32,7 @@ orderRouter.put(
   tenant.verifyTenancy('COMANDA', 'comandaId'),
   tenant.verifyTenancy('PEDIDO', 'orderId'),
   roleAccessControl.checkPermission('COZINHA'),
+  validateUpdateOrderStatus,
   catchAsync((req: Request, res: Response) => orderController.updateOrderStatus(req, res))
 );
 

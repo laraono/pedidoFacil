@@ -5,7 +5,6 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
-  DeleteDateColumn,
 } from 'typeorm';
 import { UserStatus } from '../../enum';
 import { Establishment } from './Establishment';
@@ -59,22 +58,22 @@ export class User {
     length: 14,
     unique: true,
   })
-  cpf!: string;
+  cpf!: string | null;
 
   @Column({ type: 'varchar', name: 'Telefone', nullable: true, length: 20 })
-  phone!: string;
+  phone!: string | null;
 
   @Column({ type: 'varchar', name: 'Endereco', nullable: true, length: 255 })
-  address!: string;
+  address!: string | null;
 
   @Column({ type: 'varchar', name: 'Cidade', nullable: true, length: 100 })
-  city!: string;
+  city!: string | null;
 
   @Column({ type: 'varchar', name: 'Estado', nullable: true, length: 2 })
-  state!: string;
+  state!: string | null;
 
   @Column({ type: 'varchar', name: 'CEP', nullable: true, length: 10 })
-  zip!: string;
+  zip!: string | null;
 
   @ManyToOne(() => Establishment, (establishment) => establishment.users)
   @JoinColumn({
@@ -96,5 +95,4 @@ export class User {
 
   @OneToMany(() => Payment, (payments) => payments.user)
   payments!: Payment[];
-
 }

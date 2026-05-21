@@ -60,6 +60,14 @@ const currentQuantity = ref(1);
 const currentObservation = ref("");
 const selectedSize = ref(null);
 
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return '';
+  if (imagePath.startsWith('http') || imagePath.startsWith('data:image') || imagePath.startsWith('blob:')) return imagePath;
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+  const host = BASE_URL.replace('/api/v1', '');
+  return `${host}/uploads/${imagePath}`;
+};
+
 onMounted(async () => {
   bgColor.value = localStorageService.getBackgroundColors() || "#F5F6FA";
   buttonColor.value = localStorageService.getButtonColors() || "#1E7BC4";
@@ -71,7 +79,7 @@ onMounted(async () => {
   comandaUnitLabel.value = localStorageService.getComandaUnitLabel() || "Comanda";
 
   const savedImage = localStorageService.getImage();
-  if (savedImage) imageUrl.value = savedImage;
+  if (savedImage) imageUrl.value = getImageUrl(savedImage);
 
   const data = await getEstablishmentMock();
   establishmentName.value = data?.info?.name || "Seu Restaurante";
@@ -182,14 +190,17 @@ const confirmAndSendToKitchen = async () => {
   isSubmitting.value = true;
   try {
     let comandaIdParaEnviar = selectedComandaId.value;
+    
     if (comandaIdParaEnviar === "new") {
       const label = `${comandaUnitLabel.value} ${newComandaNumber.value.trim()}`;
-      comandaIdParaEnviar = await comandaApi.create({ description: label, status: "Aberta", total: 0 });
+      const novaComanda = await comandaApi.create({ description: label, status: "Aberta", total: 0 });
+      comandaIdParaEnviar = novaComanda.id || novaComanda; 
     }
 
     const orderPayload = {
       status: "Aguardando_Preparo",
       serviceType: "Autoatendimento",
+      comandaId: comandaIdParaEnviar, 
       itens: cart.value.map(item => ({
         productId: item.productId,
         quantity: item.quantity,
@@ -200,12 +211,18 @@ const confirmAndSendToKitchen = async () => {
 
     await comandaApi.addOrder(comandaIdParaEnviar, orderPayload);
     await comandaStore.loadComandas();
+    
     cart.value = [];
     isComandaModalOpen.value = false;
     isCartModalOpen.value = false;
     showToast("Pedido enviado para a cozinha!", "success");
   } catch (error) {
-    showToast("Erro ao enviar pedido.", "error");
+    const data = error.response?.data || error.data || error;
+    if (data?.errors && Array.isArray(data.errors)) {
+      showToast(data.errors[0].mensagem, "error");
+    } else {
+      showToast(data?.message || "Erro ao enviar pedido para a cozinha.", "error");
+    }
   } finally {
     isSubmitting.value = false;
   }
@@ -241,8 +258,12 @@ const saveVisuals = async () => {
 
     showToast("Aparência salva com sucesso!", "success");
   } catch (error) {
-    console.error("Erro ao salvar no servidor:", error);
-    showToast("Erro ao salvar no servidor.", "error");
+    const data = error.response?.data || error.data || error;
+    if (data?.errors && Array.isArray(data.errors)) {
+      showToast(data.errors[0].mensagem, "error");
+    } else {
+      showToast(data?.message || "Erro ao salvar configurações no servidor.", "error");
+    }
   } finally {
     isSubmitting.value = false;
   }
@@ -326,7 +347,7 @@ watch(() => route.query.editMode, checkEditMode);
               <template v-if="category.image">
                 <div
                   class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-                  :style="{ backgroundImage: `url(${category.image})` }"
+                  :style="{ backgroundImage: `url(${getImageUrl(category.image)})` }"
                 ></div>
                 <div
                   class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"
@@ -381,7 +402,7 @@ watch(() => route.query.editMode, checkEditMode);
                   <div
                     v-if="product.image"
                     class="w-full h-40 rounded mb-4 bg-cover bg-center shadow-inner"
-                    :style="{ backgroundImage: `url(${product.image})` }"
+                    :style="{ backgroundImage: `url(${getImageUrl(product.image)})` }"
                   ></div>
                   <div class="flex-1 z-10">
                     <h3
@@ -522,6 +543,11 @@ watch(() => route.query.editMode, checkEditMode);
                 class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6"
                 :style="{ backgroundColor: adaptiveSubtleBg }"
               >
+                <div
+                  v-if="currentProduct?.image"
+                  class="w-full h-48 rounded bg-cover bg-center shadow-inner"
+                  :style="{ backgroundImage: `url(${getImageUrl(currentProduct.image)})` }"
+                ></div>
                 <p class="leading-relaxed text-base opacity-90">
                   {{ currentProduct?.description }}
                 </p>
@@ -1164,7 +1190,6 @@ watch(() => route.query.editMode, checkEditMode);
   border-radius: 10px;
 }
 
-/* Placeholder dinâmico via CSS var --ph injetada pelo :style */
 .adaptive-placeholder::placeholder {
   color: var(--ph, rgba(0, 0, 0, 0.35));
 }

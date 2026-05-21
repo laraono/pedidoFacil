@@ -20,8 +20,6 @@ export const loginSchema = z.object({
     senha: z.string().min(1, 'Senha é obrigatória.'),
 });
 
-// backend/src/validator/authSchema.ts
-
 export const registerSchema = z.object({
     nome_usuario: z.string().min(1, 'Nome do usuário é obrigatório.'),
     email: z.string().email('E-mail inválido.'),

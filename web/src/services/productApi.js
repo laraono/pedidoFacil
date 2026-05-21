@@ -7,12 +7,12 @@ export const productApi = {
   
   create: (data) => request('/products', { 
     method: 'POST', 
-    body: JSON.stringify(data) 
+    body: data
   }),
   
   update: (id, data) => request(`/products/${id}`, { 
     method: 'PUT', 
-    body: JSON.stringify(data) 
+    body: data 
   }),
   
   delete: (id) => request(`/products/${id}`, { method: 'DELETE' }),

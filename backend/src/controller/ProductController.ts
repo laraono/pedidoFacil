@@ -1,6 +1,8 @@
 import { ProductService } from '../service';
 import { Request, Response } from 'express';
 import { getIO } from '../socket'; 
+import { deleteFile } from '../utils/fileHelper';
+
 
 export class ProductController {
   private productService: ProductService;
@@ -10,13 +12,17 @@ export class ProductController {
   }
 
   async createProduct(req: Request, res: Response) {
-    if (req.body.product) {
-      req.body.product.establishment = {
-        id: (req as any).usuario.estabelecimento,
-      };
+    let productData = req.body.product || req.body;
+
+    productData.establishment = {
+      id: (req as any).usuario.estabelecimento,
+    };
+
+    if (req.file) {
+      productData.imagem = req.file.filename;
     }
 
-    const productId = await this.productService.createProduct(req.body);
+    const productId = await this.productService.createProduct(productData);
 
     getIO().emit('menu_updated'); 
     res.status(201).json(productId);
@@ -43,10 +49,23 @@ export class ProductController {
   }
 
   async updateProduct(req: Request, res: Response) {
-    await this.productService.updateProduct(Number(req.params.id), req.body);
+    const id = Number(req.params.id);
+    let productData = { ...req.body };
+
+    if (req.file) {
+      const oldProduct = await this.productService.getProduct(id);
+      
+      if (oldProduct && oldProduct.image) {
+        deleteFile(oldProduct.image);
+      }
+      
+      productData.image = req.file.filename;
+    }
+
+    await this.productService.updateProduct(id, productData);
 
     getIO().emit('menu_updated'); 
-    res.sendStatus(204);
+    res.status(200).json({ message: 'Produto atualizado com sucesso' });
   }
 
   async deleteProduct(req: Request, res: Response) {

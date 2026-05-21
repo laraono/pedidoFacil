@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useMenuStore } from "@/stores/productsManagement.js";
+import { categoryApi } from "@/services/categoryApi"; // IMPORT DA API
 import { useToast } from "@/composables/useToast";
 import BaseInput from "@/components/ui/BaseInput.vue";
 import BaseButton from "@/components/ui/BaseButton.vue";
@@ -37,7 +38,7 @@ const displayedCategories = computed(() =>
 const errors = ref({});
 const touched = ref({});
 
-const form = ref({ id: null, name: "", image: null, imagePreview: null });
+const form = ref({ id: null, name: "", imageFile: null, imagePreview: null });
 
 const confirmModal = ref({
   show: false,
@@ -47,6 +48,14 @@ const confirmModal = ref({
   data: null,
   isError: false,
 });
+
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return '';
+  if (imagePath.startsWith('http') || imagePath.startsWith('data:image')) return imagePath;
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+  const host = BASE_URL.replace('/api/v1', '');
+  return `${host}/uploads/${imagePath}`;
+};
 
 const showConfirm = (title, message, onConfirm, data = null, options = {}) => {
   confirmModal.value = {
@@ -75,7 +84,7 @@ const touchField = (field) => {
 
 const openAddModal = () => {
   isEditing.value = false;
-  form.value = { id: null, name: "", image: null, imagePreview: null };
+  form.value = { id: null, name: "", imageFile: null, imagePreview: null };
   errors.value = {};
   touched.value = {};
   showModal.value = true;
@@ -86,8 +95,8 @@ const openEditModal = (category) => {
   form.value = {
     id: category.id,
     name: category.name,
-    image: category.image,
-    imagePreview: category.image,
+    imageFile: null,
+    imagePreview: getImageUrl(category.image),
   };
   errors.value = {};
   touched.value = {};
@@ -98,41 +107,15 @@ const handleImageUpload = (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX_WIDTH = 600;
-      const MAX_HEIGHT = 600;
-      let width = img.width;
-      let height = img.height;
+  const maxSize = 2 * 1024 * 1024; 
+  if (file.size > maxSize) {
+    showToast("Arquivo muito grande! O limite é 2MB.", "error");
+    event.target.value = ""; 
+    return;
+  }
 
-      if (width > height) {
-        if (width > MAX_WIDTH) {
-          height *= MAX_WIDTH / width;
-          width = MAX_WIDTH;
-        }
-      } else {
-        if (height > MAX_HEIGHT) {
-          width *= MAX_HEIGHT / height;
-          height = MAX_HEIGHT;
-        }
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-
-      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-
-      form.value.imagePreview = compressedBase64;
-      form.value.image = compressedBase64; 
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+  form.value.imageFile = file; 
+  form.value.imagePreview = URL.createObjectURL(file); 
 };
 
 const saveCategory = async () => {
@@ -141,23 +124,35 @@ const saveCategory = async () => {
 
   isLoading.value = true;
   try {
-    const payload = {
-      id: form.value.id,
-      name: form.value.name,
-      image: form.value.image, 
-    };
+    const formData = new FormData();
+    formData.append('name', form.value.name);
+    
+    if (form.value.imageFile) {
+      formData.append('imagem', form.value.imageFile); 
+    }
 
     if (isEditing.value) {
-      await menuStore.updateCategory(payload);
+      await categoryApi.update(form.value.id, formData);
     } else {
-      await menuStore.addCategory(payload);
+      await categoryApi.create(formData);
     }
     
+    await menuStore.loadData();
+
     showToast(`Categoria "${form.value.name}" salva com sucesso!`, "success");
     showModal.value = false;
   } catch (error) {
-    console.error("Erro ao salvar categoria:", error);
-    showToast("Erro ao salvar categoria no banco.", "error");
+    const data = error.response?.data || error.data || error;
+    
+    if (data?.errors && Array.isArray(data.errors)) {
+      data.errors.forEach((err) => {
+        let field = err.campo.replace("body.", "");
+        errors.value[field] = err.mensagem;
+      });
+      showToast("Verifique os campos destacados em vermelho.", "error");
+    } else {
+      showToast(data?.message || "Erro ao salvar categoria.", "error");
+    }
   } finally {
     isLoading.value = false;
   }
@@ -318,7 +313,7 @@ const handlePermanentDelete = (category) => {
               >
                 <img
                   v-if="cat.image"
-                  :src="cat.image"
+                  :src="getImageUrl(cat.image)"
                   class="w-full h-full object-cover"
                 />
                 <ImageIcon v-else class="text-[#757575]" :size="20" />
