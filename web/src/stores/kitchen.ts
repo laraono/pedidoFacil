@@ -1,16 +1,36 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { request } from '@/services/api';
+import { connectSocket, disconnectSocket, getSocket } from '@/services/socket';
 
-export type OrderStatus = 'pending' | 'preparing' | 'ready';
+export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'finished' | 'cancelled';
+
+const dbToFrontMap: Record<string, OrderStatus> = {
+  'Aguardando_Preparo': 'pending',
+  'Em_Preparo': 'preparing',
+  'Pronto': 'ready',
+  'Finalizado': 'finished',
+  'Cancelado': 'cancelled'
+};
+
+const frontToDbMap: Record<string, string> = {
+  'pending': 'Aguardando_Preparo',
+  'preparing': 'Em_Preparo',
+  'ready': 'Pronto',
+  'finished': 'Finalizado',
+  'cancelled': 'Cancelado'
+};
 
 export interface KitchenOrderItem {
   name: string;
+  variationName: string;
   amount: number;
   obs: string;
 }
 
 export interface KitchenOrder {
   id: number;
+  comandaId: number;
   comanda: string;
   waiter: string;
   status: OrderStatus;
@@ -19,66 +39,160 @@ export interface KitchenOrder {
 }
 
 export const useKitchenStore = defineStore('kitchen', () => {
-  const orders = ref<KitchenOrder[]>([
-    {
-      id: 101,
-      comanda: 'Mesa 04',
-      waiter: 'Carlos',
-      status: 'pending',
-      createdAt: new Date(Date.now() - 1000 * 60 * 15),
-      items: [
-        { name: 'X-Bacon', amount: 2, obs: 'Sem cebola' },
-        { name: 'Coca-Cola Zero', amount: 2, obs: '' }
-      ]
-    },
-    {
-      id: 102,
-      comanda: 'Balcão',
-      waiter: 'Ana',
-      status: 'preparing',
-      createdAt: new Date(Date.now() - 1000 * 60 * 5),
-      items: [
-        { name: 'Isca de Peixe', amount: 1, obs: 'Molho extra' }
-      ]
-    }
-  ]);
+  const orders = ref<KitchenOrder[]>([]);
 
   const pendingOrders = computed(() => orders.value.filter(o => o.status === 'pending'));
   const preparingOrders = computed(() => orders.value.filter(o => o.status === 'preparing'));
   const readyOrders = computed(() => orders.value.filter(o => o.status === 'ready'));
 
-  function moveOrder(id: number, newStatus: OrderStatus): void {
-    const order = orders.value.find(o => o.id === id);
-    if (order) {
-      order.status = newStatus;
+  async function fetchOrders() {
+    try {
+      const data = await request('/orders');
+      if (!data) return;
+      let allOrders: KitchenOrder[] = [];
+
+      data.forEach((pedido: any) => {
+        const mappedStatus = dbToFrontMap[pedido.status];
+        
+        if (mappedStatus && mappedStatus !== 'finished' && mappedStatus !== 'cancelled') {
+          allOrders.push({
+            id: pedido.id,
+            comandaId: pedido.comanda?.id || 0,
+            comanda: pedido.comanda?.description || `Totem #${pedido.id}`,
+            waiter: pedido.serviceType === 'AUTOATENDIMENTO' || pedido.serviceType === 'TOTEM' ? 'Totem' : (pedido.serviceType || 'Balcão'),
+            status: mappedStatus,
+            createdAt: pedido.created_at ? new Date(pedido.created_at) : new Date(),
+            items: pedido.productOrders?.map((po: any) => {
+              const variationName = po.variations
+                ?.map((v: any) => v.productVariation?.name)
+                .filter(Boolean)
+                .join(', ') || '';
+              return {
+                name: po.product?.name || 'Produto Excluído',
+                variationName,
+                amount: po.quantity,
+                obs: po.observation || '',
+              };
+            }) || []
+          });
+        }
+      });
+
+      orders.value = allOrders;
+    } catch (error) {
+      console.error("Erro ao buscar pedidos da cozinha:", error);
     }
   }
 
-  function addOrder(order: Omit<KitchenOrder, 'id'>): void {
-    orders.value.push({...order, id: orders.value.length + 1});
+  function addOrder(order: KitchenOrder) {
+    const already = orders.value.find(o => o.id === order.id);
+    if (!already) {
+      orders.value.push({ ...order, status: order.status || 'pending' });
+    }
   }
 
-  function finishOrder(id: number): void {
-    orders.value = orders.value.filter(o => o.id !== id);
+  async function moveOrder(id: number, targetFrontendCol: OrderStatus) {
+    const order = orders.value.find(o => o.id === id);
+    if (!order) return;
+
+    const previousStatus = order.status;
+    const newDbStatus = frontToDbMap[targetFrontendCol];
+
+    try {
+      await request(`/commands/${order.comandaId}/orders/${id}`, {
+        method: 'PUT',
+        body: { status: newDbStatus } as any 
+      });
+      
+      order.status = targetFrontendCol;
+
+      if (targetFrontendCol === 'finished' || targetFrontendCol === 'cancelled') {
+        orders.value = orders.value.filter(o => o.id !== id);
+      }
+    } catch (error) {
+      console.error("Erro ao mover pedido:", error);
+      order.status = previousStatus; 
+    }
   }
 
-  // --- SIMULAÇÃO DE WEBSOCKET ---
-  // Em produção, isso seria substituído por: socket.on('new_order', (data) => orders.value.push(data))
-  function incomingOrderMock(): boolean {
-    const newId = Math.floor(Math.random() * 1000) + 200;
-    const newOrder: KitchenOrder = {
-      id: newId,
-      comanda: `Mesa ${Math.floor(Math.random() * 20) + 1}`,
-      waiter: 'Sistema',
-      status: 'pending',
-      createdAt: new Date(),
-      items: [
-        { name: 'Hambúrguer Artesanal', amount: 1, obs: 'Ao ponto' },
-        { name: 'Batata Frita', amount: 1, obs: '' }
-      ]
+  async function finishOrder(id: number, cancelReason: string | null = null) {
+    const order = orders.value.find(o => o.id === id);
+    if (!order) return;
+
+    const finalStatus = cancelReason ? 'Cancelado' : 'Finalizado';
+
+    const bodyPayload: any = {
+      status: finalStatus
     };
-    orders.value.push(newOrder);
-    return true;
+
+    if (cancelReason) {
+      bodyPayload.cancellationDescription = cancelReason;
+    }
+
+    try {
+      await request(`/commands/${order.comandaId}/orders/${id}`, {
+        method: 'PUT',
+        body: bodyPayload as any
+      });
+      
+      orders.value = orders.value.filter(o => o.id !== id);
+    } catch (error) {
+      console.error("Erro ao finalizar pedido:", error);
+    }
+  }
+
+  function initKitchenSocket(onNewOrder?: (order: KitchenOrder) => void) {
+    connectSocket('kitchen');
+    const socket = getSocket();
+    if (!socket) return;
+
+
+    socket.on('new_order', (data: any) => {
+      console.log('[Kitchen Socket] Novo pedido recebido:', data);
+
+      const newOrder: KitchenOrder = {
+        id: data.orderId,
+        comandaId: data.comandaId,
+        comanda: data.comandaLabel,
+        waiter: data.source === 'totem' ? 'Totem' : (data.source || 'Caixa/Web'),
+        status: 'pending',
+        createdAt: new Date(data.createdAt),
+        items: (data.items || []).map((i: any) => ({
+          name: i.name || 'Produto',
+          variationName: i.variationName || '',
+          amount: i.quantity || 1,
+          obs: i.observation || '',
+        })),
+      };
+
+      addOrder(newOrder);
+      if (typeof onNewOrder === 'function') onNewOrder(newOrder);
+    });
+
+    socket.on('order_status_updated', (data: any) => {
+      console.log('[Kitchen Socket] Status atualizado:', data);
+      
+      const order = orders.value.find(o => o.id === data.orderId);
+      if (!order) return;
+
+      const mappedStatus = dbToFrontMap[data.status];
+      if (mappedStatus) {
+        order.status = mappedStatus;
+
+        if (mappedStatus === 'finished' || mappedStatus === 'cancelled') {
+          orders.value = orders.value.filter(o => o.id !== data.orderId);
+        }
+      }
+    });
+  }
+
+  function destroyKitchenSocket() {
+    const socket = getSocket();
+    if (socket) {
+      socket.off('new_order');
+      socket.off('order_status_updated'); 
+    }
+    disconnectSocket();
   }
 
   return {
@@ -86,9 +200,11 @@ export const useKitchenStore = defineStore('kitchen', () => {
     pendingOrders,
     preparingOrders,
     readyOrders,
+    fetchOrders,
+    addOrder,
     moveOrder,
     finishOrder,
-    incomingOrderMock,
-    addOrder
+    initKitchenSocket,
+    destroyKitchenSocket
   };
 });

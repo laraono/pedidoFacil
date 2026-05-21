@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useCouponStore } from '@/stores/coupons';
 import { useToast } from '@/composables/useToast';
 import BaseButton from '@/components/ui/BaseButton.vue';
@@ -17,6 +17,10 @@ const isEditing = ref(false);
 const isLoading = ref(false);
 const errors = ref({});
 const confirmDelete = ref(null);
+
+onMounted(() => {
+  store.loadData();
+});
 
 const emptyForm = () => ({ id: null, code: '', description: '', type: 'percent', value: '', expiresAt: '', active: true });
 const form = ref(emptyForm());
@@ -46,9 +50,20 @@ const onValueInput = (e) => {
 const validate = () => {
   const e = {};
   if (!form.value.code?.trim()) e.code = 'Código do cupom é obrigatório.';
+  
   const parsed = parseFloat(String(form.value.value).replace(',', '.'));
   if (!form.value.value || isNaN(parsed) || parsed <= 0) e.value = 'Valor do desconto inválido.';
   if (form.value.type === 'percent' && parsed > 100) e.value = 'Percentual não pode exceder 100%.';
+  
+  if (form.value.expiresAt) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(`${form.value.expiresAt}T12:00:00`);
+    if (selectedDate < today) {
+      e.expiresAt = 'A data não pode ser anterior a hoje.';
+    }
+  }
+
   errors.value = e;
   return Object.keys(e).length === 0;
 };
@@ -69,8 +84,15 @@ const openEdit = (c) => {
   showModal.value = true;
 };
 
-const save = () => {
-  if (!validate()) { showToast('Corrija os erros no formulário.', 'error'); return; }
+const save = async () => {
+  errors.value = {};
+
+  if (!validate()) { 
+    const firstErrorMsg = Object.values(errors.value)[0];
+    showToast(firstErrorMsg || 'Corrija os erros no formulário.', 'error'); 
+    return; 
+  }
+  
   isLoading.value = true;
   try {
     const parsed = parseFloat(String(form.value.value).replace(',', '.'));
@@ -83,10 +105,27 @@ const save = () => {
       expiresAt: form.value.expiresAt || null,
       active: form.value.active,
     };
-    if (isEditing.value) store.updateCoupon(payload); else store.addCoupon(payload);
+    
+    if (isEditing.value) await store.updateCoupon(payload); 
+    else await store.addCoupon(payload);
+    
     showToast(isEditing.value ? 'Cupom atualizado!' : 'Cupom criado!', 'success');
     showModal.value = false;
-  } catch { showToast('Erro ao salvar cupom.', 'error'); } finally { isLoading.value = false; }
+  } catch (error) { 
+    const data = error.response?.data || error.data || error;
+    
+    if (data?.errors && Array.isArray(data.errors)) {
+      data.errors.forEach((err) => {
+        let field = err.campo.replace("body.", "");
+        errors.value[field] = err.mensagem;
+      });
+      showToast("Verifique os campos destacados em vermelho.", "error"); 
+    } else {
+      showToast(data?.message || "Erro ao salvar cupom.", "error"); 
+    }
+  } finally { 
+    isLoading.value = false; 
+  }
 };
 
 const toggleActive = (c) => {
@@ -94,14 +133,26 @@ const toggleActive = (c) => {
   showToast(c.active !== false ? `${c.code} desativado.` : `${c.code} ativado.`, 'success');
 };
 
-const doDelete = () => {
+const doDelete = async () => {
   if (!confirmDelete.value) return;
-  store.removeCoupon(confirmDelete.value.id);
+  await store.removeCoupon(confirmDelete.value.id);
   showToast(`Cupom ${confirmDelete.value.code} excluído.`, 'success');
   confirmDelete.value = null;
 };
 
-const isExpired = (c) => c.expiresAt && new Date(c.expiresAt) < new Date();
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const [year, month, day] = dateString.split('T')[0].split('-');
+  return `${day}/${month}/${year}`;
+};
+
+const isExpired = (c) => {
+  if (!c.expiresAt) return false;
+  const expDate = new Date(`${c.expiresAt}T12:00:00`);
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
+  return expDate < today;
+};
 
 const statusOf = (c) => {
   if (isExpired(c)) return { label: 'Vencido', cls: 'bg-danger-light text-danger border-danger' };
@@ -156,8 +207,8 @@ const statusOf = (c) => {
         <div class="flex items-center gap-2 text-xs" :class="isExpired(coupon) ? 'text-danger' : 'text-[#757575]'">
           <Calendar :size="13" />
           <span v-if="!coupon.expiresAt">Sem data de validade</span>
-          <span v-else-if="isExpired(coupon)">Vencido em {{ new Date(coupon.expiresAt).toLocaleDateString('pt-BR') }}</span>
-          <span v-else>Válido até {{ new Date(coupon.expiresAt).toLocaleDateString('pt-BR') }}</span>
+          <span v-else-if="isExpired(coupon)">Vencido em {{ formatDate(coupon.expiresAt) }}</span>
+          <span v-else>Válido até {{ formatDate(coupon.expiresAt) }}</span>
         </div>
 
         <div class="flex items-center justify-between pt-3 border-t border-[#E0E0E0] mt-auto">
@@ -243,8 +294,10 @@ const statusOf = (c) => {
             v-model="form.expiresAt"
             type="date"
             class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] focus:outline-none focus:border-primary/50 transition-all"
+            :class="errors.expiresAt ? '!border-red-500' : ''"
           />
-          <p class="text-[#757575] text-[10px] ml-2">Deixe em branco para cupom sem validade.</p>
+          <p v-if="errors.expiresAt" class="text-danger text-[11px] font-bold mt-0.5 ml-2">{{ errors.expiresAt }}</p>
+          <p v-else class="text-[#757575] text-[10px] ml-2">Deixe em branco para cupom sem validade.</p>
         </div>
         <div class="flex items-center justify-between p-4 bg-gray-50 rounded border border-[#E0E0E0]">
           <div>

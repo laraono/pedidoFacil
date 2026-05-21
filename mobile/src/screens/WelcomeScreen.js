@@ -1,127 +1,201 @@
-import React from "react";
+import React, { useMemo, useEffect, useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
+  Animated,
+  Image,
   StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useTheme } from "../contexts/ThemeContext";
+
+import imgLogo from "../../assets/logo.png";
+import patternOndas from "../../assets/ondas.png";
 import Colors from "../constants/Colors";
 
 const C = Colors.dark;
 
 export default function WelcomeScreen() {
+  const { theme } = useTheme();
   const navigation = useNavigation();
+  const styles = useMemo(() => getStyles(theme), [theme]);
+
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.05,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+  }, []);
 
   const handleStart = () => {
     navigation.navigate("Menu");
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={C.background} />
+    <TouchableOpacity
+      style={styles.fullScreenBtn}
+      activeOpacity={1}
+      onPress={handleStart}
+    >
+      {/* StatusBar mantido da feature-104 */}
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor={theme.fundoGeral || C.background} 
+      />
+      
+      <Image
+        source={patternOndas}
+        style={styles.backgroundPattern}
+        resizeMode="cover"
+      />
 
-      <View style={styles.content}>
-        {/* Logo */}
-        <View style={styles.logoWrapper}>
-          <View style={styles.logoBox}>
-            <Feather name="coffee" size={52} color={C.tint} />
-          </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centerContent}>
+          <Animated.View
+            style={[styles.logoWrapper, { transform: [{ scale: pulseAnim }] }]}
+          >
+            <View style={styles.logoCircle}>
+              <Image
+                source={imgLogo}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
+            </View>
+          </Animated.View>
+
+          <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit>
+            Peça aqui e{"\n"}evite filas
+          </Text>
+          <Text style={styles.subtitle}>Rápido, fácil e do seu jeito.</Text>
         </View>
 
-        {/* Texto */}
-        <Text style={styles.title}>Restaurante Exemplo</Text>
-        <Text style={styles.subtitle}>Bem-vindo! Faça seu pedido{'\n'}diretamente por aqui.</Text>
-
-        {/* CTA */}
-        <TouchableOpacity
-          style={styles.startButton}
-          onPress={handleStart}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.startButtonText}>Toque para começar</Text>
-          <Feather name="arrow-right" size={22} color="#FFFFFF" style={{ marginLeft: 10 }} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Footer */}
-      <Text style={styles.footer}>Autoatendimento</Text>
-    </SafeAreaView>
+        <View style={styles.bottomContent}>
+          <Animated.View
+            style={[
+              styles.touchIndicator,
+              { transform: [{ scale: pulseAnim }] },
+            ]}
+          >
+            <Text style={styles.touchText}>Toque para começar</Text>
+            <Feather
+              name="arrow-right"
+              size={24}
+              color={theme.textoBotoes || "#FFFFFF"}
+              style={styles.pointerIcon}
+            />
+          </Animated.View>
+        </View>
+      </SafeAreaView>
+    </TouchableOpacity>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: C.background,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  content: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 32,
-  },
-  logoWrapper: { marginBottom: 32 },
-  logoBox: {
-    width: 120,
-    height: 120,
-    borderRadius: 32,
-    backgroundColor: C.surface,
-    borderWidth: 1,
-    borderColor: C.border,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 8,
-    shadowColor: C.tint,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "900",
-    color: C.text,
-    textAlign: "center",
-    letterSpacing: -0.5,
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: C.textMuted,
-    textAlign: "center",
-    lineHeight: 24,
-    marginBottom: 52,
-  },
-  startButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: C.tint,
-    paddingVertical: 20,
-    paddingHorizontal: 40,
-    borderRadius: 50,
-    elevation: 8,
-    shadowColor: C.tint,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
-  },
-  startButtonText: {
-    fontSize: 20,
-    fontWeight: "900",
-    color: "#FFFFFF",
-  },
-  footer: {
-    fontSize: 12,
-    color: C.textMuted,
-    fontWeight: "600",
-    letterSpacing: 2,
-    textTransform: "uppercase",
-    paddingBottom: 24,
-  },
-});
+const getStyles = (theme) =>
+  StyleSheet.create({
+    fullScreenBtn: {
+      flex: 1,
+      backgroundColor: theme.fundoGeral || C.background,
+    },
+    backgroundPattern: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      opacity: 0.08,
+      width: "100%",
+      height: "100%",
+    },
+    container: {
+      flex: 1,
+      paddingHorizontal: 24,
+    },
+    centerContent: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    bottomContent: {
+      justifyContent: "flex-end",
+      alignItems: "center",
+      paddingBottom: 30,
+    },
+    logoWrapper: {
+      marginBottom: 40,
+    },
+    logoCircle: {
+      width: 150,
+      height: 150,
+      borderRadius: 75,
+      backgroundColor: theme.corBotoes,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 3,
+      borderColor: theme.borda || 'rgba(255, 255, 255, 0.1)',
+      elevation: 15,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.1,
+      shadowRadius: 12,
+    },
+    logoImage: {
+      width: "70%",
+      height: "70%",
+    },
+    title: {
+      fontSize: 42,
+      fontWeight: "900",
+      color: theme.corTextoPrincipal || C.text,
+      textAlign: "center",
+      marginBottom: 16,
+      letterSpacing: -1.5,
+      lineHeight: 46,
+    },
+    subtitle: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: theme.textoSecundario || C.textMuted,
+      textAlign: "center",
+    },
+    touchIndicator: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.corBotoes || C.tint,
+      width: "100%",
+      maxWidth: 350,
+      paddingVertical: 20,
+      borderRadius: 40,
+      elevation: 10,
+      shadowColor: theme.corBotoes,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 10,
+    },
+    pointerIcon: {
+      marginLeft: 12,
+    },
+    touchText: {
+      fontSize: 20,
+      fontWeight: "900",
+      color: theme.textoBotoes || "#FFFFFF",
+      textTransform: "uppercase",
+      letterSpacing: 1,
+    },
+  });

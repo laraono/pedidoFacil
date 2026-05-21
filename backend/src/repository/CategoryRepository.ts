@@ -1,4 +1,4 @@
-import { DataSource, Repository } from "typeorm";
+import { DataSource, Repository, Not, IsNull } from "typeorm";
 import { CreateCategory } from "../dto";
 import { Category } from "../database";
 
@@ -12,10 +12,21 @@ export class CategoryRepository extends Repository<Category>{
         return await this.save(category)
     }
 
-    async listCategories() {
-        return await this.find()
+    async listCategories(establishmentId: number) {
+        return await this.find({
+            where: { establishment: { id: establishmentId } }
+        });
     }
-
+    
+    async listDeletedCategories(establishmentId: number) {
+        return await this.find({
+            where: { 
+                establishment: { id: establishmentId }, 
+                deletedAt: Not(IsNull()) 
+            },
+            withDeleted: true 
+        });
+    }
     async getCategory(categoryId: number) {
         return await this.findOne({
             where: {
@@ -23,5 +34,16 @@ export class CategoryRepository extends Repository<Category>{
             }
         })
     }
-    
+
+    async updateCategory(categoryId: number, data: Partial<Category>) {
+        await this.update(categoryId, data);
+    }
+
+    async softDeleteCategory(categoryId: number) {
+        await this.softDelete(categoryId);
+    }
+
+    async restoreCategory(categoryId: number) {
+        await this.restore(categoryId);
+    }
 }

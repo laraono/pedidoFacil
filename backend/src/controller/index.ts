@@ -1,22 +1,73 @@
-import { authService, categoryService, comandaService, orderService, productService } from '../service'
+import { 
+    authService, 
+    categoryService, 
+    comandaService, 
+    employeeService, 
+    orderService, 
+    productService, 
+    profileService, 
+    couponService, 
+    establishmentService,
+    roleService,
+    receiptService,    
+    metricsService,
+    menuService,
+    paymentService,
+    subscriptionService,
+    planService
+} from '../service'
+
 import { AuthController } from './AuthController'
 import { CategoryController } from './CategoryController'
 import { ComandaController } from './ComandaController'
 import { OrderController } from './OrderController'
 import { ProductController } from './ProductController'
+import { EmployeeController } from './EmployeeController'
+import { ProfileController } from './ProfileController'
+import { CouponController } from './CouponController'
+import { EstablishmentController } from './EstablishmentController'
+import { RoleController } from './RoleController'
+import { ReceiptController } from './ReceiptController'
+import { MetricsController } from './MetricsController' 
+import { MenuController } from './MenuController'
+import { PaymentController } from './PaymentController'
+import { SubscriptionController } from './SubscriptionController'
+import { PlanController } from './PlanController'
 
-const authController: AuthController = new AuthController(authService)
-const categoryController: CategoryController = new CategoryController(categoryService)
-const comandaController: ComandaController = new ComandaController(comandaService)
-const orderController: OrderController = new OrderController(orderService)
-const productController: ProductController = new ProductController(productService)
+const authController = new AuthController(authService)
+const categoryController = new CategoryController(categoryService)
+const comandaController = new ComandaController(comandaService)
+const orderController = new OrderController(orderService)
+const productController = new ProductController(productService)
+const couponController = new CouponController(couponService)
+const establishmentController = new EstablishmentController(establishmentService)
+const roleController = new RoleController(roleService)
+const employeeController = new EmployeeController(employeeService) 
+const profileController = new ProfileController(profileService) 
+const receiptController = new ReceiptController(receiptService)
+const metricsController = new MetricsController(metricsService)
+const menuController = new MenuController(menuService) 
+const paymentController = new PaymentController(paymentService) 
+const subscriptionController = new SubscriptionController(subscriptionService)
+const planController = new PlanController(planService)
 
 export {
     authController,
     categoryController,
     comandaController,
     orderController,
-    productController
+    productController,
+    employeeController,
+    profileController,
+    couponController,
+    establishmentController,
+    roleController,
+    receiptController,
+    metricsController,
+    menuController,
+    paymentController,
+    planController,
+    subscriptionController
 }
 
 export {
@@ -24,7 +75,18 @@ export {
     CategoryController,
     ComandaController,
     OrderController,
-    ProductController
+    ProductController,
+    EmployeeController,
+    ProfileController,
+    CouponController,
+    EstablishmentController,
+    RoleController,
+    ReceiptController,
+    MetricsController,
+    MenuController,
+    PaymentController,
+    PlanController,
+    SubscriptionController
 }
 
 export { loginLimiter } from './AuthController'

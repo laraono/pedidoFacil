@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToOne } from "typeorm"
 import { SubscriptionStatus, UserStatus } from "../../enum"
 import { Plan } from "./Plan"
 import { Establishment } from "./Establishment"
@@ -9,28 +9,28 @@ export class Subscription {
     @PrimaryGeneratedColumn({
         name: 'ID_Assinatura'
     })
-    id: number
+    id!: number
 
     @Column({
         type: 'date',
         name: 'Data_Inicio',
         nullable: false,
     })
-    initialDate: Date
+    initialDate!: Date
 
     @Column({
         type: 'date',
         name: 'Data_Vencimento_Prox',
         nullable: false,
     })
-    expirationDate: Date
+    expirationDate!: Date
 
     @Column({
         type: 'varchar',
         name: 'Status',
         nullable: false,
     })
-    status: SubscriptionStatus
+    status!: SubscriptionStatus
 
     @Column({
         type: 'date',
@@ -46,16 +46,38 @@ export class Subscription {
     })
     receipt?: string
 
+    @Column({
+        name: 'ID_MercadoPago',
+        type: 'varchar',
+        nullable: true
+    })
+    mercadoPagoId?: string
+
+    @Column({
+        name: 'Valor',
+        type: 'decimal',
+        precision: 10,
+        scale: 2,
+        nullable: true
+    })
+    price?: number
+
     @ManyToOne(() => Establishment, (establishment) => establishment.subscriptions)
     @JoinColumn({
         name: 'ID_Estabelecimento'
     })
-    establishment: Establishment
+    establishment!: Establishment
 
     @ManyToOne(() => Plan, (plan) => plan.subscriptions)
     @JoinColumn({
         name: 'ID_Plano'
     })
-    plan: Plan
-    
+    plan!: Plan
+
+    @ManyToOne(() => Plan, { nullable: true, eager: false })
+    @JoinColumn({
+        name: 'ID_Plano_Agendado'
+    })
+    scheduledPlan?: Plan | null
+
 }

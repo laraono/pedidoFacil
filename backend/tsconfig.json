@@ -1,15 +1,24 @@
 {
    "compilerOptions": {
-      "lib": [
-         "es2021"
-      ],
+      "lib": ["ESNext", "dom"],
       "target": "es2021",
-      "module": "commonjs",
-      "moduleResolution": "node",
+      "module": "node16",
+      "moduleResolution": "node16",
+      "rootDir": "./src",
+      "types": ["node"],
       "outDir": "./build",
       "emitDecoratorMetadata": true,
       "experimentalDecorators": true,
       "sourceMap": true,
       "esModuleInterop": true,
-   }
+      "typeRoots": ["./node_modules/@types", "./src/types"],
+      "allowJs": true,
+      "checkJs": false, 
+      "noImplicitAny": false
+   },
+   "include": ["./src/**/*"],
+   "exclude": [
+      "node_modules",
+      "build"
+   ]
 }

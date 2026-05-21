@@ -1,31 +1,31 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, DeleteDateColumn, Unique, JoinColumn, ManyToOne } from "typeorm"
-import { ComandaStatus, DiscountType } from "../../enum"
+import { Entity, PrimaryGeneratedColumn, Column, DeleteDateColumn, Unique, JoinColumn, ManyToOne } from "typeorm"
+import { DiscountType } from "../../enum"
 import { Establishment } from "./Establishment"
 
-@Unique(['id', 'code'])
+@Unique('UK_Estabelecimento_Codigo', ['establishment', 'code'])
 @Entity({name: 'CUPOM_DESCONTO'})
 export class Coupon {
 
     @PrimaryGeneratedColumn({
         name: 'ID_Cupom'
     })
-    id: number
+    id!: number
 
     @Column({
         type: 'varchar',
         name: 'Codigo',
         nullable: false,
-        length: 30
+        length: 50
     })
-    code: string
+    code!: string
 
     @Column({
         type: 'varchar',
-        name: 'status',
+        name: 'Tipo_Desconto',
         nullable: false,
-        length: 30
+        length: 20
     })
-    status: ComandaStatus
+    type!: DiscountType 
 
     @Column({
         name: 'Valor_Desconto',
@@ -34,33 +34,31 @@ export class Coupon {
         scale: 2,
         nullable: false
     })
-    value: number
+    value!: number
 
     @Column({
         type: 'int',
         name: 'Quantidade_Disponivel',
         nullable: true,
     })
-    quantity: number
+    quantity!: number
 
     @Column({
         type: 'date',
-        name: 'Data_Vencimento',
+        name: 'Data_Validade',
         nullable: true,
     })
-    expirationDate: Date
+    expirationDate!: String
 
-    @Column({
-        type: 'varchar',
-        name: 'Tipo_Desconto',
-        nullable: false,
-        length: 20
+    @DeleteDateColumn({
+        name: 'Data_Exclusao',
+        nullable: true,
     })
-    type: DiscountType
+    deletedAt!: Date
 
     @ManyToOne(() => Establishment, (establishment) => establishment.coupons)
     @JoinColumn({
         name: 'ID_Estabelecimento'
     })
-    establishment: Establishment
+    establishment!: Establishment
 }

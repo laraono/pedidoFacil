@@ -1,14 +1,22 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, ManyToOne, JoinColumn, OneToMany } from "typeorm"
+import { 
+    Entity, 
+    PrimaryGeneratedColumn, 
+    Column, 
+    ManyToOne, 
+    JoinColumn, 
+    OneToMany, 
+    DeleteDateColumn 
+} from "typeorm"
 import { Establishment } from "./Establishment"
 import { User } from "./User"
 
-@Entity({name: 'CARGO'})
+@Entity({ name: 'CARGO' })
 export class Role {
 
     @PrimaryGeneratedColumn({
         name: 'ID_Cargo'
     })
-    id: number
+    id!: number
 
     @Column({
         type: 'varchar',
@@ -16,7 +24,7 @@ export class Role {
         nullable: false,
         length: 50
     })
-    name: string
+    name!: string
 
     @Column({
         type: 'json',
@@ -25,12 +33,18 @@ export class Role {
     })
     permissions?: string
 
+    @DeleteDateColumn({
+        name: 'Data_Exclusao',
+        nullable: true
+    })
+    deletedAt?: Date
+
     @ManyToOne(() => Establishment, (establishment) => establishment.roles)
     @JoinColumn({
         name: 'ID_Estabelecimento'
     })
-    establishment: Establishment
+    establishment!: Establishment
 
-    @OneToMany(() => User, (user) => user.establishment)
-    users: User[]
+    @OneToMany(() => User, (user) => user.role)
+    users!: User[]
 }

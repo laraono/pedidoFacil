@@ -1,7 +1,7 @@
 import {
   ChefHat, UtensilsCrossed, Users,
   DollarSign, HamburgerIcon, Package, Receipt, Settings, BarChart2,
-  CreditCard, ShieldAlert, UserCog, Tag, FileText
+  CreditCard, ShieldAlert, UserCog, Tag, FileText, Calculator
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import { PERMISSIONS, type Permission } from '@/utils/permissions';
@@ -159,6 +159,14 @@ export const allMenuItems: MenuItem[] = [
     icon: Users,
     description: 'Dados pessoais para contato e cobranças.',
     callToAction: 'Editar Perfil',
+    permission: PERMISSIONS.CONFIGURACAO
+  },
+  {
+    label: 'Terminal',
+    route: '/app/settings/register',
+    icon: Calculator,
+    description: 'Gerencie terminais de máquinas de cartão.',
+    callToAction: 'Ver terminal',
     permission: PERMISSIONS.CONFIGURACAO
   },
 ];

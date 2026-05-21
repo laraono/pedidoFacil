@@ -1,56 +1,25 @@
-import icon from '../../assets/food.jpg';
-import food from '../../assets/hamburguer.png'
+import { appConfig } from '../services/apiConfig';
 
-const categories = [
-  {
-    id: 1,
-    name: 'Lanches',
-    image: icon
-  },
-  {
-    id: 2,
-    name: 'Bebidas',
-    image: icon
-  },
-  {
-    id: 3,
-    name: 'Sobremesas',
-    image: icon
-  }
-];
+export async function fetchFullMenu() {
+    try {
+        const url = `${appConfig.API_URL}/menu?establishmentId=${appConfig.ESTABLISHMENT_ID}`;
+        console.log(`[MenuStore] Fazendo requisição para: ${url}`); 
 
-const products = [
-  {
-    id: 1,
-    name: 'X-Bacon',
-    description: 'Hambúrguer com muito bacon crocante.',
-    image: food,
-    categoryId: 1,
-    sizes: [
-      { name: 'Padrão', price: 25.0 },
-      { name: 'Grande', price: 30.0 }
-    ]
-  },
-  {
-    id: 2,
-    name: 'X-Salada',
-    description: 'Hambúrguer com muita salada crocante.',
-    image: food,
-    categoryId: 1,
-    sizes: [
-      { name: 'Padrão', price: 25.0 },
-      { name: 'Grande', price: 30.0 }
-    ]
-  },
-  {
-    id: 3,
-    name: 'X-Salada',
-    description: 'Hambúrguer com muita salada crocante.',
-    image: food,
-    categoryId: 2,
-    sizes: [
-      { name: 'Padrão', price: 25.0 },
-      { name: 'Grande', price: 30.0 }
-    ]
-  },
-];
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text(); 
+            throw new Error(`Status ${response.status} - ${errorText}`);
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error("[MenuStore] Erro crítico no fetchFullMenu:", error.message);
+        return { categories: [], products: [] };
+    }
+}

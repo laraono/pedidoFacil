@@ -6,7 +6,7 @@ export class Admin {
     @PrimaryGeneratedColumn({
         name: 'ID_Admin'
     })
-    id: number
+    id!: number
 
     @Column({
         type: 'varchar',
@@ -14,7 +14,7 @@ export class Admin {
         nullable: false,
         length: 100
     })
-    name: string
+    name!: string
 
     @Column({
         type: 'varchar',
@@ -23,12 +23,12 @@ export class Admin {
         length: 100,
         unique: true
     })
-    email: string
+    email!: string
 
     @Column({
         type: 'varchar',
         name: 'Senha',
         nullable: false
     })
-    password: string
+    password!: string
 }

@@ -1,29 +1,50 @@
-import { AppDataSource } from '../database'
-import { CategoryRepository } from './CategoryRepository'
-import { ComandaRepository } from './ComandaRepository'
-import { OrderRepository } from './OrderRepository'
-import { ProductOrderRepository } from './ProductOrderRepository'
-import { ProductRepository } from './ProductRepository'
-import { ProductVariationOrderRepository } from './ProductVariationOrderRepository'
-import { ProductVariationRepository } from './ProductVariationRepository'
-import { RefreshTokenRepository } from './RefreshTokenRepository'
-import { RoleRepository } from './RoleRepository'
-import { UserRepository } from './UserRepository'
+import { AppDataSource } from '../database';
+import { CategoryRepository } from './CategoryRepository';
+import { ComandaRepository } from './ComandaRepository';
+import { EstablishmentRepository } from './EstablishmentRepository'
+import { OrderRepository } from './OrderRepository';
+import { ProductOrderRepository } from './ProductOrderRepository';
+import { ProductRepository } from './ProductRepository';
+import { ProductVariationOrderRepository } from './ProductVariationOrderRepository';
+import { ProductVariationRepository } from './ProductVariationRepository';
+import { RefreshTokenRepository } from './RefreshTokenRepository';
+import { RoleRepository } from './RoleRepository';
+import { UserRepository } from './UserRepository';
+import { CouponRepository } from './CouponRepository';
+import { ConfigurationRepository } from './ConfigurationRepository';
+import { ReceiptRepository } from './ReceiptRepository';
+import { PaymentRepository } from './PaymentRepository'; 
+import { PlanRepository } from './PlanRepository';
+import { SubscriptionRepository } from './SubscriptionRepository';
+import { RegisterRepository } from './RegisterRepository';
 
-const categoryRepository: CategoryRepository = new CategoryRepository(AppDataSource)
-const comandaRepository: ComandaRepository = new ComandaRepository(AppDataSource)
-const orderRepository: OrderRepository = new OrderRepository(AppDataSource)
-const productRepository: ProductRepository = new ProductRepository(AppDataSource)
-const productOrderRepository: ProductOrderRepository = new ProductOrderRepository(AppDataSource)
-const productVariationRepository: ProductVariationRepository = new ProductVariationRepository(AppDataSource)
-const productVariationOrderRepository: ProductVariationOrderRepository = new ProductVariationOrderRepository(AppDataSource)
-const refreshTokenRepository: RefreshTokenRepository = new RefreshTokenRepository(AppDataSource)
-const roleRepository: RoleRepository = new RoleRepository(AppDataSource)
-const userRepository: UserRepository = new UserRepository(AppDataSource)
+const categoryRepository = new CategoryRepository(AppDataSource);
+const comandaRepository = new ComandaRepository(AppDataSource);
+const establishmentRepository: EstablishmentRepository = new EstablishmentRepository(AppDataSource)
+const orderRepository = new OrderRepository(AppDataSource);
+const productRepository = new ProductRepository(AppDataSource);
+const productOrderRepository = new ProductOrderRepository(AppDataSource);
+const productVariationRepository = new ProductVariationRepository(
+    AppDataSource,
+);
+const productVariationOrderRepository = new ProductVariationOrderRepository(
+    AppDataSource,
+);
+const refreshTokenRepository = new RefreshTokenRepository(AppDataSource);
+const roleRepository = new RoleRepository(AppDataSource);
+const userRepository = new UserRepository(AppDataSource);
+const couponRepository = new CouponRepository(AppDataSource);
+const configurationRepository = new ConfigurationRepository(AppDataSource);
+const receiptRepository = new ReceiptRepository(AppDataSource);
+const paymentRepository = new PaymentRepository(AppDataSource); 
+const planRepository = new PlanRepository(AppDataSource)
+const subscriptionRepository = new SubscriptionRepository(AppDataSource)
+const registerRepository = new RegisterRepository(AppDataSource)
 
 export {
     categoryRepository,
     comandaRepository,
+    establishmentRepository,
     orderRepository,
     productRepository,
     productOrderRepository,
@@ -31,10 +52,33 @@ export {
     productVariationOrderRepository,
     refreshTokenRepository,
     roleRepository,
-    userRepository
-}
+    userRepository,
+    couponRepository,
+    configurationRepository,
+    receiptRepository, 
+    paymentRepository,
+    planRepository,
+    subscriptionRepository,
+    registerRepository
+};
 
 export {
-    CategoryRepository, ComandaRepository, OrderRepository, ProductRepository, ProductOrderRepository, ProductVariationRepository,
-    ProductVariationOrderRepository, RefreshTokenRepository, RoleRepository, UserRepository
-}
+    CategoryRepository,
+    ComandaRepository,
+    OrderRepository,
+    ProductRepository,
+    ProductOrderRepository,
+    ProductVariationRepository,
+    ProductVariationOrderRepository,
+    RefreshTokenRepository,
+    RoleRepository,
+    UserRepository,
+    CouponRepository,
+    EstablishmentRepository,
+    ConfigurationRepository,
+    ReceiptRepository,
+    PaymentRepository,
+    PlanRepository,
+    SubscriptionRepository,
+    RegisterRepository
+};

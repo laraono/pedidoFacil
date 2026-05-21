@@ -11,7 +11,7 @@ export class Product {
     @PrimaryGeneratedColumn({
         name: 'ID_Produto'
     })
-    id: number
+    id!: number
 
     @Column({
         type: 'varchar',
@@ -19,7 +19,7 @@ export class Product {
         nullable: false,
         length: 50
     })
-    name: string
+    name!: string
 
     @Column({
         type: 'varchar',
@@ -30,7 +30,7 @@ export class Product {
     description?: string
 
     @Column({
-        type: 'varchar',
+        type: 'longtext',
         name: 'Imagem',
         nullable: true,
     })
@@ -38,17 +38,10 @@ export class Product {
 
     @Column({
         type: 'boolean',
-        name: 'Disponivel',
-        nullable: false
-    })
-    isAvailable: boolean
-
-    @Column({
-        type: 'boolean',
         name: 'Estocavel',
         nullable: false
     })
-    estocavel: boolean
+    estocavel!: boolean
 
     @Column({
         name: 'Preco_Base',
@@ -57,21 +50,16 @@ export class Product {
         scale: 2,
         nullable: false
     })
-    basePrice: number
+    basePrice!: number
 
     @Column({
-        type: 'varchar',
+        type: 'enum',
+        enum: ['Ativo', 'Inativo'],
         name: 'Status',
         nullable: false,
-        length: 30
+        default: 'Ativo'
     })
-    status: ProductStatus
-
-    @CreateDateColumn({ 
-        type: "timestamp", 
-        default: () => "CURRENT_TIMESTAMP(6)"
-     })
-    created_at: Date;
+    status!: ProductStatus | string
 
     @DeleteDateColumn({
         name: 'Data_Exclusao',
@@ -81,21 +69,21 @@ export class Product {
     deletedAt?: Date
 
     @OneToMany(() => ProductOrder, (productOrders) => productOrders.product)
-    productOrders: ProductOrder[]
+    productOrders!: ProductOrder[]
 
     @OneToMany(() => ProductVariation, (productVariation) => productVariation.product)
-    productVariations: ProductVariation[]
+    productVariations!: ProductVariation[]
 
     @ManyToOne(() => Category, (category) => category.products)
     @JoinColumn({
         name: 'ID_Categoria'
     })
-    category: Category
+    category!: Category
 
     @ManyToOne(() => Establishment, (establishment) => establishment.products)
     @JoinColumn({
         name: 'ID_Estabelecimento'
     })
-    establishment: Establishment
+    establishment!: Establishment
 
 }

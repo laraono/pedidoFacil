@@ -1,13 +1,17 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { Clock, ChefHat, CheckCircle2, AlertTriangle, Hash, Flame, XCircle } from 'lucide-vue-next';
+import localStorageService from '@/services/localStorageService';
 
 const props = defineProps({
   order: { type: Object, required: true },
   alertMinutes: { type: Number, default: 15 }
 });
 
-const emit = defineEmits(['move', 'finish', 'cancel']);
+const unitLabel = localStorageService.getComandaUnitLabel();
+const isAutoatendimento = computed(() => props.order.source === 'totem' || (props.order.comanda || '').startsWith('Totem #'));
+
+const emit = defineEmits(['move', 'cancel']);
 
 const elapsedTime = ref('00:00');
 const isDelayed = ref(false);
@@ -37,6 +41,7 @@ onUnmounted(() => {
 });
 
 const statusTheme = computed(() => {
+  if(!props.order) return
   // Priority for delayed orders (except if ready)
   if (isDelayed.value && props.order.status !== 'ready') {
     return {
@@ -60,6 +65,7 @@ const statusTheme = computed(() => {
       return { color: 'bg-gray-400', border: 'border-[#E0E0E0]', bg: 'bg-white', label: 'INFO', btn: 'bg-gray-400 text-white', barWidth: 'w-3' };
   }
 });
+
 </script>
 
 <template>
@@ -81,10 +87,15 @@ const statusTheme = computed(() => {
     <div class="flex-grow flex flex-col">
       <div class="p-4 flex justify-between items-center border-b border-[#E0E0E0] bg-gray-50">
         <div class="flex items-center gap-3">
-          <span class="font-black text-2xl text-[#212121] tracking-tighter">#{{ order.id }}</span>
+          <span class="font-black text-2xl text-[#212121] tracking-tighter">{{ order.id }}</span>
           <div class="flex flex-col">
-            <span class="text-[#757575] text-[9px] font-black uppercase tracking-[0.2em] leading-none">Comanda</span>
-            <span class="text-[#212121] font-black text-base uppercase italic leading-none">{{ order.comanda }}</span>
+            <span class="text-[9px] font-black uppercase tracking-[0.2em] leading-none"
+              :class="isAutoatendimento ? 'text-blue-500' : 'text-[#757575]'">
+              {{ isAutoatendimento ? 'Autoatendimento' : unitLabel }}
+            </span>
+            <span class="text-[#212121] font-black text-base uppercase italic leading-none">
+              {{ isAutoatendimento && order.customerName ? order.customerName : order.comanda }}
+            </span>
           </div>
         </div>
 
@@ -120,7 +131,15 @@ const statusTheme = computed(() => {
             >
               {{ item.amount }}x
             </span>
-            <span class="font-black text-lg text-[#212121] uppercase tracking-tight pt-0.5">{{ item.name }}</span>
+            <div class="flex flex-col gap-1 pt-0.5">
+              <span class="font-black text-lg text-[#212121] uppercase tracking-tight leading-none">{{ item.name }}</span>
+              <span
+                v-if="item.variationName"
+                class="inline-block self-start px-2 py-0.5 rounded bg-blue-50 border border-blue-200 text-blue-600 text-[11px] font-black uppercase tracking-wide"
+              >
+                {{ item.variationName }}
+              </span>
+            </div>
           </div>
 
           <div v-if="item.obs" class="ml-12 mt-2 p-3 rounded bg-amber-50 border border-amber-200 flex items-center gap-2">
@@ -153,7 +172,7 @@ const statusTheme = computed(() => {
 
         <button
           v-if="order.status === 'ready'"
-          @click="$emit('finish', order.id)"
+          @click="$emit('move', order.id, 'finished')"
           class="w-full py-4 bg-gray-100 hover:bg-gray-200 text-[#212121] border border-[#E0E0E0] rounded font-black uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-3 transition-all"
         >
           Finalizar Entrega

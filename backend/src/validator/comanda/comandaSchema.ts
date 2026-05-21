@@ -2,17 +2,14 @@ import { z } from 'zod';
 import express, { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 
-
 const app = express();
 app.use(express.json());
 
 export const createComandaSchema = z.object({
-    
     description: z.string().min(1).max(100),
     status: z.string().min(1).max(20), 
     total: z.coerce.number().int(),
     discountValue: z.coerce.number().positive().optional()
-    
 });
 
 export const cancelComandaSchema = z.object({
@@ -23,14 +20,13 @@ export const cancelComandaSchema = z.object({
         userId: z.coerce.number().int().positive(),
         reason: z.string().min(1)
     })
-})
-
+});
 
 export const validateCreateComanda = 
     (req: Request, res: Response, next: NextFunction) => {
         try {
-            req.body = createComandaSchema.parse(req.body)
-
+            req.body = createComandaSchema.parse(req.body);
+            next();
         } catch (error) {
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);
@@ -39,15 +35,15 @@ export const validateCreateComanda =
         }
     };
 
-
-export const validateCancelComanda = 
-    (req, res: Response, next: NextFunction) => {
+export const validateCancelComanda =
+    (req: Request, res: Response, next: NextFunction) => {
         try {
-            const validation =  cancelComandaSchema.parse({ params: req.params, body: req.body })
+            const validation = cancelComandaSchema.parse({ params: req.params, body: req.body });
 
-            req.params = validation.params
-            req.body = validation.body
+            req.params = validation.params as any;
+            req.body = validation.body;
 
+            next();
         } catch (error) {
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);
@@ -56,3 +52,8 @@ export const validateCancelComanda =
         }
     };
 
+export const validateListComandas =
+    (_req: Request, _res: Response, next: NextFunction) => next();
+
+export const validateListComandasByStatus =
+    (_req: Request, _res: Response, next: NextFunction) => next();

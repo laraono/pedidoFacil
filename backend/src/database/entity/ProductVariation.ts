@@ -8,9 +8,9 @@ import { ProductVariationOrder } from "./ProductVariationOrder"
 export class ProductVariation {
 
     @PrimaryGeneratedColumn({
-        name: 'ID_Variacao '
+        name: 'ID_Variacao'
     })
-    id: number
+    id!: number
 
     @Column({
         type: 'varchar',
@@ -18,16 +18,16 @@ export class ProductVariation {
         nullable: false,
         length: 50
     })
-    name: string
+    name!: string
 
     @Column({
-        name: 'preco_adicional',
+        name: 'Preco_Adicional',
         type: "decimal",
         precision: 10,
         scale: 2,
         nullable: false
     })
-    addPrice: number
+    addPrice!: number
 
     @Column({
         type: 'varchar',
@@ -35,16 +35,10 @@ export class ProductVariation {
         nullable: false,
         length: 30
     })
-    status: ProductStatus
-
-    @CreateDateColumn({ 
-        type: "timestamp", 
-        default: () => "CURRENT_TIMESTAMP(6)"
-        })
-    created_at: Date;
+    status!: ProductStatus
 
     @DeleteDateColumn({
-        name: 'deleted_at',
+        name: 'Data_Exclusao',
         type: 'datetime',
         nullable: true
     })
@@ -52,11 +46,11 @@ export class ProductVariation {
 
     @ManyToOne(() => Product, (product) => product.productVariations)
     @JoinColumn({
-        name: 'ID_Produto '
+        name: 'ID_Produto'
     })
-    product: Product
+    product!: Product
 
     @OneToMany(() => ProductVariationOrder, (productVariationOrder) => productVariationOrder.productVariation)
-    productVariationOrders: ProductVariationOrder[]
+    productVariationOrders!: ProductVariationOrder[]
 
 }

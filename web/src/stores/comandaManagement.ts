@@ -1,25 +1,48 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { comandaApi } from '@/services/comandaApi';
 
 export interface ComandaOrder {
   price: number;
-  [key: string]: unknown;
+  [key: string]: any;
 }
 
 export interface Comanda {
   id: number;
   label: string;
+  customerName?: string;
+  isAutoatendimento?: boolean;
   orders: ComandaOrder[];
   total: number;
+  closedAt?: any;
+  paymentDetails?: any;
 }
 
 export const useComandaStore = defineStore('comanda', () => {
 
     const comandas = ref<Comanda[]>([]);
 
+    async function loadComandas() {
+        try {
+            const response = await comandaApi.listByStatus('Aberta');
+            if (!response) return;
+
+            comandas.value = response.map((c: any) => ({
+                id: c.id,
+                label: c.description,
+                customerName: c.customerName ?? undefined,
+                isAutoatendimento: !!c.customerName || (c.description || '').startsWith('Totem #'),
+                total: Number(c.total),
+                orders: c.pedidos || []
+            }));
+        } catch (error) {
+            console.error("Erro ao carregar comandas do banco:", error);
+        }
+    }
+
     function createComanda(label?: string): Comanda {
         const id = Date.now();
-        const comanda: Comanda = { orders: [], id, label: label || `Comanda #${id}`, total: 0 };
+        const comanda: Comanda = { orders: [], id, label: label || `#${id}`, total: 0 };
         comandas.value.push(comanda);
         return comanda;
     }
@@ -45,6 +68,7 @@ export const useComandaStore = defineStore('comanda', () => {
 
     return {
         comandas,
+        loadComandas, 
         createComanda,
         addComanda,
         updateComanda,

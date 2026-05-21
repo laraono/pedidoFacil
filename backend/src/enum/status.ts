@@ -13,20 +13,25 @@ export enum ComandaStatus {
 }
 
 export enum ProductStatus {
-    ATIVA ='Ativo',
-    INATIVA = 'Inativo'
+    ATIVO ='Ativo',
+    ARQUIVADO = 'Arquivado'
+}
+
+export enum CategoryStatus {
+    ATIVA ='Ativa',
+    ARVUIVADA = 'Arquivada'
 }
 
 export enum UserStatus {
-    ATIVA ='Ativo',
-    INATIVA = 'Inativo',
+    ATIVO ='Ativo',
+    INATIVO = 'Inativo',
     PENDENTE = 'Pendente'
 }
 
 export enum SubscriptionStatus {
     PENDENTE = 'Pendente',
-    PAGO = 'Pago',
-    EXPIRADA = 'ExpiradA',
-    CACNELADA = 'Cancelada'
+    PAGA = 'Paga',
+    EXPIRADA = 'Expirada',
+    CANCELADA = 'Cancelada'
 }
 

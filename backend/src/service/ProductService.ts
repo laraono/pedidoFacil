@@ -1,10 +1,9 @@
-import { CreateProduct } from "../dto";
-import { AppError } from "../middleware";
+import { CreateProductDTO } from "../dto/product/CreateProductDTO"; 
+import { AppError } from "../middleware/error/AppError";
 import { ProductRepository, ProductVariationRepository } from "../repository";
 import { CategoryService } from "./CategoryService";
 
 export class ProductService {
-
     private categoryService: CategoryService
     private productRepository: ProductRepository
     private productVariationRepository: ProductVariationRepository
@@ -19,35 +18,83 @@ export class ProductService {
         this.productVariationRepository = productVariationRepository
     }
 
-    async createProduct(params: CreateProduct) {
-        const {product, productVariations} = params
+    async createProduct(params: CreateProductDTO) {
+        const { product, productVariations } = params
 
         const category = await this.categoryService.getCategory(product.categoryId)
 
-        if(!category) {
+        if (!category) {
             throw new AppError('Categoria não existe', 400)
         }
 
-        const createdProduct = await this.productRepository.createProduct(product) 
+        const createdProduct = await this.productRepository.createProduct({
+            ...product,
+            category: category
+        } as any) 
 
-        if(createdProduct) { 
-            productVariations.forEach(async (productVariation) => {
-                await this.productVariationRepository.createProductVariation({...productVariation, product: createdProduct})
-            })
+        if (createdProduct && productVariations) { 
+            for (const variation of productVariations) {
+                await this.productVariationRepository.createProductVariation({
+                    ...variation,
+                    product: createdProduct,
+                    status: 'Ativo'
+                } as any)
+            }
         }
 
         return createdProduct.id
     }
 
-    async listProducts() {
-        return await this.productRepository.listProducts()
+    async listProducts(establishmentId: number) {
+        return await this.productRepository.listProducts(establishmentId);
     }
 
-    async listProductsByCategory(categoryId: number) {
-        return await this.productRepository.listProductsByCategory(categoryId)
+    async listProductsByCategory(categoryId: number, establishmentId: number) {
+        return await this.productRepository.listProductsByCategory(categoryId, establishmentId);
+    }
+
+    async listDeletedProducts(establishmentId: number) {
+        return await this.productRepository.listDeletedProducts(establishmentId);
     }
  
     async getProduct(productId: number) {
         return await this.productRepository.getProduct(productId)
+    }
+
+    async updateProduct(productId: number, data: any) {
+        const updateData: any = {};
+        
+        if (data.name !== undefined) updateData.name = data.name;
+        if (data.description !== undefined) updateData.description = data.description;
+        if (data.price !== undefined) updateData.basePrice = data.price;
+        if (data.image !== undefined) updateData.image = data.image;
+        if (data.categoryId !== undefined) updateData.category = { id: data.categoryId };
+        
+        if (data.available !== undefined) {
+            updateData.status = data.available ? 'Ativo' : 'Inativo';
+        }
+
+        await this.productRepository.updateProduct(productId, updateData);
+
+        if (data.sizes && Array.isArray(data.sizes)) {
+            await this.productVariationRepository.softDeleteVariationsByProduct(productId);
+            
+            for (const size of data.sizes) {
+                await this.productVariationRepository.createProductVariation({
+                    name: size.name,
+                    addPrice: size.price,
+                    status: 'Ativo',
+                    product: { id: productId }
+                } as any);
+            }
+        }
+    }
+
+    async softDeleteProduct(productId: number) {
+        await this.productRepository.softDeleteProduct(productId);
+    }
+
+    async restoreProduct(productId: number) {
+        await this.productRepository.restoreProduct(productId);
     }
 }

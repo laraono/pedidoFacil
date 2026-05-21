@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import rateLimit from 'express-rate-limit'
 import { AuthService } from '../service'
+import { RefreshToken } from '../database'
 
 export const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -21,9 +22,19 @@ export class AuthController {
         this.authService = authService
     }
 
-    async register(req: Request, res: Response) {
-        const result = await this.authService.register(req.body)
-        res.status(201).json(result)
+    async registerManager(req: Request, res: Response) {
+        const { accessToken, refreshToken, usuario } = await this.authService.registerManager(req.body)
+
+        if (refreshToken) {
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+                maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN || '7') * 24 * 60 * 60 * 1000
+            })
+        }
+
+        res.status(201).json({ accessToken, usuario })
     }
 
     async login(req: Request, res: Response) {
@@ -34,7 +45,7 @@ export class AuthController {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-                maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN!) * 24 * 60 * 60 * 1000
+                maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN || '7') * 24 * 60 * 60 * 1000
             })
         }
 
@@ -43,7 +54,6 @@ export class AuthController {
 
     async refresh(req: Request, res: Response) {
         const token = req.cookies.refreshToken
-
         if (!token) {
             return res.status(401).json({ error: 'Token não fornecido.' })
         }
@@ -54,7 +64,7 @@ export class AuthController {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-            maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN!) * 24 * 60 * 60 * 1000
+            maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN || '7') * 24 * 60 * 60 * 1000
         })
 
         res.json({ accessToken, usuario })
@@ -62,12 +72,13 @@ export class AuthController {
 
     async logout(req: Request, res: Response) {
         const token = req.cookies.refreshToken
+        const { refreshToken } = req.body;
 
         if (!token) {
             return res.status(204).send()
         }
 
-        await this.authService.logout(token)
+        await this.authService.logout(refreshToken)
 
         res.clearCookie('refreshToken')
         res.status(204).send()
