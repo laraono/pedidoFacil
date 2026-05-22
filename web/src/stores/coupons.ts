@@ -1,7 +1,6 @@
-import { defineStore } from 'pinia';
-import { ref } from 'vue';
-
-const STORAGE_KEY = 'pedidofacil_coupons';
+import { defineStore } from "pinia";
+import { ref } from "vue";
+import { couponApi } from "@/services/couponApi";
 
 export type CouponType = 'percent' | 'fixed';
 
@@ -15,41 +14,52 @@ export interface Coupon {
   active: boolean;
 }
 
-const SEED: Coupon[] = [
-  { id: 1, code: 'BEMVINDO10', description: 'Cupom de boas-vindas', type: 'percent', value: 10, expiresAt: null, active: true },
-  { id: 2, code: 'FIDELIDADE15', description: 'Clientes fiéis', type: 'percent', value: 15, expiresAt: null, active: true },
-  { id: 3, code: 'DESC5REAIS', description: 'Desconto fixo', type: 'fixed', value: 5, expiresAt: '2026-12-31', active: true },
-];
+export const useCouponStore = defineStore("coupons", () => {
+  const coupons = ref<Coupon[]>([]);
 
-const load = (): Coupon[] => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored) as Coupon[];
-  } catch { /* ignore */ }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED));
-  return SEED;
-};
+  const mapCouponToFront = (c: any): Coupon => ({
+    id: c.id,
+    code: c.code,
+    description: "",
+    type: c.type === "Percentual" ? "percent" : "fixed",
+    value: Number(c.value),
+    expiresAt: c.expirationDate ? c.expirationDate.split("T")[0] : null,
+    active: true,
+  });
 
-const save = (list: Coupon[]): void => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-};
-
-export const useCouponStore = defineStore('coupons', () => {
-  const coupons = ref<Coupon[]>(load());
-
-  const addCoupon = (coupon: Omit<Coupon, 'id'>): void => {
-    coupons.value.push({ ...coupon, id: Date.now() });
-    save(coupons.value);
+  const mapCouponToBack = (payload: Partial<Coupon>) => {
+    return {
+      code: payload.code,
+      type: payload.type === "percent" ? "Percentual" : "Valor",
+      value: Number(payload.value),
+      expirationDate: payload.expiresAt || null, 
+    };
   };
 
-  const updateCoupon = (updated: Coupon): void => {
-    const idx = coupons.value.findIndex(c => c.id === updated.id);
-    if (idx !== -1) { coupons.value[idx] = { ...updated }; save(coupons.value); }
+  const loadData = async () => {
+    try {
+      const data = await couponApi.list();
+      coupons.value = data.map(mapCouponToFront);
+    } catch (error) {
+      console.error("Erro ao carregar cupons:", error);
+    }
   };
 
-  const removeCoupon = (id: number): void => {
-    coupons.value = coupons.value.filter(c => c.id !== id);
-    save(coupons.value);
+  const addCoupon = async (payload: Omit<Coupon, 'id'>) => {
+    const backendPayload = mapCouponToBack(payload);
+    await couponApi.create(backendPayload);
+    await loadData();
+  };
+
+  const updateCoupon = async (payload: Coupon) => {
+    const backendPayload = mapCouponToBack(payload);
+    await couponApi.update(payload.id, backendPayload);
+    await loadData();
+  };
+
+  const removeCoupon = async (id: number) => {
+    await couponApi.delete(id);
+    await loadData();
   };
 
   const findByCode = (code: string): Coupon | undefined => {
@@ -58,5 +68,12 @@ export const useCouponStore = defineStore('coupons', () => {
     );
   };
 
-  return { coupons, addCoupon, updateCoupon, removeCoupon, findByCode };
+  return {
+    coupons,
+    loadData,
+    addCoupon,
+    updateCoupon,
+    removeCoupon,
+    findByCode
+  };
 });
