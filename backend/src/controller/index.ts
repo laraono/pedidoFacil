@@ -94,5 +94,9 @@ export {
     WebhookController
 }
 
-export { loginLimiter } from './AuthController'
-export { AdminController } from './AdminController'
+export { authLimiter } from './AuthController'
+export { menuLimiter } from './MenuController'
+export { paymentLimiter } from './PaymentController'
+export { receiptLimiter } from './ReceiptController'
+export { roleLimiter } from './RoleController'
+export { couponLimiter } from './CouponController'

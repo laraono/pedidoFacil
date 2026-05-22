@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { AuthController, loginLimiter } from '../controller/AuthController';
+import { AuthController, authLimiter } from '../controller/AuthController';
 import { AuthService } from '../service/AuthService';
 import { AppDataSource } from '../database/data-source';
 import { UserRepository, RefreshTokenRepository } from '../repository';
@@ -18,28 +18,10 @@ const authController = new AuthController(authService);
 
 const authRouter = Router();
 
-authRouter.post(
-  '/register',
-  validateRegister,
-  catchAsync((req: Request, res: Response) =>
-    authController.registerManager(req, res),
-  ),
-);
-authRouter.post(
-  '/login',
-  loginLimiter,
-  validateLogin,
-  catchAsync((req: Request, res: Response) => authController.login(req, res)),
-);
-authRouter.post(
-  '/logout',
-  authenticate,
-  catchAsync((req: Request, res: Response) => authController.logout(req, res)),
-);
-authRouter.post(
-  '/refresh',
-  catchAsync((req: Request, res: Response) => authController.refresh(req, res)),
-);
+authRouter.post('/register', authLimiter, validateRegister, catchAsync((req: Request, res: Response) => authController.registerManager(req, res)));
+authRouter.post('/login', authLimiter, validateLogin, catchAsync((req: Request, res: Response) => authController.login(req, res)));
+authRouter.post('/logout', authenticate, catchAsync((req: Request, res: Response) => authController.logout(req, res)));
+authRouter.post('/refresh', catchAsync((req: Request, res: Response) => authController.refresh(req, res)));
 authRouter.get(
   '/me',
   authenticate,

@@ -1,7 +1,19 @@
 import { Request, Response } from 'express';
 import { RoleService } from '../service/RoleService';
 import { catchAsync } from '../middleware/error/catchAsync';
+import rateLimit from 'express-rate-limit'
 import { auditLog } from '../utils/logger';
+
+export const roleLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 20,
+    handler: (req: Request, res: Response) => {
+        res.status(429).json({
+            error: 'Muitas tentativas. Tente novamente mais tarde.',
+            retryAfter: Math.ceil((req as any).rateLimit.resetTime / 1000)
+        })
+    }
+})
 
 export class RoleController {
     constructor(private roleService: RoleService) {}

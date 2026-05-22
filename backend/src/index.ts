@@ -1,6 +1,7 @@
 import http from 'http';
 import express from 'express';
 import dotenv from 'dotenv';
+import path from 'path';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import {
@@ -26,12 +27,15 @@ import {
     paymentRouter,
 } from './router';
 import { AppDataSource } from './database';
-import { errorHandler } from './middleware';
+import { errorHandler, publicLimiter, authenticatedLimiter } from './middleware';
 import { initSocket } from './socket';
-import path from 'path';
 import { logger } from './utils/logger';
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET não está definido. Verifique o arquivo .env');
+}
 
 process.on('unhandledRejection', (reason) => {
     logger.error('unhandledRejection', { reason });
@@ -42,7 +46,6 @@ process.on('uncaughtException', (err) => {
     logger.error('uncaughtException', { message: err.message, stack: err.stack });
     process.exit(1);
 });
-
 
 const app = express();
 
@@ -60,33 +63,33 @@ app.use(cors({
         }
     },
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-totem-code']
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-totem-code'],
 }));
 app.use(cookieParser());
 
 const httpServer = http.createServer(app);
 
 AppDataSource.initialize().then(async () => {
-    app.use('/api/v1', planRouter)
-    app.use('/api/v1', subscriptionRouter)
-    app.use('/api/v1', authRouter)
-    app.use('/api/v1', configRouter)
-    app.use('/api/v1', categoryRouter)
-    app.use('/api/v1', comandaRouter)
-    app.use('/api/v1', orderRouter)
-    app.use('/api/v1', productRouter)
-    app.use('/api/v1', menuRouter)
-    app.use('/api/v1/estabelecimento', establishmentRouter)
-    app.use('/api/v1/metrics', metricsRouter)
-    app.use('/api/v1/receipts', receiptRouter)
-    app.use('/api/v1/roles', roleRouter)
-    app.use('/api/v1/funcionario', employeeRouter)
-    app.use('/api/v1/conta', profileRouter)
-    app.use('/api/v1/cupons', couponRouter)
-    app.use('/api/v1/contato', contactRouter)
-    app.use('/api/v1/admin', adminRouter)
-    app.use('/api/v1', paymentRouter)
-    app.use('/webhook', webhookRouter)
+    app.use('/api/v1/admin', authenticatedLimiter, adminRouter)
+    app.use('/api/v1', publicLimiter, authRouter);
+    app.use('/api/v1', authenticatedLimiter, categoryRouter);
+    app.use('/api/v1', authenticatedLimiter, comandaRouter);
+    app.use('/api/v1', authenticatedLimiter, orderRouter);
+    app.use('/api/v1', authenticatedLimiter, productRouter);
+    app.use('/api/v1', authenticatedLimiter, menuRouter);
+    app.use('/api/v1/estabelecimento', authenticatedLimiter, establishmentRouter);
+    app.use('/api/v1/metrics', authenticatedLimiter, metricsRouter);
+    app.use('/api/v1/receipts', authenticatedLimiter, receiptRouter);
+    app.use('/api/v1/roles', authenticatedLimiter, roleRouter);
+    app.use('/api/v1/funcionario', authenticatedLimiter, employeeRouter);
+    app.use('/api/v1/conta', authenticatedLimiter, profileRouter);
+    app.use('/api/v1/cupons', authenticatedLimiter, couponRouter);
+    app.use('/api/v1', authenticatedLimiter, configRouter);
+    app.use('/api/v1', publicLimiter, planRouter);
+    app.use('/api/v1', authenticatedLimiter, subscriptionRouter);
+    app.use('/api/v1/contato', publicLimiter, contactRouter);
+    app.use('/api/v1', authenticatedLimiter, paymentRouter);
+    app.use('/webhook', publicLimiter, webhookRouter);
     app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
     app.use((req, res) => {
         res.status(404).json({ error: 'Página não encontrada.' });
