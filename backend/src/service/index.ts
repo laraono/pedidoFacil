@@ -34,6 +34,7 @@ import { PaymentService } from './PaymentService';
 import { MercadoPagoService } from './MercadoPagoService';
 import { SubscriptionService } from './SubscriptionService';
 import { PlanService } from './PlanService';
+import { WebhookService } from './WebhookService';  
 
 const authService = new AuthService(AppDataSource, userRepository, refreshTokenRepository);
 const categoryService = new CategoryService(categoryRepository);
@@ -81,6 +82,8 @@ const menuService = new MenuService(categoryRepository, productRepository);
 const subscriptionService = new SubscriptionService(planRepository, subscriptionRepository, mercadoPagoService, AppDataSource);
 const planService = new PlanService(planRepository, subscriptionService, mercadoPagoService, AppDataSource);
 
+const webhookService = new WebhookService(subscriptionRepository, mercadoPagoService);
+
 export {
   authService,
   categoryService,
@@ -99,6 +102,7 @@ export {
   subscriptionService,
   planService,
   mercadoPagoService,
+  webhookService
 };
 
 export {
@@ -119,4 +123,5 @@ export {
   MercadoPagoService,
   SubscriptionService,
   PlanService,
+  WebhookService
 };

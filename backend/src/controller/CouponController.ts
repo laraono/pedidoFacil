@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { CouponService } from "../service/CouponService";
+import { auditLog } from '../utils/logger';
 
 export class CouponController {
 
@@ -20,6 +21,12 @@ export class CouponController {
         }
 
         const couponId = await this.couponService.createCoupon(Number(establishmentId), data);
+
+        auditLog('create_coupon.success', {
+            establishmentId,
+            ip: req.ip,
+            timestamp: new Date().toISOString(),
+        });
 
         res.status(201).send({ id: couponId });
     }
@@ -49,6 +56,13 @@ export class CouponController {
 
         await this.couponService.updateCoupon(couponId, Number(establishmentId), data);
 
+        auditLog('update_coupon.success', {
+            establishmentId,
+            couponId,
+            ip: req.ip,
+            timestamp: new Date().toISOString(),
+        });
+
         res.sendStatus(204);
     }
 
@@ -62,7 +76,14 @@ export class CouponController {
         }
 
         const coupon = await this.couponService.validateAndApplyCoupon(code, Number(establishmentId));
-
+        
+        auditLog('validate_coupon.success', {
+            establishmentId,
+            couponId: coupon.id,
+            ip: req.ip,
+            timestamp: new Date().toISOString(),
+        });
+        
         res.status(200).send(coupon);
     }
 
@@ -76,6 +97,13 @@ export class CouponController {
         }
 
         await this.couponService.deleteCoupon(couponId, Number(establishmentId));
+
+        auditLog('delete_coupon.success', {
+            establishmentId,
+            couponId,
+            ip: req.ip,
+            timestamp: new Date().toISOString(),
+        });
 
         res.sendStatus(204);
     }

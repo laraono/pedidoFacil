@@ -3,6 +3,7 @@ import { EstablishmentService } from '../service/EstablishmentService';
 import { catchAsync } from '../middleware';
 import { getIO } from '../socket';
 import { deleteFile } from '../utils/fileHelper';
+import { auditLog } from '../utils/logger';
 
 export class EstablishmentController {
   
@@ -44,15 +45,29 @@ export class EstablishmentController {
 
   getByCode = catchAsync(async (req: Request, res: Response) => {
     const code = req.params.code as string;
-    
-    const establishment = await this.establishmentService.validateAccessCode(code);
+    try {
+      const establishment = await this.establishmentService.validateAccessCode(code);
 
-    return res.status(200).json({
-      id: establishment.id, 
-      name: establishment.name,
-      selfServiceCode: establishment.selfServiceCode,
-      configurations: establishment.configurations
-    });
+      auditLog('get_by_code.success', {
+        code,
+        ip: req.ip,
+        timestamp: new Date().toISOString(),
+      });
+
+      return res.status(200).json({
+        id: establishment.id, 
+        name: establishment.name,
+        selfServiceCode: establishment.selfServiceCode,
+        configurations: establishment.configurations
+      });
+    } catch (error) {
+      auditLog('get_by_code.failure', {
+        code,
+        ip: req.ip,
+        timestamp: new Date().toISOString(),
+      });
+      return res.status(404).json({ error: 'Estabelecimento não encontrado.' });
+    }
   });
 
   update = catchAsync(async (req: Request, res: Response) => {
@@ -92,17 +107,41 @@ export class EstablishmentController {
       updateData.pixQrCodeUrl = files.pixQrCode[0].filename;
     }
 
-    const updated = await this.establishmentService.updateEstablishment(establishmentId, updateData);
-    
-    getIO().emit('profile_updated');
+    try {
+      const updated = await this.establishmentService.updateEstablishment(establishmentId, updateData);
+      
+      getIO().emit('profile_updated');
 
-    return res.status(200).json(updated);
+      return res.status(200).json(updated);
+    } catch (error) {
+      auditLog('update_establishment.failure', {
+        establishmentId,
+        ip: req.ip,
+        timestamp: new Date().toISOString(),
+        updateData
+      });
+      return res.status(500).json({ error: 'Erro interno ao atualizar o estabelecimento.' });
+    }
   });
 
   disable = catchAsync(async (req: Request, res: Response) => {
     const establishmentId = (req as any).usuario.estabelecimento;
-    const result = await this.establishmentService.softDeleteEstablishment(establishmentId);
-    return res.status(200).json(result);
+    try {
+      const result = await this.establishmentService.softDeleteEstablishment(establishmentId);
+      auditLog('disable_establishment.success', {
+        establishmentId,
+        ip: req.ip,
+        timestamp: new Date().toISOString(),
+      });
+      return res.status(200).json(result);
+    } catch (error) {
+      auditLog('disable_establishment.failure', {
+        establishmentId,
+        ip: req.ip,
+        timestamp: new Date().toISOString(),
+      });
+      return res.status(500).json({ error: 'Erro interno ao desativar o estabelecimento.' });
+    }
   });
 
 }

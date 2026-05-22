@@ -22,13 +22,27 @@ import {
     subscriptionRouter,
     contactRouter,
     adminRouter,
+    webhookRouter,
+    paymentRouter,
 } from './router';
 import { AppDataSource } from './database';
 import { errorHandler } from './middleware';
 import { initSocket } from './socket';
 import path from 'path';
+import { logger } from './utils/logger';
 
 dotenv.config();
+
+process.on('unhandledRejection', (reason) => {
+    logger.error('unhandledRejection', { reason });
+    process.exit(1);
+});
+
+process.on('uncaughtException', (err) => {
+    logger.error('uncaughtException', { message: err.message, stack: err.stack });
+    process.exit(1);
+});
+
 
 const app = express();
 
@@ -71,9 +85,14 @@ AppDataSource.initialize().then(async () => {
     app.use('/api/v1/cupons', couponRouter)
     app.use('/api/v1/contato', contactRouter)
     app.use('/api/v1/admin', adminRouter)
+    app.use('/api/v1', paymentRouter)
+    app.use('/webhook', webhookRouter)
     app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
+    app.use((req, res) => {
+        res.status(404).json({ error: 'Página não encontrada.' });
+    });
 
-    app.use(errorHandler)
+    app.use(errorHandler);
 
     const PORT = 3000;
 

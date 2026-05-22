@@ -14,7 +14,8 @@ import {
     menuService,
     paymentService,
     subscriptionService,
-    planService
+    planService,
+    webhookService
 } from '../service'
 
 import { AuthController } from './AuthController'
@@ -33,6 +34,7 @@ import { MenuController } from './MenuController'
 import { PaymentController } from './PaymentController'
 import { SubscriptionController } from './SubscriptionController'
 import { PlanController } from './PlanController'
+import { WebhookController } from './WebhookController'
 
 const authController = new AuthController(authService)
 const categoryController = new CategoryController(categoryService)
@@ -50,6 +52,7 @@ const menuController = new MenuController(menuService)
 const paymentController = new PaymentController(paymentService) 
 const subscriptionController = new SubscriptionController(subscriptionService)
 const planController = new PlanController(planService)
+const webhookController = new WebhookController(webhookService)
 
 export {
     authController,
@@ -67,7 +70,8 @@ export {
     menuController,
     paymentController,
     planController,
-    subscriptionController
+    subscriptionController,
+    webhookController
 }
 
 export {
@@ -86,7 +90,8 @@ export {
     MenuController,
     PaymentController,
     PlanController,
-    SubscriptionController
+    SubscriptionController,
+    WebhookController
 }
 
 export { loginLimiter } from './AuthController'

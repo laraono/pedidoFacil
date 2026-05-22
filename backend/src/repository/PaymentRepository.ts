@@ -9,4 +9,12 @@ export class PaymentRepository extends Repository<Payment> {
     async saveMercadoPagoInfo(paymentId: number, mercadoPagoOrderId: string, mercadoPagoPaymentId: string) {
         await this.update(paymentId, {mercadoPagoOrderId, mercadoPagoPaymentId})
     }
+
+    async getPaymentByMercadoPagoId(mercadoPagoId: string) {
+        return await this.findOne({
+            where: {
+                mercadoPagoPaymentId: mercadoPagoId
+            }
+        })
+    }
 }
