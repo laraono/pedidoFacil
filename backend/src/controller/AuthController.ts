@@ -4,7 +4,7 @@ import { AuthService } from '../service'
 import { RefreshToken } from '../database'
 import { auditLog } from '../utils/logger'
 
-export const loginLimiter = rateLimit({
+export const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 10,
     handler: (req: Request, res: Response) => {

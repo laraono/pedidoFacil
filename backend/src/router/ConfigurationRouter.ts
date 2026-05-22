@@ -9,7 +9,7 @@ const configRouter = Router();
 const configService = new ConfigurationService();
 const configController = new ConfigurationController(configService);
 
-configRouter.get('/estabelecimento/:establishmentId/config', (req, res) => configController.getConfig(req, res));
+configRouter.get('/estabelecimento/:establishmentId/config', authenticate, (req, res) => configController.getConfig(req, res));
 
 configRouter.put(
     '/estabelecimento/config', 
