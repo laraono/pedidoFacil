@@ -4,118 +4,109 @@ import { useRouter } from 'vue-router';
 import { useToast } from '@/composables/useToast';
 import {
   ArrowLeft, ShieldAlert, Plus, Trash2, Pencil, X,
-  Eye, EyeOff, UserCheck, UserX, KeyRound, Mail
+  Eye, EyeOff, KeyRound, Mail
 } from 'lucide-vue-next';
+import { adminUserApi } from '@/services/adminApi';
 
 const router = useRouter();
 const { showToast } = useToast();
 
-const ADMIN_USERS_KEY = 'adminUsers';
-
-const loadUsers = () => {
-  const saved = localStorage.getItem(ADMIN_USERS_KEY);
-  if (saved) return JSON.parse(saved);
-  const defaults = [
-    { id: 1, name: 'Admin Principal', email: 'admin@email.com', password: '123456', status: 'ativo', createdAt: '2025-01-10' },
-  ];
-  localStorage.setItem(ADMIN_USERS_KEY, JSON.stringify(defaults));
-  return defaults;
-};
-
-const saveUsers = (list) => localStorage.setItem(ADMIN_USERS_KEY, JSON.stringify(list));
-
 const users = ref([]);
+const loading = ref(false);
+const saving = ref(false);
 const isModalOpen = ref(false);
 const isEditing = ref(false);
 const showPassword = ref(false);
-const isLoading = ref(false);
+const deleteTarget = ref(null);
+const confirmDelete = ref(false);
 
-const form = ref({ id: null, name: '', email: '', password: '', status: 'ativo' });
+const form = ref({ id: null, name: '', email: '', password: '' });
 const errors = ref({});
 
-onMounted(() => { users.value = loadUsers(); });
+async function load() {
+  loading.value = true;
+  try {
+    users.value = await adminUserApi.list();
+  } catch (e) {
+    showToast('Erro ao carregar usuários admin.', 'error');
+  } finally {
+    loading.value = false;
+  }
+}
 
-const validate = () => {
-  const e = {};
-  if (!form.value.name.trim()) e.name = 'Nome é obrigatório.';
-  if (!form.value.email.trim() || !form.value.email.includes('@')) e.email = 'E-mail inválido.';
-  if (!isEditing.value && !form.value.password.trim()) e.password = 'Senha é obrigatória.';
-  if (form.value.password && form.value.password.length < 6) e.password = 'Mínimo 6 caracteres.';
-  errors.value = e;
-  return Object.keys(e).length === 0;
-};
+onMounted(load);
 
-const openCreate = () => {
-  form.value = { id: null, name: '', email: '', password: '', status: 'ativo' };
+function openCreate() {
+  form.value = { id: null, name: '', email: '', password: '' };
   errors.value = {};
   isEditing.value = false;
   showPassword.value = false;
   isModalOpen.value = true;
-};
+}
 
-const openEdit = (user) => {
-  form.value = { ...user, password: '' };
+function openEdit(user) {
+  form.value = { id: user.id, name: user.name, email: user.email, password: '' };
   errors.value = {};
   isEditing.value = true;
   showPassword.value = false;
   isModalOpen.value = true;
-};
+}
 
-const saveUser = () => {
+function validate() {
+  const e = {};
+  if (!form.value.name.trim()) e.name = 'Nome é obrigatório.';
+  if (!form.value.email.trim() || !form.value.email.includes('@')) e.email = 'E-mail inválido.';
+  if (!isEditing.value && !form.value.password.trim()) e.password = 'Senha é obrigatória.';
+  if (form.value.password && form.value.password.length < 8) e.password = 'Mínimo 8 caracteres.';
+  errors.value = e;
+  return Object.keys(e).length === 0;
+}
+
+async function save() {
   if (!validate()) return;
-  isLoading.value = true;
-  setTimeout(() => {
+  saving.value = true;
+  const payload = { name: form.value.name.trim(), email: form.value.email.trim() };
+  if (form.value.password) payload.password = form.value.password;
+  try {
     if (isEditing.value) {
-      const idx = users.value.findIndex(u => u.id === form.value.id);
-      const updated = { ...users.value[idx], name: form.value.name, email: form.value.email, status: form.value.status };
-      if (form.value.password) updated.password = form.value.password;
-      users.value[idx] = updated;
-      showToast('Usuário atualizado!', 'success');
+      await adminUserApi.update(form.value.id, payload);
+      showToast('Admin atualizado!', 'success');
     } else {
-      if (users.value.some(u => u.email === form.value.email)) {
-        errors.value.email = 'Este e-mail já está em uso.';
-        isLoading.value = false;
-        return;
-      }
-      users.value.push({
-        id: Date.now(),
-        name: form.value.name,
-        email: form.value.email,
-        password: form.value.password,
-        status: 'ativo',
-        createdAt: new Date().toISOString().split('T')[0]
-      });
-      showToast('Usuário admin criado!', 'success');
+      payload.password = form.value.password;
+      await adminUserApi.create(payload);
+      showToast('Admin criado!', 'success');
     }
-    saveUsers(users.value);
     isModalOpen.value = false;
-    isLoading.value = false;
-  }, 300);
-};
-
-const deleteUser = (user) => {
-  if (users.value.length <= 1) {
-    showToast('Precisa existir ao menos um usuário admin.', 'error');
-    return;
+    await load();
+  } catch (e) {
+    showToast(e?.message || 'Erro ao salvar admin.', 'error');
+  } finally {
+    saving.value = false;
   }
-  users.value = users.value.filter(u => u.id !== user.id);
-  saveUsers(users.value);
-  showToast(`"${user.name}" removido.`, 'success');
-};
+}
 
-const toggleStatus = (user) => {
-  user.status = user.status === 'ativo' ? 'inativo' : 'ativo';
-  saveUsers(users.value);
-  showToast(`Status atualizado para ${user.status}.`, 'success');
-};
+function askDelete(user) {
+  deleteTarget.value = user;
+  confirmDelete.value = true;
+}
 
-const formatDate = (d) =>
-  new Date(d + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+async function doDelete() {
+  if (!deleteTarget.value) return;
+  try {
+    await adminUserApi.delete(deleteTarget.value.id);
+    showToast(`"${deleteTarget.value.name}" removido.`, 'success');
+    await load();
+  } catch (e) {
+    showToast('Erro ao remover admin.', 'error');
+  } finally {
+    confirmDelete.value = false;
+    deleteTarget.value = null;
+  }
+}
 </script>
 
 <template>
   <main class="max-w-5xl mx-auto py-12 px-6 font-inter">
-
     <header class="flex items-center justify-between gap-4 mb-10">
       <div class="flex items-center gap-4">
         <button @click="router.push('/app/dashboard')" class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] transition-colors">
@@ -130,23 +121,19 @@ const formatDate = (d) =>
           <p class="text-[#757575] text-sm">Gerenciar contas com acesso ao painel administrativo</p>
         </div>
       </div>
-      <button
-        @click="openCreate"
-        class="flex items-center gap-2 px-5 py-3 bg-primary text-white font-black rounded hover:bg-primary-dark transition-all text-sm"
-      >
+      <button @click="openCreate" class="flex items-center gap-2 px-5 py-3 bg-primary text-white font-black rounded hover:bg-primary-dark transition-all text-sm">
         <Plus :size="16" /> Novo Admin
       </button>
     </header>
 
-    <!-- Table -->
-    <div class="bg-white border border-[#E0E0E0] rounded overflow-hidden">
+    <div v-if="loading" class="py-20 text-center text-[#757575]">Carregando...</div>
+
+    <div v-else class="bg-white border border-[#E0E0E0] rounded overflow-hidden">
       <table class="w-full">
         <thead>
           <tr class="border-b border-[#E0E0E0] bg-gray-100">
             <th class="text-left px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[#757575]">Nome</th>
             <th class="text-left px-4 py-4 text-[10px] font-black uppercase tracking-widest text-[#757575] hidden sm:table-cell">E-mail</th>
-            <th class="text-left px-4 py-4 text-[10px] font-black uppercase tracking-widest text-[#757575]">Status</th>
-            <th class="text-left px-4 py-4 text-[10px] font-black uppercase tracking-widest text-[#757575] hidden md:table-cell">Criado em</th>
             <th class="px-6 py-4"></th>
           </tr>
         </thead>
@@ -163,36 +150,19 @@ const formatDate = (d) =>
             <td class="px-4 py-4 hidden sm:table-cell">
               <span class="text-[#757575] text-sm">{{ user.email }}</span>
             </td>
-            <td class="px-4 py-4">
-              <button
-                @click="toggleStatus(user)"
-                class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border cursor-pointer transition-all"
-                :class="user.status === 'ativo'
-                  ? 'text-accent bg-accent-light border-accent/25 hover:bg-primary-dark/20'
-                  : 'text-[#757575] bg-gray-200/20 border-[#E0E0E0] hover:bg-gray-200/30'"
-              >
-                <UserCheck v-if="user.status === 'ativo'" :size="10" />
-                <UserX v-else :size="10" />
-                {{ user.status }}
-              </button>
-            </td>
-            <td class="px-4 py-4 hidden md:table-cell">
-              <span class="text-[#757575] text-sm">{{ formatDate(user.createdAt) }}</span>
-            </td>
             <td class="px-6 py-4">
               <div class="flex items-center justify-end gap-2">
-                <button @click="openEdit(user)" class="p-2 rounded text-[#757575] hover:text-[#212121] hover:bg-gray-100 transition-all" title="Editar">
+                <button @click="openEdit(user)" class="p-2 rounded text-[#757575] hover:text-[#212121] hover:bg-gray-100 transition-all">
                   <Pencil :size="15" />
                 </button>
-                <button @click="deleteUser(user)" class="p-2 rounded text-[#757575] hover:text-danger hover:bg-danger-light transition-all" title="Excluir">
+                <button @click="askDelete(user)" class="p-2 rounded text-[#757575] hover:text-red-500 hover:bg-red-50 transition-all">
                   <Trash2 :size="15" />
                 </button>
               </div>
             </td>
           </tr>
-
           <tr v-if="!users.length">
-            <td colspan="5" class="px-6 py-16 text-center text-[#757575]">
+            <td colspan="3" class="px-6 py-16 text-center text-[#757575]">
               <ShieldAlert :size="32" class="mx-auto mb-3 opacity-30" />
               <p class="text-sm font-bold">Nenhum usuário admin cadastrado</p>
             </td>
@@ -200,107 +170,81 @@ const formatDate = (d) =>
         </tbody>
       </table>
     </div>
-
   </main>
 
-  <!-- Modal -->
   <Teleport to="body">
     <Transition name="fade">
-      <div v-if="isModalOpen" class="fixed inset-0 bg-black/50  z-[100] flex items-center justify-center p-4">
-        <div class="bg-white border border-[#E0E0E0] w-full max-w-md rounded shadow-2xl">
-
-          <div class="p-8 border-b border-[#E0E0E0] flex justify-between items-center bg-gray-100">
+      <div v-if="isModalOpen" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white border border-[#E0E0E0] w-full max-w-md rounded-xl shadow-2xl">
+          <div class="p-6 border-b border-[#E0E0E0] flex justify-between items-center bg-gray-50">
             <h2 class="text-xl font-black text-[#212121] flex items-center gap-3">
               <ShieldAlert :size="20" class="text-accent" />
               {{ isEditing ? 'Editar Admin' : 'Novo Admin' }}
             </h2>
-            <button @click="isModalOpen = false" class="p-2 text-[#757575] hover:text-[#212121]">
-              <X :size="20" />
-            </button>
+            <button @click="isModalOpen = false" class="p-2 text-[#757575] hover:text-[#212121]"><X :size="20" /></button>
           </div>
-
-          <div class="p-8 space-y-5">
-            <!-- Name -->
+          <div class="p-6 space-y-5">
             <div>
-              <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-2 mb-2 block">Nome</label>
-              <input
-                v-model="form.name"
-                type="text"
-                placeholder="Ex: Admin Suporte"
-                class="w-full bg-gray-50 border rounded px-4 py-3.5 text-sm text-[#212121] outline-none placeholder:text-[#757575] transition-colors"
-                :class="errors.name ? 'border-danger' : 'border-[#E0E0E0] focus:border-primary/40'"
-                @input="delete errors.name"
-              />
-              <p v-if="errors.name" class="text-danger text-xs font-bold mt-1 ml-2">{{ errors.name }}</p>
+              <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1 mb-2 block">Nome</label>
+              <input v-model="form.name" type="text" placeholder="Ex: Admin Suporte"
+                class="w-full bg-gray-50 border rounded-lg px-4 py-3 text-sm text-[#212121] outline-none placeholder:text-[#757575] transition-colors"
+                :class="errors.name ? 'border-red-400' : 'border-[#E0E0E0] focus:border-primary/40'"
+                @input="delete errors.name" />
+              <p v-if="errors.name" class="text-red-500 text-xs font-bold mt-1 ml-1">{{ errors.name }}</p>
             </div>
-
-            <!-- Email -->
             <div>
-              <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-2 mb-2 block">E-mail</label>
+              <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1 mb-2 block">E-mail</label>
               <div class="relative">
-                <Mail :size="16" class="absolute left-4 top-1/2 -translate-y-1/2 text-[#757575]" />
-                <input
-                  v-model="form.email"
-                  type="email"
-                  placeholder="admin@empresa.com"
-                  class="w-full bg-gray-50 border rounded pl-10 pr-4 py-3.5 text-sm text-[#212121] outline-none placeholder:text-[#757575] transition-colors"
-                  :class="errors.email ? 'border-danger' : 'border-[#E0E0E0] focus:border-primary/40'"
-                  @input="delete errors.email"
-                />
+                <Mail :size="15" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#757575]" />
+                <input v-model="form.email" type="email" placeholder="admin@empresa.com"
+                  class="w-full bg-gray-50 border rounded-lg pl-9 pr-4 py-3 text-sm text-[#212121] outline-none placeholder:text-[#757575] transition-colors"
+                  :class="errors.email ? 'border-red-400' : 'border-[#E0E0E0] focus:border-primary/40'"
+                  @input="delete errors.email" />
               </div>
-              <p v-if="errors.email" class="text-danger text-xs font-bold mt-1 ml-2">{{ errors.email }}</p>
+              <p v-if="errors.email" class="text-red-500 text-xs font-bold mt-1 ml-1">{{ errors.email }}</p>
             </div>
-
-            <!-- Password -->
             <div>
-              <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-2 mb-2 block">
+              <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1 mb-2 block">
                 {{ isEditing ? 'Nova Senha (deixe em branco para manter)' : 'Senha' }}
               </label>
               <div class="relative">
-                <KeyRound :size="16" class="absolute left-4 top-1/2 -translate-y-1/2 text-[#757575]" />
-                <input
-                  v-model="form.password"
-                  :type="showPassword ? 'text' : 'password'"
-                  placeholder="Mínimo 6 caracteres"
-                  class="w-full bg-gray-50 border rounded pl-10 pr-12 py-3.5 text-sm text-[#212121] outline-none placeholder:text-[#757575] transition-colors"
-                  :class="errors.password ? 'border-danger' : 'border-[#E0E0E0] focus:border-primary/40'"
-                  @input="delete errors.password"
-                />
+                <KeyRound :size="15" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#757575]" />
+                <input v-model="form.password" :type="showPassword ? 'text' : 'password'" placeholder="Mínimo 8 caracteres"
+                  class="w-full bg-gray-50 border rounded-lg pl-9 pr-10 py-3 text-sm text-[#212121] outline-none placeholder:text-[#757575] transition-colors"
+                  :class="errors.password ? 'border-red-400' : 'border-[#E0E0E0] focus:border-primary/40'"
+                  @input="delete errors.password" />
                 <button type="button" @click="showPassword = !showPassword"
-                  class="absolute right-4 top-1/2 -translate-y-1/2 text-[#757575] hover:text-[#757575] transition-colors">
-                  <Eye v-if="!showPassword" :size="16" />
-                  <EyeOff v-else :size="16" />
+                  class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#757575] hover:text-[#212121] transition-colors">
+                  <Eye v-if="!showPassword" :size="15" /><EyeOff v-else :size="15" />
                 </button>
               </div>
-              <p v-if="errors.password" class="text-danger text-xs font-bold mt-1 ml-2">{{ errors.password }}</p>
-            </div>
-
-            <!-- Status (edit only) -->
-            <div v-if="isEditing">
-              <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-2 mb-2 block">Status</label>
-              <div class="flex gap-3">
-                <button v-for="s in ['ativo', 'inativo']" :key="s" @click="form.status = s"
-                  :class="form.status === s
-                    ? (s === 'ativo' ? 'border-accent bg-accent-light text-accent' : 'border-danger bg-danger-light text-danger')
-                    : 'border-[#E0E0E0] bg-gray-50 text-[#757575]'"
-                  class="flex-1 py-2.5 rounded border text-xs font-black uppercase tracking-wider transition-all capitalize">
-                  {{ s }}
-                </button>
-              </div>
+              <p v-if="errors.password" class="text-red-500 text-xs font-bold mt-1 ml-1">{{ errors.password }}</p>
             </div>
           </div>
+          <div class="p-6 pt-0 flex gap-3">
+            <button @click="isModalOpen = false" class="flex-1 py-3 rounded-lg text-[#757575] font-bold hover:bg-gray-50 transition-colors">Cancelar</button>
+            <button @click="save" :disabled="saving"
+              class="flex-1 py-3 rounded-lg bg-primary text-white font-black hover:bg-primary-dark transition-all disabled:opacity-50">
+              {{ saving ? 'Salvando...' : (isEditing ? 'Salvar' : 'Criar Admin') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 
-          <div class="p-8 pt-0 flex gap-3">
-            <button @click="isModalOpen = false" class="flex-1 py-3 rounded text-[#757575] font-bold hover:bg-gray-50 transition-colors">
-              Cancelar
-            </button>
-            <button
-              @click="saveUser"
-              :disabled="isLoading"
-              class="flex-1 py-3 rounded bg-primary text-white font-black hover:bg-primary-dark transition-all disabled:opacity-50"
-            >
-              {{ isLoading ? 'Salvando...' : (isEditing ? 'Salvar' : 'Criar Admin') }}
-            </button>
+  <Teleport to="body">
+    <Transition name="fade">
+      <div v-if="confirmDelete" class="fixed inset-0 bg-black/50 z-[110] flex items-center justify-center p-4">
+        <div class="bg-white border border-[#E0E0E0] w-full max-w-sm rounded-xl shadow-2xl p-8 text-center">
+          <div class="w-14 h-14 rounded-full bg-red-50 border border-red-200 flex items-center justify-center mx-auto mb-5">
+            <Trash2 :size="24" class="text-red-500" />
+          </div>
+          <h3 class="text-xl font-black text-[#212121] mb-2">Remover Admin?</h3>
+          <p class="text-[#757575] text-sm mb-6">O usuário <strong>"{{ deleteTarget?.name }}"</strong> será removido permanentemente.</p>
+          <div class="flex gap-3">
+            <button @click="confirmDelete = false; deleteTarget = null" class="flex-1 py-3 rounded-lg font-bold text-[#757575] border border-[#E0E0E0] hover:bg-gray-50 transition-colors">Cancelar</button>
+            <button @click="doDelete" class="flex-1 py-3 rounded-lg bg-red-500 text-white font-black hover:bg-red-600 transition-all">Remover</button>
           </div>
         </div>
       </div>

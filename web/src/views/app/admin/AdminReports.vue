@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router';
 import { useSubscriptionStore } from '@/stores/subscriptions';
 import {
   ArrowLeft, ShieldAlert, TrendingUp, DollarSign, Users,
-  BarChart3, Download, Calendar
+  BarChart3, Download, Calendar, Loader2
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -13,43 +13,83 @@ const subscriptionStore = useSubscriptionStore();
 const isLoaded = ref(false);
 const dateFilter = ref('12m');
 
-onMounted(() => setTimeout(() => isLoaded.value = true, 60));
+onMounted(async () => {
+  await subscriptionStore.loadAdminData();
+  setTimeout(() => isLoaded.value = true, 60);
+});
 
 const allSubs = computed(() => subscriptionStore.adminSubscriptions);
+const metrics = computed(() => subscriptionStore.adminMetrics);
+const isLoading = computed(() => subscriptionStore.adminDataLoading);
 
-// KPIs
-const totalActive = computed(() => allSubs.value.filter(s => s.status === 'ativo').length);
-const totalMRR = computed(() => allSubs.value
-  .filter(s => s.status === 'ativo')
-  .reduce((acc, s) => acc + s.amount, 0));
-const totalAnnual = computed(() => allSubs.value.filter(s => s.plan === 'anual').length);
-const totalMonthly = computed(() => allSubs.value.filter(s => s.plan === 'mensal').length);
+const totalActive = computed(() =>
+  metrics.value ? metrics.value.totalAtivas : allSubs.value.filter(s => s.status === 'ativo').length
+);
+
+const totalMRR = computed(() =>
+  metrics.value ? metrics.value.receitaMensal : allSubs.value
+    .filter(s => s.status === 'ativo')
+    .reduce((acc, s) => acc + s.amount, 0)
+);
+
+const totalAnnual = computed(() => {
+  if (metrics.value?.porPlano?.length) {
+    return metrics.value.porPlano
+      .filter(p => p.planName?.toLowerCase().includes('anual'))
+      .reduce((acc, p) => acc + p.ativas, 0);
+  }
+  return allSubs.value.filter(s =>
+    String(s.planFrequency ?? s.plan).toLowerCase().includes('anual')
+  ).length;
+});
+
+const totalMonthly = computed(() => {
+  if (metrics.value?.porPlano?.length) {
+    return metrics.value.porPlano
+      .filter(p => !p.planName?.toLowerCase().includes('anual'))
+      .reduce((acc, p) => acc + p.ativas, 0);
+  }
+  return allSubs.value.filter(s =>
+    !String(s.planFrequency ?? s.plan).toLowerCase().includes('anual')
+  ).length;
+});
+
 const avgUsers = computed(() => {
   const active = allSubs.value.filter(s => s.status === 'ativo');
   if (!active.length) return 0;
   return Math.round(active.reduce((a, s) => a + s.users, 0) / active.length);
 });
 
-// Monthly revenue chart (mock)
 const monthlyRevenue = computed(() => {
+  if (metrics.value?.novosPorMes?.length) {
+    return metrics.value.novosPorMes.map(row => {
+      const [year, month] = row.mes.split('-');
+      const label = new Date(Number(year), Number(month) - 1).toLocaleDateString('pt-BR', { month: 'short' });
+      return { month: label.charAt(0).toUpperCase() + label.slice(1, 3), value: row.novos };
+    });
+  }
   const months = ['Out', 'Nov', 'Dez', 'Jan', 'Fev', 'Mar'];
-  const base = [420, 498, 549, 598, 648, totalMRR.value];
+  const base = [0, 0, 0, 0, 0, totalMRR.value];
   return months.map((m, i) => ({ month: m, value: base[i] }));
 });
 
 const maxRevenue = computed(() => Math.max(...monthlyRevenue.value.map(d => d.value), 1));
 const revenueHeight = (val) => isLoaded.value ? `${(val / maxRevenue.value) * 100}%` : '4%';
 
-// Plan distribution
 const planShare = computed(() => {
-  const total = allSubs.value.length || 1;
+  const total = (totalAnnual.value + totalMonthly.value) || 1;
   return {
     anual: Math.round((totalAnnual.value / total) * 100),
     mensal: Math.round((totalMonthly.value / total) * 100),
   };
 });
 
-// Per-establishment data sorted by users
+const ticketAnual = computed(() => {
+  if (!metrics.value?.porPlano?.length) return null;
+  const anualPlan = metrics.value.porPlano.find(p => p.planName?.toLowerCase().includes('anual'));
+  return anualPlan ? null : null;
+});
+
 const establishmentData = computed(() =>
   [...allSubs.value]
     .filter(s => s.status === 'ativo')
@@ -58,13 +98,19 @@ const establishmentData = computed(() =>
 
 const maxUsers = computed(() => Math.max(...establishmentData.value.map(e => e.users), 1));
 
+const planLabel = (sub) => {
+  const freq = String(sub.planFrequency ?? sub.plan ?? '').toLowerCase();
+  if (freq.includes('anual')) return 'anual';
+  if (freq.includes('mensal') || freq.includes('month')) return 'mensal';
+  return sub.plan;
+};
+
 const handleExport = () => window.print();
 </script>
 
 <template>
   <main class="max-w-7xl mx-auto py-12 px-6 font-inter">
 
-    <!-- Header -->
     <header class="flex items-center justify-between gap-4 mb-10">
       <div class="flex items-center gap-4">
         <button @click="router.push('/app/dashboard')" class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] transition-colors">
@@ -81,6 +127,7 @@ const handleExport = () => window.print();
       </div>
 
       <div class="flex items-center gap-3">
+        <Loader2 v-if="isLoading" :size="18" class="text-accent animate-spin" />
         <div class="flex bg-white border border-[#E0E0E0] rounded overflow-hidden">
           <button
             v-for="opt in [{ v: '3m', l: '3M' }, { v: '6m', l: '6M' }, { v: '12m', l: '12M' }]"
@@ -101,7 +148,6 @@ const handleExport = () => window.print();
       </div>
     </header>
 
-    <!-- KPI cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       <div class="bg-white border border-[#E0E0E0] rounded p-6">
         <div class="flex items-center gap-2 text-[#757575] text-xs font-black uppercase tracking-widest mb-3">
@@ -142,7 +188,6 @@ const handleExport = () => window.print();
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
 
-      <!-- Revenue chart -->
       <div class="lg:col-span-2 bg-white border border-[#E0E0E0] rounded p-8">
         <div class="flex items-center gap-2 mb-6">
           <BarChart3 :size="18" class="text-accent" />
@@ -170,7 +215,6 @@ const handleExport = () => window.print();
         </div>
       </div>
 
-      <!-- Plan distribution -->
       <div class="bg-white border border-[#E0E0E0] rounded p-8">
         <div class="flex items-center gap-2 mb-6">
           <Calendar :size="18" class="text-accent" />
@@ -211,20 +255,19 @@ const handleExport = () => window.print();
           </div>
 
           <div class="pt-4 border-t border-[#E0E0E0] space-y-2">
-            <div class="flex justify-between text-sm">
-              <span class="text-[#757575]">Ticket médio anual</span>
-              <span class="font-black text-[#212121]">R$ 598,80</span>
+            <div class="flex justify-between text-sm" v-if="metrics?.porPlano?.length">
+              <span class="text-[#757575]">Planos ativos</span>
+              <span class="font-black text-[#212121]">{{ (totalAnnual + totalMonthly) }}</span>
             </div>
             <div class="flex justify-between text-sm">
-              <span class="text-[#757575]">Ticket médio mensal</span>
-              <span class="font-black text-[#212121]">R$ 79,90</span>
+              <span class="text-[#757575]">MRR atual</span>
+              <span class="font-black text-[#212121]">{{ totalMRR.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}</span>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Per-establishment table -->
     <div class="bg-white border border-[#E0E0E0] rounded overflow-hidden">
       <div class="p-6 border-b border-[#E0E0E0] flex items-center gap-3">
         <Users :size="18" class="text-accent" />
@@ -252,11 +295,11 @@ const handleExport = () => window.print();
           </div>
           <span
             class="shrink-0 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border"
-            :class="est.plan === 'anual'
+            :class="planLabel(est) === 'anual'
               ? 'text-purple-400 bg-primary/10 border-primary/20'
               : 'text-blue-400 bg-blue-500/10 border-blue-500/20'"
           >
-            {{ est.plan }}
+            {{ planLabel(est) }}
           </span>
         </div>
       </div>
@@ -264,7 +307,6 @@ const handleExport = () => window.print();
 
   </main>
 
-  <!-- Layout de impressão -->
   <div class="admin-print-root" style="font-family: Inter, Arial, sans-serif; color: #111; background: white; padding: 0;">
     <div style="border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
       <div>
@@ -338,7 +380,7 @@ const handleExport = () => window.print();
           <td style="padding: 5px 10px; font-weight: 700; color: #111; border-bottom: 1px solid #f3f4f6;">{{ est.establishment }}</td>
           <td style="padding: 5px 10px; color: #6b7280; border-bottom: 1px solid #f3f4f6;">{{ est.manager }}</td>
           <td style="padding: 5px 10px; text-align: center; border-bottom: 1px solid #f3f4f6;">
-            <span :style="{ background: est.plan === 'anual' ? '#f3e8ff' : '#dbeafe', color: est.plan === 'anual' ? '#7e22ce' : '#1d4ed8', padding: '2px 6px', borderRadius: '4px', fontSize: '8px', fontWeight: '900' }">{{ est.plan }}</span>
+            <span :style="{ background: planLabel(est) === 'anual' ? '#f3e8ff' : '#dbeafe', color: planLabel(est) === 'anual' ? '#7e22ce' : '#1d4ed8', padding: '2px 6px', borderRadius: '4px', fontSize: '8px', fontWeight: '900' }">{{ planLabel(est) }}</span>
           </td>
           <td style="padding: 5px 10px; text-align: right; font-weight: 900; border-bottom: 1px solid #f3f4f6;">{{ est.users }}</td>
           <td style="padding: 5px 10px; text-align: right; font-weight: 900; color: #059669; border-bottom: 1px solid #f3f4f6;">{{ est.amount.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }}</td>

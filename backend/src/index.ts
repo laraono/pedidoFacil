@@ -22,6 +22,7 @@ import {
     planRouter,
     subscriptionRouter,
     contactRouter,
+    adminRouter,
     webhookRouter,
     paymentRouter,
 } from './router';
@@ -69,6 +70,7 @@ app.use(cookieParser());
 const httpServer = http.createServer(app);
 
 AppDataSource.initialize().then(async () => {
+    app.use('/api/v1/admin', authenticatedLimiter, adminRouter)
     app.use('/api/v1', publicLimiter, authRouter);
     app.use('/api/v1', authenticatedLimiter, categoryRouter);
     app.use('/api/v1', authenticatedLimiter, comandaRouter);
