@@ -60,6 +60,20 @@ export class User {
   })
   cpf!: string | null;
 
+  @Column({
+    type: 'varchar',
+    name: 'Password_Reset_Token',
+    nullable: true,
+  })
+  passwordResetToken!: string | null;
+
+  @Column({
+    type: 'timestamp',
+    name: 'Password_Reset_Expires',
+    nullable: true,
+  })
+  passwordResetExpires!: Date | null;
+
   @Column({ type: 'varchar', name: 'Telefone', nullable: true, length: 20 })
   phone!: string | null;
 

@@ -28,22 +28,26 @@ export class ProductController {
 
   async listProducts(req: Request, res: Response) {
     const estabelecimentoId = (req as any).usuario.estabelecimento;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
 
     if (req.query.deleted === 'true') {
-      const products = await this.productService.listDeletedProducts(estabelecimentoId);
-      return res.status(200).json(products);
+      const result = await this.productService.listDeletedProducts(estabelecimentoId, page, limit);
+      return res.status(200).json(result);
     }
 
-    const products = await this.productService.listProducts(estabelecimentoId);
-    return res.status(200).json(products);
+    const result = await this.productService.listProducts(estabelecimentoId, page, limit);
+    return res.status(200).json(result);
   }
 
   async listProductsByCategory(req: Request, res: Response) {
     const categoryId = Number(req.params.categoryId || req.params.id);
     const estabelecimentoId = (req as any).usuario.estabelecimento;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
     
-    const products = await this.productService.listProductsByCategory(categoryId, estabelecimentoId);
-    res.status(200).json(products);
+    const result = await this.productService.listProductsByCategory(categoryId, estabelecimentoId, page, limit);
+    res.status(200).json(result);
   }
 
   async updateProduct(req: Request, res: Response) {
