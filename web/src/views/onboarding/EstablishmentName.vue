@@ -12,6 +12,7 @@ const router = useRouter();
 const nomeEstabelecimento = ref("");
 const cnpj = ref("");
 const cnpjError = ref("");
+const errors = ref({}); 
 
 const isLoading = ref(false);
 const serverError = ref(null);
@@ -27,8 +28,13 @@ watch(cnpj, (value) => {
   if (cnpjError.value && isValidCNPJ(masked)) cnpjError.value = "";
 });
 
+watch(nomeEstabelecimento, () => {
+  if (errors.value.name) delete errors.value.name;
+});
+
 const handleSubmit = async () => {
   cnpjError.value = "";
+  errors.value = {};
   serverError.value = null;
 
   if (!nomeEstabelecimento.value.trim()) return;
@@ -52,9 +58,20 @@ const handleSubmit = async () => {
 
     router.push("/onboarding/type");
   } catch (error) {
-    console.error(error);
-    serverError.value =
-      error.message || "Erro ao registrar o estabelecimento. Tente novamente.";
+    const data = error.response?.data || error.data || error;
+    
+    if (data?.errors && Array.isArray(data.errors)) {
+      data.errors.forEach((err) => {
+        let field = err.campo.replace("body.", "");
+        
+        if (field === "name") errors.value.name = err.mensagem;
+        if (field === "cnpj") cnpjError.value = err.mensagem;
+      });
+      
+      serverError.value = "Verifique os campos destacados em vermelho.";
+    } else {
+      serverError.value = data?.message || "Erro ao registrar o estabelecimento. Tente novamente.";
+    }
   } finally {
     isLoading.value = false;
   }
@@ -119,9 +136,9 @@ const handleSubmit = async () => {
           @submit.prevent="handleSubmit"
           class="flex flex-col items-center w-full gap-4"
         >
-          <div class="relative w-full max-w-lg group">
+          <div class="relative w-full max-w-lg group flex flex-col items-start">
             <div
-              class="absolute left-5 top-1/2 -translate-y-1/2 text-[#757575] group-focus-within:text-accent transition-colors duration-300"
+              class="absolute left-5 top-[24px] text-[#757575] group-focus-within:text-accent transition-colors duration-300"
             >
               <Store class="w-6 h-6" />
             </div>
@@ -134,13 +151,24 @@ const handleSubmit = async () => {
               minlength="3"
               maxlength="100"
               :disabled="isLoading"
-              class="w-full p-6 pl-16 bg-gray-50 text-[#212121] rounded border border-[#E0E0E0] text-xl placeholder-gray-600 focus:outline-none focus:border-primary/50 focus:bg-gray-100 transition-all duration-300 disabled:opacity-50"
+              class="w-full p-6 pl-16 bg-gray-50 text-[#212121] rounded border text-xl placeholder-gray-600 focus:outline-none focus:bg-gray-100 transition-all duration-300 disabled:opacity-50"
+              :class="
+                errors.name
+                  ? 'border-red-500 bg-red-500/5'
+                  : 'border-[#E0E0E0] focus:border-primary/50'
+              "
             />
+            <p
+              v-if="errors.name"
+              class="text-red-500 text-xs font-bold text-left mt-1 ml-1"
+            >
+              {{ errors.name }}
+            </p>
           </div>
 
-          <div class="relative w-full max-w-lg group">
+          <div class="relative w-full max-w-lg group flex flex-col items-start">
             <div
-              class="absolute left-5 top-[22px] text-[#757575] group-focus-within:text-accent transition-colors duration-300"
+              class="absolute left-5 top-[24px] text-[#757575] group-focus-within:text-accent transition-colors duration-300"
             >
               <Building2 class="w-6 h-6" />
             </div>
@@ -186,3 +214,9 @@ const handleSubmit = async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+input::placeholder {
+  opacity: 1;
+}
+</style>

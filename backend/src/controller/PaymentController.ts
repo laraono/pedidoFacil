@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PaymentService } from '../service/PaymentService';
 import { catchAsync } from '../middleware/error/catchAsync';
 import rateLimit from 'express-rate-limit'
+import { auditLog } from '../utils/logger';
 
 export const paymentLimiter = rateLimit({
     windowMs: 5 * 60 * 1000,
@@ -33,17 +34,37 @@ export class PaymentController {
     getPaymentDetails = catchAsync(async (req: Request, res: Response) => {
         const establishmentId = (req as any).usuario.estabelecimento;
         const { paymentId } = req.params;
-
-        const payment = await this.paymentService.getPaymentById(Number(paymentId), establishmentId);
-        return res.status(200).json(payment);
+        try {
+            const payment = await this.paymentService.getPaymentById(Number(paymentId), establishmentId);
+            return res.status(200).json(payment);
+        } catch (error) {
+            return res.status(404).json({ error: 'Pagamento não encontrado.' });
+        }
     });
 
     refundPayment = catchAsync(async (req: Request, res: Response) => {
         const establishmentId = (req as any).usuario.estabelecimento;
         const { paymentId } = req.params;
-        const { reason } = req.body;
+        try {
+            const payment = await this.paymentService.getPaymentById(Number(paymentId), establishmentId);
+            
+            auditLog('refund_payment.success', {
+                paymentId,
+                establishmentId,
+                ip: req.ip,
+                timestamp: new Date().toISOString(),
+            });
 
-        const result = await this.paymentService.refundPayment(Number(paymentId), establishmentId, reason);
-        return res.status(200).json(result);
+            return res.status(200).json(payment);
+        } catch (error) {
+            auditLog('refund_payment.failure', {
+                paymentId,
+                establishmentId,
+                ip: req.ip,
+                timestamp: new Date().toISOString(),
+            });
+            return res.status(404).json({ error: 'Pagamento não encontrado.' });
+        }
     });
+
 }

@@ -42,7 +42,12 @@ export default {
         dark: {
           bg: '#0B0E11',
           card: '#1A1E24',
-        }
+        },
+        danger: {
+          DEFAULT: '#E53935',
+          light: '#FFEBEE',
+        },
+        page: '#F5F6FA',
       },
       fontFamily: {
         'inter': ['Inter', 'sans-serif'],

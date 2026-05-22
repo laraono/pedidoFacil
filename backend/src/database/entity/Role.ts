@@ -16,7 +16,7 @@ export class Role {
     @PrimaryGeneratedColumn({
         name: 'ID_Cargo'
     })
-    id: number
+    id!: number
 
     @Column({
         type: 'varchar',
@@ -24,7 +24,7 @@ export class Role {
         nullable: false,
         length: 50
     })
-    name: string
+    name!: string
 
     @Column({
         type: 'json',
@@ -43,8 +43,8 @@ export class Role {
     @JoinColumn({
         name: 'ID_Estabelecimento'
     })
-    establishment: Establishment
+    establishment!: Establishment
 
     @OneToMany(() => User, (user) => user.role)
-    users: User[]
+    users!: User[]
 }

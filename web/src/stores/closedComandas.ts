@@ -9,14 +9,22 @@ export const useClosedComandaStore = defineStore('closedComandas', () => {
   async function loadClosedComandas() {
     try {
       const response = await comandaApi.listByStatus('Fechada');
+      if (!response) return;
 
       const fetchedComandas = response.map((c: any) => {
         const mappedOrders = (c.pedidos || []).map((p: any) => {
-          const items = (p.productOrders || []).map((po: any) => ({
-            name: po.product?.name || 'Item',
-            amount: po.quantity || 1,
-            price: Number(po.price || po.Preco_Unitario_Momento || 0)
-          }));
+          const items = (p.productOrders || []).map((po: any) => {
+            const variationName = po.variations
+              ?.map((v: any) => v.productVariation?.name)
+              .filter(Boolean)
+              .join(', ') || '';
+            return {
+              name: po.product?.name || 'Item',
+              variationName,
+              amount: po.quantity || 1,
+              price: Number(po.price || 0),
+            };
+          });
           
           const orderPrice = items.reduce((sum: number, idx: any) => sum + (idx.price * idx.amount), 0);
           
@@ -26,6 +34,8 @@ export const useClosedComandaStore = defineStore('closedComandas', () => {
         return {
           id: c.id,
           label: c.description || `Comanda #${c.id}`,
+          customerName: c.customerName ?? undefined,
+          isAutoatendimento: !!c.customerName || (c.description || '').startsWith('Totem #'),
           closedAt: c.deleted_at || c.created_at || new Date(),
           total: Number(c.total),
           orders: mappedOrders,

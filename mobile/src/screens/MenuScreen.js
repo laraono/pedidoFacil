@@ -15,6 +15,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { useCart } from "../contexts/CartContext";
 import { useTheme } from "../contexts/ThemeContext";
+import { useError } from "../contexts/ErrorContext";
 import { useIdleTimer } from "../hooks/useIdleTimer";
 import CartBottomBar from "../components/CartBottomBar";
 import BrandHeader from "../components/ui/BrandHeader";
@@ -23,6 +24,18 @@ import ProductModal from "../components/ProductModal";
 import { fetchFullMenu } from "../stores/menuStore";
 import { connectMobileSocket } from "../services/socketService";
 
+const API_BASE_URL = "http://192.168.1.39:3000";
+
+const getFullImageUrl = (imagePath) => {
+  
+  if (!imagePath) return null; 
+  if (typeof imagePath !== "string") return imagePath; 
+  if (imagePath.startsWith("http") || imagePath.startsWith("data:")) {
+    return { uri: imagePath }; 
+  }
+  return { uri: `${API_BASE_URL}/uploads/${imagePath}` };
+};
+
 export default function MenuScreen() {
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
@@ -30,6 +43,7 @@ export default function MenuScreen() {
 
   const { addToCart } = useCart();
   const { theme, loadTheme } = useTheme();
+  const { errorMessage, setErrorMessage } = useTheme();
   const { width } = useWindowDimensions();
   const panHandlers = useIdleTimer(45);
 
@@ -48,7 +62,7 @@ export default function MenuScreen() {
 
   const loadMenuData = async () => {
     try {
-      const data = await fetchFullMenu();
+      const data = await fetchFullMenu(setErrorMessage);
       if (data) {
         setCategories(data.categories || []);
         setProducts(data.products || []);
@@ -122,8 +136,8 @@ export default function MenuScreen() {
           <Text style={styles.sidebarTitle}>Cardápio</Text>
           {categories.map((item) => {
             const isSelected = selectedCategory === item.id;
-            const imageSource =
-              typeof item.image === "string" ? { uri: item.image } : item.image;
+            
+            const imageSource = getFullImageUrl(item.image);
 
             return (
               <TouchableOpacity
@@ -177,10 +191,8 @@ export default function MenuScreen() {
               contentContainerStyle={styles.listContainer}
               showsVerticalScrollIndicator={false}
               renderItem={({ item }) => {
-                const imageSource =
-                  typeof item.image === "string"
-                    ? { uri: item.image }
-                    : item.image;
+                
+                const imageSource = getFullImageUrl(item.image);
 
                 return (
                   <TouchableOpacity
@@ -205,7 +217,6 @@ export default function MenuScreen() {
                       </Text>
 
                       <View style={styles.productFooter}>
-                        {/* 🎯 CORREÇÃO DO BLOCO DE PREÇOS AQUI */}
                         <View style={styles.priceBlock}>
                           {((item.productVariations &&
                             item.productVariations.length > 1) ||

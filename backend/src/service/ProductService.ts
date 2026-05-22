@@ -1,10 +1,9 @@
-import { CreateProduct } from "../dto";
-import { AppError } from "../middleware";
+import { CreateProductDTO } from "../dto/product/CreateProductDTO"; 
+import { AppError } from "../middleware/error/AppError";
 import { ProductRepository, ProductVariationRepository } from "../repository";
 import { CategoryService } from "./CategoryService";
 
 export class ProductService {
-
     private categoryService: CategoryService
     private productRepository: ProductRepository
     private productVariationRepository: ProductVariationRepository
@@ -19,25 +18,27 @@ export class ProductService {
         this.productVariationRepository = productVariationRepository
     }
 
-    async createProduct(params: CreateProduct) {
-        const {product, productVariations} = params
+    async createProduct(params: CreateProductDTO) {
+        const { product, productVariations } = params
 
         const category = await this.categoryService.getCategory(product.categoryId)
 
-        if(!category) {
+        if (!category) {
             throw new AppError('Categoria não existe', 400)
         }
 
-        const createdProduct = await this.productRepository.createProduct({
+        const result: any = await this.productRepository.createProduct({
             ...product,
             category: category
         } as any) 
 
-        if(createdProduct && productVariations) { 
+        const createdProduct = Array.isArray(result) ? result[0] : result;
+
+        if (createdProduct && productVariations) { 
             for (const variation of productVariations) {
                 await this.productVariationRepository.createProductVariation({
                     ...variation,
-                    product: createdProduct,
+                    product: { id: createdProduct.id },
                     status: 'Ativo'
                 } as any)
             }
@@ -46,20 +47,20 @@ export class ProductService {
         return createdProduct.id
     }
 
-    async listProducts() {
-        return await this.productRepository.listProducts()
+    async listProducts(establishmentId: number, page: number = 1, limit: number = 10) {
+        return await this.productRepository.listProducts(establishmentId, page, limit);
     }
 
-    async listProductsByCategory(categoryId: number) {
-        return await this.productRepository.listProductsByCategory(categoryId)
+    async listProductsByCategory(categoryId: number, establishmentId: number, page: number = 1, limit: number = 10) {
+        return await this.productRepository.listProductsByCategory(categoryId, establishmentId, page, limit);
+    }
+
+    async listDeletedProducts(establishmentId: number, page: number = 1, limit: number = 10) {
+        return await this.productRepository.listDeletedProducts(establishmentId, page, limit);
     }
  
     async getProduct(productId: number) {
         return await this.productRepository.getProduct(productId)
-    }
-
-    async listDeletedProducts() {
-        return await this.productRepository.listDeletedProducts();
     }
 
     async updateProduct(productId: number, data: any) {

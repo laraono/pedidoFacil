@@ -1,16 +1,23 @@
 import { Router } from 'express';
 import { EstablishmentController } from '../controller/EstablishmentController';
-import authenticate from '../middleware/authenticate';
+import { authenticate } from '../middleware/authenticate';
 import { checkPermission } from '../middleware/roleAccessControl';
 import { establishmentService } from '../service'; 
 import { 
     validateSaveOnboarding, 
-    validateFinalizeOnboarding, 
-    validateUpdateEstablishment 
+    validateFinalizeOnboarding 
 } from '../validator/establishment/establishmentSchema';
+import { validateRequest } from '../middleware/validateRequest';
+import { UpdateEstablishmentDTO } from '../dto/establishment/UpdateEstablishmentDTO';
+import { validateUpload } from '../middleware/validateUpload';
 
 const establishmentRouter = Router();
 const establishmentController = new EstablishmentController(establishmentService);
+
+establishmentRouter.get(
+  '/code/:code',
+  establishmentController.getByCode
+);
 
 establishmentRouter.get(
   '/:id/public',
@@ -34,7 +41,7 @@ establishmentRouter.post(
 establishmentRouter.get(
   '/profile',
   authenticate,
-  checkPermission('ESTABELECIMENTO_VIEW', 'ALL'),
+  checkPermission('ESTABELECIMENTO_VIEW', 'CONFIGURACAO'),
   establishmentController.getProfile
 );
 
@@ -42,8 +49,9 @@ establishmentRouter.put(
   '/profile',
   authenticate,
   checkPermission('ESTABELECIMENTO_EDIT', 'ALL'),
-  validateUpdateEstablishment,
-  establishmentController.update
+  validateUpload.fields([{ name: 'logo', maxCount: 1 }, { name: 'pixQrCode', maxCount: 1 }]),
+  validateRequest(UpdateEstablishmentDTO), 
+  establishmentController.update   
 );
 
 establishmentRouter.delete(
@@ -52,5 +60,7 @@ establishmentRouter.delete(
   checkPermission('ESTABELECIMENTO_DELETE', 'ALL'),
   establishmentController.disable
 );
+
+
 
 export { establishmentRouter };

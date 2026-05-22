@@ -35,8 +35,8 @@ const visibleMenuItems = computed(() => {
   });
 });
 
-const logout = async () => {
-  await authStore.logout();
+const logout = () => {
+  authStore.logout();
   router.push('/login');
 };
 

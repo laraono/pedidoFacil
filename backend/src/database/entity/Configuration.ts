@@ -6,7 +6,7 @@ export class Configuration {
   @PrimaryColumn({
     name: 'ID_Estabelecimento',
   })
-  id: number;
+  id!: number;
 
   @Column({
     type: 'varchar',
@@ -62,7 +62,7 @@ export class Configuration {
     nullable: true,
     length: 50,
   })
-  fontFamily: string;
+  fontFamily!: string;
 
   @Column({
     type: 'varchar',
@@ -70,7 +70,7 @@ export class Configuration {
     nullable: true,
     length: 30,
   })
-  comandaLabel: string;
+  comandaLabel!: string;
 
   @Column({
     type: 'longtext',
@@ -85,11 +85,11 @@ export class Configuration {
     default: true,
     name: 'Permite_Observacoes',
   })
-  allowObservations: boolean;
+  allowObservations!: boolean;
 
   @OneToOne(() => Establishment)
   @JoinColumn({
     name: 'ID_Estabelecimento',
   })
-  establishment: Establishment;
+  establishment!: Establishment;
 }

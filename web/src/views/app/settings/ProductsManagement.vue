@@ -1,7 +1,7 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useRouter } from "vue-router";
-import { useMenuStore } from "@/stores/productsManagement.js";
+import { useMenuStore } from "@/stores/productsManagement";
 import { useToast } from "@/composables/useToast";
 import { useConfirm } from "@/composables/useConfirm";
 import BaseButton from "@/components/ui/BaseButton.vue";
@@ -11,24 +11,46 @@ import FormModal from "@/components/ui/FormModal.vue";
 import ConfirmModal from "@/components/ui/ConfirmModal.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import ToastMessage from "@/components/ui/ToastMessage.vue";
-import { PlusCircle, Edit, Archive, RotateCcw, Trash2, Image as ImageIcon, Layers, CheckSquare, Square, TrendingUp, TrendingDown, ToggleLeft, FolderInput, X } from "lucide-vue-next";
+import { 
+  PlusCircle, Edit, Archive, RotateCcw, Trash2, Image as ImageIcon, 
+  Layers, CheckSquare, Square, TrendingUp, TrendingDown, ToggleLeft, 
+  FolderInput, X, Search, ChevronLeft, ChevronRight 
+} from "lucide-vue-next";
 
 const menuStore = useMenuStore();
 const { showToast } = useToast();
 const { confirmState, showConfirm } = useConfirm();
-
-onMounted(() => {
-  menuStore.loadData();
-});
 
 const showDeleted = ref(false);
 const showModal = ref(false);
 const isEditing = ref(false);
 const isLoading = ref(false);
 const errors = ref({});
-const form = ref({ id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true, sizes: [] });
+const form = ref({ id: null, name: "", description: "", price: "", categoryId: "", imageFile: null, imagePreview: null, available: true, sizes: [] });
 
-const displayedProducts = computed(() => showDeleted.value ? menuStore.deletedProducts : menuStore.activeProducts);
+const searchQuery = ref("");
+const itemsPerPage = ref(8);
+
+const fetchData = async (page = 1) => {
+  isLoading.value = true;
+  try {
+    await menuStore.loadProducts(page, itemsPerPage.value, showDeleted.value, searchQuery.value);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+onMounted(async () => {
+  await menuStore.loadCategories();
+  await fetchData();
+});
+
+watch([searchQuery, showDeleted], () => {
+  fetchData(1);
+});
+
+const displayedProducts = computed(() => menuStore.products);
+
 const sortedProducts = computed(() => {
   const list = [...displayedProducts.value];
   if (sortMode.value === 'alpha') return list.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
@@ -40,6 +62,7 @@ const sortedProducts = computed(() => {
   });
   return list;
 });
+
 const categoryOptions = computed(() => menuStore.activeCategories.map(c => ({ label: c.name, value: c.id })));
 
 const bulkMode = ref(false);
@@ -56,6 +79,14 @@ const bulkConfirmMessage = ref('');
 const allSelected = computed(() =>
   displayedProducts.value.length > 0 && displayedProducts.value.every(p => selectedIds.value.includes(p.id))
 );
+
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return '';
+  if (imagePath.startsWith('http') || imagePath.startsWith('data:image')) return imagePath;
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+  const host = BASE_URL.replace('/api/v1', '');
+  return `${host}/uploads/${imagePath}`;
+};
 
 const toggleBulkMode = () => {
   bulkMode.value = !bulkMode.value;
@@ -88,6 +119,7 @@ const applyBulkPriceMask = (raw) => {
   parts[0] = parts[0].replace(/^0+(\d)/, '$1');
   return parts.join(',');
 };
+
 const onBulkPriceInput = (e) => { bulkPriceValue.value = applyBulkPriceMask(e.target.value); };
 
 const applyBulk = () => {
@@ -140,6 +172,7 @@ const executeBulk = async () => {
   showBulkConfirm.value = false;
   selectedIds.value = [];
   bulkMode.value = false;
+  fetchData(menuStore.currentPage);
 };
 
 const validate = () => {
@@ -154,8 +187,23 @@ const validate = () => {
   return Object.keys(e).length === 0;
 };
 
-const openAdd = () => { isEditing.value = false; form.value = { id: null, name: "", description: "", price: "", categoryId: "", image: null, imagePreview: null, available: true, sizes: [] }; errors.value = {}; showModal.value = true; };
-const openEdit = (p) => { isEditing.value = true; form.value = { id: p.id, name: p.name, description: p.description || "", price: p.price != null ? String(p.price).replace('.', ',') : "", categoryId: p.categoryId, image: p.image, imagePreview: p.image, available: p.available !== false, sizes: p.sizes ? p.sizes.map(s => ({ name: s.name, price: String(s.price).replace('.', ',') })) : [] }; errors.value = {}; showModal.value = true; };
+const openAdd = () => { isEditing.value = false; form.value = { id: null, name: "", description: "", price: "", categoryId: "", imageFile: null, imagePreview: null, available: true, sizes: [] }; errors.value = {}; showModal.value = true; };
+const openEdit = (p) => { 
+  isEditing.value = true; 
+  form.value = { 
+    id: p.id, 
+    name: p.name, 
+    description: p.description || "", 
+    price: p.price != null ? String(p.price).replace('.', ',') : "", 
+    categoryId: p.categoryId, 
+    imageFile: null, 
+    imagePreview: getImageUrl(p.image), 
+    available: p.available !== false, 
+    sizes: p.sizes ? p.sizes.map(s => ({ name: s.name, price: String(s.price).replace('.', ',') })) : [] 
+  }; 
+  errors.value = {}; 
+  showModal.value = true; 
+};
 
 const addSize = () => form.value.sizes.push({ name: '', price: '' });
 const removeSize = (i) => form.value.sizes.splice(i, 1);
@@ -163,38 +211,14 @@ const removeSize = (i) => form.value.sizes.splice(i, 1);
 const handleImageUpload = (e) => {
   const file = e.target.files[0];
   if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX_WIDTH = 600;
-      const MAX_HEIGHT = 600;
-      let width = img.width;
-      let height = img.height;
-
-      if (width > height && width > MAX_WIDTH) {
-        height *= MAX_WIDTH / width;
-        width = MAX_WIDTH;
-      } else if (height > MAX_HEIGHT) {
-        width *= MAX_HEIGHT / height;
-        height = MAX_HEIGHT;
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-
-      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-
-      form.value.imagePreview = compressedBase64;
-      form.value.image = compressedBase64;
-    };
-    img.src = event.target.result;
-  };
-  reader.readAsDataURL(file);
+  const maxSize = 2 * 1024 * 1024; 
+  if (file.size > maxSize) {
+    showToast("Arquivo muito grande! O limite é 2MB.", "error");
+    e.target.value = "";
+    return;
+  }
+  form.value.imageFile = file;
+  form.value.imagePreview = URL.createObjectURL(file);
 };
 
 const applyPriceMask = (raw) => {
@@ -213,24 +237,45 @@ const onPriceInput = (e) => { form.value.price = applyPriceMask(e.target.value);
 const onSizePriceInput = (e, i) => { form.value.sizes[i].price = applyPriceMask(e.target.value); };
 
 const save = async () => {
+  errors.value = {};
   if (!validate()) { showToast("Corrija os erros no formulário.", "error"); return; }
   isLoading.value = true;
   try {
     const parsedSizes = form.value.sizes
       .filter(s => s.name.trim())
       .map(s => ({ name: s.name.trim(), price: parseFloat(String(s.price).replace(',', '.')) || 0 }));
-    const payload = { id: form.value.id, name: form.value.name, description: form.value.description, price: parseFloat(String(form.value.price).replace(",", ".")), categoryId: form.value.categoryId, image: form.value.image, available: form.value.available, sizes: parsedSizes };
+    const formData = new FormData();
+    if (form.value.id) formData.append('id', form.value.id);
+    formData.append('name', form.value.name);
+    formData.append('description', form.value.description || "");
+    formData.append('price', parseFloat(String(form.value.price).replace(",", ".")));
+    formData.append('categoryId', form.value.categoryId);
+    formData.append('available', form.value.available);
+    formData.append('sizes', JSON.stringify(parsedSizes));
+    if (form.value.imageFile) formData.append('imagem', form.value.imageFile);
     
-    if (isEditing.value) await menuStore.updateProduct(payload); 
-    else await menuStore.addProduct(payload);
+    if (isEditing.value) await menuStore.updateProduct(formData); 
+    else await menuStore.addProduct(formData);
     
     showToast(isEditing.value ? "Produto atualizado!" : "Produto criado!", "success");
     showModal.value = false;
-  } catch { showToast("Erro ao salvar produto.", "error"); } finally { isLoading.value = false; }
+    fetchData(menuStore.currentPage);
+  } catch (error) { 
+    const data = error.response?.data || error.data || error;
+    if (data?.errors && Array.isArray(data.errors)) {
+      data.errors.forEach((err) => {
+        let field = err.campo.replace("body.", "");
+        errors.value[field] = err.mensagem;
+      });
+      showToast("Verifique os campos destacados em vermelho.", "error");
+    } else {
+      showToast(data?.message || "Erro ao salvar produto.", "error");
+    }
+  } finally { isLoading.value = false; }
 };
 
-const handleDelete = (p) => showConfirm({ title: "Arquivar Produto", message: "Arquivar " + p.name + "?", onConfirm: async () => { await menuStore.softDeleteProduct(p.id); showToast(p.name + " arquivado.", "success"); } });
-const handleRestore = (p) => showConfirm({ title: "Restaurar Produto", message: "Restaurar " + p.name + "?", onConfirm: async () => { await menuStore.restoreProduct(p.id); showToast(p.name + " restaurado.", "success"); } });
+const handleDelete = (p) => showConfirm({ title: "Arquivar Produto", message: "Arquivar " + p.name + "?", onConfirm: async () => { await menuStore.softDeleteProduct(p.id); showToast(p.name + " arquivado.", "success"); fetchData(menuStore.currentPage); } });
+const handleRestore = (p) => showConfirm({ title: "Restaurar Produto", message: "Restaurar " + p.name + "?", onConfirm: async () => { await menuStore.restoreProduct(p.id); showToast(p.name + " restaurado.", "success"); fetchData(menuStore.currentPage); } });
 const handlePermanentDelete = (p) => showConfirm({ title: "Excluir Permanentemente", message: "Excluir " + p.name + " para sempre?", onConfirm: () => { menuStore.permanentlyDeleteProduct(p.id); showToast(p.name + " removido localmente.", "success"); } });
 
 const tableColumns = computed(() => {
@@ -238,11 +283,12 @@ const tableColumns = computed(() => {
   if (bulkMode.value) return [{ key: 'select', label: '' }, ...base];
   return base;
 });
+
 const tableActions = computed(() => bulkMode.value ? [] : [
-  { icon: Edit,    tooltip: "Editar",    handler: openEdit,             condition: (p) => !p.deletedAt },
-  { icon: Archive, tooltip: "Arquivar",  handler: handleDelete,         condition: (p) => !p.deletedAt, class: "text-[#757575] hover:text-orange-400 hover:bg-orange-500/10 p-2 rounded transition-all" },
-  { icon: RotateCcw, tooltip: "Restaurar", handler: handleRestore,      condition: (p) =>  p.deletedAt, class: "text-[#757575] hover:text-accent hover:bg-primary-dark/10 p-2 rounded transition-all" },
-  { icon: Trash2,  tooltip: "Excluir",   handler: handlePermanentDelete, condition: (p) => p.deletedAt, class: "text-[#757575] hover:text-danger hover:bg-danger-light p-2 rounded transition-all" },
+  { icon: Edit, tooltip: "Editar", handler: openEdit, condition: (p) => !p.deletedAt },
+  { icon: Archive, tooltip: "Arquivar", handler: handleDelete, condition: (p) => !p.deletedAt, class: "text-[#757575] hover:text-orange-400 hover:bg-orange-500/10 p-2 rounded transition-all" },
+  { icon: RotateCcw, tooltip: "Restaurar", handler: handleRestore, condition: (p) => p.deletedAt, class: "text-[#757575] hover:text-accent hover:bg-primary-dark/10 p-2 rounded transition-all" },
+  { icon: Trash2, tooltip: "Excluir", handler: handlePermanentDelete, condition: (p) => p.deletedAt, class: "text-[#757575] hover:text-danger hover:bg-danger-light p-2 rounded transition-all" },
 ]);
 </script>
 
@@ -251,14 +297,14 @@ const tableActions = computed(() => bulkMode.value ? [] : [
     <ToastMessage />
     <PageHeader title="Gerenciar Produtos" subtitle="Controle do cardápio">
       <template #actions>
-        <button @click="showDeleted = !showDeleted" class="px-5 py-3 rounded flex items-center gap-2 font-bold text-sm border transition-all" :class="showDeleted ? 'bg-gray-100 text-[#212121] border-[#E0E0E0]' : 'bg-gray-50 text-[#757575] border-[#E0E0E0] hover:bg-gray-100 hover:text-[#212121]'">
+        <button @click="showDeleted = !showDeleted" class="px-5 py-3 rounded flex items-center gap-2 font-bold text-sm border transition-all" :class="showDeleted ? 'bg-gray-100 text-[#212121] border-[#E0E0E0]' : 'bg-white text-[#757575] border-[#E0E0E0] hover:bg-gray-100 hover:text-[#212121]'">
           <Archive :size="18" /> {{ showDeleted ? 'Ver Ativos' : 'Ver Arquivados' }}
         </button>
         <button
           v-if="!showDeleted"
           @click="toggleBulkMode"
           class="px-5 py-3 rounded flex items-center gap-2 font-bold text-sm border transition-all"
-          :class="bulkMode ? 'bg-accent-light text-accent border-accent/40' : 'bg-gray-50 text-[#757575] border-[#E0E0E0] hover:bg-gray-100 hover:text-[#212121]'"
+          :class="bulkMode ? 'bg-accent-light text-accent border-accent/40' : 'bg-white text-[#757575] border-[#E0E0E0] hover:bg-gray-100 hover:text-[#212121]'"
         >
           <Layers :size="18" /> {{ bulkMode ? 'Cancelar Lote' : 'Edição em Lote' }}
         </button>
@@ -269,6 +315,18 @@ const tableActions = computed(() => bulkMode.value ? [] : [
     <div v-if="showDeleted" class="mb-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded flex items-center justify-between">
       <p class="text-orange-400 text-sm font-bold flex items-center gap-2"><Archive :size="16" /> Visualizando produtos arquivados.</p>
       <button @click="showDeleted = false" class="text-orange-300 hover:text-orange-100 text-sm font-bold underline">Voltar para ativos</button>
+    </div>
+
+    <div class="mb-6 relative">
+      <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+        <Search :size="18" class="text-[#757575]" />
+      </div>
+      <input 
+        v-model="searchQuery"
+        type="text"
+        placeholder="Buscar por nome, descrição ou categoria..."
+        class="w-full py-3.5 pl-12 pr-4 rounded-2xl border bg-white border-[#E0E0E0] text-[#212121] focus:outline-none focus:border-accent/50 transition-all shadow-sm"
+      />
     </div>
 
     <div v-if="bulkMode" class="mb-5 bg-white border border-accent/30 rounded p-5 flex flex-col gap-4">
@@ -286,7 +344,6 @@ const tableActions = computed(() => bulkMode.value ? [] : [
           <X :size="14" /> Cancelar
         </button>
       </div>
-
       <div class="flex flex-wrap gap-2">
         <button v-for="opt in [
           { key: 'price_increase', icon: TrendingUp, label: 'Aumentar Preço' },
@@ -303,7 +360,6 @@ const tableActions = computed(() => bulkMode.value ? [] : [
           {{ opt.label }}
         </button>
       </div>
-
       <div v-if="bulkAction === 'price_increase' || bulkAction === 'price_decrease'" class="flex items-end gap-3 flex-wrap">
         <div class="flex flex-col gap-1">
           <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-1">Tipo</label>
@@ -317,33 +373,21 @@ const tableActions = computed(() => bulkMode.value ? [] : [
             {{ bulkAction === 'price_increase' ? 'Acréscimo' : 'Decréscimo' }}
           </label>
           <div class="relative">
-            <input
-              :value="bulkPriceValue"
-              @input="onBulkPriceInput"
-              inputmode="numeric"
-              :placeholder="bulkPriceType === 'percent' ? '0' : '0,00'"
-              class="py-2.5 px-4 pr-10 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] text-sm focus:outline-none focus:border-primary/50 transition-all w-32"
-            />
-            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-[#757575] pointer-events-none">
+            <input :value="bulkPriceValue" @input="onBulkPriceInput" inputmode="numeric" :placeholder="bulkPriceType === 'percent' ? '0' : '0,00'" class="py-2.5 px-4 pr-10 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] text-sm focus:outline-none focus:border-primary/50 transition-all w-32" />
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-[#757575]">
               {{ bulkPriceType === 'percent' ? '%' : 'R$' }}
             </span>
           </div>
         </div>
-        <button @click="applyBulk" class="py-2.5 px-6 bg-primary text-white font-black text-sm rounded hover:opacity-90 transition-opacity">
-          Aplicar
-        </button>
+        <button @click="applyBulk" class="py-2.5 px-6 bg-primary text-white font-black text-sm rounded hover:opacity-90 transition-opacity">Aplicar</button>
       </div>
-
       <div v-else-if="bulkAction === 'availability'" class="flex items-center gap-4 flex-wrap">
         <div class="flex gap-2">
           <button @click="bulkAvailability = true" class="px-4 py-2 rounded text-sm font-bold border transition-all" :class="bulkAvailability ? 'bg-accent-light text-accent border-accent/40' : 'bg-gray-50 text-[#757575] border-[#E0E0E0]'">Disponível</button>
           <button @click="bulkAvailability = false" class="px-4 py-2 rounded text-sm font-bold border transition-all" :class="!bulkAvailability ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-gray-50 text-[#757575] border-[#E0E0E0]'">Indisponível</button>
         </div>
-        <button @click="applyBulk" class="py-2.5 px-6 bg-primary text-white font-black text-sm rounded hover:opacity-90 transition-opacity">
-          Aplicar
-        </button>
+        <button @click="applyBulk" class="py-2.5 px-6 bg-primary text-white font-black text-sm rounded hover:opacity-90 transition-opacity">Aplicar</button>
       </div>
-
       <div v-else-if="bulkAction === 'category'" class="flex items-end gap-3 flex-wrap">
         <div class="flex flex-col gap-1">
           <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-1">Nova categoria</label>
@@ -352,29 +396,24 @@ const tableActions = computed(() => bulkMode.value ? [] : [
             <option v-for="opt in categoryOptions" :key="opt.value" :value="opt.value" class="bg-white">{{ opt.label }}</option>
           </select>
         </div>
-        <button @click="applyBulk" class="py-2.5 px-6 bg-primary text-white font-black text-sm rounded hover:opacity-90 transition-opacity">
-          Aplicar
-        </button>
+        <button @click="applyBulk" class="py-2.5 px-6 bg-primary text-white font-black text-sm rounded hover:opacity-90 transition-opacity">Aplicar</button>
       </div>
-
       <div v-else-if="bulkAction === 'delete'" class="flex items-center gap-3">
-        <p class="text-sm text-[#757575]">Os produtos selecionados serão arquivados e poderão ser restaurados.</p>
-        <button @click="applyBulk" class="py-2.5 px-6 bg-orange-500 text-[#212121] font-black text-sm rounded hover:bg-orange-400 transition-colors">
-          Arquivar Selecionados
-        </button>
+        <p class="text-sm text-[#757575]">Os produtos selecionados serão arquivados.</p>
+        <button @click="applyBulk" class="py-2.5 px-6 bg-orange-500 text-[#212121] font-black text-sm rounded hover:bg-orange-400 transition-colors">Arquivar Selecionados</button>
       </div>
     </div>
 
     <div class="flex items-center gap-2 mb-4 flex-wrap">
       <span class="text-xs font-black text-[#757575] uppercase tracking-widest mr-1">Ordenar:</span>
-      <button v-for="opt in [{ v: 'none', l: 'Padrão' }, { v: 'alpha', l: 'A → Z' }, { v: 'category-alpha', l: 'Categoria + A → Z' }]"
+      <button v-for="opt in [{ v: 'none', l: 'Padrão' }, { v: 'alpha', l: 'A → Z' }, { v: 'category-alpha', l: 'Categoria' }]"
         :key="opt.v" @click="sortMode = opt.v"
         class="px-3 py-1.5 rounded text-xs font-bold border transition-all"
-        :class="sortMode === opt.v ? 'bg-accent-light text-accent border-accent/40' : 'bg-gray-50 text-[#757575] border-[#E0E0E0] hover:text-[#212121] hover:border-[#E0E0E0]'"
+        :class="sortMode === opt.v ? 'bg-accent-light text-accent border-accent/40' : 'bg-white text-[#757575] border-[#E0E0E0] hover:text-[#212121] hover:border-[#E0E0E0]'"
       >{{ opt.l }}</button>
     </div>
 
-    <DataTable :columns="tableColumns" :data="sortedProducts" :actions="tableActions" emptyMessage="Nenhum produto encontrado.">
+    <DataTable :columns="tableColumns" :data="sortedProducts" :actions="tableActions" :isLoading="isLoading" emptyMessage="Nenhum produto encontrado.">
       <template #cell-select="{ item }">
         <button @click="toggleSelect(item.id)" class="flex items-center justify-center w-8 h-8 rounded transition-colors hover:bg-gray-50">
           <component :is="isSelected(item.id) ? CheckSquare : Square" :size="18" :class="isSelected(item.id) ? 'text-accent' : 'text-[#757575]'" />
@@ -385,23 +424,37 @@ const tableActions = computed(() => bulkMode.value ? [] : [
       </template>
       <template #cell-image="{ item }">
         <div class="w-12 h-12 bg-gray-50 rounded flex items-center justify-center overflow-hidden border border-[#E0E0E0]">
-          <img v-if="item.image" :src="item.image" class="w-full h-full object-cover" />
+          <img v-if="item.image" :src="getImageUrl(item.image)" class="w-full h-full object-cover" />
           <ImageIcon v-else class="text-[#757575]" :size="18" />
         </div>
       </template>
       <template #cell-name="{ item }">
         <span class="font-bold text-[#212121]" :class="{ 'opacity-50': item.deletedAt }">{{ item.name }}</span>
-        <p v-if="item.description" class="text-[#757575] text-xs mt-0.5">{{ item.description }}</p>
+        <p v-if="item.description" class="text-[#757575] text-xs mt-0.5 truncate max-w-[200px]">{{ item.description }}</p>
       </template>
       <template #cell-price="{ item }">
         <span class="text-accent font-black">R$ {{ Number(item.price ?? item.sizes?.[0]?.price ?? 0).toFixed(2) }}</span>
       </template>
       <template #cell-status="{ item }">
         <span v-if="item.deletedAt" class="px-3 py-1 bg-gray-100 text-[#757575] border border-[#E0E0E0] rounded text-[10px] font-black uppercase tracking-widest">Arquivado</span>
-        <span v-else-if="item.available === false" class="px-3 py-1 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded text-[10px] font-black uppercase tracking-widest">Indisponível</span>
-        <span v-else class="px-3 py-1 bg-accent-light text-accent border border-accent/30 rounded text-[10px] font-black uppercase tracking-widest">Disponível</span>
+        <span v-else-if="item.available === false" class="px-3 py-1 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded text-[10px] font-black uppercase tracking-widest">Pausa</span>
+        <span v-else class="px-3 py-1 bg-accent-light text-accent border border-accent/30 rounded text-[10px] font-black uppercase tracking-widest">Ativo</span>
       </template>
     </DataTable>
+
+    <div v-if="menuStore.totalPages > 1" class="mt-8 flex items-center justify-center gap-2">
+      <button @click="fetchData(menuStore.currentPage - 1)" :disabled="menuStore.currentPage === 1" class="p-2.5 rounded-xl border border-[#E0E0E0] hover:bg-gray-50 disabled:opacity-20 transition-all">
+        <ChevronLeft :size="20" />
+      </button>
+      <div class="flex items-center gap-1">
+        <button v-for="page in menuStore.totalPages" :key="page" @click="fetchData(page)" class="w-11 h-11 rounded-xl border text-sm font-bold transition-all shadow-sm" :class="menuStore.currentPage === page ? 'bg-accent text-white border-accent' : 'bg-white text-[#757575] border-[#E0E0E0]'">
+          {{ page }}
+        </button>
+      </div>
+      <button @click="fetchData(menuStore.currentPage + 1)" :disabled="menuStore.currentPage === menuStore.totalPages" class="p-2.5 rounded-xl border border-[#E0E0E0] hover:bg-gray-50 disabled:opacity-20 transition-all">
+        <ChevronRight :size="20" />
+      </button>
+    </div>
 
     <FormModal :show="showModal" :title="isEditing ? 'Editar Produto' : 'Novo Produto'" :isLoading="isLoading" :saveLabel="isEditing ? 'Salvar Alterações' : 'Criar Produto'" size="md" @close="showModal = false" @save="save">
       <div class="flex flex-col gap-5">
@@ -414,19 +467,11 @@ const tableActions = computed(() => bulkMode.value ? [] : [
           </label>
         </div>
         <BaseInput v-model="form.name" label="Nome do Produto" placeholder="Ex: X-Burguer Especial" :maxlength="60" :error="errors.name" />
-        <BaseInput v-model="form.description" label="Descrição (opcional)" placeholder="Ingredientes, detalhes..." :maxlength="120" />
+        <BaseInput v-model="form.description" label="Descrição (opcional)" placeholder="Ingredientes, detalhes..." :maxlength="120" :error="errors.description" />
         <div class="flex flex-col gap-1">
           <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-2">Preço base (R$)</label>
-          <input
-            :value="form.price"
-            @input="onPriceInput"
-            inputmode="numeric"
-            placeholder="0,00"
-            class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] focus:outline-none focus:border-primary/50 transition-all"
-            :class="errors.price ? '!border-red-500' : ''"
-          />
+          <input :value="form.price" @input="onPriceInput" inputmode="numeric" placeholder="0,00" class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] focus:outline-none focus:border-primary/50 transition-all" :class="errors.price ? '!border-red-500' : ''" />
           <p v-if="errors.price" class="text-danger text-[11px] font-bold mt-0.5 ml-2">{{ errors.price }}</p>
-          <p class="text-[#757575] text-[10px] ml-2">Usado quando não há tamanhos configurados.</p>
         </div>
         <div class="flex flex-col gap-1">
           <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-2">Categoria</label>
@@ -442,44 +487,30 @@ const tableActions = computed(() => bulkMode.value ? [] : [
             <span class="inline-block h-5 w-5 transform rounded bg-white transition-transform duration-300" :class="form.available ? 'translate-x-6' : 'translate-x-1'" />
           </button>
         </div>
-
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm font-bold text-[#212121]">Tamanhos / Variações</p>
-              <p class="text-xs text-[#757575]">Se configurados, substituem o preço base no cardápio</p>
+              <p class="text-xs text-[#757575]">Substituem o preço base no cardápio</p>
             </div>
             <button type="button" @click="addSize" class="flex items-center gap-1.5 px-3 py-2 bg-accent-light text-accent border border-accent/30 rounded text-xs font-black hover:bg-primary-dark/20 transition-colors">
               <PlusCircle :size="14" /> Adicionar
             </button>
           </div>
           <div v-for="(size, i) in form.sizes" :key="i" class="flex gap-2 items-center">
-            <input
-              v-model="size.name"
-              placeholder="Nome (ex: Grande)"
-              class="flex-1 py-2.5 px-3 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] text-sm focus:outline-none focus:border-primary/50 transition-all"
-            />
-            <input
-              :value="size.price"
-              @input="onSizePriceInput($event, i)"
-              inputmode="numeric"
-              placeholder="0,00"
-              class="w-24 py-2.5 px-3 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] text-sm text-right focus:outline-none focus:border-primary/50 transition-all"
-            />
+            <input v-model="size.name" placeholder="Nome" class="flex-1 py-2.5 px-3 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] text-sm focus:outline-none focus:border-primary/50 transition-all" />
+            <input :value="size.price" @input="onSizePriceInput($event, i)" inputmode="numeric" placeholder="0,00" class="w-24 py-2.5 px-3 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] text-sm text-right focus:outline-none focus:border-primary/50 transition-all" />
             <button type="button" @click="removeSize(i)" class="p-2 text-[#757575] hover:text-danger hover:bg-danger-light rounded transition-all">
               <Trash2 :size="16" />
             </button>
           </div>
-          <p v-if="errors.sizes" class="text-danger text-[11px] font-bold ml-1">{{ errors.sizes }}</p>
         </div>
       </div>
     </FormModal>
-
     <ConfirmModal :confirmModal="confirmState" @close="confirmState.show = false" />
-
     <Teleport to="body">
       <Transition name="fade">
-        <div v-if="showBulkConfirm" class="fixed inset-0 bg-black/50  z-[110] flex items-center justify-center p-4">
+        <div v-if="showBulkConfirm" class="fixed inset-0 bg-black/50 z-[110] flex items-center justify-center p-4">
           <div class="bg-white border border-[#E0E0E0] w-full max-w-sm rounded p-8 shadow-2xl">
             <div class="flex items-start gap-4 mb-6">
               <div class="p-3 bg-accent-light rounded border border-accent/30 shrink-0">

@@ -12,7 +12,6 @@ import { Establishment } from "./Establishment"
 import { User } from "./User"
 import { PaymentOrder } from "./PaymentOrder"
 
-// Enum específico para pagamentos (mais profissional para o TCC)
 export enum PaymentStatus {
     PENDING = 'Pendente',
     PAID = 'Aprovado',
@@ -24,14 +23,14 @@ export enum PaymentStatus {
 export class Payment {
 
     @PrimaryGeneratedColumn({ name: 'ID_Pagamento' })
-    id: number
+    id!: number
 
     @Column({
         type: 'varchar',
         name: 'Forma_Pagamento',
         length: 50
     })
-    paymentType: string
+    paymentType!: string
 
     @Column({
         name: 'Valor_Total',
@@ -40,7 +39,7 @@ export class Payment {
         scale: 2,
         default: 0.00
     })
-    totalValue: number
+    totalValue!: number
 
     @Column({
         name: 'Valor_Taxa_Servico',
@@ -49,7 +48,7 @@ export class Payment {
         scale: 2,
         default: 0.00
     })
-    serviceTax: number // Corrigido o typo 'TAx'
+    serviceTax!: number 
 
     @Column({
         name: 'Troco',
@@ -58,7 +57,7 @@ export class Payment {
         scale: 2,
         default: 0.00
     })
-    change: number
+    change!: number
 
     @Column({
         type: 'enum',
@@ -66,16 +65,30 @@ export class Payment {
         name: 'Status',
         default: PaymentStatus.PAID
     })
-    status: PaymentStatus
+    status!: PaymentStatus
 
     @CreateDateColumn({ 
         type: "datetime", 
         name: 'Data_Hora_Pagamento'
     })
-    createdAt: Date
+    createdAt!: Date
+
+    @Column({
+        name: 'ID_Pedido_MercadoPago',
+        type: 'varchar',
+        nullable: true
+    })
+    mercadoPagoOrderId?: string
+
+    @Column({
+        name: 'ID_Pagamento_MercadoPago',
+        type: 'varchar',
+        nullable: true
+    })
+    mercadoPagoPaymentId?: string
 
     @DeleteDateColumn({
-        name: 'Data_Exclusao', // Sincronizado com o DDL
+        name: 'Data_Exclusao',
         type: 'datetime',
         nullable: true
     })
@@ -83,12 +96,12 @@ export class Payment {
 
     @ManyToOne(() => Establishment)
     @JoinColumn({ name: 'ID_Estabelecimento' })
-    establishment: Establishment
+    establishment!: Establishment
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'ID_Usuario_Caixa' }) 
-    user: User
+    user!: User
 
     @OneToMany(() => PaymentOrder, (paymentOrder) => paymentOrder.payment)
-    paymentOrders: PaymentOrder[]
+    paymentOrders!: PaymentOrder[]
 }

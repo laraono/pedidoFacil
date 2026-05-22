@@ -1,14 +1,11 @@
 import React, { useMemo } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useTheme } from "../../contexts/ThemeContext";
 
-export default function BrandHeader({
-  showBack = false,
-  title = "PedidoFácil",
-}) {
+export default function BrandHeader({ showBack = false }) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { theme } = useTheme();
@@ -34,9 +31,17 @@ export default function BrandHeader({
           <View style={{ width: 40 }} />
         )}
 
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {title}
-        </Text>
+        {theme.logoUrl ? (
+          <Image
+            source={{ uri: theme.logoUrl }}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+        ) : (
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            {theme.nomeEstabelecimento || "PedidoFácil"}
+          </Text>
+        )}
 
         <View style={{ width: 40 }} />
       </View>
@@ -50,7 +55,7 @@ const getStyles = (theme, insets) =>
       backgroundColor: theme.headerGeral,
       paddingTop: insets.top,
       borderBottomWidth: 1,
-      borderBottomColor: theme.borda,
+      borderBottomColor: theme.bordaCard,
       zIndex: 10,
     },
     container: {
@@ -67,6 +72,10 @@ const getStyles = (theme, insets) =>
       letterSpacing: -0.5,
       flex: 1,
       textAlign: "center",
+    },
+    logoImage: {
+      flex: 1,
+      height: 46,
     },
     backButton: {
       padding: 6,

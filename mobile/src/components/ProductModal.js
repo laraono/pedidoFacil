@@ -12,6 +12,18 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 
+const API_BASE_URL = "http://192.168.1.39:3000"; 
+
+const getFullImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+  if (typeof imagePath !== "string") return imagePath;
+  if (imagePath.startsWith("http") || imagePath.startsWith("data:")) {
+    return { uri: imagePath };
+  }
+  const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+  return { uri: `${API_BASE_URL}/uploads/${cleanPath}` };
+};
+
 export default function ProductModal({ visible, product, onClose, onConfirm }) {
   const { theme } = useTheme();
   const styles = useMemo(() => getStyles(theme), [theme]);
@@ -70,13 +82,10 @@ export default function ProductModal({ visible, product, onClose, onConfirm }) {
             style={styles.scrollArea}
             showsVerticalScrollIndicator={false}
           >
+            {/* 🔥 2. CORRIGIDO: Usando o getFullImageUrl no source */}
             {product.image && (
               <Image
-                source={
-                  typeof product.image === "string"
-                    ? { uri: product.image }
-                    : product.image
-                }
+                source={getFullImageUrl(product.image)}
                 style={styles.productImage}
                 resizeMode="cover"
               />
@@ -131,7 +140,6 @@ export default function ProductModal({ visible, product, onClose, onConfirm }) {
               </View>
             )}
 
-            {/* 🔥 OBSERVAÇÃO CONDICIONAL */}
             {theme.permitirObservacoes && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Alguma observação?</Text>

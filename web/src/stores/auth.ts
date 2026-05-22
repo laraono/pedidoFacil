@@ -12,7 +12,8 @@ export interface AuthUser {
   name: string;
   email: string;
   estabelecimentoId: number | null;
-  cargo: UserCargo;
+  cargo: UserCargo | null; 
+  isAdmin: boolean;
 }
 
 export interface ConfigStatus {
@@ -35,7 +36,7 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   getters: {
-    isAdmin: (state): boolean => state.user?.cargo?.permissoes?.includes('ALL') ?? false,
+    isAdmin: (state): boolean => state.user?.isAdmin ?? false,
   },
 
   actions: {
@@ -44,20 +45,25 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('accessToken', accessToken);
 
       const perfil = await authApi.me();
-      const permissoes: string[] = typeof perfil.cargo.permissoes === 'string'
-        ? JSON.parse(perfil.cargo.permissoes)
-        : perfil.cargo.permissoes;
+      
+      let permissoes: string[] = [];
+      if (perfil.cargo?.permissoes) { 
+        permissoes = typeof perfil.cargo.permissoes === 'string'
+          ? JSON.parse(perfil.cargo.permissoes)
+          : perfil.cargo.permissoes;
+      }
 
       const user: AuthUser = {
         id: perfil.usuario.id,
-        name: perfil.usuario.nome,
+        name: perfil.usuario.name,
         email: perfil.usuario.email,
         estabelecimentoId: perfil.estabelecimentoId ?? null,
-        cargo: {
+        isAdmin: !!perfil.usuario.isAdmin,
+        cargo: perfil.cargo ? {
           id: perfil.cargo.id,
           name: perfil.cargo.nome,
           permissoes,
-        }
+        } : null
       };
 
       this.user = user;
@@ -65,19 +71,40 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('user', JSON.stringify(user));
     },
 
+    async forgotPassword(email: string) {
+      return await authApi.forgotPassword(email);
+    },
+
+    async resetPassword(data: any) {
+      return await authApi.resetPassword(data);
+    },
+
     loadSession(): void {
       const token = localStorage.getItem('accessToken');
       const userRaw = localStorage.getItem('user');
-      const user: AuthUser | null = userRaw ? JSON.parse(userRaw) : null;
+
+      let user: AuthUser | null = null;
+      try {
+        user = userRaw ? JSON.parse(userRaw) : null;
+      } catch {
+        localStorage.removeItem('user');
+        localStorage.removeItem('accessToken');
+        return;
+      }
+
       if (!token || !user) return;
 
       this.user = user;
       this.isAuthenticated = true;
 
       const configStatusRaw = localStorage.getItem('configStatus');
-      const savedConfigStatus: ConfigStatus | null = configStatusRaw ? JSON.parse(configStatusRaw) : null;
-      if (savedConfigStatus) {
-        this.configStatus = savedConfigStatus;
+      try {
+        const savedConfigStatus: ConfigStatus | null = configStatusRaw ? JSON.parse(configStatusRaw) : null;
+        if (savedConfigStatus) {
+          this.configStatus = savedConfigStatus;
+        }
+      } catch {
+        localStorage.removeItem('configStatus');
       }
     },
 
@@ -93,41 +120,56 @@ export const useAuthStore = defineStore('auth', {
 
       try {
         const perfil = await authApi.me();
-        const permissoes: string[] = typeof perfil.cargo.permissoes === 'string'
-          ? JSON.parse(perfil.cargo.permissoes)
-          : perfil.cargo.permissoes;
+        
+        let permissoes: string[] = [];
+        if (perfil.cargo?.permissoes) { 
+          permissoes = typeof perfil.cargo.permissoes === 'string'
+            ? JSON.parse(perfil.cargo.permissoes)
+            : perfil.cargo.permissoes;
+        }
 
         this.user = {
           id: perfil.usuario.id,
-          name: perfil.usuario.nome,
+          name: perfil.usuario.name,
           email: perfil.usuario.email,
           estabelecimentoId: perfil.estabelecimentoId ?? null,
-          cargo: { id: perfil.cargo.id, name: perfil.cargo.nome, permissoes },
+          isAdmin: !!perfil.usuario.isAdmin,
+          cargo: perfil.cargo ? {
+            id: perfil.cargo.id,
+            name: perfil.cargo.nome,
+            permissoes
+          } : null,
         };
+
         this.isAuthenticated = true;
         localStorage.setItem('user', JSON.stringify(this.user));
         return true;
-      } catch {
+      } catch (error) {
+        this.isAuthenticated = false;
         return false;
       }
     },
 
     hasPermission(permission: string): boolean {
+      if (this.isAdmin) return true;
+      
       const permissoes = this.user?.cargo?.permissoes;
       if (!permissoes) return false;
+      
       return permissoes.includes('ALL') || permissoes.includes(permission);
     },
 
     async logout(): Promise<void> {
       try {
         await authApi.logout();
-      } catch {
-      }
+      } catch (error) {}
+
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
       this.user = null;
       this.roles = [];
       this.isAuthenticated = false;
+      this.sessionValidated = false;
       this.configStatus = { info: false, roles: false, menu: false };
     },
 

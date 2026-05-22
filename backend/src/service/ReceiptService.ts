@@ -64,7 +64,6 @@ export class ReceiptService {
 
 
     async getMetrics(establishmentId: number, startDate: string, endDate: string) {
-        // 🔥 SOLUÇÃO: A mesma blindagem para as métricas
         const start = startDate.includes('T') ? startDate : `${startDate}T00:00:00.000Z`;
         const end = endDate.includes('T') ? endDate : `${endDate}T23:59:59.999Z`;
 

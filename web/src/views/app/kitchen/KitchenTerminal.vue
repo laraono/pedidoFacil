@@ -15,13 +15,11 @@ import {
   ChefHat,
   CheckCircle,
   XCircle,
-  X,
   ArrowLeft,
   Clock,
 } from "lucide-vue-next";
 
-const AUDIO_URL =
-  "https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/pause.wav";
+const AUDIO_URL = "https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/pause.wav";
 const audioPlayer = new Audio(AUDIO_URL);
 const audioEnabled = ref(false);
 
@@ -54,6 +52,8 @@ const playAlert = () => {
   }
 };
 
+let pollInterval = null;
+
 onMounted(async () => {
   if (!authStore.hasPermission(PERMISSIONS.COZINHA)) {
     router.push("/app/dashboard");
@@ -61,12 +61,14 @@ onMounted(async () => {
   }
 
   await kitchenStore.fetchOrders();
-
   kitchenStore.initKitchenSocket(playAlert);
+
+  pollInterval = setInterval(() => kitchenStore.fetchOrders(), 30_000);
 });
 
 onUnmounted(() => {
   kitchenStore.destroyKitchenSocket();
+  clearInterval(pollInterval);
 });
 
 const handleMove = (id, status) => {
@@ -131,12 +133,8 @@ const indicatorColor = (color) => {
 
 <template>
   <SubscriptionGuard featureName="A Cozinha">
-    <div
-      class="h-screen bg-page flex flex-col font-inter overflow-hidden text-[#212121]"
-    >
-      <header
-        class="h-16 md:h-20 bg-white border-b border-[#E0E0E0] flex items-center justify-between px-6 md:px-8 shadow-sm z-20 shrink-0"
-      >
+    <div class="h-screen bg-page flex flex-col font-inter overflow-hidden text-[#212121]">
+      <header class="h-16 md:h-20 bg-white border-b border-[#E0E0E0] flex items-center justify-between px-6 md:px-8 shadow-sm z-20 shrink-0">
         <div class="flex items-center gap-3">
           <button
             @click="router.push('/app/dashboard')"
@@ -149,16 +147,8 @@ const indicatorColor = (color) => {
             <UtensilsCrossed :size="20" class="md:w-6 md:h-6" />
           </div>
           <div>
-            <h1
-              class="text-[#212121] font-black text-lg tracking-tight leading-none uppercase"
-            >
-              Fila de Pedidos
-            </h1>
-            <p
-              class="text-[#757575] text-[10px] uppercase font-black tracking-widest mt-1"
-            >
-              Monitor de Produção
-            </p>
+            <h1 class="text-[#212121] font-black text-lg tracking-tight leading-none uppercase">Fila de Pedidos</h1>
+            <p class="text-[#757575] text-[10px] uppercase font-black tracking-widest mt-1">Monitor de Produção</p>
           </div>
         </div>
 
@@ -175,9 +165,7 @@ const indicatorColor = (color) => {
               v-if="showTimerSettings"
               class="absolute right-0 top-12 z-50 bg-white border border-[#E0E0E0] rounded p-5 shadow-xl w-64"
             >
-              <p
-                class="text-xs font-black uppercase tracking-widest text-[#757575] mb-3 flex items-center gap-2"
-              >
+              <p class="text-xs font-black uppercase tracking-widest text-[#757575] mb-3 flex items-center gap-2">
                 <Clock :size="12" /> Alerta de atraso
               </p>
               <div class="flex items-center gap-3">
@@ -190,9 +178,7 @@ const indicatorColor = (color) => {
                 />
                 <span class="text-[#757575] text-sm font-bold">min</span>
               </div>
-              <p class="text-[#757575] text-[10px] mt-2">
-                Pedido fica vermelho após este tempo
-              </p>
+              <p class="text-[#757575] text-[10px] mt-2">Pedido fica vermelho após este tempo</p>
               <button
                 @click="saveAlertMinutes"
                 class="w-full mt-3 py-2 bg-primary text-white text-xs font-black uppercase rounded hover:bg-primary-dark transition-colors"
@@ -205,11 +191,7 @@ const indicatorColor = (color) => {
           <button
             @click="toggleAudio"
             class="p-2.5 rounded transition-all border"
-            :class="
-              audioEnabled
-                ? 'bg-primary-light text-primary border-primary/20'
-                : 'bg-danger-light text-danger border-danger'
-            "
+            :class="audioEnabled ? 'bg-primary-light text-primary border-primary/20' : 'bg-danger-light text-danger border-danger'"
           >
             <Volume2 v-if="audioEnabled" :size="18" />
             <VolumeX v-else :size="18" />
@@ -217,33 +199,19 @@ const indicatorColor = (color) => {
         </div>
       </header>
 
-      <main
-        class="flex-grow flex flex-col md:flex-row p-4 md:p-8 gap-6 overflow-hidden pb-24 md:pb-8 bg-page"
-      >
+      <main class="flex-grow flex flex-col md:flex-row p-4 md:p-8 gap-6 overflow-hidden pb-24 md:pb-8 bg-page">
         <section
           v-for="col in columns"
           :key="col.key"
           class="flex-1 flex-col min-w-0 md:min-w-[360px] bg-white rounded border border-[#E0E0E0] shadow-sm overflow-hidden transition-all"
           :class="activeTab === col.key ? 'flex' : 'hidden md:flex'"
         >
-          <header
-            class="p-6 flex justify-between items-center bg-gray-50 z-10 border-b border-[#E0E0E0]"
-          >
+          <header class="p-6 flex justify-between items-center bg-gray-50 z-10 border-b border-[#E0E0E0]">
             <div class="flex items-center gap-3">
-              <div
-                class="w-2 h-6 rounded"
-                :class="indicatorColor(col.color)"
-              ></div>
-              <h2
-                class="font-black text-[#212121] text-sm uppercase tracking-widest"
-              >
-                {{ col.label }}
-              </h2>
+              <div class="w-2 h-6 rounded" :class="indicatorColor(col.color)"></div>
+              <h2 class="font-black text-[#212121] text-sm uppercase tracking-widest">{{ col.label }}</h2>
             </div>
-            <span
-              class="font-black px-4 py-1 rounded text-xs"
-              :class="col.badgeClass"
-            >
+            <span class="font-black px-4 py-1 rounded text-xs" :class="col.badgeClass">
               {{ columnOrders(col.key).length }}
             </span>
           </header>
@@ -259,62 +227,41 @@ const indicatorColor = (color) => {
               @cancel="openCancelModal"
             />
 
-            <div
-              v-if="columnOrders(col.key).length === 0"
-              class="flex flex-col items-center justify-center h-40 text-[#757575]"
-            >
+            <div v-if="columnOrders(col.key).length === 0" class="flex flex-col items-center justify-center h-40 text-[#757575]">
               <Bell :size="48" class="mb-2 opacity-20" />
-              <p class="text-[10px] font-black uppercase tracking-[0.2em]">
-                Cozinha Limpa
-              </p>
+              <p class="text-[10px] font-black uppercase tracking-[0.2em]">Cozinha Limpa</p>
             </div>
           </div>
         </section>
       </main>
 
-      <nav
-        class="fixed bottom-0 left-0 w-full bg-white border-t border-[#E0E0E0] shadow-lg md:hidden z-50 px-8 py-3 pb-8 flex justify-between items-center"
-      >
+      <nav class="fixed bottom-0 left-0 w-full bg-white border-t border-[#E0E0E0] shadow-lg md:hidden z-50 px-8 py-3 pb-8 flex justify-between items-center">
         <button
           @click="activeTab = 'pending'"
           class="flex flex-col items-center gap-1 p-2 transition-all relative"
-          :class="
-            activeTab === 'pending' ? 'text-yellow-500' : 'text-[#757575]'
-          "
+          :class="activeTab === 'pending' ? 'text-yellow-500' : 'text-[#757575]'"
         >
           <div class="relative">
             <List :size="24" stroke-width="3" />
-            <span
-              v-if="kitchenStore.pendingOrders.length > 0"
-              class="absolute -top-2 -right-3 bg-yellow-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-white"
-            >
+            <span v-if="kitchenStore.pendingOrders.length > 0" class="absolute -top-2 -right-3 bg-yellow-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-white">
               {{ kitchenStore.pendingOrders.length }}
             </span>
           </div>
-          <span class="text-[9px] font-black uppercase tracking-widest mt-1"
-            >Fila</span
-          >
+          <span class="text-[9px] font-black uppercase tracking-widest mt-1">Fila</span>
         </button>
 
         <button
           @click="activeTab = 'preparing'"
           class="flex flex-col items-center gap-1 p-2 transition-all relative"
-          :class="
-            activeTab === 'preparing' ? 'text-blue-500' : 'text-[#757575]'
-          "
+          :class="activeTab === 'preparing' ? 'text-blue-500' : 'text-[#757575]'"
         >
           <div class="relative">
             <ChefHat :size="24" stroke-width="3" />
-            <span
-              v-if="kitchenStore.preparingOrders.length > 0"
-              class="absolute -top-2 -right-3 bg-blue-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-white"
-            >
+            <span v-if="kitchenStore.preparingOrders.length > 0" class="absolute -top-2 -right-3 bg-blue-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-white">
               {{ kitchenStore.preparingOrders.length }}
             </span>
           </div>
-          <span class="text-[9px] font-black uppercase tracking-widest mt-1"
-            >Preparo</span
-          >
+          <span class="text-[9px] font-black uppercase tracking-widest mt-1">Preparo</span>
         </button>
 
         <button
@@ -324,71 +271,36 @@ const indicatorColor = (color) => {
         >
           <div class="relative">
             <CheckCircle :size="24" stroke-width="3" />
-            <span
-              v-if="kitchenStore.readyOrders.length > 0"
-              class="absolute -top-2 -right-3 bg-primary text-white text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-white"
-            >
+            <span v-if="kitchenStore.readyOrders.length > 0" class="absolute -top-2 -right-3 bg-primary text-white text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-white">
               {{ kitchenStore.readyOrders.length }}
             </span>
           </div>
-          <span class="text-[9px] font-black uppercase tracking-widest mt-1"
-            >Pronto</span
-          >
+          <span class="text-[9px] font-black uppercase tracking-widest mt-1">Pronto</span>
         </button>
       </nav>
 
-      <div
-        v-if="cancelTargetId !== null"
-        class="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-[200]"
-      >
-        <div
-          class="bg-white border border-danger rounded p-8 w-full max-w-md shadow-xl"
-        >
+      <div v-if="cancelTargetId !== null" class="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-[200]">
+        <div class="bg-white border border-danger rounded p-8 w-full max-w-md shadow-xl">
           <div class="flex items-start gap-4 mb-6">
-            <div
-              class="p-3 bg-danger-light rounded border border-danger shrink-0"
-            >
+            <div class="p-3 bg-danger-light rounded border border-danger shrink-0">
               <XCircle :size="22" class="text-danger" />
             </div>
             <div>
-              <p class="text-[#212121] font-black text-base mb-1">
-                Cancelar Pedido
-              </p>
-              <p class="text-[#757575] text-sm leading-relaxed">
-                Informe o motivo do cancelamento. Esse pedido será removido da
-                fila.
-              </p>
+              <p class="text-[#212121] font-black text-base mb-1">Cancelar Pedido</p>
+              <p class="text-[#757575] text-sm leading-relaxed">Informe o motivo do cancelamento. Esse pedido será removido da fila.</p>
             </div>
           </div>
 
-          <select
-            v-model="cancelReason"
-            class="w-full bg-gray-50 border border-[#E0E0E0] rounded px-4 py-3 text-sm text-[#212121] outline-none focus:border-danger mb-6 cursor-pointer"
-          >
+          <select v-model="cancelReason" class="w-full bg-gray-50 border border-[#E0E0E0] rounded px-4 py-3 text-sm text-[#212121] outline-none focus:border-danger mb-6 cursor-pointer">
             <option value="" disabled>Selecione o motivo...</option>
             <option value="Demora no preparo">Demora no preparo</option>
-            <option value="Pedido errado / Erro do Garçom">
-              Pedido errado / Erro do Garçom
-            </option>
-            <option value="Desistência / Cliente foi embora">
-              Desistência / Cliente foi embora
-            </option>
+            <option value="Pedido errado / Erro do Garçom">Pedido errado / Erro do Garçom</option>
+            <option value="Desistência / Cliente foi embora">Desistência / Cliente foi embora</option>
           </select>
 
           <div class="flex gap-3">
-            <button
-              @click="dismissCancelModal"
-              class="flex-1 px-6 py-3 bg-gray-50 border border-[#E0E0E0] text-[#757575] font-black uppercase tracking-widest text-xs rounded hover:bg-gray-100 transition-all"
-            >
-              Voltar
-            </button>
-            <button
-              @click="confirmCancel"
-              :disabled="!cancelReason.trim()"
-              class="flex-1 px-6 py-3 bg-danger text-white font-black uppercase tracking-widest text-xs rounded hover:bg-red-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              Confirmar Cancelamento
-            </button>
+            <button @click="dismissCancelModal" class="flex-1 px-6 py-3 bg-gray-50 border border-[#E0E0E0] text-[#757575] font-black uppercase tracking-widest text-xs rounded hover:bg-gray-100 transition-all">Voltar</button>
+            <button @click="confirmCancel" :disabled="!cancelReason.trim()" class="flex-1 px-6 py-3 bg-danger text-white font-black uppercase tracking-widest text-xs rounded hover:bg-red-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed">Confirmar Cancelamento</button>
           </div>
         </div>
       </div>

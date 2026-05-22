@@ -1,5 +1,7 @@
 import { ComandaService } from "../service";
 import { Request, Response } from 'express';
+import { auditLog } from "../utils/logger";
+import { ca, tr } from "zod/v4/locales";
 
 export class ComandaController {
     private comandaService: ComandaService
@@ -25,19 +27,25 @@ export class ComandaController {
             
             return res.status(201).json(novaComanda); 
         } catch (error) {
-            console.error("Erro ao criar comanda:", error);
+            auditLog('create_comanda.failure', {
+                ip: req.ip,
+                timestamp: new Date().toISOString(),
+            });
+            
             return res.status(500).json({ error: "Erro interno ao criar comanda" });
         }
     }
 
     async listComandas(req: Request, res: Response) {
-        const comandas = await this.comandaService.listComandas()
-        res.status(200).send(comandas)
+        const estabelecimentoId = (req as any).usuario.estabelecimento; 
+        const comandas = await this.comandaService.listComandas(estabelecimentoId);
+        res.status(200).send(comandas);
     }
 
     async listComandasByStatus(req: Request, res: Response) {
+        const estabelecimentoId = (req as any).usuario.estabelecimento; 
         const { status } = req.query;
-        const comandas = await this.comandaService.listComandasByStatus(status as any);
+        const comandas = await this.comandaService.listComandasByStatus(status as any, estabelecimentoId);
         res.status(200).send(comandas);
     }
     
@@ -45,9 +53,25 @@ export class ComandaController {
         const { id } = req.params;
         const idNumero = Number(id || req.params.comandaId); 
 
-        await this.comandaService.updateComandaStatus(idNumero, req.body.status);
-        
-        res.sendStatus(204);
+        try {
+            await this.comandaService.updateComandaStatus(idNumero, req.body.status);
+            
+            auditLog('update_comanda_status.success', {
+                comandaId: idNumero,
+                ip: req.ip,
+                timestamp: new Date().toISOString(),
+            });
+
+            res.sendStatus(204);
+         } catch (error) {
+            auditLog('update_comanda_status.failure', {
+                comandaId: idNumero,
+                ip: req.ip,
+                timestamp: new Date().toISOString(),
+            });
+            
+            return res.status(500).json({ error: "Erro interno ao atualizar comanda." });
+        }
     }
 
     async cancelComanda(req: Request, res: Response) {
@@ -62,10 +86,10 @@ export class ComandaController {
     }
 
     async checkout(req: Request, res: Response) {
+        const { comandaId } = req.params;
+        const user = (req as any).user || (req as any).usuario; 
+
         try {
-            const { comandaId } = req.params;
-            const user = (req as any).user || (req as any).usuario; 
-            
             if (!user) {
                 return res.status(401).json({ error: "Sessão inválida: Usuário não encontrado no request." });
             }
@@ -74,21 +98,33 @@ export class ComandaController {
             const estabelecimentoId = user.estabelecimento || user.ID_Estabelecimento;
 
             if (!userId || !estabelecimentoId) {
-                console.error("🔥 Token JWT sem ID ou Estabelecimento:", user);
+                console.error("Token JWT sem ID ou Estabelecimento:", user);
                 return res.status(400).json({ error: "Token inválido ou incompleto." });
             }
+            
+                const payment = await this.comandaService.checkoutComanda(
+                    Number(comandaId),
+                    Number(userId),
+                    Number(estabelecimentoId),
+                    req.body
+                );
 
-            const payment = await this.comandaService.checkoutComanda(
-                Number(comandaId),
-                Number(userId),
-                Number(estabelecimentoId),
-                req.body
-            );
+            auditLog('checkout.success', {
+                comandaId: Number(comandaId),
+                userId: userId,
+                ip: req.ip,
+                timestamp: new Date().toISOString(),
+            });
 
             return res.status(200).json(payment);
 
         } catch (error: any) {
-            console.error("🔥 ERRO FATAL NO BACKEND (Checkout):", error);
+            auditLog('checkout.failure', {
+                comandaId: Number(comandaId),
+                ip: req.ip,
+                timestamp: new Date().toISOString(),
+            });
+            
             return res.status(500).json({ error: "Erro interno ao processar o pagamento." });
         }
     }

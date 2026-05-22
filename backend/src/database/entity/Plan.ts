@@ -8,7 +8,7 @@ export class Plan {
     @PrimaryGeneratedColumn({
         name: 'ID_Plano'
     })
-    id: number
+    id!: number
 
     @Column({
         type: 'varchar',
@@ -16,7 +16,7 @@ export class Plan {
         nullable: false,
         length: 100
     })
-    name: string
+    name!: string
 
     @Column({
         name: 'Valor_Plano',
@@ -25,8 +25,23 @@ export class Plan {
         scale: 2,
         nullable: false
     })
-    price: number
+    price!: number
     
+    @Column({
+        name: 'Frequencia',
+        type: 'varchar',
+        nullable: true,
+        length: 20
+    })
+    frequency?: string
+
+    @Column({
+        name: 'Funcionalidades',
+        type: 'text',
+        nullable: true
+    })
+    features?: string
+
     @OneToMany(() => Subscription, (subscription) => subscription.establishment)
-    subscriptions: Subscription[]
+    subscriptions!: Subscription[]
 }

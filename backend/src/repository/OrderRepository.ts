@@ -3,32 +3,49 @@ import { Order } from "../database";
 import { OrderParams } from "../dto";
 import { OrderStatus } from "../enum";
 
-export class OrderRepository extends Repository<Order>{
+export class OrderRepository extends Repository<Order> {
 
     constructor(private dataSource: DataSource) {
         super(Order, dataSource.createEntityManager());
     }
 
     async createOrder(order: OrderParams) {
-        return await this.save(order)
+        return await this.save(order as any);
     }
 
-    async listOrders() {
-        return await this.find()
+    async getOrderWithDetails(id: number) {
+        return await this.findOne({
+            where: { id },
+            relations: ["productOrders", "productOrders.product", "productOrders.variations", "productOrders.variations.productVariation"]
+        });
+    }
+
+    async listOrders(establishmentId: number) {
+        return await this.createQueryBuilder('order')
+            .leftJoinAndSelect('order.comanda', 'comanda')
+            .leftJoinAndSelect('order.productOrders', 'po')
+            .leftJoinAndSelect('po.product', 'product')
+            .leftJoinAndSelect('po.variations', 'variation')
+            .leftJoinAndSelect('variation.productVariation', 'pv')
+            .where('order.establishment = :id', { id: establishmentId })
+            .getMany();
     }
 
     async listOrdersByComanda(comandaId: number) {
         return await this.find({
             where: {
-                comanda: {
-                    id: comandaId
-                }
-            }
-        })
+                comanda: { id: comandaId }
+            },
+            relations: [
+                'productOrders',
+                'productOrders.product',
+                'productOrders.variations',
+                'productOrders.variations.productVariation',
+            ]
+        });
     }
 
     async updateOrderStatus(id: number, status: OrderStatus) {
-        await this.update(id, {status})
+        await this.update(id, { status });
     }
-    
 }

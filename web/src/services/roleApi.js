@@ -13,7 +13,7 @@ export const roleApi = {
     
     return await request('/roles', { 
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: payload
     });
   },
 
@@ -25,7 +25,7 @@ export const roleApi = {
     
     return await request(`/roles/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(payload)
+      body: payload
     });
   },
 

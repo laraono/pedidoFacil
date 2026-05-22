@@ -1,16 +1,17 @@
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
-import { useMenuStore } from "@/stores/menu";
+import { useMenuOrderingStore as useMenuStore } from "@/stores/menu.js";
 import { useComandaStore } from "@/stores/comandaManagement";
 import { comandaApi } from "@/services/comandaApi";
 import { request } from "@/services/api";
 import SubscriptionGuard from "@/components/SubscriptionGuard.vue";
 import { useToast } from "@/composables/useToast";
 import localStorageService from "@/services/localStorageService";
-import { getEstablishmentMock } from "@/mock/stablishmentmock";
 import ToastMessage from "@/components/ui/ToastMessage.vue";
 import { useUtils } from "@/composables/useUtils";
 import { useRoute, useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
+import { establishmentApi } from "@/services/establishmentApi";
 
 import {
   Utensils,
@@ -33,6 +34,7 @@ const menuStore = useMenuStore();
 const comandaStore = useComandaStore();
 const { formatCurrency } = useUtils();
 const { showToast } = useToast();
+const authStore = useAuthStore();
 
 const establishmentName = ref("Carregando...");
 const imageUrl = ref("");
@@ -60,29 +62,59 @@ const currentQuantity = ref(1);
 const currentObservation = ref("");
 const selectedSize = ref(null);
 
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return '';
+  if (imagePath.startsWith('http') || imagePath.startsWith('data:image') || imagePath.startsWith('blob:')) return imagePath;
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+  const host = BASE_URL.replace('/api/v1', '');
+  return `${host}/uploads/${imagePath}`;
+};
+
 onMounted(async () => {
-  bgColor.value = localStorageService.getBackgroundColors() || "#F5F6FA";
-  buttonColor.value = localStorageService.getButtonColors() || "#1E7BC4";
-  buttonTextColor.value = localStorageService.getButtonTextColor() || "#FFFFFF";
-  categoryColor.value = localStorageService.getCategoryColors() || "#7AB648";
-  textColor.value = localStorageService.getTextColor() || "#212121";
-  cardBg.value = localStorageService.getProductCardBg() || "#FFFFFF";
-  fontFamily.value = localStorageService.getFontFamily() || "Inter, sans-serif";
-  comandaUnitLabel.value = localStorageService.getComandaUnitLabel() || "Comanda";
+  checkEditMode();
 
-  const savedImage = localStorageService.getImage();
-  if (savedImage) imageUrl.value = savedImage;
+  const estId = authStore.user?.estabelecimentoId;
 
-  const data = await getEstablishmentMock();
-  establishmentName.value = data?.info?.name || "Seu Restaurante";
+  if (estId) {
+    try {
+      const config = await request(`/estabelecimento/${estId}/config`, { method: "GET" });
+      bgColor.value = config.backgroundColor || "#F5F6FA";
+      buttonColor.value = config.buttonsColor || "#1E7BC4";
+      buttonTextColor.value = config.buttonsTextColor || "#FFFFFF";
+      categoryColor.value = config.activeCateogryColor || "#7AB648";
+      textColor.value = config.textsColor || "#212121";
+      cardBg.value = config.cardsColor || "#FFFFFF";
+      fontFamily.value = config.fontFamily || "Inter, sans-serif";
+      comandaUnitLabel.value = config.comandaLabel || "Comanda";
+      if (config.logo) imageUrl.value = getImageUrl(config.logo);
+      observacoesPermitidas.value = config.allowObservations ?? true;
+    } catch {
+      bgColor.value = localStorageService.getBackgroundColors() || "#F5F6FA";
+      buttonColor.value = localStorageService.getButtonColors() || "#1E7BC4";
+      buttonTextColor.value = localStorageService.getButtonTextColor() || "#FFFFFF";
+      categoryColor.value = localStorageService.getCategoryColors() || "#7AB648";
+      textColor.value = localStorageService.getTextColor() || "#212121";
+      cardBg.value = localStorageService.getProductCardBg() || "#FFFFFF";
+      fontFamily.value = localStorageService.getFontFamily() || "Inter, sans-serif";
+      comandaUnitLabel.value = localStorageService.getComandaUnitLabel() || "Comanda";
+      const savedImage = localStorageService.getImage();
+      if (savedImage) imageUrl.value = getImageUrl(savedImage);
+    }
 
-  await menuStore.loadData();
+    try {
+      const profile = await establishmentApi.getProfile();
+      establishmentName.value = profile.name || "Seu Restaurante";
+    } catch {
+      establishmentName.value = "Seu Restaurante";
+    }
+  }
+
+  await menuStore.loadData(isEditMode.value);
   await comandaStore.loadComandas();
 
-  if (productsByCategory.value && productsByCategory.value.length > 0) {
+  if (productsByCategory.value.length > 0) {
     activeCategoryId.value = productsByCategory.value[0].id;
   }
-  checkEditMode();
 });
 
 const backgroundStyle = computed(() => ({ backgroundColor: bgColor.value }));
@@ -182,14 +214,17 @@ const confirmAndSendToKitchen = async () => {
   isSubmitting.value = true;
   try {
     let comandaIdParaEnviar = selectedComandaId.value;
+    
     if (comandaIdParaEnviar === "new") {
       const label = `${comandaUnitLabel.value} ${newComandaNumber.value.trim()}`;
-      comandaIdParaEnviar = await comandaApi.create({ description: label, status: "Aberta", total: 0 });
+      const novaComanda = await comandaApi.create({ description: label, status: "Aberta", total: 0 });
+      comandaIdParaEnviar = novaComanda.id || novaComanda; 
     }
 
     const orderPayload = {
       status: "Aguardando_Preparo",
-      serviceType: "Autoatendimento",
+      serviceType: "Garcom",
+      //comandaId: comandaIdParaEnviar, 
       itens: cart.value.map(item => ({
         productId: item.productId,
         quantity: item.quantity,
@@ -200,12 +235,18 @@ const confirmAndSendToKitchen = async () => {
 
     await comandaApi.addOrder(comandaIdParaEnviar, orderPayload);
     await comandaStore.loadComandas();
+    
     cart.value = [];
     isComandaModalOpen.value = false;
     isCartModalOpen.value = false;
     showToast("Pedido enviado para a cozinha!", "success");
   } catch (error) {
-    showToast("Erro ao enviar pedido.", "error");
+    const data = error.response?.data || error.data || error;
+    if (data?.errors && Array.isArray(data.errors)) {
+      showToast(data.errors[0].mensagem, "error");
+    } else {
+      showToast(data?.message || "Erro ao enviar pedido para a cozinha.", "error");
+    }
   } finally {
     isSubmitting.value = false;
   }
@@ -217,7 +258,7 @@ const saveVisuals = async () => {
 
     await request("/estabelecimento/config", {
       method: "PUT",
-      body: JSON.stringify({
+      body: {
         backgroundColor: bgColor.value,
         cardsColor: cardBg.value,
         textsColor: textColor.value,
@@ -227,7 +268,7 @@ const saveVisuals = async () => {
         fontFamily: fontFamily.value,
         comandaLabel: comandaUnitLabel.value, 
         allowObservations: observacoesPermitidas.value,
-      }),
+      },
     });
 
     localStorageService.saveBackgroundColors(bgColor.value);
@@ -241,8 +282,12 @@ const saveVisuals = async () => {
 
     showToast("Aparência salva com sucesso!", "success");
   } catch (error) {
-    console.error("Erro ao salvar no servidor:", error);
-    showToast("Erro ao salvar no servidor.", "error");
+    const data = error.response?.data || error.data || error;
+    if (data?.errors && Array.isArray(data.errors)) {
+      showToast(data.errors[0].mensagem, "error");
+    } else {
+      showToast(data?.message || "Erro ao salvar configurações no servidor.", "error");
+    }
   } finally {
     isSubmitting.value = false;
   }
@@ -326,7 +371,7 @@ watch(() => route.query.editMode, checkEditMode);
               <template v-if="category.image">
                 <div
                   class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-                  :style="{ backgroundImage: `url(${category.image})` }"
+                  :style="{ backgroundImage: `url(${getImageUrl(category.image)})` }"
                 ></div>
                 <div
                   class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"
@@ -381,7 +426,7 @@ watch(() => route.query.editMode, checkEditMode);
                   <div
                     v-if="product.image"
                     class="w-full h-40 rounded mb-4 bg-cover bg-center shadow-inner"
-                    :style="{ backgroundImage: `url(${product.image})` }"
+                    :style="{ backgroundImage: `url(${getImageUrl(product.image)})` }"
                   ></div>
                   <div class="flex-1 z-10">
                     <h3
@@ -522,6 +567,11 @@ watch(() => route.query.editMode, checkEditMode);
                 class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6"
                 :style="{ backgroundColor: adaptiveSubtleBg }"
               >
+                <div
+                  v-if="currentProduct?.image"
+                  class="w-full h-48 rounded bg-cover bg-center shadow-inner"
+                  :style="{ backgroundImage: `url(${getImageUrl(currentProduct.image)})` }"
+                ></div>
                 <p class="leading-relaxed text-base opacity-90">
                   {{ currentProduct?.description }}
                 </p>
@@ -1164,7 +1214,6 @@ watch(() => route.query.editMode, checkEditMode);
   border-radius: 10px;
 }
 
-/* Placeholder dinâmico via CSS var --ph injetada pelo :style */
 .adaptive-placeholder::placeholder {
   color: var(--ph, rgba(0, 0, 0, 0.35));
 }

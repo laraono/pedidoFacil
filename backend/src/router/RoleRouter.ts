@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { RoleController, roleLimiter } from '../controller/RoleController';
 import { roleService } from '../service';
-import authenticate from '../middleware/authenticate';
+import { authenticate } from '../middleware/authenticate';
 import { validateRole } from '../validator/role/roleSchema';
 
 const roleRouter = Router();

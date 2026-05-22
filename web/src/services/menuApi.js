@@ -8,7 +8,7 @@ export const menuApi = {
     if (userStr) {
         try {
             const user = JSON.parse(userStr);
-            estId = user.estabelecimento || user.id || 1; 
+            estId = user.estabelecimentoId || user.id || 1;
         } catch (e) {
             console.warn("Falha ao ler usuário do localStorage");
         }

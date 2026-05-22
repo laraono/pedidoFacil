@@ -60,7 +60,6 @@ const maskZip = (v) => {
 onMounted(async () => {
   try {
     const data = await profileApi.get();
-    console.log("DADOS QUE CHEGARAM DO BACKEND:", data);
     form.value.fullName = data.name || "";
     form.value.email = data.email || "";
     form.value.cpf = data.cpf ? maskCPF(data.cpf) : "";
@@ -120,13 +119,21 @@ const saveProfile = async () => {
     };
 
     const updatedUser = await profileApi.update(payload);
-
     authStore.user.name = updatedUser.name;
     authStore.user.email = updatedUser.email;
-
     showToast("Dados salvos com sucesso!", "success");
   } catch (error) {
-    showToast(error.message || "Erro ao salvar perfil.", "error");
+    const data = error.response?.data || error.data || error;
+    if (data?.errors && Array.isArray(data.errors)) {
+      data.errors.forEach((err) => {
+        let field = err.campo.replace("body.", "");
+        if (field === "name") field = "fullName";
+        errors.value[field] = err.mensagem;
+      });
+      showToast("Verifique os campos destacados em vermelho.", "error");
+    } else {
+      showToast(data?.message || "Erro ao salvar perfil.", "error");
+    }
   } finally {
     isLoadingProfile.value = false;
   }
@@ -145,15 +152,19 @@ const savePassword = async () => {
       oldPassword: passwordForm.value.oldPassword,
       newPassword: passwordForm.value.newPassword,
     });
-
     showToast("Senha alterada com sucesso!", "success");
-    passwordForm.value = {
-      oldPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    };
+    passwordForm.value = { oldPassword: "", newPassword: "", confirmPassword: "" };
   } catch (error) {
-    showToast(error.message || "Erro ao alterar senha.", "error");
+    const data = error.response?.data || error.data || error;
+    if (data?.errors && Array.isArray(data.errors)) {
+      data.errors.forEach((err) => {
+        let field = err.campo.replace("body.", "");
+        errors.value[field] = err.mensagem;
+      });
+      showToast("Verifique os erros no formulário de senha.", "error");
+    } else {
+      showToast(data?.message || "Erro ao alterar senha.", "error");
+    }
   } finally {
     isLoadingPassword.value = false;
   }

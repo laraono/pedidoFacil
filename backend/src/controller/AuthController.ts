@@ -1,11 +1,19 @@
 import { Request, Response } from 'express'
 import rateLimit from 'express-rate-limit'
 import { AuthService } from '../service'
+import { RefreshToken } from '../database'
+import { auditLog } from '../utils/logger'
 
 export const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 10,
     handler: (req: Request, res: Response) => {
+        auditLog('login.exceededlimit', {
+            ip: req.ip,
+            email: req.body.email,
+            timestamp: new Date().toISOString(),
+        });
+        
         res.status(429).json({
             error: 'Muitas tentativas. Tente novamente mais tarde.',
             retryAfter: Math.ceil((req as any).rateLimit.resetTime / 1000)
@@ -22,6 +30,7 @@ export class AuthController {
     }
 
     async registerManager(req: Request, res: Response) {
+        try {
         const { accessToken, refreshToken, usuario } = await this.authService.registerManager(req.body)
 
         if (refreshToken) {
@@ -33,11 +42,34 @@ export class AuthController {
             })
         }
 
-        res.status(201).json({ accessToken, usuario })
+        auditLog('register.success', {
+                    ip: req.ip,
+                    email: req.body.email,
+                    userId: usuario.id,
+                    timestamp: new Date().toISOString(),
+        });
+
+        res.status(201).json({ accessToken, usuario });
+        } catch (err) {
+            auditLog('register.failure', {
+                ip: req.ip,
+                email: req.body.email,
+                timestamp: new Date().toISOString(),
+            });
+            throw err;
+        }
     }
 
-    async login(req: Request, res: Response) {
+async login(req: Request, res: Response) {
+    try {
         const { accessToken, refreshToken, usuario } = await this.authService.login(req.body)
+
+        auditLog('login.success', {
+            ip: req.ip,
+            email: req.body.email,
+            userId: usuario.id,
+            timestamp: new Date().toISOString(),
+        });
 
         if (refreshToken) {
             res.cookie('refreshToken', refreshToken, {
@@ -49,11 +81,19 @@ export class AuthController {
         }
 
         res.json({ accessToken, usuario })
+    } catch (err) {
+        auditLog('login.failure', {
+            ip: req.ip,
+            email: req.body.email,
+            timestamp: new Date().toISOString(),
+        });
+        throw err;
     }
+}
+
 
     async refresh(req: Request, res: Response) {
         const token = req.cookies.refreshToken
-
         if (!token) {
             return res.status(401).json({ error: 'Token não fornecido.' })
         }
@@ -72,12 +112,13 @@ export class AuthController {
 
     async logout(req: Request, res: Response) {
         const token = req.cookies.refreshToken
+        const { refreshToken } = req.body;
 
         if (!token) {
             return res.status(204).send()
         }
 
-        await this.authService.logout()
+        await this.authService.logout(refreshToken)
 
         res.clearCookie('refreshToken')
         res.status(204).send()
@@ -85,7 +126,30 @@ export class AuthController {
 
     async perfil(req: Request, res: Response) {
         const { id, isAdmin } = (req as any).usuario
-        const result = await this.authService.perfil(id, isAdmin === true)
+
+        try {
+            const result = await this.authService.perfil(id, isAdmin === true)
+            res.json(result)
+        } catch (err) {
+            auditLog('profile.failure', {
+                ip: req.ip,
+                isAdmin: isAdmin === true,
+                userId: id,
+                timestamp: new Date().toISOString(),
+            });
+            throw err;
+        }
+    }
+
+    async forgotPassword(req: Request, res: Response) {
+        const { email } = req.body
+        const result = await this.authService.forgotPassword(email)
+        res.json(result)
+    }
+
+    async resetPassword(req: Request, res: Response) {
+        const { token, email, novaSenha } = req.body
+        const result = await this.authService.resetPassword(token, email, novaSenha)
         res.json(result)
     }
 }

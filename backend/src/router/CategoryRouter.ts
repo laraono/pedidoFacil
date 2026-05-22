@@ -1,16 +1,20 @@
 import express, { Request, Response } from 'express';
 import { categoryController } from '../controller';
-import { validateCreateCategory } from '../validator';
 import { catchAsync } from '../middleware';
-const authenticate = require('../middleware/authenticate');
-const roleAccessControl = require('../middleware/roleAccessControl');
+import { validateUpload } from '../middleware/validateUpload'; 
+import { validateRequest } from '../middleware/validateRequest';
+import { createCategorySchema } from '../dto/category/CreateCategoryDTO';
+import { updateCategorySchema } from '../dto/category/UpdateCategoryDTO'; 
+
+import { authenticate } from '../middleware/authenticate';
+import { checkPermission } from '../middleware/roleAccessControl';
 
 export const categoryRouter = express.Router();
 
 categoryRouter.get(
   '/categories',
   authenticate,
-  roleAccessControl.checkPermission('CARDAPIO'),
+  checkPermission('CARDAPIO'),
   catchAsync((req: Request, res: Response) =>
     categoryController.listCategories(req, res),
   ),
@@ -19,8 +23,9 @@ categoryRouter.get(
 categoryRouter.post(
   '/categories',
   authenticate,
-  roleAccessControl.checkPermission('CARDAPIO'),
-  validateCreateCategory,
+  checkPermission('CARDAPIO'),
+  validateUpload.single('imagem'), 
+  validateRequest(createCategorySchema), 
   catchAsync((req: Request, res: Response) =>
     categoryController.createCategory(req, res),
   ),
@@ -29,7 +34,9 @@ categoryRouter.post(
 categoryRouter.put(
   '/categories/:id',
   authenticate,
-  roleAccessControl.checkPermission('CARDAPIO'),
+  checkPermission('CARDAPIO'),
+  validateUpload.single('imagem'), 
+  validateRequest(updateCategorySchema), 
   catchAsync((req: Request, res: Response) =>
     categoryController.updateCategory(req, res),
   ),
@@ -38,7 +45,7 @@ categoryRouter.put(
 categoryRouter.delete(
   '/categories/:id',
   authenticate,
-  roleAccessControl.checkPermission('CARDAPIO'),
+  checkPermission('CARDAPIO'),
   catchAsync((req: Request, res: Response) =>
     categoryController.deleteCategory(req, res),
   ),
@@ -47,7 +54,7 @@ categoryRouter.delete(
 categoryRouter.patch(
   '/categories/:id/restore',
   authenticate,
-  roleAccessControl.checkPermission('CARDAPIO'),
+  checkPermission('CARDAPIO'),
   catchAsync((req: Request, res: Response) =>
     categoryController.restoreCategory(req, res),
   ),

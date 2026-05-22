@@ -1,8 +1,11 @@
-import { API_URL } from '../services/apiConfig';
+import { appConfig } from '../services/apiConfig';
 
 export async function fetchFullMenu() {
     try {
-        const response = await fetch(`${API_URL}/menu?establishmentId=1`, {
+        const url = `${appConfig.API_URL}/menu?establishmentId=${appConfig.ESTABLISHMENT_ID}`;
+        console.log(`[MenuStore] Fazendo requisição para: ${url}`); 
+
+        const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'

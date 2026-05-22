@@ -1,13 +1,11 @@
 import { Router } from 'express';
-import { paymentLimiter, PaymentController } from '../controller';
-import { PaymentService } from '../service/PaymentService';
-import { AppDataSource } from '../database';
-import authenticate from '../middleware/authenticate';
+import { paymentLimiter, paymentController } from '../controller';
+import { authenticate } from '../middleware/authenticate';
+import { subscriptionMiddleware } from '../middleware';
 
 const paymentRouter = Router();
 
-const paymentService = new PaymentService(AppDataSource);
-const paymentController = new PaymentController(paymentService);
+paymentRouter.use(authenticate, subscriptionMiddleware)
 
 paymentRouter.get('/', authenticate, paymentLimiter, paymentController.listPayments);
 paymentRouter.get('/:paymentId', authenticate, paymentLimiter, paymentController.getPaymentDetails);

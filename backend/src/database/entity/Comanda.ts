@@ -11,7 +11,7 @@ export class Comanda {
     @PrimaryGeneratedColumn({
         name: 'ID_Comanda'
     })
-    id: number
+    id!: number
 
     @Column({
         type: 'varchar',
@@ -19,7 +19,15 @@ export class Comanda {
         nullable: false,
         length: 100
     })
-    description: string
+    description!: string
+
+    @Column({
+        type: 'varchar',
+        name: 'Nome_Cliente',
+        nullable: true,
+        length: 100
+    })
+    customerName?: string
 
     @Column({
         type: 'varchar',
@@ -27,7 +35,7 @@ export class Comanda {
         nullable: false,
         length: 30
     })
-    status: ComandaStatus
+    status!: ComandaStatus
 
     @Column({
         name: 'Total',
@@ -36,7 +44,7 @@ export class Comanda {
         scale: 2,
         nullable: false
     })
-    total: number
+    total!: number
 
     @Column({
         name: 'Valor_Desconto_Aplicado',
@@ -60,7 +68,7 @@ export class Comanda {
         name: 'Data_Abertura' ,
         default: () => "CURRENT_TIMESTAMP(6)"
     })
-    created_at: Date;
+    created_at!: Date;
 
     @DeleteDateColumn({
         name: 'deleted_at',
@@ -70,24 +78,24 @@ export class Comanda {
     deletedAt?: Date
 
     @OneToMany(() => Order, (pedido) => pedido.comanda)
-    pedidos: Order[]
+    pedidos!: Order[]
 
     @ManyToOne(() => Establishment, (establishment) => establishment.comandas)
     @JoinColumn({
         name: 'ID_Estabelecimento'
     })
-    establishment: Establishment
+    establishment!: Establishment
 
     @OneToOne(() => User)
     @JoinColumn({
         name: 'ID_Usuario_Abertura'
     })
-    user: User
+    user!: User
 
     @OneToOne(() => Coupon)
     @JoinColumn({
         name: 'ID_Cupom_Aplicado'
     })
-    coupon: Coupon
+    coupon!: Coupon
 
 }

@@ -8,13 +8,13 @@ export const employeeApi = {
   create: (data) =>
     request("/funcionario", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: data,
     }),
 
   update: (id, data) =>
     request(`/funcionario/${id}`, {
       method: "PUT",
-      body: JSON.stringify(data),
+      body: data,
     }),
 
   delete: (id) => request(`/funcionario/${id}`, { method: "DELETE" }),

@@ -1,26 +1,17 @@
 import { z } from 'zod';
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-import { ProductStatus } from '../../enum';
 
 export const createProductSchema = z.object({
-    product: z.object({
-        name: z.string().min(1).max(100),
-        description: z.string().nullable().optional(), 
-        image: z.string().nullable().optional(),
-        estocavel: z.coerce.boolean(),
-        categoryId: z.coerce.number().int().positive(),
-        basePrice: z.coerce.number().min(0),
-        status: z.nativeEnum(ProductStatus).or(z.string())
-    }),
-    productVariations: z.object({
-        name: z.string().min(1).max(50),
-        addPrice: z.coerce.number().min(0),
-        status: z.nativeEnum(ProductStatus).or(z.string())
-    }).array().optional()
+    name: z.string().min(1).max(100),
+    description: z.string().nullable().optional(),
+    price: z.coerce.number().min(0),
+    categoryId: z.coerce.number().int().positive(),
+    available: z.union([z.boolean(), z.string()]).optional(),
+    sizes: z.string().optional() 
 });
 
-export const validateCreateProduct = 
+export const validateCreateProduct =
     (req: Request, res: Response, next: NextFunction) => {
         try {
             req.body = createProductSchema.parse(req.body);
@@ -38,3 +29,12 @@ export const validateCreateProduct =
             return res.status(500).send("Internal Server Error");
         }
     };
+
+export const validateListProducts =
+    (_req: Request, _res: Response, next: NextFunction) => next();
+
+export const validateListProductsByCategories =
+    (_req: Request, _res: Response, next: NextFunction) => next();
+
+export const validateDeleteProduct =
+    (_req: Request, _res: Response, next: NextFunction) => next();

@@ -12,23 +12,27 @@ export class CategoryRepository extends Repository<Category>{
         return await this.save(category)
     }
 
-    async listCategories() {
-        return await this.find()
+    async listCategories(establishmentId: number) {
+        return await this.find({
+            where: { establishment: { id: establishmentId } }
+        });
     }
-
+    
+    async listDeletedCategories(establishmentId: number) {
+        return await this.find({
+            where: { 
+                establishment: { id: establishmentId }, 
+                deletedAt: Not(IsNull()) 
+            },
+            withDeleted: true 
+        });
+    }
     async getCategory(categoryId: number) {
         return await this.findOne({
             where: {
                 id: categoryId
             }
         })
-    }
-    
-    async listDeletedCategories() {
-        return await this.find({
-            where: { deletedAt: Not(IsNull()) },
-            withDeleted: true 
-        });
     }
 
     async updateCategory(categoryId: number, data: Partial<Category>) {

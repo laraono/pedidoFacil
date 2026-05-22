@@ -1,6 +1,12 @@
 import jwt from 'jsonwebtoken';
-import { User } from '../database';
+import crypto from 'crypto'; 
+import { User } from '../database/entity/User'; 
 import { Admin } from '../database/entity/Admin';
+
+
+export const hashToken = (token: string): string => {
+    return crypto.createHash('sha256').update(token).digest('hex');
+};
 
 export async function gerarTokens(usuario: User) {
     const payload = { 

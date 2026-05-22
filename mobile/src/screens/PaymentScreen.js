@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Modal,
   ActivityIndicator,
   ScrollView,
   Dimensions,
@@ -19,13 +18,11 @@ import { useIdleTimer } from "../hooks/useIdleTimer";
 import BrandHeader from "../components/ui/BrandHeader";
 
 import { submitOrder } from "../services/orderService";
-import { connectMobileSocket, listenOrderStatus, stopListeningOrderStatus } from "../services/socketService";
-import { API_URL } from "../services/apiConfig";
+import { connectMobileSocket } from "../services/socketService";
+
+import { appConfig } from "../services/apiConfig";
 
 const { width } = Dimensions.get("window");
-
-const DEFAULT_COMANDA_ID = 1;
-const DEFAULT_COMANDA_LABEL = "Totem";
 
 const PAYMENT_ICONS = {
   "PIX": { icon: "qrcode-scan", label: "Pix", color: "#32BCAD" },
@@ -44,28 +41,23 @@ export default function PaymentScreen() {
   const panHandlers = useIdleTimer(120);
 
   const desconto = route.params?.descontoAplicado || 0;
-  const comandaId = route.params?.comandaId || DEFAULT_COMANDA_ID;
-  const comandaLabel = route.params?.comandaLabel || DEFAULT_COMANDA_LABEL;
-
+  const customerName = route.params?.customerName || null;
   const totalComDesconto = Math.max(0, cartTotal - desconto);
 
   const [availableMethods, setAvailableMethods] = useState([]);
   const [isLoadingMethods, setIsLoadingMethods] = useState(true);
 
   const [selectedMethod, setSelectedMethod] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState("");
-  const [isApproved, setIsApproved] = useState(false);
-  const [orderId, setOrderId] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadEstablishmentData = useCallback(async () => {
     try {
-      const url = `${API_URL}/estabelecimento/1/public?t=${new Date().getTime()}`;
-
+      const url = `${appConfig.API_URL}/estabelecimento/${appConfig.ESTABLISHMENT_ID}/public`;
       const response = await fetch(url, {
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
+          'x-totem-code': appConfig.selfServiceCode 
         }
       });
       
@@ -79,11 +71,9 @@ export default function PaymentScreen() {
         
         setAvailableMethods(methods);
       } else {
-        console.warn("[PaymentScreen] Rota retornou erro:", response.status);
         setAvailableMethods(["MISTO"]);
       }
     } catch (error) {
-      console.error("[PaymentScreen] Erro de conexão:", error);
       setAvailableMethods(["MISTO"]);
     } finally {
       setIsLoadingMethods(false);
@@ -92,11 +82,9 @@ export default function PaymentScreen() {
 
   useEffect(() => {
     loadEstablishmentData();
-
     const socket = connectMobileSocket();
 
     socket.on("profile_updated", () => {
-      console.log("[Socket] Métodos alterados! Recarregando...");
       setSelectedMethod(null);
       loadEstablishmentData(); 
     });
@@ -106,58 +94,32 @@ export default function PaymentScreen() {
     };
   }, [loadEstablishmentData]);
 
-  useEffect(() => {
-    if (!orderId) return;
-    connectMobileSocket();
-    listenOrderStatus(orderId, (data) => {
-      console.log("Status do pedido recebido via socket:", data.status);
-    });
-    return () => stopListeningOrderStatus();
-  }, [orderId]);
-
   const styles = useMemo(() => getStyles(theme, width), [theme, width]);
 
   const handleConfirm = async () => {
-    if (!selectedMethod) return;
+    if (!selectedMethod || isSubmitting) return;
 
-    setIsProcessing(true);
-    setPaymentStatus("Enviando pedido para a cozinha...");
+    setIsSubmitting(true);
 
     try {
-      const order = await submitOrder({
-        comandaId,
-        comandaLabel,
-        cartItems,
-        authToken: null,
-      });
+      const orderData = await submitOrder({ cartItems, customerName });
 
-      setOrderId(order.id);
-      
       if (selectedMethod === "Dinheiro" || selectedMethod === "MISTO") {
-        setPaymentStatus("Pedido enviado! Pague no caixa ao retirar.");
-        setIsApproved(true);
-        setTimeout(() => {
-          setIsProcessing(false);
-          clearCart();
-          navigation.navigate("Welcome");
-        }, 4000);
+        clearCart();
+        navigation.navigate("OrderConfirmed", {
+          ticket: orderData.ticket,
+          label: orderData.label,
+        });
       } else {
-        setPaymentStatus(selectedMethod === "PIX" ? "Gerando QR Code Pix..." : "Comunicando com a operadora...");
-        setTimeout(() => {
-          setPaymentStatus("Pagamento Aprovado! Pedido na fila da cozinha.");
-          setIsApproved(true);
-          setTimeout(() => {
-            setIsProcessing(false);
-            clearCart();
-            navigation.navigate("Welcome");
-          }, 3000);
-        }, 3000);
+        navigation.navigate("MPBricks", {
+          amount: totalComDesconto,
+          method: selectedMethod,
+          orderId: orderData.id,
+        });
       }
     } catch (error) {
-      console.error("[PaymentScreen] Erro ao enviar pedido:", error);
-      setPaymentStatus("Erro ao enviar o pedido. Tente novamente.");
-      setIsProcessing(false);
-      setIsApproved(false);
+      console.error("[PaymentScreen] Erro:", error);
+      setIsSubmitting(false);
     }
   };
 
@@ -209,7 +171,6 @@ export default function PaymentScreen() {
             })}
           </View>
 
-          {/* 🔥 AQUI TAMBÉM: Verificando "Dinheiro" */}
           {(selectedMethod === "Dinheiro" || selectedMethod === "MISTO") && (
             <View style={styles.cashWarning}>
               <Feather name="info" size={20} color={theme.corCategorias} />
@@ -240,15 +201,20 @@ export default function PaymentScreen() {
         </View>
 
         <TouchableOpacity
-          style={[styles.btnConfirm, !selectedMethod && styles.btnDisabled]}
-          disabled={!selectedMethod}
+          style={[styles.btnConfirm, (!selectedMethod || isSubmitting) && styles.btnDisabled]}
+          disabled={!selectedMethod || isSubmitting}
           onPress={handleConfirm}
         >
-          {/* 🔥 AQUI TAMBÉM: Verificando "Dinheiro" */}
-          <Text style={styles.btnConfirmText}>
-            {selectedMethod === "Dinheiro" || selectedMethod === "MISTO" ? "Gerar Ficha" : "Finalizar Pedido"}
-          </Text>
-          <Feather name="arrow-right" size={20} color={theme.textoBotoes} />
+          {isSubmitting ? (
+            <ActivityIndicator size="small" color={theme.textoBotoes} />
+          ) : (
+            <>
+              <Text style={styles.btnConfirmText}>
+                {selectedMethod === "Dinheiro" || selectedMethod === "MISTO" ? "Gerar Ficha" : "Finalizar Pedido"}
+              </Text>
+              <Feather name="arrow-right" size={20} color={theme.textoBotoes} />
+            </>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.btnCancel} onPress={handleCancelOrder}>
@@ -256,18 +222,6 @@ export default function PaymentScreen() {
         </TouchableOpacity>
       </View>
 
-      <Modal visible={isProcessing} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            {isApproved ? (
-              <Feather name="check-circle" size={80} color={theme.corCategorias} style={styles.modalIcon} />
-            ) : (
-              <ActivityIndicator size={80} color={theme.corBotoes} style={styles.modalIcon} />
-            )}
-            <Text style={styles.modalStatusText}>{paymentStatus}</Text>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -289,10 +243,6 @@ const getStyles = (theme, width) =>
       borderWidth: 0.5,
       borderColor: 'rgba(255, 255, 255, 0.1)',
       elevation: 5,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
       paddingVertical: 24,
       paddingHorizontal: 12,
       minHeight: 140,
@@ -325,10 +275,6 @@ const getStyles = (theme, width) =>
       paddingHorizontal: 30, paddingTop: 20, paddingBottom: 30,
       borderTopWidth: 0.5,
       borderTopColor: 'rgba(255, 255, 255, 0.1)',
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: -4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 10,
       elevation: 20,
     },
     totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
@@ -339,8 +285,4 @@ const getStyles = (theme, width) =>
     btnConfirmText: { color: theme.textoBotoes, fontSize: 18, fontWeight: "900", textTransform: "uppercase" },
     btnCancel: { alignSelf: "center", marginTop: 16 },
     btnCancelText: { color: "#E53935", fontSize: 14, fontWeight: "900", textTransform: "uppercase", textDecorationLine: "underline" },
-    modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.85)", justifyContent: "center", alignItems: "center" },
-    modalContent: { width: "80%", backgroundColor: theme.fundoProdutos, borderRadius: 32, padding: 40, alignItems: "center" },
-    modalIcon: { marginBottom: 24 },
-    modalStatusText: { fontSize: 20, fontWeight: "900", color: theme.corTextoPrincipal, textAlign: "center" },
   });

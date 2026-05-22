@@ -4,6 +4,8 @@ import { OrderStatus, ComandaStatus } from '../enum';
 import { AppError } from '../middleware/error/AppError';
 import { PaymentService } from './PaymentService';
 import { ReceiptService } from './ReceiptService';
+import { CreateComandaDTO } from '../dto/comanda/CreateComandaDTO';
+import { CancelComandaDTO } from '../dto/comanda/CancelComandaDTO';
 
 export class ComandaService {
   constructor(
@@ -19,7 +21,7 @@ export class ComandaService {
     });
   }
 
-  async createComanda(comandaData: any): Promise<Comanda> {
+  async createComanda(comandaData: CreateComandaDTO): Promise<Comanda> {
     const novaComanda = this.comandaRepository.create({
       ...comandaData,
       status: ComandaStatus.ABERTA,
@@ -29,25 +31,29 @@ export class ComandaService {
     return await this.comandaRepository.save(novaComanda);
   }
 
-  async listComandas(): Promise<Comanda[]> {
-    return await this.comandaRepository.find({
-      relations: [
-        'pedidos',
-        'pedidos.productOrders',
-        'pedidos.productOrders.product',
-      ],
-    });
+  async listComandas(establishmentId: number): Promise<Comanda[]> {
+    return await this.dataSource.getRepository(Comanda)
+      .createQueryBuilder('comanda')
+      .leftJoinAndSelect('comanda.pedidos', 'pedido')
+      .leftJoinAndSelect('pedido.productOrders', 'po')
+      .leftJoinAndSelect('po.product', 'product')
+      .leftJoinAndSelect('po.variations', 'variation')
+      .leftJoinAndSelect('variation.productVariation', 'pv')
+      .where('comanda.establishment = :id', { id: establishmentId })
+      .getMany();
   }
 
-  async listComandasByStatus(status: ComandaStatus): Promise<Comanda[]> {
-    return await this.comandaRepository.find({
-      where: { status },
-      relations: [
-        'pedidos',
-        'pedidos.productOrders',
-        'pedidos.productOrders.product',
-      ],
-    });
+  async listComandasByStatus(status: ComandaStatus, establishmentId: number): Promise<Comanda[]> {
+    return await this.dataSource.getRepository(Comanda)
+      .createQueryBuilder('comanda')
+      .leftJoinAndSelect('comanda.pedidos', 'pedido')
+      .leftJoinAndSelect('pedido.productOrders', 'po')
+      .leftJoinAndSelect('po.product', 'product')
+      .leftJoinAndSelect('po.variations', 'variation')
+      .leftJoinAndSelect('variation.productVariation', 'pv')
+      .where('comanda.status = :status', { status })
+      .andWhere('comanda.establishment = :id', { id: establishmentId })
+      .getMany();
   }
 
   async updateComandaStatus(
@@ -63,11 +69,7 @@ export class ComandaService {
     await this.comandaRepository.save(comanda);
   }
 
-  async cancelComanda(data: {
-    comandaId: number;
-    userId: number;
-    reason: string;
-  }): Promise<void> {
+  async cancelComanda(data: CancelComandaDTO): Promise<void> {
     const comanda = await this.comandaRepository.findOne({
       where: { id: data.comandaId },
     });

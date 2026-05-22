@@ -1,46 +1,41 @@
-import { Category } from "../database";
-import { CreateCategory } from "../dto";
-import { CategoryRepository } from "../repository";
+import { CategoryRepository } from "../repository/CategoryRepository";
+import { CreateCategoryDTO } from "../dto/category/CreateCategoryDTO"; 
 
 export class CategoryService {
-
     private categoryRepository: CategoryRepository
 
     constructor(categoryRepository: CategoryRepository) {
         this.categoryRepository = categoryRepository
     }
 
-    /**
-     * Cria uma nova categoria. 
-     * Certifique-se de que o DTO CreateCategory agora aceite o campo 'image'.
-     */
-    async createCategory(category: CreateCategory) {
-        // Ao passar o objeto 'category' completo, o Repository receberá o Base64 da imagem
-        const { id } = await this.categoryRepository.createCategory(category) 
-        return id
+    async createCategory(categoryData: CreateCategoryDTO) {
+        const { id } = await this.categoryRepository.createCategory(categoryData); 
+        return id;
     }
 
-    async listCategories() {
-        return await this.categoryRepository.listCategories()
+    async listCategories(establishmentId: number) {
+        return await this.categoryRepository.listCategories(establishmentId);
+    }
+
+    async listDeletedCategories(establishmentId: number) {
+        return await this.categoryRepository.listDeletedCategories(establishmentId);
     }
 
     async getCategory(categoryId: number) {
-        return await this.categoryRepository.getCategory(categoryId)
+        return await this.categoryRepository.getCategory(categoryId);
     }
 
-    async listDeletedCategories() {
-        return await this.categoryRepository.listDeletedCategories()
-    }
-
-    /**
-     * Atualiza uma categoria existente.
-     * CORREÇÃO: Agora o campo 'image' é enviado para o repositório.
-     */
     async updateCategory(categoryId: number, data: any) {
-        await this.categoryRepository.updateCategory(categoryId, { 
-            name: data.name, 
-            image: data.image // Adicionado para persistir o Base64 no banco
-        });
+        const updateData: any = {};
+
+        if (data.name !== undefined) updateData.name = data.name;
+        if (data.image !== undefined) updateData.image = data.image;
+
+        if (Object.keys(updateData).length === 0) {
+            return; 
+        }
+
+        await this.categoryRepository.updateCategory(categoryId, updateData);
     }
 
     async softDeleteCategory(categoryId: number) {

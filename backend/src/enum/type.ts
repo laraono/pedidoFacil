@@ -14,3 +14,8 @@ export enum ServiceType {
     CAIXA = 'Caixa',
     AUTOATENDIMENTO = 'Autoatendimento'
 }
+
+export enum ProductVariationType {
+    ADDON = 'Addon',
+    SIZE = 'Tamanho'
+}
