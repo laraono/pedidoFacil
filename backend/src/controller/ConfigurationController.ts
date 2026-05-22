@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { ConfigurationService } from '../service/ConfigurationService';
 import { getIO } from '../socket';
 import { deleteFile } from '../utils/fileHelper';
+import { auditLog } from '../utils/logger';
 
 export class ConfigurationController {
   private configurationService: ConfigurationService;
@@ -11,10 +12,10 @@ export class ConfigurationController {
   }
 
   async updateConfig(req: Request, res: Response) {
-    try {
       const establishmentId = (req as any).usuario?.estabelecimento || 1;
       let configData = req.body;
 
+    try {
       if (req.file) {
         const oldConfig =
           await this.configurationService.getOrCreateConfiguration(
@@ -37,7 +38,12 @@ export class ConfigurationController {
 
       return res.status(200).json(updatedConfig);
     } catch (error) {
-      console.error('Erro ao atualizar configurações:', error);
+      auditLog('update_config.failure', {
+        establishmentId,
+        ip: req.ip,
+        timestamp: new Date().toISOString(),
+        configData
+      });
       return res
         .status(500)
         .json({ message: 'Erro interno ao salvar configurações.' });

@@ -2,6 +2,7 @@ import { OrderService } from "../service";
 import { Request, Response } from 'express';
 import { OrderStatus } from '../enum';
 import { getIO } from '../socket';
+import { auditLog } from "../utils/logger";
 
 export class OrderController {
     private orderService: OrderService
@@ -151,6 +152,13 @@ export class OrderController {
             usuario.id,
             cancellationDescription
         );
+
+        auditLog('cancel_order.success', {
+                    orderId,
+                    userId: usuario.id,
+                    description: cancellationDescription
+        });
+           
         res.sendStatus(204);
     }
 }

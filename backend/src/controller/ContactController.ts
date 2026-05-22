@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import nodemailer from 'nodemailer';
+import { auditLog } from '../utils/logger';
 
 export class ContactController {
   static async sendContactEmail(req: Request, res: Response) {
@@ -34,7 +35,14 @@ export class ContactController {
 
       return res.status(200).json({ message: 'Mensagem enviada com sucesso!' });
     } catch (error) {
-      console.error('Erro ao enviar email:', error);
+      auditLog('contact.failure', {
+        nome,
+        email,
+        mensagem,
+        ip: req.ip,
+        timestamp: new Date().toISOString(),
+      });
+
       return res.status(500).json({
         error: 'Erro interno ao processar a mensagem. Tente novamente mais tarde.',
       });
