@@ -222,7 +222,7 @@ onUnmounted(() => {
             </div>
 
             <template v-if="isAnnual(plan)">
-              <p class="text-xs text-[#757575] mt-1">Preço total anual: <span class="font-bold text-[#212121]">{{ formatCurrency(plan.price * 12) }}</span></p>
+              <p class="text-xs text-[#757575] mt-1">Preço total anual: <span class="font-bold text-[#212121]">{{ formatCurrency(plan.price) }}</span></p>
               <p class="text-xs text-[#757575]">Parcele em até 12× no cartão</p>
             </template>
 

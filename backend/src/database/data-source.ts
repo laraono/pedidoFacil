@@ -22,6 +22,6 @@ export const AppDataSource = new DataSource({
         ProductVariation, ProductVariationOrder, Receipt, RefreshToken, Role, StorageIten,
         StorageMovimentation, Subscription, User, Register
     ],
-    migrations: [__dirname + '/migration/*.js'],
+    migrations: [__dirname + '/migration/*.ts'],
     subscribers: [],
 })

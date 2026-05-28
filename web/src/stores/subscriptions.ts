@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { adminSubscriptionApi, adminMetricsApi } from '@/services/adminApi';
 
 const SUBSCRIPTION_KEY = 'subscription';
 const PLAN_KEY = 'plan';
 
-export type SubscriptionStatus = 'ativo' | 'expirado' | 'desativado';
+export type SubscriptionStatus = 'ativo' | 'expirado' | 'desativado' | 'cancelado' | 'pendente';
 export type SubscriptionPlan = 'mensal' | 'anual';
 
 export interface PaymentRecord {
@@ -33,9 +34,8 @@ export interface AdminSubscription {
   id: number;
   establishment: string;
   manager: string;
-  email: string;
-  phone: string;
-  plan: SubscriptionPlan;
+  plan: string;
+  planFrequency: string;
   status: SubscriptionStatus;
   nextDueDate: string;
   amount: number;
@@ -84,12 +84,12 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     }
   }
 
-  function setPlanToBeSubscribed(id: number) {
-    localStorage.setItem(PLAN_KEY, JSON.stringify(id))
+  function setPlanToBeSubscribed(id: number): void {
+    localStorage.setItem(PLAN_KEY, JSON.stringify(id));
   }
 
-  function getPlanToBeSubscribed() {
-    return localStorage.getItem(PLAN_KEY)
+  function getPlanToBeSubscribed(): string | null {
+    return localStorage.getItem(PLAN_KEY);
   }
 
   function updatePaymentMethod(method: string): void {
@@ -143,16 +143,52 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   });
 
-  const adminSubscriptions: AdminSubscription[] = [
-    { id: 1, establishment: 'Burger Palace', manager: 'João Silva', email: 'joao.silva@burgerpalace.com', phone: '(11) 98765-4321', plan: 'anual', status: 'ativo', nextDueDate: '2026-10-15', amount: 49.90, users: 8 },
-    { id: 2, establishment: 'Pizza Viva', manager: 'Maria Costa', email: 'maria.costa@pizziviva.com', phone: '(21) 99887-6543', plan: 'mensal', status: 'ativo', nextDueDate: '2026-03-28', amount: 79.90, users: 5 },
-    { id: 3, establishment: 'Tacos & Co', manager: 'Pedro Alves', email: 'pedro@tacosco.com', phone: '(31) 97654-3210', plan: 'mensal', status: 'expirado', nextDueDate: '2026-02-10', amount: 79.90, users: 3 },
-    { id: 4, establishment: 'Sushi Express', manager: 'Ana Tanaka', email: 'ana.tanaka@sushiexpress.com', phone: '(11) 96543-2109', plan: 'anual', status: 'ativo', nextDueDate: '2026-11-05', amount: 49.90, users: 12 },
-    { id: 5, establishment: 'Café Mooca', manager: 'Carlos Mendes', email: 'carlos@cafemooca.com', phone: '(11) 95432-1098', plan: 'mensal', status: 'desativado', nextDueDate: '2026-01-20', amount: 79.90, users: 2 },
-    { id: 6, establishment: 'Churrasco do Rei', manager: 'Roberto Lima', email: 'roberto@churrascodrei.com', phone: '(41) 94321-0987', plan: 'anual', status: 'ativo', nextDueDate: '2026-08-22', amount: 49.90, users: 9 },
-    { id: 7, establishment: 'Açaí Tropical', manager: 'Fernanda Rocha', email: 'fernanda@acaitropical.com', phone: '(85) 93210-9876', plan: 'mensal', status: 'ativo', nextDueDate: '2026-04-01', amount: 79.90, users: 4 },
-    { id: 8, establishment: 'Cantina Italiana', manager: 'Giuseppe Ferri', email: 'giuseppe@cantina.com', phone: '(11) 92109-8765', plan: 'anual', status: 'expirado', nextDueDate: '2026-01-30', amount: 49.90, users: 6 },
-  ];
+  const adminSubscriptions = ref<AdminSubscription[]>([]);
+  const adminMetrics = ref<any>(null);
+  const adminDataLoading = ref(false);
+
+  function normalizeStatus(status: any): SubscriptionStatus {
+    const s = String(status ?? '').toLowerCase();
+    if (s === 'paga' || s === 'ativo' || s === 'ativa') return 'ativo';
+    if (s === 'cancelada' || s === 'cancelado') return 'cancelado';
+    if (s === 'expirada' || s === 'expirado') return 'expirado';
+    if (s === 'pendente') return 'pendente';
+    return s as SubscriptionStatus;
+  }
+
+  async function loadAdminData(): Promise<void> {
+    adminDataLoading.value = true;
+    try {
+      const [subs, metrics] = await Promise.all([
+        adminSubscriptionApi.list(),
+        adminMetricsApi.getSubscriptionMetrics(),
+      ]);
+
+      adminSubscriptions.value = (subs || []).map((s: any) => {
+        const managerUser = s.establishment?.users?.find(
+          (u: any) => u.role?.name?.toLowerCase().includes('gerente') || u.role?.name?.toLowerCase().includes('manager')
+        ) ?? s.establishment?.users?.[0];
+
+        return {
+          id: s.id,
+          establishment: s.establishment?.name ?? '—',
+          manager: managerUser?.name ?? '—',
+          plan: s.plan?.name ?? '—',
+          planFrequency: s.plan?.frequency ?? '—',
+          status: normalizeStatus(s.status),
+          nextDueDate: s.expirationDate,
+          amount: Number(s.plan?.price ?? 0),
+          users: s.establishment?.users?.length ?? 0,
+        };
+      });
+
+      adminMetrics.value = metrics;
+    } catch (e) {
+      console.error('Erro ao carregar dados admin:', e);
+    } finally {
+      adminDataLoading.value = false;
+    }
+  }
 
   loadSubscription();
 
@@ -162,14 +198,17 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     daysUntilDue,
     planPrices,
     adminSubscriptions,
+    adminMetrics,
+    adminDataLoading,
+    loadAdminData,
     loadSubscription,
     updateStatus,
     updatePaymentMethod,
     updatePlan,
     setPendingPlan,
-    updatePlanPrices,
     setPlanToBeSubscribed,
     getPlanToBeSubscribed,
-    recordPayment
+    updatePlanPrices,
+    recordPayment,
   };
 });

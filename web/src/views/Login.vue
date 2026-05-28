@@ -16,6 +16,8 @@ const senha = ref('');
 const isLoading = ref(false);
 const serverError = ref(null);
 
+if (authStore.isAuthenticated) router.push('/app/dashboard');
+
 onMounted(() => window.scrollTo(0, 0));
 
 const handleLogin = async () => {
@@ -30,18 +32,10 @@ const handleLogin = async () => {
       return;
     }
 
-    const rotasPossiveis = [
-      { permission: PERMISSIONS.RELATORIOS, route: '/app/dashboard' },
-      { permission: PERMISSIONS.COZINHA, route: '/app/kitchen' },
-      { permission: PERMISSIONS.CONFIGURACAO, route: '/app/settings/establishment' },
-      { permission: PERMISSIONS.ASSINATURA, route: '/app/subscription' }
-    ];
-
-    const destino = rotasPossiveis.find(item => authStore.hasPermission(item.permission));
-    router.push(destino ? destino.route : '/app/dashboard');
+    router.push('/app/dashboard');
 
   } catch (err) {
-    serverError.value = `Erro: ${err.message || 'Falha de login'}`;
+    serverError.value = 'Falha no login';
   } finally {
     isLoading.value = false;
   }
@@ -62,7 +56,7 @@ const goToPlans = () => router.push({ path: '/', hash: '#planos' });
       <div class="z-10 w-full max-w-md bg-white/90 border border-[#E0E0E0] p-8 sm:p-12 rounded shadow-2xl">
         <div class="mb-10 text-center">
           <h2 class="text-3xl font-black text-[#212121] mb-2">Bem-vindo de volta</h2>
-          <p class="text-[#757575]">Entre para gerir o seu restaurante</p>
+          <p class="text-[#757575]">Acesse sua conta e faça login</p>
         </div>
 
         <div v-if="serverError" class="mb-6 p-4 bg-danger-light border border-danger rounded flex items-center gap-3 text-danger text-sm">
@@ -105,7 +99,7 @@ const goToPlans = () => router.push({ path: '/', hash: '#planos' });
               :isLoading="isLoading"
               :icon="LogIn"
             >
-              Entrar no sistema
+              Entrar
             </BaseButton>
           </div>
         </form>
@@ -113,7 +107,7 @@ const goToPlans = () => router.push({ path: '/', hash: '#planos' });
         <div class="mt-10 pt-6 border-t border-[#E0E0E0] text-center">
           <p class="text-[#757575] text-sm mb-3">Ainda não é cliente?</p>
           <a @click.prevent="goToPlans" href="/#planos" class="text-accent font-bold hover:text-[#212121] transition-colors cursor-pointer">
-            Conheça os nossos planos →
+            Conheça os nossos planos
           </a>
         </div>
       </div>

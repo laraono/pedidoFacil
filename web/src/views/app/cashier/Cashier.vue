@@ -925,7 +925,7 @@ import { useKitchenStore } from "@/stores/kitchen";
 import { useAuthStore } from "@/stores/auth";
 import { useCouponStore } from "@/stores/coupons";
 import { useToast } from "@/composables/useToast";
-import { useUtils } from "@/composables/useUtils.js";
+import { useUtils } from "@/composables/useUtils";
 import { request } from "@/services/api";
 import {
   Monitor,

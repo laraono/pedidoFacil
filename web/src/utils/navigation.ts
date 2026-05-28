@@ -38,15 +38,15 @@ export const allMenuItems: MenuItem[] = [
     icon: Settings,
     image: establishmentImage,
     description: 'Gerencie dados gerais do estabelecimento.',
-    callToAction: 'Editar Info',
+    callToAction: 'Gerenciar Estabelecimento',
     permission: PERMISSIONS.CONFIGURACAO
   },
   {
-    label: 'Cargos e Permissões',
+    label: 'Cargos',
     route: '/app/settings/roles',
     icon: Users,
     image: rolesImage,
-    description: 'Configure os cargos da sua equipe.',
+    description: 'Configure os cargos e permissões da sua equipe.',
     callToAction: 'Gerenciar Cargos',
     permission: PERMISSIONS.CONFIGURACAO
   },
@@ -55,16 +55,16 @@ export const allMenuItems: MenuItem[] = [
     route: '/app/menu?editMode=true',
     icon: Users,
     image: menuConfigImage,
-    description: 'Personalize o Estilo do Menu.',
+    description: 'Mude cores e letras do seu cardápio.',
     callToAction: 'Personalize',
     permission: PERMISSIONS.CONFIGURACAO
   },
   {
-    label: 'Gerenciar Usuários',
+    label: 'Usuários',
     route: '/app/settings/users',
     icon: Users,
     image: rolesImage,
-    description: 'Adicione, Edite e Remova Usuários',
+    description: 'Adicione, Edite e Remova Funcionários.',
     callToAction: 'Gerenciar',
     permission: PERMISSIONS.CONFIGURACAO
   },
@@ -91,7 +91,7 @@ export const allMenuItems: MenuItem[] = [
     route: '/app/settings/coupons',
     icon: Tag,
     image: rolesImage,
-    description: 'Crie e gerencie cupons promocionais.',
+    description: 'Crie e gerencie cupons de desconto.',
     callToAction: 'Gerenciar Cupons',
     permission: PERMISSIONS.CUPONS
   },
@@ -109,7 +109,7 @@ export const allMenuItems: MenuItem[] = [
     route: '/app/menu',
     icon: HamburgerIcon,
     image: menuImage,
-    description: 'Acesse o cardápio digital.',
+    description: 'Acesse o cardápio e faça pedidos.',
     callToAction: 'Fazer Pedido',
     permission: PERMISSIONS.CRIAR_PEDIDO
   },
@@ -117,7 +117,7 @@ export const allMenuItems: MenuItem[] = [
     label: 'Caixa',
     route: '/app/cashier',
     icon: DollarSign,
-    description: 'Pagamento e fechamento de comandas.',
+    description: 'Consulta e pagamento de comandas.',
     callToAction: 'Abrir Caixa',
     permission: PERMISSIONS.CAIXA
   },
@@ -125,7 +125,7 @@ export const allMenuItems: MenuItem[] = [
     label: 'Cozinha',
     route: '/app/kitchen',
     icon: ChefHat,
-    description: 'Fila de produção e status dos pedidos.',
+    description: 'Controle da fila de pedidos',
     callToAction: 'Ver Pedidos',
     permission: PERMISSIONS.COZINHA
   },
@@ -141,14 +141,14 @@ export const allMenuItems: MenuItem[] = [
     label: 'Relatórios',
     route: '/app/reports',
     icon: BarChart2,
-    description: 'Gráficos e relatórios.',
+    description: 'Gráficos de Desempenho do Estabelecimento.',
     permission: PERMISSIONS.RELATORIOS
   },
   {
     label: 'Assinatura',
     route: '/app/subscription',
     icon: CreditCard,
-    description: 'Gerencie seu plano e pagamentos.',
+    description: 'Gerencie seu plano e pagamento.',
     callToAction: 'Ver Assinatura',
     permission: PERMISSIONS.ASSINATURA
   },
@@ -158,14 +158,6 @@ export const allMenuItems: MenuItem[] = [
     icon: Users,
     description: 'Dados pessoais para contato e cobranças.',
     callToAction: 'Editar Perfil',
-    permission: PERMISSIONS.CONFIGURACAO
-  },
-  {
-    label: 'Terminal',
-    route: '/app/settings/register',
-    icon: Calculator,
-    description: 'Gerencie terminais de máquinas de cartão.',
-    callToAction: 'Ver terminal',
     permission: PERMISSIONS.CONFIGURACAO
   },
 ];

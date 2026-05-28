@@ -51,9 +51,9 @@ const firstName = computed(() => {
         <div class="relative z-10">
           <div
             class="w-16 h-16 rounded flex items-center justify-center mb-6 group-hover:scale-110 transition-all duration-300"
-            :class="isAdmin ? 'bg-accent-light text-accent' : 'bg-white border border-[#E0E0E0] text-primary'"
+            :class="isAdmin ? 'bg-accent-light text-accent' : 'text-primary'"
           >
-            <component :is="card.icon" :size="32" />
+            <component :is="card.icon" :size="60" />
           </div>
           <h2 class="text-2xl font-black text-[#212121] group-hover:text-primary transition-colors">{{ card.label }}</h2>
           <p class="text-[#757575] mt-2 text-sm leading-relaxed line-clamp-2">{{ card.description }}</p>

@@ -321,7 +321,7 @@ watch(() => route.query.editMode, checkEditMode);
           class="p-4 sm:p-6 shrink-0 border-b border-white/10 flex items-center gap-4"
         >
           <div
-            class="w-12 h-12 rounded flex items-center justify-center shadow-lg overflow-hidden bg-white"
+            class="w-20 h-20 bg-white rounded flex items-center justify-center shadow-lg overflow-hidden"
           >
             <img
               v-if="imageUrl"

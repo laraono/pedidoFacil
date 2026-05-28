@@ -476,7 +476,6 @@ const saveSettings = async () => {
                 <div class="flex items-center gap-3">
                   <div class="flex-1 bg-gray-100 border border-accent/30 rounded px-6 py-4 text-center">
                     <span class="text-4xl font-black text-accent tracking-[0.3em]">{{ selfServiceCode }}</span>
-                    <p class="text-[10px] text-[#757575] mt-2 font-mono break-all">{{ totemUrl }}</p>
                   </div>
                 </div>
                 <div class="flex gap-2">

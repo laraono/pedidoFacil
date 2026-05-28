@@ -45,6 +45,7 @@
     "ts-node": "^10.9.2",
     "typeorm": "^0.3.28",
     "uuid": "^14.0.0",
+    "winston": "^3.19.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
