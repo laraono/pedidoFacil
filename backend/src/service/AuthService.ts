@@ -10,6 +10,18 @@ import { AppError } from '../middleware/error/AppError';
 import { UserRepository, RefreshTokenRepository } from '../repository';
 import { gerarTokens, gerarTokenAdmin, hashToken } from '../config/crypto';
 
+function calcRefreshExpiry(): Date {
+  const raw = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
+  const match = raw.match(/^(\d+)([dhm]?)$/);
+  const value = match ? parseInt(match[1]) : 7;
+  const unit = match?.[2] || 'd';
+  const exp = new Date();
+  if (unit === 'h') exp.setHours(exp.getHours() + value);
+  else if (unit === 'm') exp.setMinutes(exp.getMinutes() + value);
+  else exp.setDate(exp.getDate() + value);
+  return exp;
+}
+
 const DUMMY_HASH = '$2b$12$eImiTXuWVxfM37uY4JANjQev3nHN.SBuNFa5UPSmKUVgwjBiCXhHu';
 
 function validarSenhaForte(senha: string): string | null {
@@ -49,11 +61,12 @@ export class AuthService {
 
     const savedUser = await this.userRepository.save(user);
     const { accessToken, refreshToken } = await gerarTokens(savedUser);
+    await this.refreshTokenRepository.createToken(savedUser, hashToken(refreshToken), calcRefreshExpiry());
 
-    return { 
-      accessToken, 
-      refreshToken, 
-      usuario: { id: savedUser.id, nome: savedUser.name, email: savedUser.email } 
+    return {
+      accessToken,
+      refreshToken,
+      usuario: { id: savedUser.id, nome: savedUser.name, email: savedUser.email }
     };
   }
 
@@ -70,9 +83,10 @@ export class AuthService {
       if (!senhaValida) throw new AppError('Credenciais inválidas.', 401);
 
       const { accessToken, refreshToken } = await gerarTokens(user);
-      
+      await this.refreshTokenRepository.createToken(user, hashToken(refreshToken), calcRefreshExpiry());
+
       return {
-        accessToken, 
+        accessToken,
         refreshToken,
         usuario: { id: user.id, nome: user.name, email: user.email, status: user.status },
         cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions } : null,
@@ -91,9 +105,10 @@ export class AuthService {
     if (!senhaAdminValida) throw new AppError('Credenciais inválidas.', 401);
 
     const { accessToken, refreshToken } = await gerarTokenAdmin(admin);
-    
+    await this.refreshTokenRepository.createAdminToken(admin, hashToken(refreshToken), calcRefreshExpiry());
+
     return {
-      accessToken, 
+      accessToken,
       refreshToken,
       usuario: { id: admin.id, nome: admin.name, email: admin.email },
       cargo: { id: 0, nome: 'Admin', permissoes: ['ALL'] },
@@ -113,13 +128,20 @@ export class AuthService {
       throw new AppError('Token fornecido não é válido para esta operação.', 403);
     }
 
+    const oldHash = hashToken(tokenStr);
+    const storedToken = await this.refreshTokenRepository.findByHash(oldHash);
+    if (!storedToken) throw new AppError('Refresh token inválido ou revogado.', 403);
+    await this.refreshTokenRepository.revokeByHash(oldHash);
+
     if (decoded.isAdmin) {
       const admin = await this.dataSource.getRepository(Admin).findOne({ where: { id: decoded.id } });
       if (!admin) throw new AppError('Admin inválido.', 403);
 
       const { accessToken, refreshToken } = await gerarTokenAdmin(admin);
+      await this.refreshTokenRepository.createAdminToken(admin, hashToken(refreshToken), calcRefreshExpiry());
+
       return {
-        accessToken, 
+        accessToken,
         refreshToken,
         usuario: { id: admin.id, nome: admin.name, email: admin.email },
         cargo: { id: 0, nome: 'Admin', permissoes: ['ALL'] },
@@ -132,14 +154,13 @@ export class AuthService {
       relations: { establishment: true, role: true },
     });
 
-    if (!user) {
-      throw new AppError('Credenciais inválidas ou usuário inativo.', 403);
-    }
+    if (!user) throw new AppError('Credenciais inválidas ou usuário inativo.', 403);
 
     const { accessToken, refreshToken } = await gerarTokens(user);
+    await this.refreshTokenRepository.createToken(user, hashToken(refreshToken), calcRefreshExpiry());
 
     return {
-      accessToken, 
+      accessToken,
       refreshToken,
       usuario: { id: user.id, nome: user.name, email: user.email, status: user.status },
       cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions } : null,

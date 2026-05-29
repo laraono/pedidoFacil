@@ -42,7 +42,6 @@ const listSubscriptionsSchema = z.object({
 
 const cancelSubscriptionSchema = z.object({
     params: z.object({
-        comandaId: z.coerce.number().int().positive(),
         subscriptionId: z.coerce.number().int().positive()
     }),
     body: z.object({

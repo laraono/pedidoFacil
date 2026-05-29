@@ -87,7 +87,7 @@ AppDataSource.initialize().then(async () => {
     app.use('/api/v1', authenticatedLimiter, configRouter);
     app.use('/api/v1', publicLimiter, planRouter);
     app.use('/api/v1', authenticatedLimiter, subscriptionRouter);
-    app.use('/api/v1/contato', publicLimiter, contactRouter);
+    app.use('/api/v1/contato', contactRouter);
     app.use('/api/v1', authenticatedLimiter, paymentRouter);
     app.use('/webhook', publicLimiter, webhookRouter);
     app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));

@@ -112,13 +112,12 @@ async login(req: Request, res: Response) {
 
     async logout(req: Request, res: Response) {
         const token = req.cookies.refreshToken
-        const { refreshToken } = req.body;
 
         if (!token) {
             return res.status(204).send()
         }
 
-        await this.authService.logout(refreshToken)
+        await this.authService.logout(token)
 
         res.clearCookie('refreshToken')
         res.status(204).send()

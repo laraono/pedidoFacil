@@ -5,7 +5,7 @@ import opencage from 'opencage-api-client';
 import crypto from 'crypto';
 import { MercadoPagoConfig, OAuth } from 'mercadopago'
 
-const { v4 } = require('uuid');
+const v4 = () => crypto.randomUUID();
 
 type CreateOrderType = {
     id: string,
@@ -188,7 +188,7 @@ export class MercadoPagoService {
 
             return answer.data.status
         } catch(error) {
-            throw new AppError('Erro criando plano', 500)
+            throw new AppError('Erro ao consultar assinatura no Mercado Pago', 500)
         }
     }
 

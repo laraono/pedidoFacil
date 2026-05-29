@@ -140,7 +140,7 @@ async function savePrice() {
         <button @click="router.push('/app/admin/users')" class="flex items-center gap-2 px-4 py-2.5 border border-[#E0E0E0] bg-white text-[#757575] font-black rounded text-sm hover:text-[#212121] hover:border-primary/30 transition-all">
           <Settings :size="15" /> Admins
         </button>
-        <button @click="router.push('/app/admin/metrics')" class="flex items-center gap-2 px-4 py-2.5 bg-primary text-white font-black rounded text-sm hover:bg-primary-dark transition-all">
+        <button @click="router.push('/app/admin/reports')" class="flex items-center gap-2 px-4 py-2.5 bg-primary text-white font-black rounded text-sm hover:bg-primary-dark transition-all">
           <BarChart3 :size="15" /> Métricas
         </button>
       </div>

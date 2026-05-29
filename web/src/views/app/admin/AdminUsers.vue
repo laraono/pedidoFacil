@@ -109,7 +109,7 @@ async function doDelete() {
   <main class="max-w-5xl mx-auto py-12 px-6 font-inter">
     <header class="flex items-center justify-between gap-4 mb-10">
       <div class="flex items-center gap-4">
-        <button @click="router.push('/app/dashboard')" class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] transition-colors">
+        <button @click="router.push('/app/admin/subscriptions')" class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] transition-colors">
           <ArrowLeft :size="20" />
         </button>
         <div>
