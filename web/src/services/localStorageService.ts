@@ -1,8 +1,6 @@
 import { useAuthStore } from '@/stores/auth';
 
 const STORAGE_KEYS = {
-  USERS: "users",
-  SESSION: "session",
   ONBOARDING: "onboarding",
   IMAGE: "logo",
   BUTTONS: "buttons",
@@ -58,26 +56,7 @@ function setRaw(key: string, value: string): void {
   localStorage.setItem(fullKey, value);
 }
 
-export interface StoredUser {
-  email: string;
-  password: string;
-  [key: string]: unknown;
-}
-
 export default {
-  getUsers(): StoredUser[] { return getItem<StoredUser[]>(STORAGE_KEYS.USERS, []); },
-  saveUser(user: StoredUser): void {
-    const users = this.getUsers();
-    users.push(user);
-    setItem(STORAGE_KEYS.USERS, users);
-  },
-  findUser(email: string, password: string): StoredUser | undefined {
-    return this.getUsers().find(u => u.email === email && u.password === password);
-  },
-  setSession(user: unknown): void { setItem(STORAGE_KEYS.SESSION, user); },
-  getSession(): unknown { return getItem(STORAGE_KEYS.SESSION, null); },
-  clearSession(): void { localStorage.removeItem(STORAGE_KEYS.SESSION); },
-
   saveOnboarding(data: unknown): void { setItem(STORAGE_KEYS.ONBOARDING, data); },
   getOnboarding(): unknown { return getItem(STORAGE_KEYS.ONBOARDING, {}); },
 

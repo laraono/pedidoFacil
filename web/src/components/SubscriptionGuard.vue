@@ -20,7 +20,7 @@ const isActive = computed(() => subscriptionStore.isActive);
     <Transition name="guard-fade">
       <div
         v-if="!isActive"
-        class="absolute inset-0 z-50 flex flex-col items-center justify-center"
+        class="absolute inset-0 z-30 flex flex-col items-center justify-center"
         style="backdrop-filter: blur(6px); background: rgba(0,0,0,0.72);"
       >
         <div class="max-w-sm w-full mx-4 bg-white border border-danger rounded p-8 text-center shadow-2xl">

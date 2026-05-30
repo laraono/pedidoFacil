@@ -9,13 +9,11 @@ const createSubscriptionchema = z.object({
     }),
     data: z.object({
         type: z.string().min(1),
-        total_amount: z.coerce.number().positive(),
         external_reference: z.string().min(1),
         processing_mode: z.string().min(1),
         transactions: z.object({
             payments: z.array(
                 z.object({
-                    amount: z.coerce.number().positive(),
                     payment_method: z.object({
                         id: z.string().min(1),
                         type: z.string().min(1),
@@ -51,7 +49,7 @@ const cancelSubscriptionSchema = z.object({
     })
 })
 
-const restoreSubscriptoinSchema = z.object({
+const restoreSubscriptionSchema = z.object({
     params: z.object({
         subscriptionId: z.coerce.number().int().positive(),
         establishmentId: z.coerce.number().int().positive()
@@ -88,8 +86,6 @@ export const validateCreateSubscription =
 
             next()
         } catch (error) {
-                        console.log(error)
-
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);
             }
@@ -100,7 +96,7 @@ export const validateCreateSubscription =
 export const validateRestoreSubscription = 
     (req, res: Response, next: NextFunction) => {
         try {
-            const {params, data} = restoreSubscriptoinSchema.parse({
+            const {params, data} = restoreSubscriptionSchema.parse({
                 data: req.body.data.transaction.payments, 
                 params: {
                     subscriptionId: req.params.subscriptionId, 
@@ -113,8 +109,6 @@ export const validateRestoreSubscription =
 
             next()
         } catch (error) {
-                        console.log(error)
-
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);
             }
@@ -129,7 +123,6 @@ export const validateListSubscriptions =
 
             next()
         } catch (error) {
-            console.log(error)
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);
             }

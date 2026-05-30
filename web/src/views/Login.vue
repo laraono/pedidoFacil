@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import { LogIn, Lock, User, AlertCircle } from 'lucide-vue-next';
+import { LogIn, Lock, User, AlertCircle, Eye, EyeOff } from 'lucide-vue-next';
 import { BaseInput, BaseButton } from '@/components/ui';
 import LandingHeader from '@/components/LandingHeader.vue';
 import imgOndas from '@/assets/ondas.png';
@@ -15,6 +15,7 @@ const email = ref('');
 const senha = ref('');
 const isLoading = ref(false);
 const serverError = ref(null);
+const showPassword = ref(false);
 
 if (authStore.isAuthenticated) router.push('/app/dashboard');
 
@@ -76,12 +77,22 @@ const goToPlans = () => router.push({ path: '/', hash: '#planos' });
 
           <BaseInput
             v-model="senha"
-            type="password"
+            :type="showPassword ? 'text' : 'password'"
             placeholder="Senha"
             :icon="Lock"
             dark
             required
-          />
+          >
+            <template #suffix>
+              <button
+                type="button"
+                @click="showPassword = !showPassword"
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-[#757575] hover:text-accent"
+              >
+                <component :is="showPassword ? EyeOff : Eye" class="w-5 h-5" />
+              </button>
+            </template>
+          </BaseInput>
 
           <div class="flex justify-end">
             <a @click.prevent="router.push('/forgot-password')" href="/forgot-password"

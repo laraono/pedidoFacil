@@ -1,6 +1,9 @@
 import { request } from './api';
 
 export const establishmentApi = {
+  checkCnpj: (cnpj: string): Promise<{ available: boolean }> =>
+    request('/estabelecimento/check-cnpj', { method: 'POST', body: { cnpj } as any }),
+
   saveOnboardingStep: (data: unknown) =>
     request('/estabelecimento/onboarding', { method: 'POST', body: data as BodyInit }),
 

@@ -38,8 +38,6 @@ export const validateCreateCategory =
             })
 
             req.body = body
-            console.log()
-
             next()
         } catch (error) {
             if (error instanceof ZodError) {

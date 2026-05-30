@@ -6,7 +6,6 @@ export const createCouponSchema = z.object({
     code: z.string().min(1, "O código é obrigatório").max(50),
     type: z.enum(['Valor', 'Percentual']),
     value: z.coerce.number().positive("O valor deve ser maior que zero"),
-    quantity: z.number().int().positive().optional().nullable(),
     expirationDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida").optional().nullable()
 });
 

@@ -11,7 +11,6 @@ subscriptionRouter.get('/plans/:planId/subscriptions/', authenticate, subscripti
 subscriptionRouter.get('/plans/:planId/subscriptions/:subscriptionId', authenticate, subscriptionController.getSubscription);
 subscriptionRouter.post('/process-order', authenticate, validateCreateSubscription, subscriptionController.processCardInfo);
 subscriptionRouter.post('/process-order/:subscriptionId', authenticate, validateRestoreSubscription, subscriptionController.restoreSubscription);
-subscriptionRouter.delete('/plans/:planId/subscriptions/:subscriptionId', authenticate, subscriptionController.deleteSubcription);
 subscriptionRouter.put('/plans/:planId/subscriptions/:subscriptionId', authenticate, subscriptionController.updateSubscriptionPrice);
 subscriptionRouter.get('/process-oauth', subscriptionController.processCardInfo)
 subscriptionRouter.get('/subscriptions/establishment', authenticate, validateListSubscriptions, subscriptionController.getEstablishmentSubscription)

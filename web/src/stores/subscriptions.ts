@@ -1,29 +1,11 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { adminSubscriptionApi, adminMetricsApi } from '@/services/adminApi';
+import { subscriptionApi } from '@/services/subscriptionApi';
 
-const SUBSCRIPTION_KEY = 'subscription';
 const PLAN_KEY = 'plan';
 
-export type SubscriptionStatus = 'ativo' | 'expirado' | 'desativado' | 'cancelado' | 'pendente';
-export type SubscriptionPlan = 'mensal' | 'anual';
-
-export interface PaymentRecord {
-  id: number;
-  date: string;
-  amount: number;
-  method: string;
-  status: string;
-}
-
-export interface Subscription {
-  plan: SubscriptionPlan;
-  status: SubscriptionStatus;
-  nextDueDate: string;
-  paymentMethod: string;
-  history: PaymentRecord[];
-  pendingPlan?: SubscriptionPlan;
-}
+export type SubscriptionStatus = 'Paga' | 'Pendente' | 'Expirada' | 'Cancelada';
 
 export interface PlanPrices {
   monthly: number;
@@ -43,8 +25,6 @@ export interface AdminSubscription {
 }
 
 export const useSubscriptionStore = defineStore('subscription', () => {
-  const subscription = ref<Subscription | null>(null);
-
   const planPrices = ref<PlanPrices>(
     JSON.parse(localStorage.getItem('planPrices') || 'null') || { monthly: 79.90, annual: 49.90 }
   );
@@ -52,36 +32,6 @@ export const useSubscriptionStore = defineStore('subscription', () => {
   function updatePlanPrices(prices: PlanPrices): void {
     planPrices.value = { ...prices };
     localStorage.setItem('planPrices', JSON.stringify(planPrices.value));
-  }
-
-  function loadSubscription(): void {
-    const saved = localStorage.getItem(SUBSCRIPTION_KEY);
-    if (saved) {
-      subscription.value = JSON.parse(saved) as Subscription;
-    } else {
-      const mock: Subscription = {
-        plan: 'mensal',
-        status: 'ativo',
-        nextDueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 12).toISOString(),
-        paymentMethod: 'Cartão de Crédito',
-        history: [
-          { id: 1, date: '2026-02-13', amount: 79.90, method: 'Cartão de Crédito', status: 'pago' },
-          { id: 2, date: '2026-01-13', amount: 79.90, method: 'Cartão de Crédito', status: 'pago' },
-          { id: 3, date: '2025-12-13', amount: 79.90, method: 'Pix', status: 'pago' },
-          { id: 4, date: '2025-11-13', amount: 79.90, method: 'Pix', status: 'pago' },
-          { id: 5, date: '2025-10-13', amount: 79.90, method: 'Boleto', status: 'pago' },
-        ]
-      };
-      subscription.value = mock;
-      localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(mock));
-    }
-  }
-
-  function updateStatus(newStatus: SubscriptionStatus): void {
-    if (subscription.value) {
-      subscription.value.status = newStatus;
-      localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(subscription.value));
-    }
   }
 
   function setPlanToBeSubscribed(id: number): void {
@@ -92,69 +42,22 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     return localStorage.getItem(PLAN_KEY);
   }
 
-  function updatePaymentMethod(method: string): void {
-    if (subscription.value) {
-      subscription.value.paymentMethod = method;
-      localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(subscription.value));
+  const subscriptionStatus = ref<SubscriptionStatus | null>(null);
+
+  async function fetchSubscriptionStatus(): Promise<void> {
+    try {
+      const sub = await subscriptionApi.getEstablishmentSubscription();
+      subscriptionStatus.value = (sub as any)?.status ?? null;
+    } catch {
+      subscriptionStatus.value = null;
     }
   }
 
-  function updatePlan(plan: SubscriptionPlan): void {
-    if (subscription.value) {
-      subscription.value.plan = plan;
-      localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(subscription.value));
-    }
-  }
-
-  function setPendingPlan(plan: SubscriptionPlan | null | undefined): void {
-    if (subscription.value) {
-      subscription.value.pendingPlan = plan || undefined;
-      if (!plan) delete subscription.value.pendingPlan;
-      localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(subscription.value));
-    }
-  }
-
-  function recordPayment(method: string): void {
-    if (!subscription.value) return;
-    const today = new Date().toISOString().split('T')[0];
-    const amount = subscription.value.plan === 'anual' ? planPrices.value.annual : planPrices.value.monthly;
-
-    subscription.value.history.unshift({
-      id: Date.now(),
-      date: today,
-      amount,
-      method,
-      status: 'pago'
-    });
-
-    const daysToAdd = subscription.value.plan === 'anual' ? 365 : 30;
-    subscription.value.nextDueDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * daysToAdd).toISOString();
-    subscription.value.status = 'ativo';
-    subscription.value.paymentMethod = method;
-
-    localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(subscription.value));
-  }
-
-  const isActive = computed(() => subscription.value?.status === 'ativo');
-
-  const daysUntilDue = computed((): number | null => {
-    if (!subscription.value?.nextDueDate) return null;
-    const diff = new Date(subscription.value.nextDueDate).getTime() - new Date().getTime();
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
-  });
+  const isActive = computed(() => subscriptionStatus.value === 'Paga');
 
   const adminSubscriptions = ref<AdminSubscription[]>([]);
   const adminMetrics = ref<any>(null);
   const adminDataLoading = ref(false);
-
-  function normalizeStatus(status: any): SubscriptionStatus {
-    const s = String(status ?? '').toLowerCase();
-    if (s === 'paga' || s === 'ativo' || s === 'ativa') return 'ativo';
-    if (s === 'cancelada' || s === 'cancelado') return 'cancelado';
-    if (s === 'expirada' || s === 'expirado') return 'expirado';
-    if (s === 'pendente') return 'pendente';
-    return s as SubscriptionStatus;
-  }
 
   async function loadAdminData(): Promise<void> {
     adminDataLoading.value = true;
@@ -175,7 +78,7 @@ export const useSubscriptionStore = defineStore('subscription', () => {
           manager: managerUser?.name ?? '—',
           plan: s.plan?.name ?? '—',
           planFrequency: s.plan?.frequency ?? '—',
-          status: normalizeStatus(s.status),
+          status: s.status,
           nextDueDate: s.expirationDate,
           amount: Number(s.plan?.price ?? 0),
           users: s.establishment?.users?.length ?? 0,
@@ -190,25 +93,17 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     }
   }
 
-  loadSubscription();
-
   return {
-    subscription,
-    isActive,
-    daysUntilDue,
     planPrices,
+    updatePlanPrices,
+    setPlanToBeSubscribed,
+    getPlanToBeSubscribed,
+    subscriptionStatus,
+    fetchSubscriptionStatus,
+    isActive,
     adminSubscriptions,
     adminMetrics,
     adminDataLoading,
     loadAdminData,
-    loadSubscription,
-    updateStatus,
-    updatePaymentMethod,
-    updatePlan,
-    setPendingPlan,
-    setPlanToBeSubscribed,
-    getPlanToBeSubscribed,
-    updatePlanPrices,
-    recordPayment,
   };
 });

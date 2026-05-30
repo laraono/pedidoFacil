@@ -43,6 +43,12 @@ export class EstablishmentService {
   }
 
   
+  async checkCnpjAvailable(cnpj: string) {
+    const exists = await this.establishmentRepository.findByCnpj(cnpj);
+    if (exists) throw new AppError('Este CNPJ já está cadastrado.', 409);
+    return { available: true };
+  }
+
   async validateAccessCode(code: string): Promise<Establishment> {
     const establishment = await this.establishmentRepository.findByAccessCode(code);
 

@@ -1,4 +1,4 @@
-export { validateLogin, validateRegister } from './auth';
+export { validateLogin, validateRegisterComplete } from './auth';
 export { validateCreateCategory } from './category';
 export { validateCreateComanda, validateCancelComanda, validateListComandas, validateListComandasByStatus } from './comanda';
 export { validateCreateOrder, validateCancelOrders, validateListOrders } from './order';

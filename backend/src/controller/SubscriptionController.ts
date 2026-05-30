@@ -23,13 +23,11 @@ export class SubscriptionController {
 
     getEstablishmentSubscription = catchAsync(async (req, res: Response) => {
         const subscription = await this.subscriptionService.getEstablishmentSubscription(req.usuario.estabelecimento);
-        console.log(subscription)
         return res.status(200).send(subscription);
     });
 
     getEstablishmentHistory = catchAsync(async (req, res: Response) => {
         const subscription = await this.subscriptionService.getEstablishmentHistory(req.usuario.estabelecimento);
-        console.log(subscription)
         return res.status(200).send(subscription);
     });
 
@@ -42,13 +40,6 @@ export class SubscriptionController {
         const { subscriptionId } = req.params;
         await this.subscriptionService.cancelSubscription(subscriptionId);
         auditLog('subscription.cancelled', { subscriptionId, userId: (req as any).usuario?.id });
-        return res.sendStatus(204)
-    });
-
-    deleteSubcription = catchAsync(async (req, res: Response) => {
-        const { subscriptionId } = req.params;
-        await this.subscriptionService.deleteSubscription(subscriptionId);
-        auditLog('subscription.deleted', { subscriptionId, userId: (req as any).usuario?.id });
         return res.sendStatus(204)
     });
 

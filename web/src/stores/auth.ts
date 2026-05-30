@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { authApi } from '@/services/authApi';
+import { authApi, UserProfile } from '@/services/authApi';
 
 export interface UserCargo {
   id: number;
@@ -20,6 +20,16 @@ export interface ConfigStatus {
   info: boolean;
   roles: boolean;
   menu: boolean;
+}
+
+function parseCargo(cargo: UserProfile['cargo']): UserCargo | null {
+  if (!cargo) return null;
+  const permissoes: string[] = cargo.permissoes
+    ? typeof cargo.permissoes === 'string'
+      ? JSON.parse(cargo.permissoes)
+      : cargo.permissoes
+    : [];
+  return { id: cargo.id, name: cargo.nome, permissoes };
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -46,24 +56,13 @@ export const useAuthStore = defineStore('auth', {
 
       const perfil = await authApi.me();
       
-      let permissoes: string[] = [];
-      if (perfil.cargo?.permissoes) { 
-        permissoes = typeof perfil.cargo.permissoes === 'string'
-          ? JSON.parse(perfil.cargo.permissoes)
-          : perfil.cargo.permissoes;
-      }
-
       const user: AuthUser = {
         id: perfil.usuario.id,
         name: perfil.usuario.name,
         email: perfil.usuario.email,
         estabelecimentoId: perfil.estabelecimentoId ?? null,
         isAdmin: !!perfil.usuario.isAdmin,
-        cargo: perfil.cargo ? {
-          id: perfil.cargo.id,
-          name: perfil.cargo.nome,
-          permissoes,
-        } : null
+        cargo: parseCargo(perfil.cargo),
       };
 
       this.user = user;
@@ -121,24 +120,13 @@ export const useAuthStore = defineStore('auth', {
       try {
         const perfil = await authApi.me();
         
-        let permissoes: string[] = [];
-        if (perfil.cargo?.permissoes) { 
-          permissoes = typeof perfil.cargo.permissoes === 'string'
-            ? JSON.parse(perfil.cargo.permissoes)
-            : perfil.cargo.permissoes;
-        }
-
         this.user = {
           id: perfil.usuario.id,
           name: perfil.usuario.name,
           email: perfil.usuario.email,
           estabelecimentoId: perfil.estabelecimentoId ?? null,
           isAdmin: !!perfil.usuario.isAdmin,
-          cargo: perfil.cargo ? {
-            id: perfil.cargo.id,
-            name: perfil.cargo.nome,
-            permissoes
-          } : null,
+          cargo: parseCargo(perfil.cargo),
         };
 
         this.isAuthenticated = true;
@@ -148,6 +136,24 @@ export const useAuthStore = defineStore('auth', {
         this.isAuthenticated = false;
         return false;
       }
+    },
+
+    setUserFromOnboarding(response: {
+      usuario: { id: number; nome: string; email: string };
+      cargo: UserProfile['cargo'];
+      estabelecimentoId: number | null;
+    }): void {
+      const user: AuthUser = {
+        id: response.usuario.id,
+        name: response.usuario.nome,
+        email: response.usuario.email,
+        estabelecimentoId: response.estabelecimentoId ?? null,
+        isAdmin: false,
+        cargo: parseCargo(response.cargo),
+      };
+      this.user = user;
+      this.isAuthenticated = true;
+      localStorage.setItem('user', JSON.stringify(user));
     },
 
     hasPermission(permission: string): boolean {

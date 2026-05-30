@@ -7,6 +7,7 @@ import { planApi } from '@/services/planApi';
 import { useRouter } from "vue-router";
 import LandingHeader from "@/components/LandingHeader.vue";
 import { Check } from 'lucide-vue-next';
+import { formatFrequency, monthlyEquivalent } from '@/utils/frequency';
 import { v4 } from 'uuid';
 
 const plans = ref([]);
@@ -23,25 +24,12 @@ const isSubmitting = ref(false);
 let mp = null;
 let cardPaymentBrickController = null;
 
-function normalizeFrequency(frequency) {
-  const f = String(frequency ?? '').trim().toLowerCase();
-  if (['anual', '12', 'annual', 'yearly'].includes(f)) return 'anual';
-  if (['months', '1', 'mensal', 'monthly', 'month'].includes(f)) return 'mensal';
-  if (['days', '30', 'diario', 'daily'].includes(f)) return 'diario';
-  return f;
-}
-
-function formatFrequency(frequency) {
-  const norm = normalizeFrequency(frequency);
-  return { anual: 'ano', mensal: 'mês', diario: 'dia' }[norm] ?? 'mês';
-}
-
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 function isAnnual(plan) {
-  return normalizeFrequency(plan?.frequency) === 'anual';
+  return plan?.frequency === 'anual';
 }
 
 function parsedFeatures(features) {
@@ -70,8 +58,7 @@ const selectPlan = async (plan) => {
 const renderCardPaymentBrick = async () => {
   if (!selectedPlan.value || !mp) return;
 
-  const basePrice = parseFloat(selectedPlan.value.price);
-  const amount = isAnnual(selectedPlan.value) ? basePrice * 12 : basePrice;
+  const amount = parseFloat(selectedPlan.value.price);
   if (!amount || isNaN(amount)) {
     error.value = "Valor do plano inválido.";
     return;
@@ -103,14 +90,11 @@ const renderCardPaymentBrick = async () => {
             isSubmitting.value = true;
 
             const submitData = {
-              preapproval_plan_id: planId.value,
               type: "online",
-              total_amount: String(formData.transaction_amount),
               external_reference: v4(),
               processing_mode: "automatic",
               transactions: {
                 payments: [{
-                  amount: String(formData.transaction_amount),
                   payment_method: {
                     id: formData.payment_method_id,
                     type: additionalData.paymentTypeId,
@@ -169,7 +153,7 @@ onMounted(async () => {
 
   try {
     await loadMercadoPago();
-    mp = new window.MercadoPago('APP_USR-639449eb-f800-4563-9304-f64989497a7a');
+    mp = new window.MercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY);
 
     if (planId.value && plans.value.length > 0) {
       const plan = plans.value.find(p => p.id === Number(planId.value));
@@ -217,7 +201,7 @@ onUnmounted(() => {
             <h3 class="text-[#212121] text-2xl font-black mb-4">{{ plan.name }}</h3>
 
             <div class="flex items-end gap-0.5 leading-none">
-              <span class="text-5xl font-black text-[#212121]">{{ formatCurrency(plan.price) }}</span>
+              <span class="text-5xl font-black text-[#212121]">{{ formatCurrency(plan.price / 12) }}</span>
               <span class="text-base font-medium text-[#757575] mb-1">/mês</span>
             </div>
 
@@ -260,11 +244,11 @@ onUnmounted(() => {
             <div class="flex items-baseline gap-2 mt-2">
               <p class="text-[#757575] text-sm">Total {{ isAnnual(selectedPlan) ? 'anual' : 'mensal' }}:</p>
               <span class="font-black text-primary text-xl">
-                {{ formatCurrency(isAnnual(selectedPlan) ? selectedPlan?.price * 12 : selectedPlan?.price) }}
+                {{ formatCurrency(selectedPlan?.price) }}
               </span>
             </div>
             <p v-if="isAnnual(selectedPlan)" class="text-xs text-[#757575] mt-1">
-              {{ formatCurrency(selectedPlan?.price) }}/mês · Parcele em até 12× no cartão
+              {{ formatCurrency(monthlyEquivalent(selectedPlan?.price, selectedPlan?.frequency)) }}/mês · Parcele em até 12× no cartão
             </p>
           </div>
 

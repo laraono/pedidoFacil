@@ -60,7 +60,7 @@ export class ConfigurationController {
         );
       return res.status(200).json(config);
     } catch (error) {
-      console.error('Erro ao buscar configurações:', error);
+      auditLog('config.fetch_error', { error: (error as Error).message, timestamp: new Date().toISOString() });
       return res
         .status(500)
         .json({ message: 'Erro ao buscar as configurações.' });

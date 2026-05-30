@@ -98,7 +98,7 @@ export class ComandaController {
             const estabelecimentoId = user.estabelecimento || user.ID_Estabelecimento;
 
             if (!userId || !estabelecimentoId) {
-                console.error("Token JWT sem ID ou Estabelecimento:", user);
+                auditLog('auth.token_incompleto', { ip: req.ip, timestamp: new Date().toISOString() });
                 return res.status(400).json({ error: "Token inválido ou incompleto." });
             }
             

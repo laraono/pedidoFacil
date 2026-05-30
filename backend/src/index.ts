@@ -102,7 +102,7 @@ AppDataSource.initialize().then(async () => {
     initSocket(httpServer);
 
     httpServer.listen(PORT, () => {
-        console.log(`🚀 Server rodando em http://localhost:${PORT}`);
-        console.log(` Socket.IO ativo na porta ${PORT}`);
+        logger.info(`Server rodando em http://localhost:${PORT}`);
+        logger.info(`Socket.IO ativo na porta ${PORT}`);
     });
-}).catch(error => console.log("Erro na inicialização do Banco:", error));
+}).catch(error => logger.error('Erro na inicialização do Banco', { error }));

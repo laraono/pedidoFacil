@@ -10,6 +10,7 @@ import {
   Clock, History, Banknote, X, ArrowLeftRight, Info,
   XCircle, FileText, ExternalLink
 } from 'lucide-vue-next';
+import { formatFrequency } from '@/utils/frequency';
 
 const error = ref('')
 const serverError = ref(null)
@@ -27,7 +28,7 @@ onMounted(async () => {
     currentPlan.value = sub.value?.plan ?? {}
     error.value = localStorage.getItem('subscriptionError') || ''
     await loadMercadoPago();
-    mp = new window.MercadoPago('APP_USR-639449eb-f800-4563-9304-f64989497a7a');
+    mp = new window.MercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY);
   } catch (err) {
     console.error("Init error:", err);
     error.value = "Erro ao carregar dados da assinatura";
@@ -45,19 +46,6 @@ function formatCurrency(value) {
   return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-function normalizeFrequency(frequency) {
-  const f = String(frequency ?? '').trim().toLowerCase();
-  if (['anual', '12', 'annual', 'yearly'].includes(f)) return 'anual';
-  if (['months', '1', 'mensal', 'monthly', 'month'].includes(f)) return 'mensal';
-  if (['days', '30', 'diario', 'daily'].includes(f)) return 'diario';
-  return f;
-}
-
-function formatFrequency(frequency) {
-  const norm = normalizeFrequency(frequency);
-  return { anual: 'ano', mensal: 'mês', diario: 'dia' }[norm] ?? 'mês';
-}
-
 const effectivePrice = computed(() =>
   sub.value?.price ?? sub.value?.plan?.price ?? 0
 );
@@ -66,18 +54,6 @@ function parsedFeatures(features) {
   if (!features) return [];
   try { return JSON.parse(features); }
   catch { return features.split(',').map(f => f.trim()).filter(Boolean); }
-}
-
-const STATUS_PT = {
-  ACCREDITED: 'Aprovado', IN_PROCESS: 'Em processamento',
-  CANCELED: 'Cancelado', CANCELLED: 'Cancelado',
-  PENDING_CAPTURE: 'Aguardando captura', AUTHORIZED: 'Autorizado',
-  REJECTED: 'Recusado', REFUNDED: 'Estornado',
-  CHARGED_BACK: 'Contestado', PENDING: 'Pendente',
-};
-
-function translateStatus(status) {
-  return STATUS_PT[status?.toUpperCase()] ?? status ?? '—';
 }
 
 // ── Status ────────────────────────────────────────────────────────────────────
@@ -218,7 +194,7 @@ const renderCardPaymentBrick = async () => {
         visual: { style: { theme: 'default' } },
         paymentMethods: {
           minInstallments: 1,
-          maxInstallments: normalizeFrequency(sub.value?.plan?.frequency) === 'anual' ? 12 : 1,
+          maxInstallments: sub.value?.plan?.frequency === 'anual' ? 12 : 1,
         },
       },
       callbacks: {
@@ -412,7 +388,7 @@ const renderCardPaymentBrick = async () => {
                 {{ formatCurrency(payment.amount) }}
               </p>
               <span class="text-[10px] font-black uppercase tracking-wider text-accent">
-                {{ translateStatus(payment.status) }}
+                {{ payment.status ?? '—' }}
               </span>
               <p v-if="payment.installments && payment.installments > 1" class="text-[10px] text-[#757575]">
                 {{ payment.installments }}x de {{ formatCurrency(payment.amount / payment.installments) }}

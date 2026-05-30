@@ -13,6 +13,11 @@ export class EstablishmentController {
     this.establishmentService = establishmentService;
   }
 
+  checkCnpj = catchAsync(async (req: Request, res: Response) => {
+    const result = await this.establishmentService.checkCnpjAvailable(req.body.cnpj);
+    return res.status(200).json(result);
+  });
+
   onboarding = catchAsync(async (req: Request, res: Response) => {
     const userId = (req as any).usuario.id;
     const establishment = await this.establishmentService.saveOnboardingStep(userId, req.body);

@@ -122,17 +122,7 @@ const finalizeRegistration = async () => {
     localStorage.setItem("accessToken", response.accessToken);
     localStorage.setItem("refreshToken", response.refreshToken);
 
-    const finalUser = {
-      id: response.usuario.id,
-      name: response.usuario.nome,
-      email: response.usuario.email,
-      cargo: response.cargo,
-      estabelecimentoId: response.estabelecimentoId,
-    };
-
-    localStorage.setItem("user", JSON.stringify(finalUser));
-    authStore.user = finalUser;
-    authStore.isAuthenticated = true;
+    authStore.setUserFromOnboarding(response);
 
     router.push("/onboarding/subscription");
   } catch (err) {

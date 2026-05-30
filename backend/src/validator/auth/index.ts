@@ -1,1 +1,1 @@
-export { validateLogin, validateRegister } from './authSchema'
+export { validateLogin, validateRegisterComplete } from './authSchema'

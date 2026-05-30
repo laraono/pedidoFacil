@@ -36,11 +36,12 @@ import { SubscriptionService } from './SubscriptionService';
 import { PlanService } from './PlanService';
 import { WebhookService } from './WebhookService';  
 
-const authService = new AuthService(AppDataSource, userRepository, refreshTokenRepository);
 const categoryService = new CategoryService(categoryRepository);
 
 const metricsService = new MetricsService(receiptRepository, AppDataSource);
 const mercadoPagoService = new MercadoPagoService();
+
+const authService = new AuthService(AppDataSource, userRepository, refreshTokenRepository, establishmentRepository, mercadoPagoService);
 
 const receiptService = new ReceiptService(receiptRepository, paymentRepository, establishmentRepository);
 const paymentService = new PaymentService(AppDataSource, mercadoPagoService, paymentRepository, orderRepository);
@@ -73,7 +74,7 @@ const establishmentService = new EstablishmentService(
   mercadoPagoService,
 );
 
-const profileService = new ProfileService(userRepository, establishmentService);
+const profileService = new ProfileService(userRepository);
 
 const employeeService = new EmployeeService(userRepository, roleRepository);
 
