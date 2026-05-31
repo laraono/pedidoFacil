@@ -1,16 +1,20 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
-import { useSubscriptionStore } from '@/stores/subscriptions';
+import { useAuthStore } from '@/stores/auth';
 import { subscriptionApi } from '@/services/subscriptionApi';
 import { planApi } from '@/services/planApi';
 import { loadMercadoPago } from "@mercadopago/sdk-js";
 import {
-  ArrowLeft, CreditCard, CheckCircle2, AlertTriangle,
+  CreditCard, CheckCircle2, AlertTriangle,
   Clock, History, Banknote, X, ArrowLeftRight, Info,
   XCircle, FileText, ExternalLink
 } from 'lucide-vue-next';
+import { PageHeader, BaseButton } from '@/components/ui';
 import { formatFrequency } from '@/utils/frequency';
+import { useUtils } from '@/composables/useUtils';
+
+const { formatCurrency, parsedFeatures } = useUtils();
 
 const error = ref('')
 const serverError = ref(null)
@@ -38,23 +42,12 @@ onMounted(async () => {
 })
 
 const router = useRouter();
-const subscriptionStore = useSubscriptionStore()
-
+const authStore = useAuthStore();
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatCurrency(value) {
-  return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
 
 const effectivePrice = computed(() =>
   sub.value?.price ?? sub.value?.plan?.price ?? 0
 );
-
-function parsedFeatures(features) {
-  if (!features) return [];
-  try { return JSON.parse(features); }
-  catch { return features.split(',').map(f => f.trim()).filter(Boolean); }
-}
 
 // ── Status ────────────────────────────────────────────────────────────────────
 
@@ -70,57 +63,49 @@ const statusConfig = computed(() => {
 });
 
 const daysUntilDue = computed(() => {
-  if (!sub.value?.expirationDate) return null;
-  const diff = new Date(sub.value.expirationDate).getTime() - new Date().getTime();
+  if (!sub.value?.nextPaymentDate) return null;
+  const diff = new Date(sub.value.nextPaymentDate).getTime() - new Date().getTime();
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 });
 
 const formattedDueDate = computed(() => {
-  if (!sub.value?.expirationDate) return '—';
-  return new Date(sub.value.expirationDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const date = sub.value?.nextPaymentDate ?? sub.value?.expirationDate;
+  if (!date) return '—';
+  return new Date(date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 });
 
-// ── Plano agendado ────────────────────────────────────────────────────────────
+// ── Troca de plano ────────────────────────────────────────────────────────────
 
 const isPlanModalOpen = ref(false);
+const showConfirmPlanModal = ref(false);
 const tempSelectedPlan = ref(null);
-const isScheduling = ref(false);
-
-const scheduledPlan = computed(() => sub.value?.scheduledPlan ?? null);
+const isChanging = ref(false);
 
 const openPlanModal = () => {
-  tempSelectedPlan.value = scheduledPlan.value
-    ?? plans.value.find(p => p.id === sub.value?.plan?.id)
-    ?? null;
+  tempSelectedPlan.value = plans.value.find(p => p.id === sub.value?.plan?.id) ?? null;
   isPlanModalOpen.value = true;
 };
 
-const confirmPlanChange = async () => {
-  if (!tempSelectedPlan.value) { isPlanModalOpen.value = false; return; }
-
-  const isSameAsCurrent = tempSelectedPlan.value.id === sub.value?.plan?.id;
-  const isSameAsScheduled = tempSelectedPlan.value.id === scheduledPlan.value?.id;
-
-  if (isSameAsCurrent && !scheduledPlan.value) { isPlanModalOpen.value = false; return; }
-  if (isSameAsScheduled) { isPlanModalOpen.value = false; return; }
-
-  try {
-    isScheduling.value = true;
-    const planIdToSchedule = isSameAsCurrent ? null : tempSelectedPlan.value.id;
-    sub.value = await subscriptionApi.schedulePlan(planIdToSchedule);
-  } catch (err) {
-    error.value = err.message || 'Erro ao agendar plano';
-  } finally {
-    isScheduling.value = false;
-    isPlanModalOpen.value = false;
-  }
+// Step 2: abre modal de confirmação sobre a de seleção
+const requestPlanChange = () => {
+  if (!tempSelectedPlan.value || tempSelectedPlan.value.id === sub.value?.plan?.id) return;
+  showConfirmPlanModal.value = true;
 };
 
-const cancelPendingPlan = async () => {
+// Step 3: confirmação final — chama API e fecha ambas
+const confirmPlanChange = async () => {
+  if (!tempSelectedPlan.value) { showConfirmPlanModal.value = false; return; }
   try {
-    sub.value = await subscriptionApi.schedulePlan(null);
+    isChanging.value = true;
+    sub.value = await subscriptionApi.changePlan(tempSelectedPlan.value.id);
+    currentPlan.value = sub.value?.plan ?? {};
+    showConfirmPlanModal.value = false;
+    isPlanModalOpen.value = false;
   } catch (err) {
-    error.value = err.message || 'Erro ao cancelar agendamento';
+    error.value = err.message || 'Erro ao alterar plano';
+    showConfirmPlanModal.value = false;
+  } finally {
+    isChanging.value = false;
   }
 };
 
@@ -145,127 +130,87 @@ const confirmCancel = async () => {
   }
 };
 
-// ── Pagamento (Brick) ─────────────────────────────────────────────────────────
+// ── Pagamento (mp.cardForm) ───────────────────────────────────────────────────
 
 let mp = null;
-let cardPaymentBrickController = null;
+let cardFormInstance = null;
 
 const paymentModal = ref(false);
-const isRestoring = ref(false);
+const isTokenizing = ref(false);
 
-const openCardModal = async (restore) => {
+const destroyCardForm = () => {
+  try { cardFormInstance?.unmount(); } catch {}
+  cardFormInstance = null;
+};
+
+const initCardForm = async () => {
+  if (!mp || !sub.value) return;
+  destroyCardForm();
+  await nextTick();
+
+  const amount = String(sub.value.price ?? sub.value.plan?.price ?? 1);
+
+  cardFormInstance = mp.cardForm({
+    amount,
+    iframe: true,
+    form: {
+      id: 'mp-manager-card-form',
+      cardNumber: { id: 'mp-mgr-cardNumber', placeholder: '0000 0000 0000 0000' },
+      expirationDate: { id: 'mp-mgr-expirationDate', placeholder: 'MM/AA' },
+      securityCode: { id: 'mp-mgr-securityCode', placeholder: 'CVV' },
+      cardholderName: { id: 'mp-mgr-cardholderName' },
+      identificationType: { id: 'mp-mgr-identificationType' },
+      identificationNumber: { id: 'mp-mgr-identificationNumber' },
+    },
+    callbacks: {
+      onFormMounted: (err) => {
+        if (err) { serverError.value = 'Erro ao carregar formulário de pagamento.'; console.error(err); }
+      },
+      onSubmit: async (event) => {
+        event.preventDefault();
+        if (isTokenizing.value) return;
+        serverError.value = null;
+        isTokenizing.value = true;
+        try {
+          const { token } = cardFormInstance.getCardFormData();
+          if (!token) throw new Error('Não foi possível gerar o token. Verifique os dados do cartão.');
+
+          await subscriptionApi.restoreSubscription(sub.value.id, { cardToken: token });
+
+          closePaymentModal();
+          sub.value = await subscriptionApi.getEstablishmentSubscription();
+          currentPlan.value = sub.value?.plan ?? {};
+        } catch (err) {
+          serverError.value = err.message || 'Erro ao processar pagamento. Tente novamente.';
+        } finally {
+          isTokenizing.value = false;
+        }
+      },
+      onError: (err) => { console.error('MP Card Form error:', err); },
+    },
+  });
+};
+
+const openCardModal = () => {
+  serverError.value = null;
   paymentModal.value = true;
-  isRestoring.value = restore;
-
-  if (cardPaymentBrickController) {
-    try { await cardPaymentBrickController.unmount(); } catch (_) {}
-    cardPaymentBrickController = null;
-  }
+  // initCardForm é chamado via @after-enter da Transition
 };
 
 const closePaymentModal = () => {
+  destroyCardForm();
   paymentModal.value = false;
-  isRestoring.value = false;
-};
-
-const renderCardPaymentBrick = async () => {
-  if (!sub.value || !mp) return;
-
-  const amount = parseFloat(String(sub.value.price ?? sub.value.plan?.price ?? 0));
-  if (!amount || isNaN(amount)) {
-    error.value = "Valor da assinatura inválido. Contate o suporte.";
-    return;
-  }
-
-  const container = document.getElementById("cardPaymentBrick_container");
-  if (!container) {
-    error.value = "Formulário de pagamento não pôde ser carregado";
-    return;
-  }
-
-  try {
-    container.innerHTML = '';
-
-    const settings = {
-      initialization: {
-        amount,
-      },
-      customization: {
-        visual: { style: { theme: 'default' } },
-        paymentMethods: {
-          minInstallments: 1,
-          maxInstallments: sub.value?.plan?.frequency === 'anual' ? 12 : 1,
-        },
-      },
-      callbacks: {
-        onReady: () => {},
-        onSubmit: async (formData, additionalData) => {
-          try {
-            serverError.value = null;
-            const submitData = {
-              type: "online",
-              total_amount: String(formData.transaction_amount),
-              external_reference: crypto.randomUUID(),
-              processing_mode: "automatic",
-              transactions: {
-                payments: [{
-                  amount: String(formData.transaction_amount),
-                  payment_method: {
-                    id: formData.payment_method_id,
-                    type: additionalData.paymentTypeId,
-                    token: formData.token,
-                    installments: formData.installments,
-                  },
-                }],
-              },
-              payer: {
-                email: formData.payer.email,
-                identification: formData.payer.identification,
-              }
-            };
-
-            if (isRestoring.value) {
-              await subscriptionApi.restoreSubscription(sub.value.id, submitData);
-            } else {
-              await subscriptionApi.post(submitData, subscriptionStore.getPlanToBeSubscribed());
-            }
-            closePaymentModal();
-          } catch (err) {
-            console.error("Payment error:", err);
-            serverError.value = err.message || "Erro ao processar pagamento. Tente novamente.";
-          }
-        },
-        onError: (err) => {
-          console.error("Brick error:", err);
-          error.value = "Erro no sistema de pagamento";
-        },
-      },
-    };
-
-    cardPaymentBrickController = await mp.bricks().create(
-      "cardPayment",
-      "cardPaymentBrick_container",
-      settings
-    );
-  } catch (err) {
-    console.error("Render error:", err);
-    error.value = err.message;
-  }
 };
 </script>
 
 <template>
   <main class="max-w-4xl mx-auto py-12 px-6 font-inter">
 
-    <header class="flex items-center gap-4 mb-10">
-      <button @click="router.push('/app/dashboard')" class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] transition-colors">
-        <ArrowLeft :size="20" />
-      </button>
-      <div>
-        <h1 class="text-3xl font-black text-[#212121]">Minha Assinatura</h1>
-        <p class="text-[#757575] text-sm">Gerencie seu plano e pagamentos</p>
-      </div>
-    </header>
+    <PageHeader
+      title="Minha Assinatura"
+      subtitle="Gerencie seu plano e pagamentos"
+      back-to="/app/dashboard"
+    />
 
     <transition enter-active-class="transition duration-300" enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0">
       <div v-if="error" class="bg-danger-light border border-danger text-danger p-3 rounded mb-6 inline-block font-medium text-sm">
@@ -275,25 +220,7 @@ const renderCardPaymentBrick = async () => {
 
     <div v-if="sub" class="space-y-6">
 
-      <!-- 1. Nota de plano agendado (topo) -->
-      <div v-if="scheduledPlan" class="bg-amber-50 border border-amber-400/50 rounded p-5 flex items-start gap-4">
-        <Info :size="18" class="text-amber-500 shrink-0 mt-0.5" />
-        <div class="flex-1">
-          <p class="text-sm font-bold text-[#212121]">Alteração de plano agendada</p>
-          <p class="text-xs text-[#757575] mt-1">
-            Na renovação de <span class="font-black text-[#212121]">{{ formattedDueDate }}</span>,
-            seu plano será alterado para
-            <span class="font-black text-[#212121]">{{ scheduledPlan.name }}</span>
-            — <span class="font-black text-[#212121]">{{ formatCurrency(scheduledPlan.price) }}/{{ formatFrequency(scheduledPlan.frequency) }}</span>.
-            O plano atual (<span class="font-semibold">{{ currentPlan?.name }}</span>) permanece ativo até lá.
-          </p>
-        </div>
-        <button @click="cancelPendingPlan" class="text-[#757575] hover:text-red-500 transition-colors shrink-0" title="Cancelar agendamento">
-          <X :size="16" />
-        </button>
-      </div>
-
-      <!-- 2. Card de status e cobrança -->
+      <!-- 1. Card de status e cobrança -->
       <div class="rounded p-8 border border-[#E0E0E0] bg-white flex flex-col sm:flex-row sm:items-center gap-6">
         <div class="flex-1">
           <div class="flex items-center gap-3 mb-3">
@@ -314,7 +241,7 @@ const renderCardPaymentBrick = async () => {
         <div class="flex flex-col sm:flex-row gap-3 shrink-0">
           <button
             v-if="sub?.status !== 'Pendente'"
-            @click="openCardModal(true)"
+            @click="openCardModal()"
             class="flex items-center gap-2 px-6 py-3.5 rounded font-black text-sm uppercase tracking-wider transition-all active:scale-95"
             :class="isActive ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-danger text-white hover:bg-red-700'"
           >
@@ -343,12 +270,6 @@ const renderCardPaymentBrick = async () => {
           <p class="text-lg font-black text-[#212121]">{{ currentPlan?.name }}</p>
           <p class="text-xs text-[#757575] mt-0.5">{{ formatCurrency(effectivePrice) }}/{{ formatFrequency(currentPlan?.frequency) }}</p>
 
-          <div v-if="scheduledPlan" class="mt-3 flex items-center gap-2 text-xs text-amber-600 font-bold">
-            <Clock :size="12" class="shrink-0" />
-            Em {{ formattedDueDate }}: muda para
-            <span class="font-black text-[#212121]">{{ scheduledPlan.name }}</span>
-            ({{ formatCurrency(scheduledPlan.price) }}/{{ formatFrequency(scheduledPlan.frequency) }})
-          </div>
         </div>
         <button
           @click="openPlanModal"
@@ -440,12 +361,9 @@ const renderCardPaymentBrick = async () => {
               </div>
             </div>
             <div class="p-6 pt-0 flex gap-3">
-              <button
-                @click="showCancelModal = false"
-                class="flex-1 py-3 rounded text-[#757575] font-bold hover:bg-gray-50 border border-[#E0E0E0] transition-colors"
-              >
+              <BaseButton variant="ghost" class="flex-1" @click="showCancelModal = false">
                 Manter Plano
-              </button>
+              </BaseButton>
               <button
                 @click="confirmCancel"
                 :disabled="isCancelling"
@@ -461,12 +379,12 @@ const renderCardPaymentBrick = async () => {
 
     <!-- Modal de pagamento (Teleport) -->
     <Teleport to="body">
-      <Transition name="fade" @after-enter="renderCardPaymentBrick">
+      <Transition name="fade" @after-enter="initCardForm">
         <div v-if="paymentModal" class="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4">
           <div class="bg-white border border-[#E0E0E0] w-full max-w-lg rounded shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="p-6 border-b border-[#E0E0E0] flex justify-between items-center">
               <h2 class="text-xl font-black text-[#212121]">
-                {{ isRestoring ? 'Mudar Cartão de Pagamento' : 'Confirmar Pagamento' }}
+                Mudar Cartão de Pagamento
               </h2>
               <button @click="closePaymentModal" class="p-2 text-[#757575] hover:text-[#212121] transition-colors">
                 <X :size="20" />
@@ -476,7 +394,63 @@ const renderCardPaymentBrick = async () => {
               <div v-if="serverError" class="bg-danger-light border border-danger text-danger p-3 rounded mb-4 text-sm font-medium">
                 {{ serverError }}
               </div>
-              <div id="cardPaymentBrick_container" style="min-height: 450px; width: 100%;"></div>
+
+              <div v-show="!isTokenizing">
+                <form id="mp-manager-card-form" class="space-y-4" @submit.prevent>
+                  <div>
+                    <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Número do cartão</label>
+                    <div id="mp-mgr-cardNumber" class="w-full border border-[#E0E0E0] rounded bg-white" style="height: 42px;"></div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Validade</label>
+                      <div id="mp-mgr-expirationDate" class="w-full border border-[#E0E0E0] rounded bg-white" style="height: 42px;"></div>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">CVV</label>
+                      <div id="mp-mgr-securityCode" class="w-full border border-[#E0E0E0] rounded bg-white" style="height: 42px;"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Nome no cartão</label>
+                    <input
+                      id="mp-mgr-cardholderName"
+                      type="text"
+                      placeholder="Como impresso no cartão"
+                      class="w-full border border-[#E0E0E0] rounded bg-white px-3 text-sm text-[#212121] placeholder-[#BDBDBD] focus:outline-none focus:border-primary transition-colors"
+                      style="height: 42px;"
+                    />
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Tipo de documento</label>
+                      <select
+                        id="mp-mgr-identificationType"
+                        class="w-full border border-[#E0E0E0] rounded bg-white px-3 text-sm text-[#212121] focus:outline-none focus:border-primary transition-colors"
+                        style="height: 42px;"
+                      ></select>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Número do documento</label>
+                      <input
+                        id="mp-mgr-identificationNumber"
+                        type="text"
+                        placeholder="000.000.000-00"
+                        class="w-full border border-[#E0E0E0] rounded bg-white px-3 text-sm text-[#212121] placeholder-[#BDBDBD] focus:outline-none focus:border-primary transition-colors"
+                        style="height: 42px;"
+                      />
+                    </div>
+                  </div>
+                  <BaseButton type="submit" variant="primary" class="w-full">
+                    Atualizar Cartão
+                  </BaseButton>
+                </form>
+              </div>
+
+              <div v-if="isTokenizing" class="py-12 flex flex-col items-center justify-center gap-4">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+                <p class="text-[#757575] font-medium text-sm">Processando...</p>
+              </div>
             </div>
           </div>
         </div>
@@ -538,25 +512,54 @@ const renderCardPaymentBrick = async () => {
               <div class="p-4 bg-amber-50 border border-amber-400/40 rounded flex items-start gap-3">
                 <Info :size="15" class="text-amber-500 shrink-0 mt-0.5" />
                 <p class="text-xs text-[#757575] leading-relaxed">
-                  A alteração de plano <strong class="text-[#212121]">só entrará em vigor na próxima renovação</strong>.
+                  A mudança é <strong class="text-[#212121]">imediata</strong>. O novo valor será cobrado na próxima renovação.
                 </p>
               </div>
             </div>
 
             <div class="p-8 pt-0 flex gap-3">
-              <button @click="isPlanModalOpen = false" class="flex-1 py-3 rounded text-[#757575] font-bold hover:bg-gray-50 transition-colors">
-                Cancelar
-              </button>
-              <button
-                @click="confirmPlanChange"
-                :disabled="isScheduling || !tempSelectedPlan || tempSelectedPlan?.id === scheduledPlan?.id"
-                class="flex-1 py-3 rounded font-black text-sm uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-2"
-                :class="(!isScheduling && tempSelectedPlan && tempSelectedPlan?.id !== scheduledPlan?.id)
-                  ? 'bg-primary text-white hover:bg-primary-dark'
-                  : 'bg-gray-200 text-[#757575] cursor-not-allowed'"
+              <BaseButton variant="ghost" class="flex-1" @click="isPlanModalOpen = false">Cancelar</BaseButton>
+              <BaseButton
+                variant="primary"
+                class="flex-1"
+                :disabled="!tempSelectedPlan || tempSelectedPlan?.id === sub?.plan?.id"
+                @click="requestPlanChange"
               >
-                {{ isScheduling ? 'Agendando...' : 'Confirmar' }}
+                Confirmar
+              </BaseButton>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Modal de confirmação de troca de plano (sobrepõe o de seleção) -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showConfirmPlanModal" class="fixed inset-0 bg-black/60 z-[300] flex items-center justify-center p-4">
+          <div class="bg-white border border-[#E0E0E0] w-full max-w-sm rounded shadow-2xl">
+            <div class="p-6 border-b border-[#E0E0E0] flex justify-between items-center">
+              <h2 class="text-lg font-black text-[#212121] flex items-center gap-2">
+                <ArrowLeftRight :size="18" class="text-accent" />
+                Confirmar Alteração de Plano
+              </h2>
+              <button @click="showConfirmPlanModal = false" class="p-2 text-[#757575] hover:text-[#212121] transition-colors">
+                <X :size="18" />
               </button>
+            </div>
+            <div class="p-6">
+              <p class="text-sm text-[#757575] leading-relaxed">
+                Tem certeza que deseja trocar para o plano
+                <span class="font-bold text-[#212121]">{{ tempSelectedPlan?.name }}</span>
+                por <span class="font-bold text-[#212121]">{{ formatCurrency(tempSelectedPlan?.price) }}/{{ formatFrequency(tempSelectedPlan?.frequency) }}</span>?
+                A mudança é imediata e o novo valor será cobrado na próxima renovação.
+              </p>
+            </div>
+            <div class="p-6 pt-0 flex gap-3">
+              <BaseButton variant="ghost" class="flex-1" @click="showConfirmPlanModal = false">Voltar</BaseButton>
+              <BaseButton variant="primary" class="flex-1" :isLoading="isChanging" @click="confirmPlanChange">
+                Confirmar Troca
+              </BaseButton>
             </div>
           </div>
         </div>

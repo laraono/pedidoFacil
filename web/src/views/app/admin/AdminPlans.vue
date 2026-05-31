@@ -1,29 +1,30 @@
-<script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
 import { useToast } from '@/composables/useToast';
+import { useAsyncAction } from '@/composables/useAsyncAction';
 import {
-  ArrowLeft, ShieldAlert, Plus, Pencil, Trash2, X,
-  CheckCircle2, Package, DollarSign, Zap
+  ShieldAlert, Plus, Pencil, Trash2, X,
+  CheckCircle2, Package, DollarSign
 } from 'lucide-vue-next';
-import { adminPlanApi } from '@/services/adminApi';
+import { adminPlanApi, type Plan, type PlanForm } from '@/services/adminApi';
 import { useUtils } from '@/composables/useUtils';
+import { applyPriceMask } from '@/composables/usePriceMask';
+import { PageHeader, StatusBadge, EmptyState, BaseButton, BaseInput, BaseTextArea } from '@/components/ui';
 
-const router = useRouter();
 const { showToast } = useToast();
 const { formatCurrency } = useUtils();
+const { loading: saving, run } = useAsyncAction();
 
-const plans = ref([]);
+const plans = ref<Plan[]>([]);
 const loading = ref(false);
 const loadError = ref(false);
-const saving = ref(false);
 const isModalOpen = ref(false);
 const isEditing = ref(false);
-const deleteTarget = ref(null);
+const deleteTarget = ref<Plan | null>(null);
 const confirmDelete = ref(false);
 
-const form = ref({ id: null, name: '', price: '', frequency: 'months', features: '' });
-const errors = ref({});
+const form = ref<PlanForm>({ id: null, name: '', price: '', frequency: 'mensal', features: '' });
+const errors = ref<Record<string, string>>({});
 
 async function load() {
   loading.value = true;
@@ -40,18 +41,29 @@ async function load() {
 onMounted(load);
 
 function openCreate() {
-  form.value = { id: null, name: '', price: '', frequency: 'months', features: '' };
+  form.value = { id: null, name: '', price: '', frequency: 'mensal', features: '' };
   errors.value = {};
   isEditing.value = false;
   isModalOpen.value = true;
 }
 
-function openEdit(plan) {
+const FREQ_NORMALIZE: Record<string, string> = {
+  months: 'mensal', month: 'mensal', monthly: 'mensal', '1': 'mensal',
+  annual: 'anual', yearly: 'anual', '12': 'anual',
+};
+
+function normalizeFrequency(f?: string): string {
+  if (!f) return 'mensal';
+  const lower = f.toLowerCase();
+  return FREQ_NORMALIZE[lower] ?? lower;
+}
+
+function openEdit(plan: Plan) {
   form.value = {
     id: plan.id,
     name: plan.name,
     price: String(plan.price).replace('.', ','),
-    frequency: plan.frequency || 'months',
+    frequency: normalizeFrequency(plan.frequency),
     features: plan.features || '',
   };
   errors.value = {};
@@ -59,8 +71,8 @@ function openEdit(plan) {
   isModalOpen.value = true;
 }
 
-function validate() {
-  const e = {};
+function validate(): boolean {
+  const e: Record<string, string> = {};
   if (!form.value.name.trim()) e.name = 'Nome é obrigatório.';
   const price = parseFloat(String(form.value.price).replace(',', '.'));
   if (!form.value.price || isNaN(price) || price <= 0) e.price = 'Valor inválido.';
@@ -70,17 +82,16 @@ function validate() {
 
 async function save() {
   if (!validate()) return;
-  saving.value = true;
   const payload = {
     name: form.value.name.trim(),
     price: parseFloat(String(form.value.price).replace(',', '.')),
     frequency: form.value.frequency,
     billingDay: 1,
-    features: form.value.features.trim() || undefined,
+    features: form.value.features.split('\n').map(f => f.trim()).filter(Boolean).join('\n') || undefined,
   };
-  try {
+  await run(async () => {
     if (isEditing.value) {
-      await adminPlanApi.update(form.value.id, payload);
+      await adminPlanApi.update(form.value.id!, payload);
       showToast('Plano atualizado!', 'success');
     } else {
       await adminPlanApi.create(payload);
@@ -88,59 +99,50 @@ async function save() {
     }
     isModalOpen.value = false;
     await load();
-  } catch (e) {
-    showToast(e?.message || 'Erro ao salvar plano.', 'error');
-  } finally {
-    saving.value = false;
-  }
+  }, 'Erro ao salvar plano.');
 }
 
-function askDelete(plan) {
+function askDelete(plan: Plan) {
   deleteTarget.value = plan;
   confirmDelete.value = true;
 }
 
-async function doDelete() {
-  if (!deleteTarget.value) return;
-  try {
-    await adminPlanApi.delete(deleteTarget.value.id);
-    showToast(`Plano "${deleteTarget.value.name}" removido.`, 'success');
-    await load();
-  } catch (e) {
-    showToast('Erro ao remover plano.', 'error');
-  } finally {
-    confirmDelete.value = false;
-    deleteTarget.value = null;
-  }
+function onPriceInput(e: Event) {
+  const target = e.target as HTMLInputElement;
+  const v = applyPriceMask(target.value);
+  target.value = v;
+  form.value.price = v;
+  delete errors.value.price;
 }
 
-const freqLabel = (f) => f === 'anual' ? 'Anual' : 'Mensal';
-const freqColor = (f) => f === 'anual'
-  ? 'text-purple-400 bg-purple-500/10 border-purple-500/20'
-  : 'text-blue-400 bg-blue-500/10 border-blue-500/20';
+async function doDelete() {
+  if (!deleteTarget.value) return;
+  const target = deleteTarget.value;
+  await run(async () => {
+    await adminPlanApi.delete(target.id);
+    showToast(`Plano "${target.name}" removido.`, 'success');
+    await load();
+  }, 'Erro ao remover plano.');
+  confirmDelete.value = false;
+  deleteTarget.value = null;
+}
 </script>
 
 <template>
   <main class="max-w-4xl mx-auto py-12 px-6 font-inter">
-    <header class="flex items-center justify-between gap-4 mb-10">
-      <div class="flex items-center gap-4">
-        <button @click="router.push('/app/admin/subscriptions')" class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] transition-colors">
-          <ArrowLeft :size="20" />
-        </button>
-        <div>
-          <div class="flex items-center gap-2 mb-1">
-            <ShieldAlert :size="16" class="text-accent" />
-            <span class="text-xs font-black text-accent uppercase tracking-widest">Painel Admin</span>
-          </div>
-          <h1 class="text-3xl font-black text-[#212121]">Planos</h1>
-          <p class="text-[#757575] text-sm">CRUD de planos — máximo de 2 planos ativos</p>
-        </div>
-      </div>
-      <button @click="openCreate"
-        class="flex items-center gap-2 px-5 py-3 bg-primary text-white font-black rounded hover:bg-primary-dark transition-all text-sm disabled:opacity-40 disabled:cursor-not-allowed">
-        <Plus :size="16" /> Novo Plano
-      </button>
-    </header>
+    <PageHeader
+      title="Planos"
+      subtitle="CRUD de planos — máximo de 2 planos ativos"
+      back-to="/app/admin/subscriptions"
+      :category-icon="ShieldAlert"
+      category-label="Painel Admin"
+    >
+      <template #actions>
+        <BaseButton variant="primary" :icon="Plus" @click="openCreate">
+          Novo Plano
+        </BaseButton>
+      </template>
+    </PageHeader>
 
     <div v-if="loading" class="py-20 text-center text-[#757575]">Carregando...</div>
 
@@ -148,9 +150,7 @@ const freqColor = (f) => f === 'anual'
       <ShieldAlert :size="40" class="mx-auto mb-4 text-red-400 opacity-60" />
       <p class="text-[#757575] font-bold mb-1">Erro ao carregar planos</p>
       <p class="text-[#757575] text-sm mb-4">Verifique sua conexão e tente novamente.</p>
-      <button @click="load" class="px-5 py-2.5 bg-gray-100 border border-[#E0E0E0] text-[#212121] font-black rounded text-sm hover:bg-gray-200 transition-all">
-        Tentar Novamente
-      </button>
+      <BaseButton variant="secondary" @click="load">Tentar Novamente</BaseButton>
     </div>
 
     <div v-else-if="plans.length" class="grid sm:grid-cols-2 gap-6">
@@ -163,9 +163,7 @@ const freqColor = (f) => f === 'anual'
             </div>
             <div>
               <h2 class="text-lg font-black text-[#212121]">{{ plan.name }}</h2>
-              <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border" :class="freqColor(plan.frequency)">
-                {{ freqLabel(plan.frequency) }}
-              </span>
+              <StatusBadge :status="plan.frequency ?? 'mensal'" type="frequency" />
             </div>
           </div>
           <div class="flex gap-1">
@@ -179,22 +177,28 @@ const freqColor = (f) => f === 'anual'
         </div>
         <div class="flex items-end gap-1">
           <span class="text-3xl font-black text-[#212121]">{{ formatCurrency(plan.price) }}</span>
-          <span class="text-[#757575] text-sm mb-1">/mês</span>
+          <span class="text-[#757575] text-sm mb-1">{{ plan.frequency === 'anual' ? '/ano' : '/mês' }}</span>
         </div>
         <div v-if="plan.features" class="border-t border-[#E0E0E0] pt-4">
           <p class="text-xs font-black text-[#757575] uppercase tracking-widest mb-2">Funcionalidades</p>
-          <p class="text-sm text-[#757575]">{{ plan.features }}</p>
+          <ul class="space-y-1.5">
+            <li v-for="(feature, i) in plan.features.split('\n').filter(Boolean)" :key="i"
+              class="flex items-start gap-2 text-sm text-[#757575]">
+              <CheckCircle2 :size="14" class="text-primary mt-0.5 shrink-0" />
+              <span>{{ feature }}</span>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
 
-    <div v-else class="py-20 text-center">
-      <Package :size="40" class="mx-auto mb-4 text-[#757575] opacity-30" />
-      <p class="text-[#757575] font-bold">Nenhum plano cadastrado</p>
-      <button @click="openCreate" class="mt-4 px-5 py-2.5 bg-primary text-white font-black rounded text-sm hover:bg-primary-dark transition-all">
-        Criar Primeiro Plano
-      </button>
-    </div>
+    <EmptyState
+      v-else
+      :icon="Package"
+      message="Nenhum plano cadastrado"
+      action-label="Criar Primeiro Plano"
+      @action="openCreate"
+    />
   </main>
 
   <Teleport to="body">
@@ -209,47 +213,42 @@ const freqColor = (f) => f === 'anual'
             <button @click="isModalOpen = false" class="p-2 text-[#757575] hover:text-[#212121]"><X :size="20" /></button>
           </div>
           <div class="p-6 space-y-5">
-            <div>
-              <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1 mb-2 block">Nome do Plano</label>
-              <input v-model="form.name" type="text" placeholder="Ex: Plano Profissional"
-                class="w-full bg-gray-50 border rounded-lg px-4 py-3 text-sm text-[#212121] outline-none placeholder:text-[#757575] transition-colors"
-                :class="errors.name ? 'border-red-400' : 'border-[#E0E0E0] focus:border-primary/40'"
-                @input="delete errors.name" />
-              <p v-if="errors.name" class="text-red-500 text-xs font-bold mt-1 ml-1">{{ errors.name }}</p>
-            </div>
-            <div>
-              <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1 mb-2 block">Valor (R$)</label>
-              <div class="relative">
-                <DollarSign :size="15" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#757575]" />
-                <input v-model="form.price" type="text" inputmode="decimal" placeholder="79,90"
-                  class="w-full bg-gray-50 border rounded-lg pl-9 pr-4 py-3 text-sm text-[#212121] outline-none placeholder:text-[#757575] transition-colors"
-                  :class="errors.price ? 'border-red-400' : 'border-[#E0E0E0] focus:border-primary/40'"
-                  @input="delete errors.price" />
-              </div>
-              <p v-if="errors.price" class="text-red-500 text-xs font-bold mt-1 ml-1">{{ errors.price }}</p>
-            </div>
+            <BaseInput
+              v-model="form.name"
+              label="Nome do Plano"
+              placeholder="Ex: Plano Profissional"
+              :error="errors.name"
+              @input="delete errors.name"
+            />
+            <BaseInput
+              :modelValue="form.price"
+              label="Valor (R$)"
+              placeholder="79,90"
+              :icon="DollarSign"
+              :error="errors.price"
+              @input="onPriceInput"
+            />
             <div>
               <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1 mb-2 block">Frequência</label>
               <div class="flex gap-3">
-                <button v-for="opt in [{ v: 'months', l: 'Mensal' }, { v: 'anual', l: 'Anual' }]" :key="opt.v"
+                <button v-for="opt in [{ v: 'mensal', l: 'Mensal' }, { v: 'anual', l: 'Anual' }, { v: 'diario', l: 'Diário (teste)' }]" :key="opt.v"
                   @click="form.frequency = opt.v"
                   :class="form.frequency === opt.v ? 'border-primary bg-primary/10 text-primary font-black' : 'border-[#E0E0E0] bg-gray-50 text-[#757575]'"
                   class="flex-1 py-2.5 rounded-lg border text-sm font-bold transition-all">{{ opt.l }}</button>
               </div>
             </div>
-            <div>
-              <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1 mb-2 block">Funcionalidades (opcional)</label>
-              <textarea v-model="form.features" rows="3" placeholder="Liste as funcionalidades incluídas..."
-                class="w-full bg-gray-50 border border-[#E0E0E0] rounded-lg px-4 py-3 text-sm text-[#212121] outline-none placeholder:text-[#757575] focus:border-primary/40 transition-colors resize-none" />
-            </div>
+            <BaseTextArea
+              v-model="form.features"
+              label="Funcionalidades (opcional) — uma por linha"
+              :rows="5"
+              placeholder="Ex: Até 3 usuários&#10;Relatórios mensais&#10;Suporte prioritário"
+            />
           </div>
           <div class="p-6 pt-0 flex gap-3">
-            <button @click="isModalOpen = false" class="flex-1 py-3 rounded-lg text-[#757575] font-bold hover:bg-gray-50 transition-colors">Cancelar</button>
-            <button @click="save" :disabled="saving"
-              class="flex-1 py-3 rounded-lg bg-primary text-white font-black hover:bg-primary-dark transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-              <CheckCircle2 v-if="!saving" :size="16" />
-              {{ saving ? 'Salvando...' : (isEditing ? 'Salvar' : 'Criar Plano') }}
-            </button>
+            <BaseButton variant="ghost" class="flex-1" @click="isModalOpen = false">Cancelar</BaseButton>
+            <BaseButton variant="primary" class="flex-1" :isLoading="saving" @click="save">
+              {{ isEditing ? 'Salvar' : 'Criar Plano' }}
+            </BaseButton>
           </div>
         </div>
       </div>
@@ -268,7 +267,7 @@ const freqColor = (f) => f === 'anual'
             O plano <strong>"{{ deleteTarget?.name }}"</strong> e todas as assinaturas vinculadas serão removidos permanentemente.
           </p>
           <div class="flex gap-3">
-            <button @click="confirmDelete = false; deleteTarget = null" class="flex-1 py-3 rounded-lg font-bold text-[#757575] border border-[#E0E0E0] hover:bg-gray-50 transition-colors">Cancelar</button>
+            <BaseButton variant="ghost" class="flex-1" @click="confirmDelete = false; deleteTarget = null">Cancelar</BaseButton>
             <button @click="doDelete" class="flex-1 py-3 rounded-lg bg-red-500 text-white font-black hover:bg-red-600 transition-all">Deletar</button>
           </div>
         </div>

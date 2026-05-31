@@ -2,35 +2,30 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from '@/composables/useToast';
+import { useAsyncAction } from '@/composables/useAsyncAction';
 import {
-  ArrowLeft, ShieldAlert, Users, CheckCircle2, AlertTriangle,
-  XCircle, Search, Calendar, CreditCard, UserCircle, X,
+  ShieldAlert, Search, Calendar, CreditCard, UserCircle, X,
   Mail, DollarSign, Package, BarChart3, ClipboardList, Settings
 } from 'lucide-vue-next';
 import { adminSubscriptionApi } from '@/services/adminApi';
 import { useUtils } from '@/composables/useUtils';
+import { applyPriceMask } from '@/composables/usePriceMask';
+import { PageHeader, StatusBadge, MetricCard } from '@/components/ui';
 
 const router = useRouter();
 const { showToast } = useToast();
+const { loading, run: runLoad } = useAsyncAction();
+const { loading: savingPrice, run } = useAsyncAction();
 
 const subscriptions = ref([]);
-const loading = ref(true);
 const search = ref('');
 const filterStatus = ref('todos');
 const selectedSub = ref(null);
 const editingPrice = ref(false);
 const newPrice = ref('');
-const savingPrice = ref(false);
 
 async function load() {
-  loading.value = true;
-  try {
-    subscriptions.value = await adminSubscriptionApi.list();
-  } catch (e) {
-    showToast('Erro ao carregar assinaturas.', 'error');
-  } finally {
-    loading.value = false;
-  }
+  subscriptions.value = await runLoad(() => adminSubscriptionApi.list(), 'Erro ao carregar assinaturas.') ?? subscriptions.value;
 }
 
 onMounted(load);
@@ -58,14 +53,6 @@ const getManager = (sub) => {
   return users.find(u => u.role?.name?.toLowerCase().includes('gerente')) || users[0] || null;
 };
 
-function statusConfig(status) {
-  const s = (status || '').toLowerCase();
-  if (s === 'paga') return { label: 'Paga', icon: CheckCircle2, color: 'text-accent', bg: 'bg-accent-light border-accent/25' };
-  if (s === 'pendente') return { label: 'Pendente', icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/25' };
-  if (s === 'cancelada') return { label: 'Cancelada', icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' };
-  return { label: 'Expirada', icon: AlertTriangle, color: 'text-[#757575]', bg: 'bg-gray-200/20 border-[#E0E0E0]' };
-}
-
 const { formatCurrency } = useUtils();
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
@@ -77,64 +64,57 @@ function openDetail(sub) {
 
 async function cancelSub(sub) {
   if (!confirm(`Cancelar assinatura do estabelecimento "${sub.establishment?.name}"?`)) return;
-  try {
+  await run(async () => {
     await adminSubscriptionApi.cancel(sub.id);
     showToast('Assinatura cancelada.', 'success');
     await load();
     if (selectedSub.value?.id === sub.id) selectedSub.value = null;
-  } catch {
-    showToast('Erro ao cancelar assinatura.', 'error');
-  }
+  }, 'Erro ao cancelar assinatura.');
 }
 
 async function deleteSub(sub) {
   if (!confirm(`Deletar assinatura? Esta ação é irreversível.`)) return;
-  try {
+  await run(async () => {
     await adminSubscriptionApi.delete(sub.id);
     showToast('Assinatura removida.', 'success');
     await load();
     if (selectedSub.value?.id === sub.id) selectedSub.value = null;
-  } catch {
-    showToast('Erro ao remover assinatura.', 'error');
-  }
+  }, 'Erro ao remover assinatura.');
+}
+
+function onNewPriceInput(e) {
+  const v = applyPriceMask(e.target.value);
+  e.target.value = v;
+  newPrice.value = v;
 }
 
 async function savePrice() {
   const amount = parseFloat(String(newPrice.value).replace(',', '.'));
   if (!amount || amount <= 0) { showToast('Valor inválido.', 'error'); return; }
-  savingPrice.value = true;
-  try {
+  await run(async () => {
     await adminSubscriptionApi.updatePrice(selectedSub.value.id, amount);
     showToast('Valor atualizado!', 'success');
     editingPrice.value = false;
     await load();
     selectedSub.value = subscriptions.value.find(s => s.id === selectedSub.value.id) || null;
-  } catch {
-    showToast('Erro ao atualizar valor.', 'error');
-  } finally {
-    savingPrice.value = false;
-  }
+  }, 'Erro ao atualizar valor.');
 }
 </script>
 
 <template>
   <main class="max-w-7xl mx-auto py-12 px-6 font-inter">
 
-    <header class="flex items-center justify-between gap-4 mb-10 flex-wrap">
-      <div class="flex items-center gap-4">
-        <button @click="router.push('/app/dashboard')" class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] transition-colors">
-          <ArrowLeft :size="20" />
+    <PageHeader
+      title="Assinaturas"
+      subtitle="Controle de todos os gerentes e seus planos"
+      back-to="/app/dashboard"
+      :category-icon="ShieldAlert"
+      category-label="Painel Admin"
+    >
+      <template #actions>
+        <button @click="router.push('/app/admin/establishments')" class="flex items-center gap-2 px-4 py-2.5 border border-[#E0E0E0] bg-white text-[#757575] font-black rounded text-sm hover:text-[#212121] hover:border-primary/30 transition-all">
+          <ClipboardList :size="15" /> Estabelecimentos
         </button>
-        <div>
-          <div class="flex items-center gap-2 mb-1">
-            <ShieldAlert :size="16" class="text-accent" />
-            <span class="text-xs font-black text-accent uppercase tracking-widest">Painel Admin</span>
-          </div>
-          <h1 class="text-3xl font-black text-[#212121]">Assinaturas</h1>
-          <p class="text-[#757575] text-sm">Controle de todos os gerentes e seus planos</p>
-        </div>
-      </div>
-      <div class="flex gap-3 flex-wrap">
         <button @click="router.push('/app/admin/plans')" class="flex items-center gap-2 px-4 py-2.5 border border-[#E0E0E0] bg-white text-[#757575] font-black rounded text-sm hover:text-[#212121] hover:border-primary/30 transition-all">
           <Package :size="15" /> Planos
         </button>
@@ -144,30 +124,15 @@ async function savePrice() {
         <button @click="router.push('/app/admin/reports')" class="flex items-center gap-2 px-4 py-2.5 bg-primary text-white font-black rounded text-sm hover:bg-primary-dark transition-all">
           <BarChart3 :size="15" /> Métricas
         </button>
-      </div>
-    </header>
+      </template>
+    </PageHeader>
 
     <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
-      <div class="bg-white border border-[#E0E0E0] rounded-xl p-4 text-center cursor-pointer" @click="filterStatus = 'todos'">
-        <p class="text-3xl font-black text-[#212121]">{{ counts.total }}</p>
-        <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mt-1">Total</p>
-      </div>
-      <div class="bg-accent-light border border-accent/30 rounded-xl p-4 text-center cursor-pointer hover:bg-primary-dark/10 transition-colors" @click="filterStatus = 'paga'">
-        <p class="text-3xl font-black text-accent">{{ counts.paga }}</p>
-        <p class="text-[10px] font-black text-accent/60 uppercase tracking-widest mt-1">Pagas</p>
-      </div>
-      <div class="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 text-center cursor-pointer hover:bg-amber-500/10 transition-colors" @click="filterStatus = 'pendente'">
-        <p class="text-3xl font-black text-amber-400">{{ counts.pendente }}</p>
-        <p class="text-[10px] font-black text-amber-400/60 uppercase tracking-widest mt-1">Pendentes</p>
-      </div>
-      <div class="bg-red-500/5 border border-red-500/20 rounded-xl p-4 text-center cursor-pointer hover:bg-red-500/10 transition-colors" @click="filterStatus = 'cancelada'">
-        <p class="text-3xl font-black text-red-400">{{ counts.cancelada }}</p>
-        <p class="text-[10px] font-black text-red-400/60 uppercase tracking-widest mt-1">Canceladas</p>
-      </div>
-      <div class="bg-gray-50 border border-[#E0E0E0] rounded-xl p-4 text-center cursor-pointer hover:bg-gray-100 transition-colors" @click="filterStatus = 'expirada'">
-        <p class="text-3xl font-black text-[#757575]">{{ counts.expirada }}</p>
-        <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mt-1">Expiradas</p>
-      </div>
+      <MetricCard label="Total" :value="counts.total" variant="default" class="cursor-pointer" @click="filterStatus = 'todos'" />
+      <MetricCard label="Pagas" :value="counts.paga" variant="accent" class="cursor-pointer" @click="filterStatus = 'paga'" />
+      <MetricCard label="Pendentes" :value="counts.pendente" variant="amber" class="cursor-pointer" @click="filterStatus = 'pendente'" />
+      <MetricCard label="Canceladas" :value="counts.cancelada" variant="red" class="cursor-pointer" @click="filterStatus = 'cancelada'" />
+      <MetricCard label="Expiradas" :value="counts.expirada" variant="default" class="cursor-pointer" @click="filterStatus = 'expirada'" />
     </div>
 
     <div class="flex flex-col sm:flex-row gap-3 mb-6">
@@ -215,11 +180,7 @@ async function savePrice() {
               </span>
             </td>
             <td class="px-4 py-4">
-              <div class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border"
-                :class="statusConfig(sub.status).bg + ' ' + statusConfig(sub.status).color">
-                <component :is="statusConfig(sub.status).icon" :size="10" />
-                {{ statusConfig(sub.status).label }}
-              </div>
+              <StatusBadge :status="sub.status" type="subscription" />
             </td>
             <td class="px-4 py-4 hidden lg:table-cell">
               <div class="flex items-center gap-1.5 text-sm text-[#757575]">
@@ -281,10 +242,7 @@ async function savePrice() {
             <div class="grid grid-cols-2 gap-3">
               <div class="p-4 bg-gray-50 rounded-lg border border-[#E0E0E0]">
                 <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mb-2">Status</p>
-                <div class="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider px-2.5 py-1 rounded border"
-                  :class="statusConfig(selectedSub.status).bg + ' ' + statusConfig(selectedSub.status).color">
-                  {{ statusConfig(selectedSub.status).label }}
-                </div>
+                <StatusBadge :status="selectedSub.status" type="subscription" />
               </div>
               <div class="p-4 bg-gray-50 rounded-lg border border-[#E0E0E0]">
                 <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mb-2">Plano</p>
@@ -305,8 +263,9 @@ async function savePrice() {
               <div v-else class="flex gap-2">
                 <div class="relative flex-1">
                   <DollarSign :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-[#757575]" />
-                  <input v-model="newPrice" type="text" inputmode="decimal" placeholder="79,90"
-                    class="w-full bg-white border border-[#E0E0E0] rounded pl-8 pr-3 py-2 text-sm text-[#212121] outline-none focus:border-primary/40" />
+                  <input :value="newPrice" type="text" inputmode="numeric" placeholder="79,90"
+                    class="w-full bg-white border border-[#E0E0E0] rounded pl-8 pr-3 py-2 text-sm text-[#212121] outline-none focus:border-primary/40"
+                    @input="onNewPriceInput" />
                 </div>
                 <button @click="savePrice" :disabled="savingPrice" class="px-4 py-2 bg-primary text-white font-black rounded text-sm hover:bg-primary-dark disabled:opacity-50">
                   {{ savingPrice ? '...' : 'Salvar' }}
