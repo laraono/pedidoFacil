@@ -11,6 +11,8 @@ import { validateUpload } from '../middleware/validateUpload';
 const establishmentRouter = Router();
 const establishmentController = new EstablishmentController(establishmentService);
 
+establishmentRouter.post('/check-cnpj', establishmentController.checkCnpj);
+
 establishmentRouter.get(
   '/code/:code',
   establishmentController.getByCode

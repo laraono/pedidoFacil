@@ -2,6 +2,7 @@ import { Between, DataSource, IsNull, Not } from 'typeorm';
 import { ReceiptRepository } from '../repository/ReceiptRepository';
 import { ReceiptStatus } from '../database/entity/Receipt';
 import { AppError } from '../middleware/error/AppError';
+import { auditLog } from '../utils/logger';
 
 export class MetricsService {
     constructor(
@@ -154,7 +155,7 @@ export class MetricsService {
                 nome: p.nome, categoria: p.categoria || 'Geral', qtd: Number(p.qtd),
                 receita: `R$ ${Number(p.receita).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, margem: '65%' 
             }));
-        } catch (e: any) { console.log("Aba Produtos: Verifique as tabelas de Itens/Categoria.", e.message); }
+        } catch (e: any) { auditLog('metrics.query_error', { aba: 'produtos', error: e.message }); }
         
         let couponUsage = [];
         try {
@@ -168,7 +169,7 @@ export class MetricsService {
             `, [establishmentId, start, end]);
 
             couponUsage = coupQuery.map((c: any) => ({ code: c.code, type: c.type, discount: Number(c.discount), uses: Number(c.uses) }));
-        } catch (e: any) { console.log("Aba Cupons: Verifique o nome da tabela no SQL.", e.message); }
+        } catch (e: any) { auditLog('metrics.query_error', { aba: 'cupons', error: e.message }); }
 
         let topWaiters = [];
         try {
@@ -185,7 +186,7 @@ export class MetricsService {
                 id: idx + 1, name: w.name, orders: Number(w.orders),
                 revenue: `R$ ${Number(w.revenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
             }));
-        } catch (e: any) { console.log("Aba Operacional: Verifique o nome da tabela no SQL.", e.message); }
+        } catch (e: any) { auditLog('metrics.query_error', { aba: 'operacional', error: e.message }); }
 
         let paymentMethods = [];
         try {
@@ -220,7 +221,7 @@ export class MetricsService {
                 };
             });
         } catch (e: any) { 
-            console.log("Aba Financeira: Erro ao buscar métodos de pagamento.", e.message); 
+            auditLog('metrics.query_error', { aba: 'financeira', error: e.message });
         }
 
         return {

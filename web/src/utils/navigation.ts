@@ -31,6 +31,14 @@ export interface AdminMenuItem {
   adminOnly: true;
 }
 
+export const SUBSCRIPTION_GUARDED_ROUTES = [
+  '/app/menu',
+  '/app/cashier',
+  '/app/kitchen',
+  '/app/closed',
+  '/app/reports',
+];
+
 export const allMenuItems: MenuItem[] = [
   {
     label: 'Estabelecimento',

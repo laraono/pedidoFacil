@@ -23,12 +23,12 @@ const metrics = computed(() => subscriptionStore.adminMetrics);
 const isLoading = computed(() => subscriptionStore.adminDataLoading);
 
 const totalActive = computed(() =>
-  metrics.value ? metrics.value.totalAtivas : allSubs.value.filter(s => s.status === 'ativo').length
+  metrics.value ? metrics.value.totalAtivas : allSubs.value.filter(s => s.status === 'Paga').length
 );
 
 const totalMRR = computed(() =>
   metrics.value ? metrics.value.receitaMensal : allSubs.value
-    .filter(s => s.status === 'ativo')
+    .filter(s => s.status === 'Paga')
     .reduce((acc, s) => acc + s.amount, 0)
 );
 
@@ -55,7 +55,7 @@ const totalMonthly = computed(() => {
 });
 
 const avgUsers = computed(() => {
-  const active = allSubs.value.filter(s => s.status === 'ativo');
+  const active = allSubs.value.filter(s => s.status === 'Paga');
   if (!active.length) return 0;
   return Math.round(active.reduce((a, s) => a + s.users, 0) / active.length);
 });
@@ -92,7 +92,7 @@ const ticketAnual = computed(() => {
 
 const establishmentData = computed(() =>
   [...allSubs.value]
-    .filter(s => s.status === 'ativo')
+    .filter(s => s.status === 'Paga')
     .sort((a, b) => b.users - a.users)
 );
 

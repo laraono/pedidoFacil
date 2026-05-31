@@ -22,6 +22,7 @@ export class SubscriptionService {
             throw new AppError('Assinatura não encontrada', 404)
         }
 
+        await this.mercadoPagoService.cancelSubscription(subscription.mercadoPagoId)
         await this.subscriptionRepository.updateSubscriptionStatus(subscriptionId, SubscriptionStatus.CANCELADA)
     }
 
@@ -85,8 +86,8 @@ export class SubscriptionService {
                 await transactionManager.update(Subscription, {id: existingSubscription.id}, {status: SubscriptionStatus.CANCELADA})
             }
 
-            mercadoPagoParams.total_amount = mercadoPagoParams.total_amount.toString()
-            mercadoPagoParams.transactions.payments[0].amount = mercadoPagoParams.transactions.payments[0].amount.toString()
+            mercadoPagoParams.total_amount = plan.price.toString()
+            mercadoPagoParams.transactions.payments[0].amount = plan.price.toString()
 
             const createdSubscription = await this.mercadoPagoService.createSubscriptionOrder(mercadoPagoParams)
 
@@ -214,7 +215,7 @@ export class SubscriptionService {
                 const payment = order.transactions.payments[0]
                 const statusKey = payment.status_detail?.toLowerCase() ?? ''
                 const data = {
-                    amount: payment.paid_amount,
+                    amount: payment.amount,
                     status: statusLabels[statusKey] ?? payment.status_detail,
                     type: payment.payment_method?.type === 'credit_card' ? 'Cartão de Crédito'
                         : payment.payment_method?.type === 'debit_card' ? 'Cartão de Débito'
@@ -239,16 +240,5 @@ export class SubscriptionService {
         return subscription
     }
 
-    async deleteSubscription(subscriptionId: number) {
-        const subscription = await this.subscriptionRepository.getSubscription(subscriptionId)
-
-        if(!subscription) {
-            throw new AppError('Assinatura não encontrada', 404)
-        }
-
-        await this.mercadoPagoService.cancelSubscription(subscription.mercadoPagoId)
-        await this.subscriptionRepository.deleteSubscription(subscriptionId)
-
-    }
 
 }

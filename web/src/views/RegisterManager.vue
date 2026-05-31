@@ -111,6 +111,7 @@ async function handleSubmit() {
 
     localStorage.setItem('accessToken', response.accessToken);
     localStorage.setItem('user', JSON.stringify(response.usuario));
+    localStorage.removeItem('onboarding_personal');
     authStore.user = response.usuario;
 
     router.push('/onboarding/name');

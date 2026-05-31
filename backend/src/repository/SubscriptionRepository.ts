@@ -93,9 +93,16 @@ export class SubscriptionRepository extends Repository<Subscription>{
 
     async updateSubscriptionStatus(subscriptionId: number, status: SubscriptionStatus) {
         if (status === SubscriptionStatus.PAGA) {
-            await this.update(subscriptionId, {status, lastPayment: new Date(), expirationDate: new Date(new Date().getTime() + (1000 * 60 * 60 * 24 * 30))})
+            const subscription = await this.findOne({ where: { id: subscriptionId }, relations: { plan: true } });
+            const expirationDate = new Date();
+            if (subscription?.plan?.frequency === 'anual') {
+                expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+            } else {
+                expirationDate.setMonth(expirationDate.getMonth() + 1);
+            }
+            await this.update(subscriptionId, { status, lastPayment: new Date(), expirationDate });
         } else {
-            await this.update(subscriptionId, {status})
+            await this.update(subscriptionId, { status });
         }
     }
 

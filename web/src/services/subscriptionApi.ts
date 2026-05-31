@@ -17,9 +17,6 @@ export const subscriptionApi = {
 
   getSubscriptionHistory: () => request('/subscriptions/history', { method: 'GET' }),
 
-  deleteSubscription: (subscriptionId: number) =>
-    request(`/subscriptions/${subscriptionId}`, { method: 'DELETE' }),
-
   updateSubscription: (subscriptionId: number, amount: number) =>
     request(`/subscriptions/${subscriptionId}`, {
       method: 'PUT',

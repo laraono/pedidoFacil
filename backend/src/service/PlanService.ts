@@ -45,7 +45,7 @@ export class PlanService {
         const subscriptions = await this.subscriptionService.listSubscriptionsByPlan(planId)
 
         for(const subscription of subscriptions) {
-            await this.subscriptionService.deleteSubscription(subscription.id)
+            await this.subscriptionService.cancelSubscription(subscription.id)
         }
 
         await this.planRepository.deletePlan(planId)
@@ -73,11 +73,6 @@ export class PlanService {
             }
 
             await transactionalEntityManager.update(Plan, planId, localRepositoryParams)
-
-            if(params.frequency === 'anual') {
-                params.frequency = 'months'
-                params.repetitions = 12
-            }
 
             return plan
         })

@@ -1,13 +1,11 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { useSubscriptionStore } from '@/stores/subscriptions';
 import { PERMISSIONS } from '@/utils/permissions';
 
 import LandingPage from "@/views/LandingPage.vue";
 import Login from "@/views/Login.vue";
-import RegisterManager from "@/views/RegisterManager.vue";
-import EstablishmentName from "@/views/onboarding/EstablishmentName.vue";
-import ServiceType from "@/views/onboarding/ServiceType.vue";
-import SubscriptionPage from "@/views/onboarding/SubscriptionPage.vue";
+import Register from "@/views/Register.vue";
 
 import Header from "@/views/app/Header.vue";
 import Dashboard from '@/views/app/Dashboard.vue';
@@ -25,20 +23,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/login', name: 'login', component: Login },
   { path: '/forgot-password', name: 'forgot-password', component: () => import('@/views/ForgotPassword.vue') },
   { path: '/reset-password', name: 'reset-password', component: () => import('@/views/ResetPassword.vue') },
-  { path: '/register', name: 'register', component: RegisterManager },
-  {
-    path: '/onboarding/name',
-    name: 'OnboardingName',
-    component: EstablishmentName,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/onboarding/type',
-    name: 'OnboardingType',
-    component: ServiceType,
-    meta: { requiresAuth: true }
-  },
-  { path: '/onboarding/subscription', name: 'OnboardingSubscription', component: SubscriptionPage },
+  { path: '/register', name: 'register', component: Register },
   { path: '/totem/:code', name: 'totem', component: () => import('@/views/Totem.vue') },
   {
     path: "/app",
@@ -196,18 +181,14 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresAuth) {
     const valid = await auth.validateSession();
     if (!valid) return { path: '/login' };
+
+    if (!auth.isAdmin && auth.user?.estabelecimentoId) {
+      await useSubscriptionStore().fetchSubscriptionStatus();
+    }
   }
 
-  if (auth.isAuthenticated) {
-    const hasEstablishment = auth.user?.estabelecimentoId != null;
-
-    if (!auth.isAdmin && !hasEstablishment && to.path.startsWith('/app')) {
-      return { path: "/onboarding/name" };
-    }
-
-    if ((hasEstablishment || auth.isAdmin) && to.path.startsWith('/onboarding') && to.path !== '/onboarding/subscription') {
-      return { name: "dashboard" };
-    }
+  if (auth.isAuthenticated && to.path === '/register') {
+    return { name: 'dashboard' };
   }
 
   if (auth.isAdmin && ESTABLISHMENT_PREFIXES.some(p => to.path.startsWith(p))) {

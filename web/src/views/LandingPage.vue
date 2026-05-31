@@ -5,6 +5,7 @@
   import { request } from "@/services/api.js";
   import { planApi } from "@/services/planApi";
   import { User, Menu, X, Check } from "lucide-vue-next";
+  import { formatFrequency } from "@/utils/frequency";
 
   import imgLogo from "@/assets/light-logo.png";
   import imgOndas from "@/assets/ondas.png";
@@ -17,16 +18,6 @@
   const planPrices = computed(() => subscriptionStore.planPrices);
 
   const plans = ref([]);
-
-  function normalizeFrequency(frequency) {
-    const f = String(frequency ?? "")
-      .trim()
-      .toLowerCase();
-    if (["anual", "12", "annual", "yearly"].includes(f)) return "anual";
-    if (["months", "1", "mensal", "monthly", "month"].includes(f))
-      return "mensal";
-    return f;
-  }
 
   function parsedFeatures(features) {
     if (!features) return [];
@@ -42,12 +33,12 @@
 
   const annualPlan = computed(
     () =>
-      plans.value.find((p) => normalizeFrequency(p.frequency) === "anual") ??
+      plans.value.find((p) => p.frequency === "anual") ??
       null,
   );
   const monthlyPlan = computed(
     () =>
-      plans.value.find((p) => normalizeFrequency(p.frequency) === "mensal") ??
+      plans.value.find((p) => p.frequency === "mensal") ??
       null,
   );
 
@@ -425,35 +416,6 @@
                     {{ feat }}
                   </div>
                 </template>
-                <template v-else>
-                  <div
-                    class="flex items-center gap-4 text-[#757575] font-medium"
-                  >
-                    <Check
-                      class="text-primary w-5 h-5 flex-shrink-0"
-                      stroke-width="3"
-                    />
-                    Suporte ao Usuário
-                  </div>
-                  <div
-                    class="flex items-center gap-4 text-[#757575] font-medium"
-                  >
-                    <Check
-                      class="text-primary w-5 h-5 flex-shrink-0"
-                      stroke-width="3"
-                    />
-                    Relatórios de Desempenho
-                  </div>
-                  <div
-                    class="flex items-center gap-4 text-[#757575] font-medium"
-                  >
-                    <Check
-                      class="text-primary w-5 h-5 flex-shrink-0"
-                      stroke-width="3"
-                    />
-                    Automação do Sistema
-                  </div>
-                </template>
               </div>
               <button
                 @click="navigateToRegister"
@@ -498,7 +460,7 @@
                         style: "currency",
                         currency: "BRL",
                       })
-                    : `R$${(planPrices.annual * 12).toFixed(2).replace(".", ",")}`
+                    : `R$${(planPrices.annual).toFixed(2).replace(".", ",")}`
                 }}
               </p>
               <p class="text-xs text-[#757575] mb-1">
@@ -517,42 +479,6 @@
                       stroke-width="3"
                     />
                     {{ feat }}
-                  </div>
-                </template>
-                <template v-else>
-                  <div
-                    class="flex items-center gap-4 text-[#757575] font-medium"
-                  >
-                    <Check
-                      class="text-primary w-5 h-5 flex-shrink-0"
-                      stroke-width="3"
-                    />
-                    Suporte ao Usuário
-                  </div>
-                  <div
-                    class="flex items-center gap-4 text-[#757575] font-medium"
-                  >
-                    <Check
-                      class="text-primary w-5 h-5 flex-shrink-0"
-                      stroke-width="3"
-                    />
-                    Relatórios de Desempenho
-                  </div>
-                  <div
-                    class="flex items-center gap-4 text-[#757575] font-medium"
-                  >
-                    <Check
-                      class="text-primary w-5 h-5 flex-shrink-0"
-                      stroke-width="3"
-                    />
-                    Automação do Sistema
-                  </div>
-                  <div class="flex items-center gap-4 text-[#212121] font-bold">
-                    <Check
-                      class="text-primary w-5 h-5 flex-shrink-0"
-                      stroke-width="3"
-                    />
-                    Maior Estabilidade
                   </div>
                 </template>
               </div>

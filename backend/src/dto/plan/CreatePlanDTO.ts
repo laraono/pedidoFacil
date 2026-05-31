@@ -1,7 +1,7 @@
 
 export type CreatePlanParams = {
     name: string,
-    frequency: 'days' | 'months' | 'anual',
+    frequency: 'mensal' | 'anual',
     repetitions: number,
     billingDay: number,
     billingDayProportional: boolean,
@@ -34,7 +34,7 @@ export type CreatePlan = {
 
 export type UpdatePlanParams = {
     name: string,
-    frequency: 'days' | 'months' | 'anual',
+    frequency: 'mensal' | 'anual',
     repetitions: number,
     billingDay: number,
     billingDayProportional: boolean,

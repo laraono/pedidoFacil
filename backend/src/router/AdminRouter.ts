@@ -33,7 +33,6 @@ adminRouter.get('/subscriptions', subscriptionController.listSubscriptions);
 adminRouter.get('/subscriptions/:subscriptionId', subscriptionController.getSubscription);
 adminRouter.put('/subscriptions/:subscriptionId/price', subscriptionController.updateSubscriptionPrice);
 adminRouter.post('/subscriptions/:subscriptionId/cancel', subscriptionController.cancelSubcription);
-adminRouter.delete('/subscriptions/:subscriptionId', subscriptionController.deleteSubcription);
 
 adminRouter.get(
     '/metrics/subscriptions',

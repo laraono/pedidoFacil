@@ -30,7 +30,7 @@ export const registerSchema = z.object({
     }, { message: "CNPJ inválido." }),
 
     nome_usuario: safeString(2, 100),
-    email: z.string().email("E-mail inválido").trim().toLowerCase(),
+    email: z.email("E-mail inválido").trim().toLowerCase(), 
     
     senha: z.string()
       .min(8, 'A senha deve ter pelo menos 8 caracteres.')
@@ -49,5 +49,5 @@ export const registerSchema = z.object({
   }).strict()
 });
 
-export type RegisterDTO = z.infer<typeof registerSchema>['body'];
-export type CargoDTO = NonNullable<z.infer<typeof registerSchema>['body']['cargos']>[number];
+export type RegisterDTO = z.infer<typeof registerSchema>;
+export type CargoDTO = NonNullable<RegisterDTO['body']['cargos']>[number];

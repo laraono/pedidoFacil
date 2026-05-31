@@ -23,7 +23,7 @@ onMounted(() => {
   establishmentLogo.value = localStorageService.getImage() || '';
 });
 
-const roleName = computed(() => authStore.user?.role?.name || '');
+const roleName = computed(() => authStore.user?.cargo?.name || '');
 const isAdmin = computed(() => authStore.isAdmin);
 
 const visibleMenuItems = computed(() => {
@@ -35,8 +35,8 @@ const visibleMenuItems = computed(() => {
   });
 });
 
-const logout = () => {
-  authStore.logout();
+const logout = async () => {
+  await authStore.logout();
   router.push('/login');
 };
 
@@ -99,10 +99,13 @@ const handleNavigation = (path) => {
 
       <button
         @click="logout"
-        class="p-2.5 rounded transition-all"
-        :class="isAdmin ? 'text-accent/50 hover:text-danger hover:bg-red-400/10' : 'text-[#757575] hover:text-danger hover:bg-red-400/10'"
+        class="flex items-center gap-1.5 px-3 py-2 rounded border transition-all text-sm font-medium active:scale-95"
+        :class="isAdmin
+          ? 'text-accent/70 border-accent/30 hover:text-danger hover:border-danger/40 hover:bg-red-400/10'
+          : 'text-[#757575] border-[#E0E0E0] hover:text-danger hover:border-danger/40 hover:bg-red-400/10'"
       >
-        <LogOut class="w-5 h-5" />
+        <LogOut class="w-4 h-4" />
+        <span class="hidden sm:inline">Sair</span>
       </button>
     </div>
   </header>

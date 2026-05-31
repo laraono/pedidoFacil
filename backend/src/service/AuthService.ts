@@ -4,11 +4,16 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { DataSource } from 'typeorm';
 import { Admin } from '../database/entity/Admin';
-import { LoginDTO, RegisterDTO } from '../dto/auth/';
-import { UserStatus } from '../enum';
+import { Configuration, Establishment, Plan, Role, Subscription, User } from '../database/entity';
+import { LoginDTO } from '../dto/auth/';
+import { RegisterCompleteDTO } from '../dto/auth/RegisterCompleteDTO';
+import { UserStatus, SubscriptionStatus, ServiceType, allPermissions } from '../enum';
 import { AppError } from '../middleware/error/AppError';
 import { UserRepository, RefreshTokenRepository } from '../repository';
+import { EstablishmentRepository } from '../repository/EstablishmentRepository';
 import { gerarTokens, gerarTokenAdmin, hashToken } from '../config/crypto';
+import { MercadoPagoService } from './MercadoPagoService';
+import { CreateOrderSubscriptionMP } from '../dto';
 
 function calcRefreshExpiry(): Date {
   const raw = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
@@ -36,37 +41,169 @@ export class AuthService {
   constructor(
     private dataSource: DataSource,
     private userRepository: UserRepository,
-    private refreshTokenRepository: RefreshTokenRepository, 
+    private refreshTokenRepository: RefreshTokenRepository,
+    private establishmentRepository: EstablishmentRepository,
+    private mercadoPagoService: MercadoPagoService,
   ) {}
 
-  async registerManager(data: RegisterDTO) {
-    if (!data.nome_usuario?.trim()) throw new AppError('Nome do usuário é obrigatório.', 400);
-    
-    const senhaErro = validarSenhaForte(data.senha);
-    if (senhaErro) throw new AppError(senhaErro, 400);
+  /** Validação por step — só leitura, sem criação. */
+  async checkEmailAvailable(email: string) {
+    const exists = await this.userRepository.findOne({ where: { email } });
+    if (exists) throw new AppError('Este e-mail está inválido ou já está em uso.', 409);
+    return { available: true };
+  }
 
+  /** Validação por step — só leitura, sem criação. */
+  async checkCpfAvailable(cpf: string) {
+    const exists = await this.userRepository.findOne({ where: { cpf } });
+    if (exists) throw new AppError('Este CPF já está em uso.', 409);
+    return { available: true };
+  }
+
+  /**
+   * Cadastro completo.
+   * Toda a escrita no DB ocorre em uma única transação — rollback automático se qualquer etapa falhar.
+   * Tokens são gerados fora da transação, após o commit.
+   */
+  async registerComplete(data: RegisterCompleteDTO) {
     const emailExiste = await this.userRepository.findOne({ where: { email: data.email } });
     if (emailExiste) throw new AppError('Este e-mail está inválido ou já está em uso.', 409);
+
+    if (data.cpf) {
+      const cpfExiste = await this.userRepository.findOne({ where: { cpf: data.cpf } });
+      if (cpfExiste) throw new AppError('Este CPF já está em uso.', 409);
+    }
+
+    const cnpjExiste = await this.establishmentRepository.findByCnpj(data.establishment.cnpj);
+    if (cnpjExiste) throw new AppError('Este CNPJ já está cadastrado.', 409);
 
     const salt = await bcrypt.genSalt(12);
     const passwordHash = await bcrypt.hash(data.senha, salt);
 
-    const user = this.userRepository.create({
-      name: data.nome_usuario,
-      email: data.email,
-      password: passwordHash,
-      status: UserStatus.ATIVO,
-      cpf: data.cpf ?? null,
-    });
+    const { userId, establishmentId, roleId, cargoPermissoes } =
+      await this.dataSource.transaction(async (manager) => {
+        const savedUser = await manager.save(User, {
+          name: data.nome_usuario,
+          email: data.email,
+          password: passwordHash,
+          status: UserStatus.ATIVO,
+          cpf: data.cpf ?? null,
+        });
 
-    const savedUser = await this.userRepository.save(user);
-    const { accessToken, refreshToken } = await gerarTokens(savedUser);
-    await this.refreshTokenRepository.createToken(savedUser, hashToken(refreshToken), calcRefreshExpiry());
+        const savedEstablishment = await manager.save(Establishment, {
+          name: data.establishment.name,
+          cnpj: data.establishment.cnpj,
+          manager: savedUser,
+        });
+
+        // Vínculo usuário → estabelecimento
+        await manager.update(User, savedUser.id, { establishment: { id: savedEstablishment.id } });
+
+        // Cargo Gerente com todas as permissões reais
+        const savedManagerRole = await manager.save(Role, {
+          name: 'Gerente',
+          permissions: JSON.stringify(allPermissions),
+          establishment: { id: savedEstablishment.id },
+        });
+
+        // Vínculo usuário → cargo Gerente
+        await manager.update(User, savedUser.id, { role: { id: savedManagerRole.id } });
+
+        if (data.roles && data.roles.length > 0) {
+          await manager.save(
+            Role,
+            data.roles.map((r) => ({
+              name: r.label,
+              permissions: JSON.stringify(r.permissions),
+              establishment: { id: savedEstablishment.id },
+            }))
+          );
+        }
+
+        if (data.hasTotem) {
+          await manager.update(Establishment, savedEstablishment.id, {
+            serviceTypes: JSON.stringify([ServiceType.AUTOATENDIMENTO]),
+          });
+        }
+
+        await manager.save(Configuration, {
+          establishment: { id: savedEstablishment.id },
+          backgroundColor: '#F4F4F9',
+          cardsColor: '#FFFFFF',
+          buttonsColor: '#E85D5D',
+          comandaLabel: 'Comanda',
+          activeCateogryColor: '#E85D5D',
+          textsColor: '#333333',
+          buttonsTextColor: '#FFFFFF',
+          fontFamily: 'Inter',
+          allowObservations: true,
+        });
+
+        const plan = await manager.findOne(Plan, { where: { id: data.planId } });
+        if (!plan) throw new AppError('Plano não encontrado.', 404);
+
+        const paymentData: CreateOrderSubscriptionMP = {
+          ...data.payment,
+          total_amount: plan.price.toString(),
+          transactions: {
+            payments: [{
+              ...data.payment.transactions.payments[0],
+              amount: plan.price.toString(),
+            }],
+          },
+        };
+
+        // Se o MP falhar, o throw causa rollback de tudo acima
+        const mpOrder = await this.mercadoPagoService.createSubscriptionOrder(paymentData);
+
+        const expirationDate = new Date();
+        if (plan.frequency === 'anual') {
+          expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+        } else {
+          expirationDate.setMonth(expirationDate.getMonth() + 1);
+        }
+
+        try {
+          await manager.save(Subscription, {
+            initialDate: new Date(),
+            establishment: savedEstablishment,
+            expirationDate,
+            lastPayment: new Date(),
+            status: SubscriptionStatus.PENDENTE,
+            price: plan.price,
+            plan,
+            mercadoPagoId: mpOrder.id,
+          });
+        } catch (err) {
+          // MP criou o order mas o save falhou — cancela para não deixar cobrança órfã
+          await this.mercadoPagoService.cancelSubscription(mpOrder.id);
+          throw err;
+        }
+
+        return {
+          userId: savedUser.id,
+          establishmentId: savedEstablishment.id,
+          roleId: savedManagerRole.id,
+          cargoPermissoes: allPermissions,
+        };
+      });
+
+    // Tokens gerados após o commit da transação
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['establishment', 'role'],
+    });
+    if (!user) throw new AppError('Erro ao recuperar usuário após cadastro.', 500);
+
+    const { accessToken, refreshToken } = await gerarTokens(user);
+    await this.refreshTokenRepository.createToken(user, hashToken(refreshToken), calcRefreshExpiry());
 
     return {
       accessToken,
       refreshToken,
-      usuario: { id: savedUser.id, nome: savedUser.name, email: savedUser.email }
+      usuario: { id: user.id, nome: user.name, email: user.email },
+      cargo: { id: roleId, nome: 'Gerente', permissoes: cargoPermissoes },
+      estabelecimentoId: establishmentId,
     };
   }
 
@@ -95,7 +232,7 @@ export class AuthService {
     }
 
     const admin = await this.dataSource.getRepository(Admin).findOne({ where: { email: data.email } });
-      
+
     if (!admin) {
       await bcrypt.compare(data.senha, DUMMY_HASH);
       throw new AppError('Credenciais inválidas.', 401);
@@ -186,7 +323,7 @@ export class AuthService {
       const admin = await this.dataSource.getRepository(Admin).findOne({ where: { id: userId } });
       if (!admin) throw new AppError('Admin não encontrado.', 401);
       return {
-        usuario: { ...admin, isAdmin: true }, 
+        usuario: { ...admin, isAdmin: true },
         cargo: { nome: 'Admin', permissoes: ['ALL'] },
         estabelecimentoId: null,
       };
@@ -200,7 +337,7 @@ export class AuthService {
     if (!user) throw new AppError('Usuário inválido.', 401);
 
     return {
-      usuario: { ...user, isAdmin: false }, 
+      usuario: { ...user, isAdmin: false },
       cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions } : null,
       estabelecimentoId: user.establishment?.id ?? null,
     };
@@ -257,10 +394,7 @@ export class AuthService {
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
     const user = await this.userRepository.findOne({
-      where: {
-        email,
-        passwordResetToken: hashedToken
-      }
+      where: { email, passwordResetToken: hashedToken }
     });
 
     if (!user) throw new AppError('Token inválido ou expirado.', 400);

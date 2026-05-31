@@ -49,7 +49,4 @@ export class CouponRepository {
         await this.repo.softDelete(couponId);
     }
 
-    async decrementCouponQuantity(couponId: number): Promise<void> {
-        await this.repo.decrement({ id: couponId }, 'quantity', 1);
-    }
 }

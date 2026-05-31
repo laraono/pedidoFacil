@@ -13,44 +13,17 @@ subscriptionRouter.get(
   authenticate,
   subscriptionController.listSubscriptions,
 );
+
 subscriptionRouter.get(
   '/plans/:planId/subscriptions/',
   authenticate,
   subscriptionController.listSubscriptionsByPlan,
 );
+
 subscriptionRouter.get(
   '/plans/:planId/subscriptions/:subscriptionId',
   authenticate,
   subscriptionController.getSubscription,
-);
-
-subscriptionRouter.post(
-  '/process-order',
-  authenticate,
-  validateRequest(createSubscriptionSchema),
-  subscriptionController.processCardInfo,
-);
-
-subscriptionRouter.post(
-  '/process-order/:subscriptionId',
-  authenticate,
-  validateRequest(restoreSubscriptionSchema),
-  subscriptionController.restoreSubscription,
-);
-
-subscriptionRouter.delete(
-  '/plans/:planId/subscriptions/:subscriptionId',
-  authenticate,
-  subscriptionController.deleteSubcription,
-);
-subscriptionRouter.put(
-  '/plans/:planId/subscriptions/:subscriptionId',
-  authenticate,
-  subscriptionController.updateSubscriptionPrice,
-);
-subscriptionRouter.get(
-  '/process-oauth',
-  subscriptionController.processCardInfo,
 );
 
 subscriptionRouter.get(
@@ -67,15 +40,47 @@ subscriptionRouter.get(
   subscriptionController.getEstablishmentHistory,
 );
 
+subscriptionRouter.post(
+  '/process-order',
+  authenticate,
+  validateRequest(createSubscriptionSchema),
+  subscriptionController.processCardInfo,
+);
+
+subscriptionRouter.post(
+  '/process-order/:subscriptionId',
+  authenticate,
+  validateRequest(restoreSubscriptionSchema),
+  subscriptionController.restoreSubscription,
+);
+
+subscriptionRouter.get(
+  '/process-oauth',
+  subscriptionController.processCardInfo,
+);
+
+subscriptionRouter.put(
+  '/plans/:planId/subscriptions/:subscriptionId',
+  authenticate,
+  subscriptionController.updateSubscriptionPrice,
+);
+
 subscriptionRouter.patch(
   '/subscriptions/schedule-plan',
   authenticate,
   subscriptionController.schedulePlan,
 );
+
 subscriptionRouter.post(
   '/subscriptions/:subscriptionId/cancel',
   authenticate,
   subscriptionController.cancelSubcription,
+);
+
+subscriptionRouter.delete(
+  '/plans/:planId/subscriptions/:subscriptionId',
+  authenticate,
+  subscriptionController.deleteSubcription,
 );
 
 export { subscriptionRouter };

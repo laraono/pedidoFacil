@@ -101,9 +101,8 @@ AppDataSource.initialize().then(async () => {
 
     initSocket(httpServer);
 
-    // 🌟 ALTERADO AQUI: Adicionado '0.0.0.0' para abrir a escuta para o IP do seu Wi-Fi
     httpServer.listen(PORT, '0.0.0.0', () => {
-        console.log(`🚀 Server rodando em http://192.168.100.148:${PORT}`);
-        console.log(` Socket.IO ativo na porta ${PORT}`);
+        logger.info(`Server rodando em http://localhost:${PORT}`);
+        logger.info(`Socket.IO ativo na porta ${PORT}`);
     });
-}).catch(error => console.log("Erro na inicialização do Banco:", error));
+}).catch(error => logger.error('Erro na inicialização do Banco', { error }));

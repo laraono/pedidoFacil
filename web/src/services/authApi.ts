@@ -78,8 +78,14 @@ export const authApi = {
   login: (email: string, senha: string): Promise<LoginResponse> =>
     request<LoginResponse>('/login', { method: 'POST', body: JSON.stringify({ email, senha }) }),
 
-  register: (data: unknown): Promise<unknown> =>
-    request('/register', { method: 'POST', body: JSON.stringify(data) }),
+  checkEmail: (email: string): Promise<{ available: boolean }> =>
+    request('/check-email', { method: 'POST', body: JSON.stringify({ email }) }),
+
+  checkCpf: (cpf: string): Promise<{ available: boolean }> =>
+    request('/check-cpf', { method: 'POST', body: JSON.stringify({ cpf }) }),
+
+  registerComplete: (data: unknown): Promise<any> =>
+    request('/register-complete', { method: 'POST', body: JSON.stringify(data) }),
 
   logout: (): Promise<unknown> => request('/logout', { method: 'POST' }),
 
