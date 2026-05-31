@@ -15,11 +15,6 @@ export const UpdateEstablishmentDTO = z.object({
       return val;
     }, z.array(z.string()).optional()),
     
-    selfServiceEnabled: z.preprocess((val) => {
-      if (typeof val === 'string') return val === 'true';
-      return val;
-    }, z.boolean().optional()),
-    
     selfServiceCode: safeString(0, 20).optional(),
 
     pixStaticEnabled: z.preprocess((val) => {

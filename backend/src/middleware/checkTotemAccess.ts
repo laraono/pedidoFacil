@@ -26,7 +26,7 @@ export const totemAccess = async (req: Request, res: Response, next: NextFunctio
                 : [];
         } catch { serviceTypes = []; }
 
-        if (!establishment.selfServiceEnabled && !serviceTypes.includes('Autoatendimento')) {
+        if (!serviceTypes.includes('Autoatendimento')) {
             return res.status(403).json({ error: "Autoatendimento desativado neste estabelecimento." });
         }
 

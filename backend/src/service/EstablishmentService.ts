@@ -1,6 +1,5 @@
 import { Establishment } from '../database/entity/Establishment';
 import { AppError } from '../middleware/error/AppError';
-import { ServiceType } from '../enum';
 import { EstablishmentRepository } from '../repository/EstablishmentRepository';
 import { ConfigurationRepository } from '../repository/ConfigurationRepository';
 import { MercadoPagoService } from './MercadoPagoService';
@@ -41,7 +40,7 @@ export class EstablishmentService {
     const serviceTypes = this.parseServiceTypes(establishment.serviceTypes);
     const hasAutoatendimento = serviceTypes.includes('Autoatendimento');
 
-    if (!establishment.selfServiceEnabled && !hasAutoatendimento) {
+    if (!hasAutoatendimento) {
       throw new AppError('O autoatendimento está desativado para este estabelecimento.', 403);
     }
 
@@ -61,22 +60,14 @@ export class EstablishmentService {
       ? JSON.stringify(updateData.paymentMethods)
       : updateData.paymentMethods;
 
-    let serviceTypes = this.parseServiceTypes(establishment.serviceTypes);
-    if (updateData.selfServiceEnabled === true && !serviceTypes.includes(ServiceType.AUTOATENDIMENTO)) {
-      serviceTypes.push(ServiceType.AUTOATENDIMENTO);
-    } else if (updateData.selfServiceEnabled === false) {
-      serviceTypes = serviceTypes.filter((t) => t !== ServiceType.AUTOATENDIMENTO);
-    }
-
     this.establishmentRepository.merge(establishment, {
       name: updateData.name,
       cnpj: updateData.cnpj,
       phone: updateData.phone,
       address: updateData.address,
       paymentMethods: paymentMethods,
-      selfServiceEnabled: updateData.selfServiceEnabled,
       selfServiceCode: updateData.selfServiceCode,
-      serviceTypes: JSON.stringify(serviceTypes),
+      serviceTypes: updateData.serviceTypes !== undefined ? JSON.stringify(updateData.serviceTypes) : establishment.serviceTypes,
       pixStaticEnabled: updateData.pixStaticEnabled,
       ...(updateData.pixQrCodeUrl !== undefined && { pixQrCodeUrl: updateData.pixQrCodeUrl }),
     });
@@ -139,7 +130,6 @@ export class EstablishmentService {
       cnpj: establishment.cnpj,
       phone: establishment.phone ?? null,
       address: establishment.address ?? null,
-      selfServiceEnabled: establishment.selfServiceEnabled ?? false,
       selfServiceCode: establishment.selfServiceCode ?? null,
       manager: establishment.manager ?? null,
       subscription: latestSub ?? null,

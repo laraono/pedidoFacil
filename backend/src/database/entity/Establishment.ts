@@ -68,21 +68,6 @@ export class Establishment {
     paymentMethods?: string
 
     @Column({
-        type: 'boolean',
-        name: 'Autoatendimento_Ativo',
-        default: false
-    })
-    selfServiceEnabled?: boolean
-
-    @Column({
-        type: 'enum',
-        enum: ['Ativo', 'Suspenso'],
-        default: 'Ativo',
-        name: 'Status'
-    })
-    status!: string
-
-    @Column({
         type: 'varchar',
         name: 'Codigo_Autoatendimento',
         nullable: true,

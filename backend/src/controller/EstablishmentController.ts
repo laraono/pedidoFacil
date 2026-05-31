@@ -48,8 +48,7 @@ export class EstablishmentController {
     return res.status(200).json({
       name: establishment.name,
       paymentMethods: establishment.paymentMethods,
-      selfServiceEnabled: establishment.selfServiceEnabled,
-      configurations: establishment.configurations 
+      configurations: establishment.configurations
     });
   });
 
@@ -88,10 +87,6 @@ export class EstablishmentController {
       updateData.paymentMethods = JSON.parse(updateData.paymentMethods);
     }
     
-    if (updateData.selfServiceEnabled === 'true' || updateData.selfServiceEnabled === 'false') {
-      updateData.selfServiceEnabled = updateData.selfServiceEnabled === 'true';
-    }
-
     if (updateData.pixStaticEnabled === 'true' || updateData.pixStaticEnabled === 'false') {
       updateData.pixStaticEnabled = updateData.pixStaticEnabled === 'true';
     }

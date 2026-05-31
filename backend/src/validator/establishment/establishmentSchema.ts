@@ -9,7 +9,6 @@ export const updateEstablishmentSchema = z.object({
     phone: z.string().optional(),
     address: z.string().optional(),
     paymentMethods: z.any().optional(), 
-    selfServiceEnabled: z.boolean().optional(),
     selfServiceCode: z.string().optional().nullable(),
     configurations: z.object({
         logo: z.string().nullable().optional(),
