@@ -4,8 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { authApi } from '@/services/authApi'
 import { ArrowLeft } from 'lucide-vue-next'
-import LandingHeader from '@/components/LandingHeader.vue'
-import imgOndas from '@/assets/ondas.png'
+import AuthLayout from '@/components/AuthLayout.vue'
 import Step1Account from './register/Step1Account.vue'
 import Step2Establishment from './register/Step2Establishment.vue'
 import Step3Roles from './register/Step3Roles.vue'
@@ -78,15 +77,7 @@ async function handlePaymentSubmit(payload: { planId: number; cardToken: string;
 </script>
 
 <template>
-  <div class="min-h-screen bg-page font-inter flex flex-col">
-    <LandingHeader />
-
-    <div class="flex-1 relative flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div
-        class="absolute top-0 left-0 w-full h-full z-0 pointer-events-none opacity-40"
-        :style="{ backgroundImage: `url(${imgOndas})`, backgroundSize: 'cover', backgroundPosition: 'center' }"
-      />
-
+  <AuthLayout content-class="py-12 px-4 sm:px-6 lg:px-8">
       <div class="z-10 w-full max-w-xl">
         <button
           v-if="step > 1"
@@ -150,6 +141,5 @@ async function handlePaymentSubmit(payload: { planId: number; cardToken: string;
           >Faça login aqui</a>
         </p>
       </div>
-    </div>
-  </div>
+  </AuthLayout>
 </template>

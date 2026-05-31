@@ -43,7 +43,5 @@ export {
     RestoreOrderSubscription as RestoreOrderSubscriptionMP,
     UpdateSubscription as UpdateSubscriptionMP
 } from './mercadoPago'
-export * from './establishment/SaveOnboardingStepDTO';
-export * from './establishment/FinalizeOnboardingDTO';
 export * from './establishment/UpdateEstablishmentDTO';
 export * from './role/RoleDTO';

@@ -29,4 +29,8 @@ export class RefreshTokenRepository extends Repository<RefreshToken> {
     async revokeByHash(tokenHash: string) {
         await this.update({ tokenHash }, { revoked: true })
     }
+
+    async revokeAllByUserId(userId: number) {
+        await this.update({ user: { id: userId }, revoked: false }, { revoked: true })
+    }
 }

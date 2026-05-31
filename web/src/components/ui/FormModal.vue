@@ -1,6 +1,6 @@
 <script setup>
 import { X } from 'lucide-vue-next';
-import { Loader2 } from 'lucide-vue-next';
+import BaseButton from './BaseButton.vue';
 
 defineProps({
   show: Boolean,
@@ -41,16 +41,10 @@ const sizeClasses = {
 
           <footer class="p-8 border-t border-[#E0E0E0] bg-gray-50 flex justify-end gap-4">
             <slot name="footer-actions" />
-            <button type="button" @click="$emit('close')"
-              class="px-6 py-3 rounded text-[#757575] font-bold hover:bg-gray-50 hover:text-[#212121] transition-colors">
-              Cancelar
-            </button>
-            <button v-if="!hideSave" type="button" @click="$emit('save')"
-              :disabled="isLoading || saveDisabled"
-              class="flex items-center gap-2 px-8 py-3 bg-primary text-white font-black rounded hover:bg-primary-dark transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-              <Loader2 v-if="isLoading" class="w-4 h-4 animate-spin" />
-              {{ isLoading ? 'Salvando...' : saveLabel }}
-            </button>
+            <BaseButton variant="ghost" type="button" @click="$emit('close')">Cancelar</BaseButton>
+            <BaseButton v-if="!hideSave" variant="primary" type="button" :isLoading="isLoading" :disabled="saveDisabled" @click="$emit('save')">
+              {{ saveLabel }}
+            </BaseButton>
           </footer>
         </div>
       </div>

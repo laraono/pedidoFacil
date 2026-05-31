@@ -4,12 +4,6 @@ export const establishmentApi = {
   checkCnpj: (cnpj: string): Promise<{ available: boolean }> =>
     request('/estabelecimento/check-cnpj', { method: 'POST', body: { cnpj } as any }),
 
-  saveOnboardingStep: (data: unknown) =>
-    request('/estabelecimento/onboarding', { method: 'POST', body: data as BodyInit }),
-
-  finalizeOnboarding: (data: unknown) =>
-    request('/estabelecimento/finalize', { method: 'POST', body: data as BodyInit }),
-
   getProfile: async () => {
     const data = await request('/estabelecimento/profile', { method: 'GET' });
     return {

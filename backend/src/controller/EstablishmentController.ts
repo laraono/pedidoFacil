@@ -1,32 +1,37 @@
 import { Request, Response } from 'express';
 import { EstablishmentService } from '../service/EstablishmentService';
+import { SubscriptionService } from '../service/SubscriptionService';
 import { catchAsync } from '../middleware';
 import { getIO } from '../socket';
 import { deleteFile } from '../utils/fileHelper';
 import { auditLog } from '../utils/logger';
 
 export class EstablishmentController {
-  
-  private establishmentService: EstablishmentService;
 
-  constructor(establishmentService: EstablishmentService) {
+  private establishmentService: EstablishmentService;
+  private subscriptionService?: SubscriptionService;
+
+  constructor(establishmentService: EstablishmentService, subscriptionService?: SubscriptionService) {
     this.establishmentService = establishmentService;
+    this.subscriptionService = subscriptionService;
   }
 
-  checkCnpj = catchAsync(async (req: Request, res: Response) => {
-    const result = await this.establishmentService.checkCnpjAvailable(req.body.cnpj);
+  listForAdmin = catchAsync(async (_req: Request, res: Response) => {
+    const result = await this.establishmentService.listForAdmin();
     return res.status(200).json(result);
   });
 
-  onboarding = catchAsync(async (req: Request, res: Response) => {
-    const userId = (req as any).usuario.id;
-    const establishment = await this.establishmentService.saveOnboardingStep(userId, req.body);
-    return res.status(201).json(establishment);
+  getDetailForAdmin = catchAsync(async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    const detail = await this.establishmentService.getDetailForAdmin(id);
+    const paymentHistory = this.subscriptionService
+      ? await this.subscriptionService.getEstablishmentHistory(id)
+      : [];
+    return res.status(200).json({ ...detail, paymentHistory });
   });
 
-  finalize = catchAsync(async (req: Request, res: Response) => {
-    const userId = (req as any).usuario.id;
-    const result = await this.establishmentService.finalizeOnboarding(userId, req.body);
+  checkCnpj = catchAsync(async (req: Request, res: Response) => {
+    const result = await this.establishmentService.checkCnpjAvailable(req.body.cnpj);
     return res.status(200).json(result);
   });
 

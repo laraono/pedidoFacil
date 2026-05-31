@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { safeString } from '../../utils/safeZod';
+import { strongPasswordSchema } from '../../utils/passwordSchema';
 
 export const updateProfileSchema = z.object({
   body: z.object({
@@ -17,7 +18,7 @@ export const updateProfileSchema = z.object({
 export const changePasswordSchema = z.object({
   body: z.object({
     oldPassword: z.string().min(1, "A senha atual é obrigatória"),
-    newPassword: z.string().min(6, "A nova senha deve ter no mínimo 6 caracteres")
+    newPassword: strongPasswordSchema
   }).strict()
 });
 

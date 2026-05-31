@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useCouponStore } from '@/stores/coupons';
 import { useToast } from '@/composables/useToast';
+import { applyPriceMask, applyPercentMask } from '@/composables/usePriceMask';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import FormModal from '@/components/ui/FormModal.vue';
@@ -25,26 +26,10 @@ onMounted(() => {
 const emptyForm = () => ({ id: null, code: '', description: '', type: 'percent', value: '', expiresAt: '', active: true });
 const form = ref(emptyForm());
 
-const applyValueMask = (raw) => {
-  let val = String(raw).replace(/[^\d,]/g, '');
-  const commaIdx = val.indexOf(',');
-  if (commaIdx !== -1) {
-    val = val.slice(0, commaIdx + 1) + val.slice(commaIdx + 1).replace(/,/g, '');
-    val = val.slice(0, commaIdx + 3);
-  }
-  const parts = val.split(',');
-  parts[0] = parts[0].replace(/^0+(\d)/, '$1');
-  return parts.join(',');
-};
-
 const onValueInput = (e) => {
-  if (form.value.type === 'percent') {
-    const digits = e.target.value.replace(/\D/g, '');
-    const num = Math.min(100, parseInt(digits, 10) || 0);
-    form.value.value = num === 0 ? '' : String(num);
-  } else {
-    form.value.value = applyValueMask(e.target.value);
-  }
+  const v = form.value.type === 'percent' ? applyPercentMask(e.target.value) : applyPriceMask(e.target.value);
+  e.target.value = v;
+  form.value.value = v;
 };
 
 const validate = () => {

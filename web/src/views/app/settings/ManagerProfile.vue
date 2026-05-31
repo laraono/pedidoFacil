@@ -1,22 +1,13 @@
 <script setup>
-import { ref, onMounted, nextTick, watch } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { profileApi } from "@/services/profileApi";
 import { useAuthStore } from "@/stores/auth";
 import { useToast } from "@/composables/useToast";
-import {
-  Save,
-  ArrowLeft,
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  CreditCard,
-  AlertCircle,
-  Lock,
-  Key,
-} from "lucide-vue-next";
+import { Save, ArrowLeft, AlertCircle, Lock } from "lucide-vue-next";
 import { isValidCPF, maskCPF } from "@/utils/validator";
+import { validatePasswordStrength } from "@/utils/password";
+import { BaseInput, BaseButton } from "@/components/ui";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -89,14 +80,8 @@ const validatePassword = () => {
   if (!passwordForm.value.oldPassword)
     errors.value.oldPassword = "A senha atual é obrigatória.";
   const p = passwordForm.value.newPassword;
-  if (!p || p.length < 8)
-    errors.value.newPassword = "A nova senha deve ter no mínimo 8 caracteres.";
-  else if (!/[A-Z]/.test(p))
-    errors.value.newPassword = "A nova senha deve conter pelo menos uma letra maiúscula.";
-  else if (!/[0-9]/.test(p))
-    errors.value.newPassword = "A nova senha deve conter pelo menos um número.";
-  else if (!/[^A-Za-z0-9]/.test(p))
-    errors.value.newPassword = "A nova senha deve conter pelo menos um caractere especial.";
+  const pwErr = validatePasswordStrength(p || "");
+  if (pwErr) errors.value.newPassword = pwErr;
   if (p && p !== passwordForm.value.confirmPassword)
     errors.value.confirmPassword = "As senhas não coincidem.";
   return Object.keys(errors.value).length === 0;
@@ -156,8 +141,12 @@ const savePassword = async () => {
       oldPassword: passwordForm.value.oldPassword,
       newPassword: passwordForm.value.newPassword,
     });
-    showToast("Senha alterada com sucesso!", "success");
+    showToast("Senha alterada com sucesso! Redirecionando para o login...", "success");
     passwordForm.value = { oldPassword: "", newPassword: "", confirmPassword: "" };
+    setTimeout(async () => {
+      await authStore.logout();
+      router.push("/login");
+    }, 2500);
   } catch (error) {
     const data = error.response?.data || error.data || error;
     if (data?.errors && Array.isArray(data.errors)) {
@@ -186,210 +175,63 @@ const savePassword = async () => {
           <ArrowLeft :size="20" />
         </button>
         <div>
-          <h1 class="text-3xl font-black text-[#212121] tracking-tight">
-            Meu Perfil
-          </h1>
-          <p class="text-[#757575] mt-1 text-sm">
-            Dados pessoais e de contato para cobranças
-          </p>
+          <h1 class="text-3xl font-black text-[#212121] tracking-tight">Meu Perfil</h1>
+          <p class="text-[#757575] mt-1 text-sm">Dados pessoais e de contato para cobranças</p>
         </div>
       </div>
-      <button
-        @click="saveProfile"
-        :disabled="isLoadingProfile"
-        class="hidden sm:flex items-center gap-2 bg-primary text-white font-black px-8 py-4 rounded hover:bg-primary-dark transition-all active:scale-95 shadow-lg shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        <Save :size="18" />
-        {{ isLoadingProfile ? "Salvando..." : "Salvar Dados" }}
-      </button>
+      <BaseButton variant="primary" :icon="Save" :isLoading="isLoadingProfile" class="hidden sm:flex" @click="saveProfile">
+        Salvar Dados
+      </BaseButton>
     </header>
 
     <div class="space-y-8">
       <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl">
-        <h2
-          class="text-lg font-black text-[#212121] mb-6 flex items-center gap-2"
-        >
-          <User :size="20" class="text-primary" /> Informações Pessoais
+        <h2 class="text-lg font-black text-[#212121] mb-6 flex items-center gap-2">
+          Informações Pessoais
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="space-y-1.5">
-            <label
-              class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1 flex items-center gap-1.5"
-            >
-              <User :size="11" /> Nome Completo
-            </label>
-            <input
-              v-model="form.fullName"
-              type="text"
-              placeholder="Ex: João da Silva"
-              class="w-full py-3.5 px-4 rounded border bg-gray-50 text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all"
-              :class="
-                errors.fullName
-                  ? 'border-red-500 bg-red-500/5'
-                  : 'border-[#E0E0E0]'
-              "
-            />
-            <p
-              v-if="errors.fullName"
-              class="text-danger text-[11px] font-bold ml-1 flex items-center gap-1"
-            >
-              <AlertCircle :size="11" /> {{ errors.fullName }}
-            </p>
+          <BaseInput v-model="form.fullName" label="Nome Completo" placeholder="Ex: João da Silva" :error="errors.fullName" />
+
+          <BaseInput v-model="form.email" type="email" label="E-mail de Login" placeholder="seu@email.com" :error="errors.email" />
+
+          <BaseInput
+            :modelValue="form.phone"
+            type="tel"
+            label="Telefone / WhatsApp"
+            placeholder="(00) 00000-0000"
+            :error="errors.phone"
+            @input="(e) => { form.phone = maskPhone(e.target.value); e.target.value = form.phone; }"
+          />
+
+          <BaseInput
+            :modelValue="form.cpf"
+            label="CPF"
+            placeholder="000.000.000-00"
+            maxlength="14"
+            :error="errors.cpf"
+            @input="(e) => { form.cpf = maskCPF(e.target.value); e.target.value = form.cpf; }"
+          />
+
+          <div class="md:col-span-2">
+            <BaseInput v-model="form.address" label="Endereço" placeholder="Rua, número, complemento" />
           </div>
 
-          <div class="space-y-1.5">
-            <label
-              class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1 flex items-center gap-1.5"
-            >
-              <Mail :size="11" /> E-mail de Login
-            </label>
-            <input
-              v-model="form.email"
-              type="email"
-              placeholder="seu@email.com"
-              class="w-full py-3.5 px-4 rounded border bg-gray-50 text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all"
-              :class="
-                errors.email
-                  ? 'border-red-500 bg-red-500/5'
-                  : 'border-[#E0E0E0]'
-              "
-            />
-            <p
-              v-if="errors.email"
-              class="text-danger text-[11px] font-bold ml-1 flex items-center gap-1"
-            >
-              <AlertCircle :size="11" /> {{ errors.email }}
-            </p>
-          </div>
-
-          <div class="space-y-1.5">
-            <label
-              class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1 flex items-center gap-1.5"
-            >
-              <Phone :size="11" /> Telefone / WhatsApp
-            </label>
-            <input
-              :value="form.phone"
-              @input="
-                (e) => {
-                  form.phone = maskPhone(e.target.value);
-                  e.target.value = form.phone;
-                }
-              "
-              type="tel"
-              placeholder="(00) 00000-0000"
-              class="w-full py-3.5 px-4 rounded border bg-gray-50 text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all"
-              :class="
-                errors.phone
-                  ? 'border-red-500 bg-red-500/5'
-                  : 'border-[#E0E0E0]'
-              "
-            />
-            <p
-              v-if="errors.phone"
-              class="text-danger text-[11px] font-bold ml-1 flex items-center gap-1"
-            >
-              <AlertCircle :size="11" /> {{ errors.phone }}
-            </p>
-          </div>
-
-          <div class="space-y-1.5">
-            <label
-              class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1 flex items-center gap-1.5"
-            >
-              <CreditCard :size="11" /> CPF
-            </label>
-            <input
-              :value="form.cpf"
-              @input="
-                (e) => {
-                  form.cpf = maskCPF(e.target.value);
-                  e.target.value = form.cpf;
-                }
-              "
-              type="text"
-              placeholder="000.000.000-00"
-              maxlength="14"
-              class="w-full py-3.5 px-4 rounded border bg-gray-50 text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all"
-              :class="
-                errors.cpf ? 'border-red-500 bg-red-500/5' : 'border-[#E0E0E0]'
-              "
-            />
-            <p
-              v-if="errors.cpf"
-              class="text-danger text-[11px] font-bold ml-1 flex items-center gap-1"
-            >
-              <AlertCircle :size="11" /> {{ errors.cpf }}
-            </p>
-          </div>
-
-          <div class="md:col-span-2 space-y-1.5">
-            <label
-              class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1 flex items-center gap-1.5"
-            >
-              <MapPin :size="11" /> Endereço
-            </label>
-            <input
-              v-model="form.address"
-              type="text"
-              placeholder="Rua, número, complemento"
-              class="w-full py-3.5 px-4 rounded border border-[#E0E0E0] bg-gray-50 text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all"
-            />
-          </div>
-
-          <div class="space-y-1.5">
-            <label
-              class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1"
-              >Cidade</label
-            >
-            <input
-              v-model="form.city"
-              type="text"
-              placeholder="Ex: São Paulo"
-              class="w-full py-3.5 px-4 rounded border border-[#E0E0E0] bg-gray-50 text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all"
-            />
-          </div>
+          <BaseInput v-model="form.city" label="Cidade" placeholder="Ex: São Paulo" />
 
           <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-1.5">
-              <label
-                class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1"
-                >Estado</label
-              >
-              <input
-                v-model="form.state"
-                type="text"
-                placeholder="SP"
-                maxlength="2"
-                class="w-full py-3.5 px-4 rounded border border-[#E0E0E0] bg-gray-50 text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all uppercase"
-              />
-            </div>
-            <div class="space-y-1.5">
-              <label
-                class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1"
-                >CEP</label
-              >
-              <input
-                :value="form.zip"
-                @input="
-                  (e) => {
-                    form.zip = maskZip(e.target.value);
-                    e.target.value = form.zip;
-                  }
-                "
-                type="text"
-                placeholder="00000-000"
-                maxlength="9"
-                class="w-full py-3.5 px-4 rounded border border-[#E0E0E0] bg-gray-50 text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all"
-              />
-            </div>
+            <BaseInput v-model="form.state" label="Estado" placeholder="SP" maxlength="2" />
+            <BaseInput
+              :modelValue="form.zip"
+              label="CEP"
+              placeholder="00000-000"
+              maxlength="9"
+              @input="(e) => { form.zip = maskZip(e.target.value); e.target.value = form.zip; }"
+            />
           </div>
         </div>
 
-        <div
-          class="mt-8 pt-8 border-t border-[#E0E0E0] bg-amber-500/5 border border-amber-500/10 rounded p-4 flex items-start gap-3"
-        >
+        <div class="mt-8 pt-8 border-t border-[#E0E0E0] bg-amber-500/5 border border-amber-500/10 rounded p-4 flex items-start gap-3">
           <AlertCircle :size="16" class="text-amber-400 mt-0.5 shrink-0" />
           <p class="text-xs text-amber-700 leading-relaxed">
             Mantenha seu E-mail e CPF sempre atualizados. Eles são as chaves
@@ -398,107 +240,31 @@ const savePassword = async () => {
         </div>
 
         <div class="mt-6 sm:hidden">
-          <button
-            @click="saveProfile"
-            :disabled="isLoadingProfile"
-            class="w-full bg-primary text-white font-black py-5 rounded shadow-xl active:scale-95 transition-all disabled:opacity-40"
-          >
-            {{ isLoadingProfile ? "Salvando..." : "Salvar Dados" }}
-          </button>
+          <BaseButton variant="primary" :isLoading="isLoadingProfile" class="w-full" @click="saveProfile">
+            Salvar Dados
+          </BaseButton>
         </div>
       </div>
 
       <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl">
-        <h2
-          class="text-lg font-black text-[#212121] mb-6 flex items-center gap-2"
-        >
+        <h2 class="text-lg font-black text-[#212121] mb-6 flex items-center gap-2">
           <Lock :size="20" class="text-[#757575]" /> Segurança da Conta
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="space-y-1.5 md:col-span-2">
-            <label
-              class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1 flex items-center gap-1.5"
-            >
-              <Key :size="11" /> Senha Atual
-            </label>
-            <input
-              v-model="passwordForm.oldPassword"
-              type="password"
-              placeholder="••••••••"
-              class="w-full py-3.5 px-4 rounded border bg-gray-50 text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all"
-              :class="
-                errors.oldPassword
-                  ? 'border-red-500 bg-red-500/5'
-                  : 'border-[#E0E0E0]'
-              "
-            />
-            <p
-              v-if="errors.oldPassword"
-              class="text-danger text-[11px] font-bold ml-1 flex items-center gap-1"
-            >
-              <AlertCircle :size="11" /> {{ errors.oldPassword }}
-            </p>
+          <div class="md:col-span-2">
+            <BaseInput v-model="passwordForm.oldPassword" type="password" label="Senha Atual" placeholder="••••••••" :error="errors.oldPassword" />
           </div>
 
-          <div class="space-y-1.5">
-            <label
-              class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1"
-              >Nova Senha</label
-            >
-            <input
-              v-model="passwordForm.newPassword"
-              type="password"
-              placeholder="••••••••"
-              class="w-full py-3.5 px-4 rounded border bg-gray-50 text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all"
-              :class="
-                errors.newPassword
-                  ? 'border-red-500 bg-red-500/5'
-                  : 'border-[#E0E0E0]'
-              "
-            />
-            <p
-              v-if="errors.newPassword"
-              class="text-danger text-[11px] font-bold ml-1 flex items-center gap-1"
-            >
-              <AlertCircle :size="11" /> {{ errors.newPassword }}
-            </p>
-          </div>
+          <BaseInput v-model="passwordForm.newPassword" type="password" label="Nova Senha" placeholder="••••••••" :error="errors.newPassword" />
 
-          <div class="space-y-1.5">
-            <label
-              class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1"
-              >Confirmar Nova Senha</label
-            >
-            <input
-              v-model="passwordForm.confirmPassword"
-              type="password"
-              placeholder="••••••••"
-              class="w-full py-3.5 px-4 rounded border bg-gray-50 text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all"
-              :class="
-                errors.confirmPassword
-                  ? 'border-red-500 bg-red-500/5'
-                  : 'border-[#E0E0E0]'
-              "
-            />
-            <p
-              v-if="errors.confirmPassword"
-              class="text-danger text-[11px] font-bold ml-1 flex items-center gap-1"
-            >
-              <AlertCircle :size="11" /> {{ errors.confirmPassword }}
-            </p>
-          </div>
+          <BaseInput v-model="passwordForm.confirmPassword" type="password" label="Confirmar Nova Senha" placeholder="••••••••" :error="errors.confirmPassword" />
         </div>
 
         <div class="mt-8 flex justify-end">
-          <button
-            @click="savePassword"
-            :disabled="isLoadingPassword"
-            class="flex items-center gap-2 bg-gray-100 text-[#212121] font-black px-8 py-4 rounded border border-[#E0E0E0] hover:bg-gray-200 transition-all active:scale-95 disabled:opacity-40 w-full sm:w-auto justify-center"
-          >
-            <Lock :size="18" />
-            {{ isLoadingPassword ? "Validando..." : "Atualizar Senha" }}
-          </button>
+          <BaseButton variant="secondary" :icon="Lock" :isLoading="isLoadingPassword" class="w-full sm:w-auto" @click="savePassword">
+            Atualizar Senha
+          </BaseButton>
         </div>
       </div>
     </div>

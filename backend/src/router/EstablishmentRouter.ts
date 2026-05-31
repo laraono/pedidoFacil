@@ -3,10 +3,6 @@ import { EstablishmentController } from '../controller/EstablishmentController';
 import { authenticate } from '../middleware/authenticate';
 import { checkPermission } from '../middleware/roleAccessControl';
 import { establishmentService } from '../service'; 
-import { 
-    validateSaveOnboarding, 
-    validateFinalizeOnboarding 
-} from '../validator/establishment/establishmentSchema';
 import { validateRequest } from '../middleware/validateRequest';
 import { UpdateEstablishmentDTO } from '../dto/establishment/UpdateEstablishmentDTO';
 import { validateUpload } from '../middleware/validateUpload';
@@ -24,20 +20,6 @@ establishmentRouter.get(
 establishmentRouter.get(
   '/:id/public',
   establishmentController.getPublicProfile
-);
-
-establishmentRouter.post(
-  '/onboarding',
-  authenticate,
-  validateSaveOnboarding,
-  establishmentController.onboarding
-);
-
-establishmentRouter.post(
-  '/finalize',
-  authenticate,
-  validateFinalizeOnboarding,
-  establishmentController.finalize
 );
 
 establishmentRouter.get(

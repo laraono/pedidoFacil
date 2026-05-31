@@ -5,6 +5,7 @@ import { roleApi } from "@/services/roleApi";
 import { employeeApi } from "@/services/employeeApi";
 import { useAuthStore } from "@/stores/auth";
 import { isValidCPF, maskCPF } from "@/utils/validator";
+import { validatePasswordStrength } from "@/utils/password";
 import { useToast } from "@/composables/useToast";
 import BaseInput from "@/components/ui/BaseInput.vue";
 import BaseSelect from "@/components/ui/BaseSelect.vue";
@@ -138,8 +139,7 @@ function validateForm() {
     errors.value.cpf = "O CPF inserido é inválido.";
   if (!editingUser.value && !form.value.password)
     errors.value.password = "Senha é obrigatória.";
-  if (form.value.password && form.value.password.length < 6)
-    errors.value.password = "Senha deve ter ao menos 6 caracteres.";
+  if (form.value.password) { const err = validatePasswordStrength(form.value.password); if (err) errors.value.password = err; }
   if (!form.value.roleId) errors.value.roleId = "Selecione um cargo.";
   return Object.keys(errors.value).length === 0;
 }

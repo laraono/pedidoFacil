@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from '../../middleware/error/AppError';
+import { strongPasswordSchema } from '../../utils/passwordSchema';
 
 export const updateProfileSchema = z.object({
     name: z.string().min(3, "Nome muito curto.").optional(),
@@ -16,7 +17,7 @@ export const updateProfileSchema = z.object({
 
 export const changePasswordSchema = z.object({
     oldPassword: z.string().min(1, "A senha atual é obrigatória."),
-    newPassword: z.string().min(6, "A nova senha deve ter no mínimo 6 caracteres.")
+    newPassword: strongPasswordSchema
 });
 
 const handleValidation = (schema: z.ZodSchema) => {

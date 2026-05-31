@@ -5,6 +5,7 @@ import { PlanRepository } from "../repository";
 import { MercadoPagoService } from "./MercadoPagoService";
 import { SubscriptionService } from "./SubscriptionService";
 import { Plan } from "../database";
+import { SubscriptionStatus } from "../enum";
 
 export class PlanService {
     
@@ -20,14 +21,32 @@ export class PlanService {
             const localRepositoryParams: CreatePlan = {
                 name: params.name,
                 frequency: params.frequency,
-                billingDay: params.billingDay,
                 price: params.price,
                 features: params.features,
             }
 
             const plan = await transactionalEntityManager.save(Plan, localRepositoryParams)
 
-            return plan
+            const isDiario = params.frequency === 'diario'
+            const isAnual = params.frequency === 'anual'
+            const billingDay = Number(process.env.MP_BILLING_DAY ?? 10)
+            const mpPlan = await this.mercadoPagoService.createPlan({
+                reason: params.name,
+                back_url: process.env.MP_BACK_URL || process.env.FRONTEND_URL || '',
+                auto_recurring: {
+                    frequency: isAnual ? 12 : 1,
+                    frequency_type: isDiario ? 'days' : 'months',
+                    ...(!isAnual && !isDiario && { billing_day: billingDay, billing_day_proportional: true }),
+                    transaction_amount: params.price,
+                    currency_id: 'BRL'
+                },
+                payment_methods_allowed: {
+                    payment_types: [{ id: 'credit_card' }]
+                }
+            })
+            await transactionalEntityManager.update(Plan, plan.id, { mercadoPagoId: mpPlan.id })
+
+            return { ...plan, mercadoPagoId: mpPlan.id }
         })
     }
 
@@ -67,12 +86,38 @@ export class PlanService {
             const localRepositoryParams: UpdatePlan = {
                 name: params.name,
                 frequency: params.frequency,
-                billingDay: params.billingDay,
                 price: params.price,
                 features: params.features,
             }
 
             await transactionalEntityManager.update(Plan, planId, localRepositoryParams)
+
+            if(plan.mercadoPagoId) {
+                const isAnual = params.frequency === 'anual'
+                const billingDay = Number(process.env.MP_BILLING_DAY ?? 10)
+                await this.mercadoPagoService.updatePlan(plan.mercadoPagoId, {
+                    reason: params.name,
+                    back_url: process.env.MP_BACK_URL || process.env.FRONTEND_URL || '',
+                    auto_recurring: {
+                        frequency: isAnual ? 12 : 1,
+                        frequency_type: 'months',
+                        ...(!isAnual && { billing_day: billingDay, billing_day_proportional: true }),
+                        transaction_amount: params.price,
+                        currency_id: 'BRL'
+                    }
+                })
+
+                const activeSubscriptions = await this.subscriptionService.listSubscriptionsByPlan(planId)
+                for(const sub of activeSubscriptions) {
+                    if(sub.mercadoPagoId && sub.status !== SubscriptionStatus.CANCELADA) {
+                        await this.mercadoPagoService.updateSubscriptionValue({
+                            subscriptionId: sub.mercadoPagoId,
+                            amount: params.price
+                        })
+                        await this.subscriptionService.updateSubscriptionPrice(sub.id, params.price)
+                    }
+                }
+            }
 
             return plan
         })

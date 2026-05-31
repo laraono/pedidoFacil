@@ -3,16 +3,15 @@ import { ref, onMounted, watch, computed } from 'vue';
 import {
   DollarSign, Users, TrendingUp, AlertTriangle,
   BarChart3, UserCheck, Flame, CreditCard,
-  Target, Download, PackageOpen, ArrowLeft, Tag, Clock
+  Target, Download, PackageOpen, Tag, Clock
 } from 'lucide-vue-next';
-import { useRouter } from 'vue-router';
 import { metricsApi } from '@/services/metricsApi';
 import localStorageService from '@/services/localStorageService';
 import { useToast } from '@/composables/useToast';
 import { useUtils } from '@/composables/useUtils';
 import ReportPrintLayout from '@/components/reports/ReportPrintLayout.vue';
+import { PageHeader, MetricCard } from '@/components/ui';
 
-const router = useRouter();
 const { showToast } = useToast();
 const { formatCurrency } = useUtils();
 
@@ -130,18 +129,8 @@ const exportToPDF = () => { window.print(); };
   <div class="bg-page min-h-screen">
     <div class="max-w-7xl mx-auto py-12 px-6 font-inter overflow-x-hidden print:hidden">
 
-      <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
-        <div class="flex items-center gap-4">
-          <button @click="router.back()" class="p-3 bg-white border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] transition-all shadow-sm">
-            <ArrowLeft :size="20" />
-          </button>
-          <div>
-            <h1 class="text-3xl font-black text-[#212121] tracking-tight uppercase">Relatórios</h1>
-            <p class="text-[#757575] text-sm mt-1 uppercase font-bold tracking-widest opacity-70">Business Intelligence</p>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-3 w-full sm:w-auto">
+      <PageHeader title="Relatórios" subtitle="Business Intelligence" back-to="back">
+        <template #actions>
           <button @click="exportToPDF"
             class="flex items-center gap-2 px-5 py-3 bg-white border border-[#E0E0E0] text-[#757575] text-xs font-black uppercase tracking-widest rounded hover:bg-gray-100 hover:text-[#212121] transition-all shadow-sm">
             <Download :size="16" /> PDF
@@ -154,8 +143,8 @@ const exportToPDF = () => { window.print(); };
               {{ opt.l }}
             </button>
           </div>
-        </div>
-      </header>
+        </template>
+      </PageHeader>
 
       <div class="flex gap-2 overflow-x-auto pb-2 mb-8 -mx-6 px-6 sm:mx-0 sm:px-0 custom-scrollbar">
         <button v-for="tab in [
@@ -176,18 +165,13 @@ const exportToPDF = () => { window.print(); };
       </div>
 
       <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div v-for="(val, key) in kpis" :key="key"
-          class="bg-white border border-[#E0E0E0] p-6 rounded hover:border-accent/30 transition-all duration-300 group shadow-sm">
-          <div class="flex items-center gap-4">
-            <div class="p-3 bg-gray-50 border border-[#E0E0E0] rounded group-hover:bg-primary/10 transition-all">
-              <component :is="getKpiIcon(key)" :size="20" class="text-accent" />
-            </div>
-            <div>
-              <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mb-0.5">{{ key.replace(/([A-Z])/g, ' $1').trim() }}</p>
-              <h3 class="text-xl font-black text-[#212121]">{{ val || '---' }}</h3>
-            </div>
-          </div>
-        </div>
+        <MetricCard
+          v-for="(val, key) in kpis"
+          :key="key"
+          :label="key.replace(/([A-Z])/g, ' $1').trim()"
+          :value="val || '---'"
+          :icon="getKpiIcon(key)"
+        />
       </section>
 
       <Transition enter-active-class="transition-all duration-400 ease-out" enter-from-class="opacity-0 translate-y-3" enter-to-class="opacity-100 translate-y-0" mode="out-in">

@@ -52,4 +52,20 @@ export class EstablishmentRepository extends Repository<Establishment> {
         await this.update(establishmentId, {mercadoPagoId})
     }
 
+    async findAllForAdmin(): Promise<Establishment[]> {
+        return await this.find({
+            withDeleted: true,
+            relations: ['manager', 'subscriptions', 'subscriptions.plan'],
+            order: { id: 'ASC' }
+        });
+    }
+
+    async findByIdForAdmin(id: number): Promise<Establishment | null> {
+        return await this.findOne({
+            where: { id },
+            withDeleted: true,
+            relations: ['manager', 'subscriptions', 'subscriptions.plan']
+        });
+    }
+
 }

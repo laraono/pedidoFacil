@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { strongPasswordSchema } from '../../utils/passwordSchema';
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from '../../middleware/error/AppError';
@@ -7,7 +8,7 @@ export const createEmployeeSchema = z.object({
     name: z.string().min(5, "Nome deve ter ao menos 5 caracteres."),
     email: z.string().email("E-mail inválido."),
     cpf: z.string().optional().nullable(),
-    password: z.string().min(6, "Senha deve ter ao menos 6 caracteres."),
+    password: strongPasswordSchema,
     roleId: z.number().int().positive("Selecione um cargo.")
 });
 
@@ -15,7 +16,7 @@ export const updateEmployeeSchema = z.object({
     name: z.string().min(5, "Nome deve ter ao menos 5 caracteres.").optional(),
     email: z.string().email("E-mail inválido.").optional(),
     cpf: z.string().optional().nullable(),
-    password: z.string().min(6, "Senha deve ter ao menos 6 caracteres.").optional(),
+    password: strongPasswordSchema.optional(),
     roleId: z.number().int().positive("Selecione um cargo.").optional()
 });
 

@@ -925,6 +925,7 @@ import { useKitchenStore } from "@/stores/kitchen";
 import { useAuthStore } from "@/stores/auth";
 import { useCouponStore } from "@/stores/coupons";
 import { useToast } from "@/composables/useToast";
+import { applyPriceMask, applyPercentMask } from "@/composables/usePriceMask";
 import { useUtils } from "@/composables/useUtils";
 import { request } from "@/services/api";
 import {
@@ -1040,27 +1041,15 @@ const discountType = ref("percent");
 const discountValue = ref(0);
 const discountRaw = ref("");
 
-const applyDiscountMask = (raw) => {
-  let val = String(raw).replace(/[^\d,]/g, "");
-  const commaIdx = val.indexOf(",");
-  if (commaIdx !== -1) {
-    val =
-      val.slice(0, commaIdx + 1) + val.slice(commaIdx + 1).replace(/,/g, "");
-    val = val.slice(0, commaIdx + 3);
-  }
-  const parts = val.split(",");
-  parts[0] = parts[0].replace(/^0+(\d)/, "$1");
-  return parts.join(",");
-};
-
 const onDiscountInput = (e) => {
   if (discountType.value === "percent") {
-    const digits = e.target.value.replace(/\D/g, "");
-    const num = Math.min(100, parseInt(digits, 10) || 0);
-    discountValue.value = num;
-    discountRaw.value = num === 0 ? "" : String(num);
+    const masked = applyPercentMask(e.target.value);
+    e.target.value = masked;
+    discountRaw.value = masked;
+    discountValue.value = parseInt(masked, 10) || 0;
   } else {
-    const masked = applyDiscountMask(e.target.value);
+    const masked = applyPriceMask(e.target.value);
+    e.target.value = masked;
     discountRaw.value = masked;
     discountValue.value = parseFloat(masked.replace(",", ".")) || 0;
   }

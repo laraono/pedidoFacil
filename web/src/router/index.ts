@@ -135,6 +135,18 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, requiresAdmin: true },
       },
       {
+        path: "admin/establishments",
+        name: "admin-establishments",
+        component: () => import("@/views/app/admin/AdminEstablishments.vue"),
+        meta: { requiresAuth: true, requiresAdmin: true },
+      },
+      {
+        path: "admin/establishments/:id",
+        name: "admin-establishment-detail",
+        component: () => import("@/views/app/admin/AdminEstablishmentDetail.vue"),
+        meta: { requiresAuth: true, requiresAdmin: true },
+      },
+      {
         path: "settings/profile",
         name: "manager-profile",
         component: () => import("@/views/app/settings/ManagerProfile.vue"),

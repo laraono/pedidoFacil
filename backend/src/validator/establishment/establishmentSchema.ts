@@ -3,21 +3,6 @@ import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from '../../middleware/error/AppError';
 
-export const saveOnboardingSchema = z.object({
-    name: z.string().optional(),
-    cnpj: z.string().optional(),
-    phone: z.string().optional(),
-    address: z.string().optional()
-});
-
-export const finalizeOnboardingSchema = z.object({
-    roles: z.array(z.object({
-        label: z.string(),
-        permissions: z.array(z.string())
-    })).optional().default([]),
-    hasTotem: z.boolean().default(false)
-});
-
 export const updateEstablishmentSchema = z.object({
     name: z.string().optional(),
     cnpj: z.string().optional(),
@@ -52,6 +37,4 @@ const handleValidation = (schema: z.ZodSchema) => {
     };
 };
 
-export const validateSaveOnboarding = handleValidation(saveOnboardingSchema);
-export const validateFinalizeOnboarding = handleValidation(finalizeOnboardingSchema);
 export const validateUpdateEstablishment = handleValidation(updateEstablishmentSchema);
