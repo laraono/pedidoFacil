@@ -7,12 +7,15 @@ import {
   CheckCircle2, Package, DollarSign, Zap
 } from 'lucide-vue-next';
 import { adminPlanApi } from '@/services/adminApi';
+import { useUtils } from '@/composables/useUtils';
 
 const router = useRouter();
 const { showToast } = useToast();
+const { formatCurrency } = useUtils();
 
 const plans = ref([]);
 const loading = ref(false);
+const loadError = ref(false);
 const saving = ref(false);
 const isModalOpen = ref(false);
 const isEditing = ref(false);
@@ -24,10 +27,11 @@ const errors = ref({});
 
 async function load() {
   loading.value = true;
+  loadError.value = false;
   try {
     plans.value = await adminPlanApi.list();
   } catch (e) {
-    showToast('Erro ao carregar planos.', 'error');
+    loadError.value = true;
   } finally {
     loading.value = false;
   }
@@ -114,7 +118,6 @@ const freqLabel = (f) => f === 'anual' ? 'Anual' : 'Mensal';
 const freqColor = (f) => f === 'anual'
   ? 'text-purple-400 bg-purple-500/10 border-purple-500/20'
   : 'text-blue-400 bg-blue-500/10 border-blue-500/20';
-const formatPrice = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 </script>
 
 <template>
@@ -141,6 +144,15 @@ const formatPrice = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency'
 
     <div v-if="loading" class="py-20 text-center text-[#757575]">Carregando...</div>
 
+    <div v-else-if="loadError" class="py-20 text-center">
+      <ShieldAlert :size="40" class="mx-auto mb-4 text-red-400 opacity-60" />
+      <p class="text-[#757575] font-bold mb-1">Erro ao carregar planos</p>
+      <p class="text-[#757575] text-sm mb-4">Verifique sua conexão e tente novamente.</p>
+      <button @click="load" class="px-5 py-2.5 bg-gray-100 border border-[#E0E0E0] text-[#212121] font-black rounded text-sm hover:bg-gray-200 transition-all">
+        Tentar Novamente
+      </button>
+    </div>
+
     <div v-else-if="plans.length" class="grid sm:grid-cols-2 gap-6">
       <div v-for="plan in plans" :key="plan.id"
         class="bg-white border border-[#E0E0E0] rounded-xl p-6 flex flex-col gap-4 hover:border-primary/30 transition-colors">
@@ -166,7 +178,7 @@ const formatPrice = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency'
           </div>
         </div>
         <div class="flex items-end gap-1">
-          <span class="text-3xl font-black text-[#212121]">{{ formatPrice(plan.price) }}</span>
+          <span class="text-3xl font-black text-[#212121]">{{ formatCurrency(plan.price) }}</span>
           <span class="text-[#757575] text-sm mb-1">/mês</span>
         </div>
         <div v-if="plan.features" class="border-t border-[#E0E0E0] pt-4">

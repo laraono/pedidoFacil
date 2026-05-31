@@ -13,7 +13,6 @@ import { UserRepository, RefreshTokenRepository } from '../repository';
 import { EstablishmentRepository } from '../repository/EstablishmentRepository';
 import { gerarTokens, gerarTokenAdmin, hashToken } from '../config/crypto';
 import { MercadoPagoService } from './MercadoPagoService';
-import { CreateOrderSubscriptionMP } from '../dto';
 
 function calcRefreshExpiry(): Date {
   const raw = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
@@ -141,20 +140,19 @@ export class AuthService {
 
         const plan = await manager.findOne(Plan, { where: { id: data.planId } });
         if (!plan) throw new AppError('Plano não encontrado.', 404);
+        if (!plan.mercadoPagoId) throw new AppError('Plano não configurado no Mercado Pago.', 500);
 
-        const paymentData: CreateOrderSubscriptionMP = {
-          ...data.payment,
-          total_amount: plan.price.toString(),
-          transactions: {
-            payments: [{
-              ...data.payment.transactions.payments[0],
-              amount: plan.price.toString(),
-            }],
-          },
-        };
+        const cardToken = data.payment.cardToken;
+        const payerEmail = data.payment.payerEmail;
 
         // Se o MP falhar, o throw causa rollback de tudo acima
-        const mpOrder = await this.mercadoPagoService.createSubscriptionOrder(paymentData);
+        const mpSubscription = await this.mercadoPagoService.createSubscription({
+          preapproval_plan_id: plan.mercadoPagoId,
+          payer_email: payerEmail,
+          card_token_id: cardToken,
+          reason: plan.name,
+          status: 'authorized',
+        });
 
         const expirationDate = new Date();
         if (plan.frequency === 'anual') {
@@ -172,11 +170,11 @@ export class AuthService {
             status: SubscriptionStatus.PENDENTE,
             price: plan.price,
             plan,
-            mercadoPagoId: mpOrder.id,
+            mercadoPagoId: mpSubscription.id,
           });
         } catch (err) {
-          // MP criou o order mas o save falhou — cancela para não deixar cobrança órfã
-          await this.mercadoPagoService.cancelSubscription(mpOrder.id);
+          // MP criou o preapproval mas o save falhou — cancela para não deixar cobrança órfã
+          await this.mercadoPagoService.cancelSubscription(mpSubscription.id);
           throw err;
         }
 

@@ -51,7 +51,7 @@ function onStep3Next(payload: { roles: typeof roles.value; hasTotem: boolean }) 
   nextStep()
 }
 
-async function handlePaymentSubmit(payload: { planId: number; payment: unknown }) {
+async function handlePaymentSubmit(payload: { planId: number; cardToken: string; payerEmail: string }) {
   serverError.value = ''
   isSubmitting.value = true
   try {
@@ -64,8 +64,9 @@ async function handlePaymentSubmit(payload: { planId: number; payment: unknown }
       roles: roles.value,
       hasTotem: hasTotem.value,
       planId: payload.planId,
-      payment: payload.payment,
+      payment: { cardToken: payload.cardToken, payerEmail: payload.payerEmail },
     })
+    if (res.accessToken) localStorage.setItem('accessToken', res.accessToken)
     authStore.setUserFromOnboarding(res)
     router.push('/app/dashboard')
   } catch (err: any) {
@@ -135,6 +136,7 @@ async function handlePaymentSubmit(payload: { planId: number; payment: unknown }
           <Step4Subscription
             v-else-if="step === 4"
             :isSubmitting="isSubmitting"
+            :payerEmail="account.email"
             @submit="handlePaymentSubmit"
           />
         </div>

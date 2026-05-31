@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { CategoryStatus } from '../../enum';
-import { AppError } from '../../middleware';
 
 const createCategorySchema = z.object({
     name: z.string().min(1).max(20),
@@ -29,7 +28,7 @@ export const validateCreateCategory =
     (req, res: Response, next: NextFunction) => {
         try {
             if(!req.usuario) {
-                throw new AppError('unauthorized', 401)
+                return res.status(401).json({ error: 'Não autorizado.' });
             }
 
             const body = createCategorySchema.parse({
@@ -43,7 +42,7 @@ export const validateCreateCategory =
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);
             }
-            return res.status(500).send("Internal Server Error");
+            return res.status(500).json({ error: "Erro interno no servidor." });
         }
     };
 
@@ -51,7 +50,7 @@ export const validateListCategories =
     (req, res: Response, next: NextFunction) => {
         try {
             if(!req.usuario) {
-                throw new AppError('unauthorized', 401)
+                return res.status(401).json({ error: 'Não autorizado.' });
             }
 
             const establishmentId = listCategoriesSchema.parse({establishmentId: req.usuario.estabelecimento})
@@ -63,7 +62,7 @@ export const validateListCategories =
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);
             }
-            return res.status(500).send("Internal Server Error");
+            return res.status(500).json({ error: "Erro interno no servidor." });
         }
     };
 
@@ -81,7 +80,7 @@ export const validateUpdateCategory =
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);
             }
-            return res.status(500).send("Internal Server Error");
+            return res.status(500).json({ error: "Erro interno no servidor." });
         }
     };
 
@@ -96,6 +95,6 @@ export const validateUpdateCategory =
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);
             }
-            return res.status(500).send("Internal Server Error");
+            return res.status(500).json({ error: "Erro interno no servidor." });
         }
     };

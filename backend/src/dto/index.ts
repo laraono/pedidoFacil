@@ -1,4 +1,4 @@
-export { RegisterDTO, LoginDTO } from './auth';
+export { LoginDTO } from './auth';
 export { 
     CreateCategory, 
     CreateCategoryParams, 

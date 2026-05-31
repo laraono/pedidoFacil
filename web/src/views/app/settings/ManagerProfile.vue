@@ -88,12 +88,16 @@ const validatePassword = () => {
   errors.value = {};
   if (!passwordForm.value.oldPassword)
     errors.value.oldPassword = "A senha atual é obrigatória.";
-  if (
-    !passwordForm.value.newPassword ||
-    passwordForm.value.newPassword.length < 6
-  )
-    errors.value.newPassword = "A nova senha deve ter no mínimo 6 caracteres.";
-  if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword)
+  const p = passwordForm.value.newPassword;
+  if (!p || p.length < 8)
+    errors.value.newPassword = "A nova senha deve ter no mínimo 8 caracteres.";
+  else if (!/[A-Z]/.test(p))
+    errors.value.newPassword = "A nova senha deve conter pelo menos uma letra maiúscula.";
+  else if (!/[0-9]/.test(p))
+    errors.value.newPassword = "A nova senha deve conter pelo menos um número.";
+  else if (!/[^A-Za-z0-9]/.test(p))
+    errors.value.newPassword = "A nova senha deve conter pelo menos um caractere especial.";
+  if (p && p !== passwordForm.value.confirmPassword)
     errors.value.confirmPassword = "As senhas não coincidem.";
   return Object.keys(errors.value).length === 0;
 };

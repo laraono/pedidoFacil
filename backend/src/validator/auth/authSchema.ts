@@ -12,7 +12,7 @@ export const validateLogin =
             if (error instanceof ZodError) {
                 return res.status(400).json({ error: error.issues[0].message });
             }
-            return res.status(500).send('Internal Server Error');
+            return res.status(500).json({ error: 'Erro interno no servidor.' });
         }
     };
 
@@ -25,6 +25,6 @@ export const validateRegisterComplete =
             if (error instanceof ZodError) {
                 return res.status(400).json({ error: error.issues[0].message });
             }
-            return res.status(500).send('Internal Server Error');
+            return res.status(500).json({ error: 'Erro interno no servidor.' });
         }
     };

@@ -15,6 +15,9 @@ import {
   Clock,
   PackageOpen,
 } from "lucide-vue-next";
+import { useUtils } from "@/composables/useUtils";
+
+const { formatCurrency } = useUtils();
 
 const router = useRouter();
 const closedStore = useClosedComandaStore();
@@ -63,13 +66,6 @@ function formatDate(iso) {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  });
-}
-
-function formatCurrency(v) {
-  return Number(v || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
   });
 }
 

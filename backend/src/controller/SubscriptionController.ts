@@ -44,12 +44,18 @@ export class SubscriptionController {
     });
 
     processCardInfo  = catchAsync(async (req, res: Response) => {
-        await this.subscriptionService.processCardInfo(req.body, req.params);
+        await this.subscriptionService.processCardInfo(req.body, {
+            planId: req.params.planId,
+            establishmentId: req.usuario.estabelecimento
+        });
         return res.sendStatus(204);
     });
 
     restoreSubscription  = catchAsync(async (req, res: Response) => {
-        await this.subscriptionService.restoreSubscription(req.body, req.params);
+        await this.subscriptionService.restoreSubscription(req.body, {
+            subscriptionId: req.params.subscriptionId,
+            establishmentId: req.usuario.estabelecimento,
+        });
         auditLog('subscription.restored', { subscriptionId: req.params.subscriptionId, userId: (req as any).usuario?.id });
         return res.sendStatus(204);
     });
@@ -61,10 +67,10 @@ export class SubscriptionController {
         return res.sendStatus(204);
     });
 
-    schedulePlan = catchAsync(async (req, res: Response) => {
+    changePlan = catchAsync(async (req, res: Response) => {
         const establishmentId = req.usuario.estabelecimento;
         const { planId } = req.body;
-        const updated = await this.subscriptionService.schedulePlan(establishmentId, planId ?? null);
+        const updated = await this.subscriptionService.changePlan(establishmentId, planId);
         return res.status(200).json(updated);
     });
 

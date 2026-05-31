@@ -11,7 +11,7 @@ export const subscriptionApi = {
     request(`/subscriptions/${subscriptionId}`, { method: 'GET' }),
 
   restoreSubscription: (subscriptionId: number, data: unknown) =>
-    request(`/process-order/${subscriptionId}`, { method: 'POST', body: JSON.stringify({ data }) }),
+    request(`/process-order/${subscriptionId}`, { method: 'POST', body: JSON.stringify(data) }),
 
   getEstablishmentSubscription: () => request('/subscriptions/establishment', { method: 'GET' }),
 
@@ -26,8 +26,8 @@ export const subscriptionApi = {
   cancelSubscription: (subscriptionId: number) =>
     request(`/subscriptions/${subscriptionId}/cancel`, { method: 'POST' }),
 
-  schedulePlan: (planId: number | null) =>
-    request('/subscriptions/schedule-plan', {
+  changePlan: (planId: number) =>
+    request('/subscriptions/change-plan', {
       method: 'PATCH',
       body: JSON.stringify({ planId }),
     }),

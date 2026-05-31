@@ -31,7 +31,7 @@ export const validateCreateComanda =
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);
             }
-            return res.status(500).send("Internal Server Error");
+            return res.status(500).json({ error: "Erro interno no servidor." });
         }
     };
 
@@ -48,7 +48,7 @@ export const validateCancelComanda =
             if (error instanceof ZodError) {
                 return res.status(400).send(error.message);
             }
-            return res.status(500).send("Internal Server Error");
+            return res.status(500).json({ error: "Erro interno no servidor." });
         }
     };
 

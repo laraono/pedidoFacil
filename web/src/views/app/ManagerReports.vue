@@ -9,10 +9,12 @@ import { useRouter } from 'vue-router';
 import { metricsApi } from '@/services/metricsApi';
 import localStorageService from '@/services/localStorageService';
 import { useToast } from '@/composables/useToast';
+import { useUtils } from '@/composables/useUtils';
 import ReportPrintLayout from '@/components/reports/ReportPrintLayout.vue';
 
 const router = useRouter();
 const { showToast } = useToast();
+const { formatCurrency } = useUtils();
 
 const activeTab = ref('geral');
 const dateFilter = ref('7d');
@@ -104,7 +106,7 @@ const financialImpact = computed(() => {
   const tmStr = kpis.value.ticketMedio || '0';
   const ticketMedio = parseFloat(tmStr.replace('R$', '').replace(/\./g, '').replace(',', '.')) || 0;
   const loss = totalCancellationsCount.value * ticketMedio;
-  return loss.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return formatCurrency(loss);
 });
 
 const getKpiIcon = (key) => {

@@ -18,6 +18,6 @@ export const validateCreateCoupon = (req: Request, res: Response, next: NextFunc
             const firstError = error.issues[0]?.message || "Erro de validação nos campos.";
             return res.status(400).json({ error: firstError });
         }
-        return res.status(500).json({ error: "Internal Server Error" });
+        return res.status(500).json({ error: "Erro interno no servidor." });
     }
 };

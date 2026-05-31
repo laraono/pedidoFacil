@@ -8,6 +8,7 @@ import {
   Mail, DollarSign, Package, BarChart3, ClipboardList, Settings
 } from 'lucide-vue-next';
 import { adminSubscriptionApi } from '@/services/adminApi';
+import { useUtils } from '@/composables/useUtils';
 
 const router = useRouter();
 const { showToast } = useToast();
@@ -65,8 +66,8 @@ function statusConfig(status) {
   return { label: 'Expirada', icon: AlertTriangle, color: 'text-[#757575]', bg: 'bg-gray-200/20 border-[#E0E0E0]' };
 }
 
+const { formatCurrency } = useUtils();
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
-const formatCurrency = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 function openDetail(sub) {
   selectedSub.value = sub;

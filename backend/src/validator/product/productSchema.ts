@@ -26,7 +26,7 @@ export const validateCreateProduct =
                     }))
                 });
             }
-            return res.status(500).send("Internal Server Error");
+            return res.status(500).json({ error: "Erro interno no servidor." });
         }
     };
 

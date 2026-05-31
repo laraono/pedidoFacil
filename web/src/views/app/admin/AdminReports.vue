@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSubscriptionStore } from '@/stores/subscriptions';
+import { useUtils } from '@/composables/useUtils';
 import {
   ArrowLeft, ShieldAlert, TrendingUp, DollarSign, Users,
   BarChart3, Download, Calendar, Loader2
@@ -9,6 +10,7 @@ import {
 
 const router = useRouter();
 const subscriptionStore = useSubscriptionStore();
+const { formatCurrency } = useUtils();
 
 const isLoaded = ref(false);
 const dateFilter = ref('12m');
@@ -154,7 +156,7 @@ const handleExport = () => window.print();
           <DollarSign :size="14" /> MRR
         </div>
         <p class="text-3xl font-black text-[#212121]">
-          {{ totalMRR.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
+          {{ formatCurrency(totalMRR) }}
         </p>
         <p class="text-xs text-[#757575] mt-1">receita mensal recorrente</p>
       </div>
@@ -172,7 +174,7 @@ const handleExport = () => window.print();
           <TrendingUp :size="14" /> ARR Estimado
         </div>
         <p class="text-3xl font-black text-[#212121]">
-          {{ (totalMRR * 12).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
+          {{ formatCurrency(totalMRR * 12) }}
         </p>
         <p class="text-xs text-[#757575] mt-1">receita anual recorrente</p>
       </div>
@@ -261,7 +263,7 @@ const handleExport = () => window.print();
             </div>
             <div class="flex justify-between text-sm">
               <span class="text-[#757575]">MRR atual</span>
-              <span class="font-black text-[#212121]">{{ totalMRR.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}</span>
+              <span class="font-black text-[#212121]">{{ formatCurrency(totalMRR) }}</span>
             </div>
           </div>
         </div>
@@ -320,9 +322,9 @@ const handleExport = () => window.print();
 
     <div style="display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 20px;">
       <div v-for="kpi in [
-        { label: 'MRR', value: totalMRR.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) },
+        { label: 'MRR', value: formatCurrency(totalMRR) },
         { label: 'Assinantes Ativos', value: totalActive },
-        { label: 'ARR Estimado', value: (totalMRR*12).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) },
+        { label: 'ARR Estimado', value: formatCurrency(totalMRR * 12) },
         { label: 'Média Usuários', value: avgUsers },
       ]" :key="kpi.label" style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; background: #f9fafb;">
         <p style="font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; color: #9ca3af; margin: 0 0 4px;">{{ kpi.label }}</p>
@@ -383,7 +385,7 @@ const handleExport = () => window.print();
             <span :style="{ background: planLabel(est) === 'anual' ? '#f3e8ff' : '#dbeafe', color: planLabel(est) === 'anual' ? '#7e22ce' : '#1d4ed8', padding: '2px 6px', borderRadius: '4px', fontSize: '8px', fontWeight: '900' }">{{ planLabel(est) }}</span>
           </td>
           <td style="padding: 5px 10px; text-align: right; font-weight: 900; border-bottom: 1px solid #f3f4f6;">{{ est.users }}</td>
-          <td style="padding: 5px 10px; text-align: right; font-weight: 900; color: #059669; border-bottom: 1px solid #f3f4f6;">{{ est.amount.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }}</td>
+          <td style="padding: 5px 10px; text-align: right; font-weight: 900; color: #059669; border-bottom: 1px solid #f3f4f6;">{{ formatCurrency(est.amount) }}</td>
         </tr>
       </tbody>
     </table>
