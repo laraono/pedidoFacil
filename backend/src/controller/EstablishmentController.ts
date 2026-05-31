@@ -2,8 +2,14 @@ import { Request, Response } from 'express';
 import { EstablishmentService } from '../service/EstablishmentService';
 import { catchAsync } from '../middleware';
 import { getIO } from '../socket';
-import { deleteFile } from '../utils/fileHelper';
+import path from 'path';
 import { auditLog } from '../utils/logger';
+import { 
+    ensureBucketExists, 
+    generateUniqueImageKey, 
+    uploadToS3, 
+    getImageContentType 
+} from "../service/S3Service"; 
 
 export class EstablishmentController {
   
@@ -86,25 +92,60 @@ export class EstablishmentController {
       updateData.pixStaticEnabled = updateData.pixStaticEnabled === 'true';
     }
 
+    if (typeof updateData.configurations === 'string') {
+      updateData.configurations = JSON.parse(updateData.configurations);
+    }
+
     const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const bucketName = process.env.AWS_BUCKET_NAME || 'pedidofacil-uploads';
+    let bucketChecked = false;
+
+    const verifyBucket = async () => {
+      if (!bucketChecked) {
+        await ensureBucketExists(bucketName);
+        bucketChecked = true;
+      }
+    };
 
     if (files?.logo?.[0]) {
-      const oldProfile = await this.establishmentService.getEstablishmentProfile(establishmentId);
-      if (oldProfile?.configurations?.logo) {
-        deleteFile(oldProfile.configurations.logo);
-      }
+      await verifyBucket();
+      const logoFile = files.logo[0];
+      
+      const key = generateUniqueImageKey(logoFile.buffer);
+      const extension = path.extname(logoFile.originalname) || '.jpg';
+      const fullKey = `logo-${key}${extension}`;
+      const contentType = getImageContentType(logoFile);
+
+      const uploadResult = await uploadToS3({
+        bucket: bucketName,
+        key: fullKey,
+        body: logoFile.buffer,
+        contentType: contentType
+      });
+
       updateData.configurations = {
         ...updateData.configurations,
-        logo: files.logo[0].filename
+        logo: uploadResult.Location
       };
     }
 
     if (files?.pixQrCode?.[0]) {
-      const oldProfile = await this.establishmentService.getEstablishmentProfile(establishmentId);
-      if (oldProfile?.pixQrCodeUrl && !oldProfile.pixQrCodeUrl.startsWith('http')) {
-        deleteFile(oldProfile.pixQrCodeUrl);
-      }
-      updateData.pixQrCodeUrl = files.pixQrCode[0].filename;
+      await verifyBucket();
+      const pixFile = files.pixQrCode[0];
+
+      const key = generateUniqueImageKey(pixFile.buffer);
+      const extension = path.extname(pixFile.originalname) || '.jpg';
+      const fullKey = `pix-${key}${extension}`;
+      const contentType = getImageContentType(pixFile);
+
+      const uploadResult = await uploadToS3({
+        bucket: bucketName,
+        key: fullKey,
+        body: pixFile.buffer,
+        contentType: contentType
+      });
+
+      updateData.pixQrCodeUrl = uploadResult.Location;
     }
 
     try {

@@ -1,1 +1,0 @@
-export { validateCreateCoupon } from './couponSchema';

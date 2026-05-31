@@ -1,10 +1,12 @@
 import express, { Request, Response } from 'express';
 import { comandaController } from '../controller';
-import { validateCancelComanda, validateCreateComanda, validateListComandas, validateListComandasByStatus } from '../validator';
 import { catchAsync, subscriptionMiddleware } from '../middleware';
 import { authenticate } from '../middleware/authenticate';
 import { verifyTenancy } from '../middleware/tenant';
 import { checkPermission } from '../middleware/roleAccessControl';
+import { validateRequest } from '../middleware/validateRequest'; 
+import { createComandaSchema } from '../dto/comanda/CreateComandaDTO'; 
+import { cancelComandaSchema } from '../dto/comanda/CancelComandaDTO';
 
 export const comandaRouter = express.Router();
 
@@ -37,7 +39,7 @@ comandaRouter.post(
   authenticate,
   subscriptionMiddleware,
   checkPermission('CAIXA', 'CRIAR_PEDIDO'),
-  validateCreateComanda,
+  validateRequest(createComandaSchema), 
   catchAsync((req: Request, res: Response) => comandaController.createComanda(req, res)),
 );
 
@@ -47,7 +49,7 @@ comandaRouter.post(
   subscriptionMiddleware,
   verifyTenancy('COMANDA', 'comandaId'),
   checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'),
-  validateCancelComanda,
+  validateRequest(cancelComandaSchema), 
   catchAsync((req: Request, res: Response) => comandaController.cancelComanda(req, res)),
 );
 

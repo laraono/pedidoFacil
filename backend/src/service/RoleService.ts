@@ -1,7 +1,8 @@
 import { RoleRepository } from '../repository/RoleRepository';
 import { UserRepository } from '../repository/UserRepository';
 import { AppError } from '../middleware/error/AppError';
-import { CreateRoleDTO, UpdateRoleDTO } from '../dto/role/RoleDTO';
+import { CreateRoleDTO } from '../dto/role/CreateRoleDTO';
+import { UpdateRoleDTO } from '../dto/role/UpdateRoleDTO';
 
 export class RoleService {
     constructor(

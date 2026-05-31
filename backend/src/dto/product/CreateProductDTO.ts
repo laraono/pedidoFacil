@@ -55,33 +55,32 @@ export const createProductSchema = z.object({
 });
 
 export type CreateProductDTO = z.infer<typeof createProductSchema>['body'];
-
 export type CreateProductVariationDTO = NonNullable<z.infer<typeof createProductSchema>['body']['productVariations']>[number];
 
-export type CreateProduct = CreateProductDTO
-export type CreateProductParams = CreateProductDTO
+export type CreateProduct = CreateProductDTO;
+export type CreateProductParams = CreateProductDTO;
 
 export type ProductParams = {
-    name: string
-    description?: string | null
-    isAvailable?: boolean
-    basePrice: number
-    status: ProductStatus | string
-    category: { id: number }
-    establishment?: { id: number }
-    image?: string
-    estocavel?: boolean
-}
+    name: string;
+    description?: string | null;
+    isAvailable?: boolean;
+    basePrice: number;
+    status: ProductStatus | string;
+    category: { id: number };
+    establishment?: { id: number };
+    image?: string;
+    estocavel?: boolean;
+};
 
 export type CreateProductVariation = {
-    name: string
-    addPrice: number
-    status: ProductStatus | string
-    product?: { id: number }
-}
+    name: string;
+    addPrice: number;
+    status: ProductStatus | string;
+    product?: { id: number };
+};
 
 export type ProductVariationParams = {
-    name: string
-    addPrice: number
-    status: ProductStatus | string
-}
+    name: string;
+    addPrice: number;
+    status: ProductStatus | string;
+};

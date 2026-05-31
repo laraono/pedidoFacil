@@ -1,13 +1,43 @@
 import { z } from 'zod';
 import { safeString } from '../../utils/safeZod';
 
+function validarCNPJ(cnpj: string): boolean {
+  const c = cnpj.replace(/[^\d]/g, '');
+  if (c.length !== 14 || /^(\d)\1{13}$/.test(c)) return false;
+  let sum = 0, pos = 5;
+  for (let i = 0; i < 12; i++) {
+    sum += parseInt(c[i]) * pos--;
+    if (pos < 2) pos = 9;
+  }
+  let r = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (r !== parseInt(c[12])) return false;
+  sum = 0; pos = 6;
+  for (let i = 0; i < 13; i++) {
+    sum += parseInt(c[i]) * pos--;
+    if (pos < 2) pos = 9;
+  }
+  r = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  return r === parseInt(c[13]);
+}
+
 export const registerSchema = z.object({
   body: z.object({
     nome_estabelecimento: safeString(2, 100).optional().nullable(),
-    cnpj: safeString(14, 18).optional().nullable(),
+    
+    cnpj: safeString(14, 18).optional().nullable().refine((val) => {
+      if (!val) return true; 
+      return validarCNPJ(val);
+    }, { message: "CNPJ inválido." }),
+
     nome_usuario: safeString(2, 100),
-    email: z.email("E-mail inválido").trim().toLowerCase(),
-    senha: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
+    email: z.string().email("E-mail inválido").trim().toLowerCase(),
+    
+    senha: z.string()
+      .min(8, 'A senha deve ter pelo menos 8 caracteres.')
+      .regex(/[A-Z]/, 'A senha deve conter pelo menos uma letra maiúscula.')
+      .regex(/[0-9]/, 'A senha deve conter pelo menos um número.')
+      .regex(/[^A-Za-z0-9]/, 'A senha deve conter pelo menos um caractere especial.'),
+      
     cpf: safeString(11, 14).optional().nullable(),
     
     cargos: z.array(
