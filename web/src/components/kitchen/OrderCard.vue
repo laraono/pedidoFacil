@@ -42,7 +42,6 @@ onUnmounted(() => {
 
 const statusTheme = computed(() => {
   if(!props.order) return
-  // Priority for delayed orders (except if ready)
   if (isDelayed.value && props.order.status !== 'ready') {
     return {
       color: 'bg-red-600',
@@ -64,6 +63,33 @@ const statusTheme = computed(() => {
     default:
       return { color: 'bg-gray-400', border: 'border-[#E0E0E0]', bg: 'bg-white', label: 'INFO', btn: 'bg-gray-400 text-white', barWidth: 'w-3' };
   }
+});
+
+const groupedItems = computed(() => {
+  if (!props.order || !props.order.items) return [];
+  const groups = [];
+  
+  props.order.items.forEach(item => {
+    const itemObs = (item.obs || item.observation || '').trim();
+    const itemVar = (item.variationName || '').trim();
+
+    const existing = groups.find(g => {
+      const gObs = (g.obs || g.observation || '').trim();
+      const gVar = (g.variationName || '').trim();
+      
+      return g.name === item.name && gVar === itemVar && gObs === itemObs;
+    });
+
+    const qty = Number(item.amount) || Number(item.quantity) || 1;
+
+    if (existing) {
+      existing.amount += qty; 
+    } else {
+      groups.push({ ...item, amount: qty }); 
+    }
+  });
+
+  return groups;
 });
 
 </script>
@@ -123,7 +149,7 @@ const statusTheme = computed(() => {
       </div>
 
       <div class="p-5 space-y-4">
-        <div v-for="(item, index) in order.items" :key="index" class="flex flex-col border-b border-[#E0E0E0] pb-3 last:border-0 last:pb-0">
+        <div v-for="(item, index) in groupedItems" :key="index" class="flex flex-col border-b border-[#E0E0E0] pb-3 last:border-0 last:pb-0">
           <div class="flex items-start gap-4">
             <span
               class="font-black text-2xl min-w-[35px] transition-colors"
@@ -142,10 +168,10 @@ const statusTheme = computed(() => {
             </div>
           </div>
 
-          <div v-if="item.obs" class="ml-12 mt-2 p-3 rounded bg-amber-50 border border-amber-200 flex items-center gap-2">
+          <div v-if="item.obs || item.observation" class="ml-12 mt-2 p-3 rounded bg-amber-50 border border-amber-200 flex items-center gap-2">
             <AlertTriangle :size="14" class="text-amber-500" />
             <p class="text-[11px] font-black text-amber-700 uppercase tracking-wider italic">
-              {{ item.obs }}
+              {{ item.obs || item.observation }}
             </p>
           </div>
         </div>

@@ -145,7 +145,6 @@ export class OrderService {
 
   async updateOrderStatus(orderId: number, status: OrderStatus, userId?: number, reason?: string) {
     const updateData: any = { status };
-
     const currentStatus = String(status);
 
     if (currentStatus === 'Cancelado' || currentStatus === 'CANCELADO') {
@@ -154,6 +153,26 @@ export class OrderService {
     }
 
     await this.orderRepository.update(orderId, updateData);
+
+    const order = await this.dataSource.getRepository(Order).findOne({ 
+      where: { id: orderId }, relations: ['comanda'] 
+    });
+    
+    if (!order || !order.comanda) return { comandaCancelled: false, comandaId: null };
+    const comandaId = order.comanda.id;
+
+    if (currentStatus === 'Cancelado' || currentStatus === 'CANCELADO') {
+        const allOrders = await this.dataSource.getRepository(Order).find({ where: { comanda: { id: comandaId } } });
+        
+        const allCancelled = allOrders.every(o => o.status === OrderStatus.CANCELADO);
+
+        if (allCancelled && allOrders.length > 0) {
+            await this.comandaService.updateComandaStatus(comandaId, ComandaStatus.CANCELADA);
+            return { comandaCancelled: true, comandaId };
+        }
+    }
+
+    return { comandaCancelled: false, comandaId };
   }
 
   async getOrderWithDetails(orderId: number) {

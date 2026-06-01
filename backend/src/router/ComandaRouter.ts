@@ -31,7 +31,7 @@ comandaRouter.get(
   authenticate,
   subscriptionMiddleware,
   checkPermission('COMANDAS_FINALIZADAS'),
-  catchAsync((req: Request, res: Response) => comandaController.listComandasByStatus(req, res)),
+  catchAsync((req: Request, res: Response) => comandaController.listComandasHistory(req, res)),
 );
 
 comandaRouter.post(

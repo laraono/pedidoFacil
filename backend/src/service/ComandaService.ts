@@ -1,5 +1,6 @@
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { Comanda } from '../database/entity/Comanda';
+import { Order } from '../database/entity/Order';
 import { OrderStatus, ComandaStatus } from '../enum';
 import { AppError } from '../middleware/error/AppError';
 import { PaymentService } from './PaymentService';
@@ -56,6 +57,20 @@ export class ComandaService {
       .getMany();
   }
 
+  async listComandasHistory(establishmentId: number): Promise<Comanda[]> {
+    return await this.dataSource.getRepository(Comanda)
+      .createQueryBuilder('comanda')
+      .leftJoinAndSelect('comanda.pedidos', 'pedido')
+      .leftJoinAndSelect('pedido.productOrders', 'po')
+      .leftJoinAndSelect('po.product', 'product')
+      .leftJoinAndSelect('po.variations', 'variation')
+      .leftJoinAndSelect('variation.productVariation', 'pv')
+      .where('comanda.status IN (:...statuses)', { statuses: [ComandaStatus.FECHADA, ComandaStatus.CANCELADA] })
+      .andWhere('comanda.establishment = :id', { id: establishmentId })
+      .orderBy('comanda.created_at', 'DESC')
+      .getMany();
+  }
+
   async updateComandaStatus(
     comandaId: number,
     status: ComandaStatus,
@@ -72,11 +87,22 @@ export class ComandaService {
   async cancelComanda(data: CancelComandaDTO): Promise<void> {
     const comanda = await this.comandaRepository.findOne({
       where: { id: data.comandaId },
+      relations: ['pedidos']
     });
     if (!comanda) throw new AppError('Comanda não encontrada', 404);
 
     comanda.status = ComandaStatus.CANCELADA;
     await this.comandaRepository.save(comanda);
+
+    if (comanda.pedidos && comanda.pedidos.length > 0) {
+        for (const pedido of comanda.pedidos) {
+            if (pedido.status !== OrderStatus.FINALIZADO && pedido.status !== OrderStatus.CANCELADO) {
+                pedido.status = OrderStatus.CANCELADO;
+                pedido.cancellationDescription = (data as any).reason || 'Comanda inteira cancelada na Cozinha';
+                await this.dataSource.getRepository(Order).save(pedido);
+            }
+        }
+    }
   }
 
   async updateComandaTotalTransaction(

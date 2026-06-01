@@ -115,15 +115,16 @@ export class OrderController {
         const { status, cancellationDescription } = req.body;
         const usuario = (req as any).usuario;
 
-        await this.orderService.updateOrderStatus(
+        const result = await this.orderService.updateOrderStatus(
             Number(orderId), 
             status, 
             usuario.id, 
             cancellationDescription
         );
+        
         getIO().to('kitchen').to('cashier').to('waiter').emit('order_status_updated', {
             orderId:   Number(orderId),
-            comandaId: req.params.comandaId ? Number(req.params.comandaId) : null,
+            comandaId: req.params.comandaId ? Number(req.params.comandaId) : result.comandaId,
             status,
         });
 
@@ -146,18 +147,26 @@ export class OrderController {
         const { orderId } = req.params;
         const { cancellationDescription } = req.body;
         const usuario = (req as any).usuario;
-        await this.orderService.updateOrderStatus(
+        
+        const result = await this.orderService.updateOrderStatus(
             Number(orderId),
             OrderStatus.CANCELADO,
             usuario.id,
             cancellationDescription
         );
 
-        auditLog('cancel_order.success', {
-                    orderId,
-                    userId: usuario.id,
-                    description: cancellationDescription
+        auditLog('cancel_order.success', { orderId, userId: usuario.id, description: cancellationDescription });
+        
+        getIO().to('kitchen').to('cashier').emit('order_cancelled', {
+            orderId: Number(orderId),
+            comandaId: result.comandaId
         });
+
+        if (result.comandaCancelled) {
+            getIO().to('kitchen').to('cashier').emit('comanda_cancelled', {
+                comandaId: result.comandaId
+            });
+        }
            
         res.sendStatus(204);
     }

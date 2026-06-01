@@ -4,17 +4,18 @@ import { AuthService } from '../service/AuthService';
 import { MercadoPagoService } from '../service/MercadoPagoService';
 import { AppDataSource } from '../database/data-source';
 import { UserRepository, RefreshTokenRepository, EstablishmentRepository } from '../repository';
-import { validateLogin, validateRegisterComplete } from '../validator';
 import { catchAsync } from '../middleware/error/catchAsync';
 import { authenticate } from '../middleware/authenticate';
 import { validateRequest } from '../middleware/validateRequest';
 import { loginSchema } from '../dto/auth/LoginDTO';
 import { registerSchema } from '../dto/auth/RegisterDTO';
+import { registerCompleteSchema } from '../dto/auth/RegisterCompleteDTO'; 
 
 const userRepository = new UserRepository(AppDataSource);
 const refreshTokenRepository = new RefreshTokenRepository(AppDataSource);
 const establishmentRepository = new EstablishmentRepository(AppDataSource);
 const mercadoPagoService = new MercadoPagoService();
+
 const authService = new AuthService(
   AppDataSource,
   userRepository,
@@ -27,12 +28,22 @@ const authController = new AuthController(authService);
 const authRouter = Router();
 
 authRouter.post(
-  '/register',
-  authLimiter,
-  validateRequest(registerSchema),
-  catchAsync((req: Request, res: Response) =>
-    authController.registerManager(req, res),
-  ),
+  '/check-email', 
+  authLimiter, 
+  catchAsync((req: Request, res: Response) => authController.checkEmail(req, res))
+);
+
+authRouter.post(
+  '/check-cpf', 
+  authLimiter, 
+  catchAsync((req: Request, res: Response) => authController.checkCpf(req, res))
+);
+
+authRouter.post(
+  '/register-complete', 
+  authLimiter, 
+  validateRequest(registerCompleteSchema), 
+  catchAsync((req: Request, res: Response) => authController.registerComplete(req, res))
 );
 
 authRouter.post(
@@ -47,17 +58,12 @@ authRouter.post(
   authenticate,
   catchAsync((req: Request, res: Response) => authController.logout(req, res)),
 );
+
 authRouter.post(
   '/refresh',
   catchAsync((req: Request, res: Response) => authController.refresh(req, res)),
 );
 
-authRouter.post('/check-email', authLimiter, catchAsync((req: Request, res: Response) => authController.checkEmail(req, res)));
-authRouter.post('/check-cpf', authLimiter, catchAsync((req: Request, res: Response) => authController.checkCpf(req, res)));
-authRouter.post('/register-complete', authLimiter, validateRegisterComplete, catchAsync((req: Request, res: Response) => authController.registerComplete(req, res)));
-authRouter.post('/login', authLimiter, validateLogin, catchAsync((req: Request, res: Response) => authController.login(req, res)));
-authRouter.post('/logout', authenticate, catchAsync((req: Request, res: Response) => authController.logout(req, res)));
-authRouter.post('/refresh', catchAsync((req: Request, res: Response) => authController.refresh(req, res)));
 authRouter.get(
   '/me',
   authenticate,

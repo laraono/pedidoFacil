@@ -8,7 +8,7 @@ export const useClosedComandaStore = defineStore('closedComandas', () => {
 
   async function loadClosedComandas() {
     try {
-      const response = await comandaApi.listByStatus('Fechada');
+      const response = await comandaApi.listClosed();
       if (!response) return;
 
       const fetchedComandas = response.map((c: any) => {
@@ -28,8 +28,15 @@ export const useClosedComandaStore = defineStore('closedComandas', () => {
           
           const orderPrice = items.reduce((sum: number, idx: any) => sum + (idx.price * idx.amount), 0);
           
-          return { id: p.id, price: orderPrice, items };
+          return { 
+            id: p.id, 
+            price: orderPrice, 
+            items,
+            status: p.status 
+          };
         });
+
+        const cancelledOrder = (c.pedidos || []).find((p: any) => p.cancellationDescription);
 
         return {
           id: c.id,
@@ -38,6 +45,8 @@ export const useClosedComandaStore = defineStore('closedComandas', () => {
           isAutoatendimento: !!c.customerName || (c.description || '').startsWith('Totem #'),
           closedAt: c.deleted_at || c.created_at || new Date(),
           total: Number(c.total),
+          status: c.status, 
+          cancelReason: cancelledOrder?.cancellationDescription || undefined, 
           orders: mappedOrders,
           paymentDetails: {
             discountType: c.Tipo_Desconto_Aplicado || 'percent',

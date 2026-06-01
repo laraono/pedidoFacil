@@ -29,14 +29,12 @@ subscriptionRouter.get(
 subscriptionRouter.get(
   '/subscriptions/establishment',
   authenticate,
-  validateRequest(listSubscriptionsSchema),
   subscriptionController.getEstablishmentSubscription,
 );
 
 subscriptionRouter.get(
   '/subscriptions/history',
   authenticate,
-  validateRequest(listSubscriptionsSchema),
   subscriptionController.getEstablishmentHistory,
 );
 
@@ -75,12 +73,6 @@ subscriptionRouter.post(
   '/subscriptions/:subscriptionId/cancel',
   authenticate,
   subscriptionController.cancelSubcription,
-);
-
-subscriptionRouter.delete(
-  '/plans/:planId/subscriptions/:subscriptionId',
-  authenticate,
-  subscriptionController.deleteSubcription,
 );
 
 export { subscriptionRouter };

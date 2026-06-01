@@ -1,7 +1,7 @@
 import { ComandaService } from "../service";
 import { Request, Response } from 'express';
 import { auditLog } from "../utils/logger";
-import { ca, tr } from "zod/v4/locales";
+import { getIO } from "../socket";
 
 export class ComandaController {
     private comandaService: ComandaService
@@ -48,6 +48,12 @@ export class ComandaController {
         const comandas = await this.comandaService.listComandasByStatus(status as any, estabelecimentoId);
         res.status(200).send(comandas);
     }
+
+    async listComandasHistory(req: Request, res: Response) {
+        const estabelecimentoId = (req as any).usuario.estabelecimento; 
+        const comandas = await this.comandaService.listComandasHistory(estabelecimentoId);
+        res.status(200).send(comandas);
+    }
     
     async updateComandaStatus(req: Request, res: Response) {
         const { id } = req.params;
@@ -82,6 +88,10 @@ export class ComandaController {
             ...req.body
         });
         
+        getIO().to('cashier').to('kitchen').emit('comanda_cancelled', {
+            comandaId: Number(comandaId)
+        });
+
         res.sendStatus(204);
     }
 

@@ -5,7 +5,8 @@ const orderStatusValues = Object.values(OrderStatus) as [string, ...string[]];
 
 export const updateOrderStatusSchema = z.object({
   body: z.object({
-    status: z.enum(orderStatusValues)
+    status: z.enum(orderStatusValues),
+    cancellationDescription: z.string().optional().nullable() 
   }).strict()
 });
 

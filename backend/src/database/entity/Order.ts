@@ -90,7 +90,7 @@ export class Order {
     @OneToMany(() => ProductOrder, (productOrders) => productOrders.order)
     productOrders!: ProductOrder[]
 
-    @OneToOne(() => User)
+    @ManyToOne(() => User)
     @JoinColumn({
         name: 'ID_Usuario_Cancelador'
     })
