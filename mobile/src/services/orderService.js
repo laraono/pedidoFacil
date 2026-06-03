@@ -5,12 +5,15 @@ export async function submitOrder({ cartItems, customerName = null }) {
     const itens = cartItems.map(item => ({
         productId: item.id,
         productVariationId: item.size?.id || null,
-        productName: item.name,
         quantity: item.quantity,
         observation: item.observation || '',
     }));
 
-    const body = { itens, customerName };
+    const body = { 
+        itens, 
+        description: customerName, 
+        customerName: customerName
+    };
 
     const headers = {
         'Content-Type': 'application/json',

@@ -58,7 +58,6 @@ export type ProductVariationOrderParams = {
     productVariationId: number;
     price: number;
 };
-
 export const createTotemOrderSchema = z.object({
   body: z.object({
     itens: z.array(
@@ -68,7 +67,12 @@ export const createTotemOrderSchema = z.object({
         productVariationId: z.number().int().positive().optional().nullable(),
         observation: safeString(0, 255).optional().nullable()
       }).strict()
-    ).min(1, "O pedido deve ter pelo menos um item")
+    ).min(1, "O pedido deve ter pelo menos um item"),
+    
+    // Novas chaves liberadas no validador para o Totem
+    customerName: safeString(0, 100).optional().nullable(),
+    description: safeString(0, 100).optional().nullable()
+    
   }).strict()
 });
 

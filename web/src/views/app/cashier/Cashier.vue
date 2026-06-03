@@ -548,7 +548,8 @@ function getActiveOrdersCount(comanda) {
       ? kitchenOrder.status
       : BACKEND_TO_LOCAL_STATUS[o.status] || o.status;
     return (
-      status !== "cancelled" && status !== "Cancelado" && status !== "CANCELADO"
+      status !== "cancelled" && status !== "Cancelado" && status !== "CANCELADO" &&
+      status !== "finished" && status !== "FINALIZADO"
     );
   }).length;
 }
@@ -565,7 +566,13 @@ const ordersWithStatus = computed(() => {
         status: kitchenOrder ? kitchenOrder.status : backendMapped,
       };
     })
-    .filter((o) => o.status !== "cancelled");
+    .filter((o) => 
+      o.status !== "cancelled" && 
+      o.status !== "Cancelado" && 
+      o.status !== "CANCELADO" &&
+      o.status !== "finished" && 
+      o.status !== "FINALIZADO"
+    );
 });
 
 function openDetails(comanda) {
@@ -739,9 +746,11 @@ const changeBreakdownList = computed(() =>
     count,
   })),
 );
+
 function confirmNonCashPayment() {
   nextPayment();
 }
+
 function confirmCashPayment() {
   const current = pendingPayments.value[currentPaymentIndex.value];
   if (cashReceivedForCurrent.value < current.amount) {
@@ -750,6 +759,7 @@ function confirmCashPayment() {
   }
   nextPayment();
 }
+
 function nextPayment() {
   if (currentPaymentIndex.value < pendingPayments.value.length - 1) {
     currentPaymentIndex.value++;
@@ -758,6 +768,7 @@ function nextPayment() {
     finishPaymentFlow();
   }
 }
+
 function cancelPaymentFlow() {
   paymentFlowActive.value = false;
   showDetails.value = true;
@@ -766,7 +777,7 @@ function cancelPaymentFlow() {
 async function finishPaymentFlow() {
   const checkout = activeCheckout.value;
   try {
-    await request(`/commands/${selectedComanda.value.id}/checkout`, {
+    const res = await request(`/commands/${selectedComanda.value.id}/checkout`, {
       method: "POST",
       body: {
         payments: pendingPayments.value.map((p) => ({
@@ -780,27 +791,37 @@ async function finishPaymentFlow() {
             : 0,
         discountType: checkout.discountType,
         discountValue: checkout.discountValue,
+        paymentMode: checkout.paymentMode,
+        selectedOrderIds: checkout.selectedOrderIds,
       },
     });
-    const closedComanda = {
-      ...selectedComanda.value,
-      closedAt: new Date().toISOString(),
-      status: "FINALIZADO",
-      paymentDetails: {
-        discountType: checkout.discountType,
-        discountValue: checkout.discountValue,
-        coupon: checkout.appliedCoupon ? checkout.appliedCoupon.code : null,
-        couponDiscount: checkout.couponDiscount,
-        payments: pendingPayments.value,
-      },
-    };
-    closedComandaStore.addClosedComanda(closedComanda);
-    comandaStore.removeComanda(selectedComanda.value.id);
+    
     paymentFlowActive.value = false;
+
+    const isComandaClosed = res.comanda?.status === 'FECHADA' || res.comanda?.status === 'FINALIZADO' || !checkout.paymentMode || checkout.paymentMode === 'total';
+
+    if (isComandaClosed) {
+      const closedComanda = {
+        ...selectedComanda.value,
+        closedAt: new Date().toISOString(),
+        status: "FINALIZADO",
+        paymentDetails: {
+          discountType: checkout.discountType,
+          discountValue: checkout.discountValue,
+          coupon: checkout.appliedCoupon ? checkout.appliedCoupon.code : null,
+          couponDiscount: checkout.couponDiscount,
+          payments: pendingPayments.value,
+        },
+      };
+      closedComandaStore.addClosedComanda(closedComanda);
+      comandaStore.removeComanda(selectedComanda.value.id);
+    } else {
+      await comandaStore.loadComandas();
+    }
 
     if (checkout.totalWithDiscount > 0) {
       pendingReceiptData.value = {
-        comanda: { ...closedComanda },
+        comanda: { ...selectedComanda.value },
         paymentInfo: {
           totalFinal: checkout.totalWithDiscount,
           coupon: checkout.appliedCoupon ? checkout.appliedCoupon.code : null,
@@ -814,9 +835,10 @@ async function finishPaymentFlow() {
       };
       showReceiptModal.value = true;
     }
+    
     closeDetails();
     showToast(
-      checkout.totalWithDiscount === 0 ? "Comanda removida!" : "Finalizada!",
+      isComandaClosed ? "Comanda Finalizada!" : "Pedidos pagos com sucesso!",
       "success",
     );
   } catch (error) {
@@ -839,7 +861,7 @@ function getGroupedOrderItems(order) {
     const existing = groups.find(
       (g) =>
         g.name === fullName &&
-        g.price === price &&
+        Math.abs(g.price - price) < 0.01 &&
         g.observation === (i.observation || i.obs),
     );
     if (existing) {
@@ -870,7 +892,12 @@ function buildReceiptHtml(comanda, paymentInfo) {
     minute: "2-digit",
   });
   const allItems = [];
-  (comanda.orders || []).forEach((order) => {
+  
+  const relevantOrders = activeCheckout.value?.selectedOrderIds 
+    ? (comanda.orders || []).filter(o => activeCheckout.value.selectedOrderIds.includes(o.id))
+    : (comanda.orders || []);
+
+  relevantOrders.forEach((order) => {
     const kitchenOrder = kitchenStore.orders.find((k) => k.id === order.id);
     if (kitchenOrder?.status === "cancelled") return;
     const items = getGroupedOrderItems(order);

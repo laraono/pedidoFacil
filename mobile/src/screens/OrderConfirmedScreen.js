@@ -20,24 +20,25 @@ export default function OrderConfirmedScreen() {
 
   const ticket = route.params?.ticket || "";
   const label = route.params?.label || (ticket ? `Totem #${ticket}` : "—");
+  
+  const isPaid = route.params?.isPaid || false; 
 
   const [seconds, setSeconds] = useState(COUNTDOWN);
 
   const styles = useMemo(() => getStyles(theme), [theme]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          navigation.reset({ index: 0, routes: [{ name: "Welcome" }] });
-          return 0;
-        }
-        return prev - 1;
-      });
+    if (seconds <= 0) {
+      navigation.reset({ index: 0, routes: [{ name: "Welcome" }] });
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setSeconds((prev) => prev - 1);
     }, 1000);
-    return () => clearInterval(interval);
-  }, [navigation]);
+
+    return () => clearTimeout(timer);
+  }, [seconds, navigation]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -58,7 +59,9 @@ export default function OrderConfirmedScreen() {
         <View style={styles.instructionBox}>
           <Feather name="map-pin" size={22} color={theme.corCategorias} />
           <Text style={styles.instructionText}>
-            Dirija-se ao caixa para{"\n"}efetuar o pagamento
+            {isPaid 
+              ? "Aguarde seu número ser\nchamado no painel" 
+              : "Dirija-se ao caixa para\nefetuar o pagamento"}
           </Text>
         </View>
 

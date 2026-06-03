@@ -45,11 +45,42 @@
         </div>
 
         <div class="p-8 overflow-y-auto custom-scrollbar bg-white">
-          <h3
-            class="font-black text-[#757575] mb-6 uppercase tracking-[0.2em] text-[10px]"
+          <div
+            class="flex gap-4 mb-8 bg-gray-50 p-1.5 rounded border border-[#E0E0E0]"
           >
-            Detalhamento de Consumo
-          </h3>
+            <label
+              class="flex-1 flex items-center justify-center gap-2 p-3 rounded cursor-pointer transition-all"
+              :class="
+                paymentMode === 'total'
+                  ? 'bg-white shadow-sm border border-[#E0E0E0] text-blue-600 font-black'
+                  : 'text-[#757575] font-bold hover:bg-gray-100'
+              "
+            >
+              <input
+                type="radio"
+                v-model="paymentMode"
+                value="total"
+                class="sr-only"
+              />
+              Pagar Comanda Completa
+            </label>
+            <label
+              class="flex-1 flex items-center justify-center gap-2 p-3 rounded cursor-pointer transition-all"
+              :class="
+                paymentMode === 'parcial'
+                  ? 'bg-white shadow-sm border border-[#E0E0E0] text-blue-600 font-black'
+                  : 'text-[#757575] font-bold hover:bg-gray-100'
+              "
+            >
+              <input
+                type="radio"
+                v-model="paymentMode"
+                value="parcial"
+                class="sr-only"
+              />
+              Pagar Apenas Alguns Pedidos
+            </label>
+          </div>
 
           <div
             v-if="hasPending"
@@ -73,18 +104,32 @@
             <div
               v-for="order in ordersWithStatus"
               :key="order.id"
-              class="rounded p-6"
-              :class="
+              class="rounded p-6 transition-all"
+              :class="[
                 order.status === 'pending'
                   ? 'border border-yellow-500/30 bg-yellow-500/5'
-                  : 'border border-[#E0E0E0] bg-gray-50'
-              "
+                  : 'border border-[#E0E0E0] bg-gray-50',
+                paymentMode === 'parcial' &&
+                !selectedOrderIds.includes(order.id)
+                  ? 'opacity-50 grayscale'
+                  : '',
+              ]"
             >
               <div class="flex justify-between items-center mb-4">
-                <span
-                  class="font-black text-[#212121] text-sm uppercase tracking-widest"
-                  >Pedido #{{ order.id }}</span
-                >
+                <div class="flex items-center gap-3">
+                  <input
+                    v-if="paymentMode === 'parcial'"
+                    type="checkbox"
+                    :value="order.id"
+                    v-model="selectedOrderIds"
+                    class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span
+                    class="font-black text-[#212121] text-sm uppercase tracking-widest"
+                    >Pedido #{{ order.id }}</span
+                  >
+                </div>
+
                 <div class="flex items-center gap-2">
                   <span
                     class="px-4 py-1 rounded text-[10px] font-black uppercase tracking-widest border"
@@ -129,9 +174,8 @@
                     <span
                       v-if="item.observation"
                       class="text-[10px] text-amber-500 italic mt-0.5 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 self-start"
+                      >Obs: {{ item.observation }}</span
                     >
-                      Obs: {{ item.observation }}
-                    </span>
                   </div>
                   <span class="text-[#757575] mt-0.5"
                     >R$ {{ item.total.toFixed(2) }}</span
@@ -151,14 +195,21 @@
           </div>
 
           <div
+            v-if="selectedOrderIds.length > 0"
             class="mt-10 border border-[#E0E0E0] rounded p-8 bg-page/40 shadow-inner"
           >
             <div
               class="flex justify-between text-sm font-black text-[#757575] uppercase tracking-widest"
             >
-              <span>Subtotal da Conta:</span>
+              <span
+                >Subtotal
+                {{
+                  paymentMode === "parcial" ? "Selecionado" : "da Conta"
+                }}:</span
+              >
               <span class="text-[#212121]">R$ {{ subtotal.toFixed(2) }}</span>
             </div>
+
             <div class="mt-6 p-6 bg-gray-50 rounded border border-[#E0E0E0]">
               <label
                 class="block text-[10px] font-black text-[#757575] uppercase tracking-widest mb-3"
@@ -247,7 +298,7 @@
               <div>
                 <span
                   class="text-[10px] font-black text-[#757575] uppercase tracking-[0.3em]"
-                  >Total Final</span
+                  >Total a Pagar</span
                 >
                 <div
                   v-if="appliedCoupon"
@@ -262,7 +313,21 @@
             </div>
           </div>
 
-          <div class="mt-10" v-if="totalWithDiscount > 0">
+          <div
+            v-if="selectedOrderIds.length === 0"
+            class="mt-10 p-8 border border-dashed border-[#E0E0E0] rounded bg-gray-50 text-center"
+          >
+            <p
+              class="text-[#757575] font-black uppercase tracking-widest text-sm"
+            >
+              Selecione pelo menos um pedido para pagar.
+            </p>
+          </div>
+
+          <div
+            class="mt-10"
+            v-if="totalWithDiscount > 0 && selectedOrderIds.length > 0"
+          >
             <h3
               class="font-black text-[#757575] mb-6 uppercase tracking-[0.2em] text-[10px]"
             >
@@ -401,44 +466,6 @@
         <div
           class="p-8 border-t border-[#E0E0E0] bg-page/20 flex flex-col gap-6 shrink-0"
         >
-          <div
-            v-if="isFinalizeDisabled && splitPayment && totalWithDiscount > 0"
-            class="flex items-center gap-4 p-4 rounded border animate-pulse bg-danger-light border-danger"
-          >
-            <div class="p-2 bg-red-500/20 rounded text-red-500">
-              <AlertTriangle :size="20" />
-            </div>
-            <div class="flex-grow">
-              <p
-                class="text-xs font-black uppercase tracking-widest text-[#212121]"
-              >
-                Pagamento Bloqueado
-              </p>
-              <p class="text-[11px] font-bold text-[#757575]">
-                <span
-                  v-if="paymentSplits.some((s) => !s.amount || s.amount <= 0)"
-                  >Existem pessoas com valor R$ 0,00 na divisão.</span
-                >
-                <span v-else-if="totalPayments < totalWithDiscount"
-                  >Faltam
-                  <span class="text-danger font-black"
-                    >R$
-                    {{ (totalWithDiscount - totalPayments).toFixed(2) }}</span
-                  >
-                  para atingir o total.</span
-                >
-                <span v-else-if="totalPayments > totalWithDiscount"
-                  >O valor excede em
-                  <span class="text-danger font-black"
-                    >R$
-                    {{ (totalPayments - totalWithDiscount).toFixed(2) }}</span
-                  >
-                  o total da conta.</span
-                >
-              </p>
-            </div>
-          </div>
-
           <div class="flex flex-col sm:flex-row justify-between gap-4 w-full">
             <div class="flex gap-3">
               <button
@@ -470,9 +497,7 @@
                 {{
                   isFinalizeDisabled
                     ? "Pagamento Inválido"
-                    : totalWithDiscount === 0
-                      ? "Baixar Comanda (R$ 0,00)"
-                      : "Confirmar Pagamento"
+                    : "Confirmar Pagamento"
                 }}
               </button>
             </div>
@@ -505,7 +530,6 @@ const props = defineProps({
   enabledPaymentMethods: Array,
   comandaUnitLabel: String,
 });
-
 const emit = defineEmits([
   "close",
   "cancel-comanda",
@@ -517,22 +541,52 @@ const emit = defineEmits([
 const couponStore = useCouponStore();
 const utils = useUtils();
 
+const paymentMode = ref("total");
+const selectedOrderIds = ref([]);
+
+watch(
+  () => props.isOpen,
+  (newVal) => {
+    if (newVal) {
+      paymentMode.value = "total";
+      selectedOrderIds.value = props.ordersWithStatus.map((o) => o.id);
+      discountType.value = "percent";
+      discountValue.value = 0;
+      discountRaw.value = "";
+      appliedCoupon.value = null;
+      couponCodeInput.value = "";
+      couponError.value = "";
+      splitPayment.value = false;
+      numberOfPeople.value = 2;
+      paymentSplits.value = [{ type: "Dinheiro", amount: 0 }];
+    }
+  },
+);
+
+watch(paymentMode, (mode) => {
+  if (mode === "total")
+    selectedOrderIds.value = props.ordersWithStatus.map((o) => o.id);
+  else selectedOrderIds.value = [];
+});
+
 function getGroupedOrderItems(order) {
   const items = order.items || order.productOrders || [];
   const groups = [];
-  
   items.forEach((i) => {
-    const variationName = (i.variations?.[0]?.productVariation?.name || "").trim();
+    const variationName = (
+      i.variations?.[0]?.productVariation?.name || ""
+    ).trim();
     const baseName = (i.name || i.product?.name || "Item").trim();
     const fullName = baseName + (variationName ? ` (${variationName})` : "");
     const amount = Number(i.amount || i.quantity || 1);
     const price = Number(i.price ?? i.Preco_Unitario_Momento ?? 0);
     const obs = (i.observation || i.obs || "").trim();
-
     const existing = groups.find(
-      (g) => g.name === fullName && Math.abs(g.price - price) < 0.01 && g.observation === obs
+      (g) =>
+        g.name === fullName &&
+        Math.abs(g.price - price) < 0.01 &&
+        g.observation === obs,
     );
-    
     if (existing) {
       existing.amount += amount;
       existing.total += price * amount;
@@ -556,9 +610,9 @@ function getOrderTotal(order) {
 }
 
 function getComandaMainLabel(comanda) {
-  if (comanda?.isAutoatendimento && comanda?.customerName)
-    return comanda.customerName;
-  return comanda?.label || `#${comanda?.id}`;
+  return comanda?.isAutoatendimento && comanda?.customerName
+    ? comanda.customerName
+    : comanda?.label || `#${comanda?.id}`;
 }
 
 const discountType = ref("percent");
@@ -571,23 +625,6 @@ const paymentSplits = ref([{ type: "Dinheiro", amount: 0 }]);
 const splitPayment = ref(false);
 const numberOfPeople = ref(1);
 
-watch(
-  () => props.isOpen,
-  (newVal) => {
-    if (newVal) {
-      discountType.value = "percent";
-      discountValue.value = 0;
-      discountRaw.value = "";
-      appliedCoupon.value = null;
-      couponCodeInput.value = "";
-      couponError.value = "";
-      splitPayment.value = false;
-      numberOfPeople.value = 2;
-      paymentSplits.value = [{ type: "Dinheiro", amount: 0 }];
-    }
-  },
-);
-
 const hasPreparing = computed(() =>
   props.ordersWithStatus.some((o) => o.status === "preparing"),
 );
@@ -595,32 +632,33 @@ const hasPending = computed(() =>
   props.ordersWithStatus.some((o) => o.status === "pending"),
 );
 
+const ordersToCalculate = computed(() =>
+  props.ordersWithStatus.filter((o) => selectedOrderIds.value.includes(o.id)),
+);
+
 const subtotal = computed(() => {
-  if (!props.comanda) return 0;
-  const orders = props.ordersWithStatus || [];
-  const hasItems = orders.some(
-    (o) => (o.productOrders || o.items || []).length > 0,
+  if (ordersToCalculate.value.length === 0) return 0;
+  const sum = ordersToCalculate.value.reduce(
+    (acc, order) => acc + getOrderTotal(order),
+    0,
   );
-  if (!hasItems && orders.length === 0) return Number(props.comanda.total) || 0;
-  const sum = orders.reduce((acc, order) => acc + getOrderTotal(order), 0);
   return Math.round(sum * 100) / 100;
 });
 
 const couponDiscount = computed(() => {
-  if (!appliedCoupon.value) return 0;
-  const sub = subtotal.value;
+  if (!appliedCoupon.value || subtotal.value === 0) return 0;
   if (appliedCoupon.value.type === "percent")
-    return sub * (appliedCoupon.value.value / 100);
-  return Math.min(appliedCoupon.value.value, sub);
+    return subtotal.value * (appliedCoupon.value.value / 100);
+  return Math.min(appliedCoupon.value.value, subtotal.value);
 });
 
 const totalWithDiscount = computed(() => {
-  const sub = subtotal.value;
-  let afterManual = sub;
+  if (subtotal.value === 0) return 0;
+  let afterManual = subtotal.value;
   if (discountValue.value) {
     if (discountType.value === "percent")
-      afterManual = sub * (1 - discountValue.value / 100);
-    else afterManual = Math.max(0, sub - discountValue.value);
+      afterManual = subtotal.value * (1 - discountValue.value / 100);
+    else afterManual = Math.max(0, subtotal.value - discountValue.value);
   }
   return Math.max(0, afterManual - couponDiscount.value);
 });
@@ -630,8 +668,7 @@ const totalPayments = computed(() =>
 );
 
 const isFinalizeDisabled = computed(() => {
-  const activeOrdersCount = props.ordersWithStatus.length;
-  if (activeOrdersCount === 0) return false;
+  if (selectedOrderIds.value.length === 0) return true;
   if (splitPayment.value) {
     const hasZero = paymentSplits.value.some((s) => !s.amount || s.amount <= 0);
     const totalMismatch =
@@ -661,7 +698,6 @@ const applyDiscountMask = (raw) => {
   parts[0] = parts[0].replace(/^0+(\d)/, "$1");
   return parts.join(",");
 };
-
 const onDiscountInput = (e) => {
   if (discountType.value === "percent") {
     const digits = e.target.value.replace(/\D/g, "");
@@ -690,7 +726,6 @@ const applyCoupon = () => {
   appliedCoupon.value = coupon;
   couponError.value = "";
 };
-
 const removeCoupon = () => {
   appliedCoupon.value = null;
   couponCodeInput.value = "";
@@ -718,14 +753,12 @@ function distributeEqually() {
     amount: i === 0 ? total - each * (num - 1) : each,
   }));
 }
-
 function addPaymentSplit() {
   paymentSplits.value.push({ type: "Dinheiro", amount: 0 });
 }
 function removePaymentSplit(index) {
   paymentSplits.value.splice(index, 1);
 }
-
 function applyMask(event, method) {
   let value = event.target.value.replace(/\D/g, "");
   if (value === "") value = "0";
@@ -752,11 +785,9 @@ function printReceipt() {
 
 function handleFinalize() {
   if (isFinalizeDisabled.value) return;
-  
-  if (!splitPayment.value) {
+  if (!splitPayment.value)
     paymentSplits.value[0].amount = totalWithDiscount.value;
-  }
-  
+
   emit("finalize", {
     paymentSplits: paymentSplits.value,
     totalWithDiscount: totalWithDiscount.value,
@@ -767,6 +798,8 @@ function handleFinalize() {
     subtotal: subtotal.value,
     hasPreparing: hasPreparing.value,
     hasPending: hasPending.value,
+    selectedOrderIds: selectedOrderIds.value,
+    paymentMode: paymentMode.value,
   });
 }
 </script>
