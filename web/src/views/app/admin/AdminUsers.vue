@@ -7,6 +7,7 @@ import {
   Eye, EyeOff, KeyRound, Mail
 } from 'lucide-vue-next';
 import { adminUserApi } from '@/services/adminApi';
+import { validatePasswordStrength } from '@/utils/password';
 
 const router = useRouter();
 const { showToast } = useToast();
@@ -57,7 +58,7 @@ function validate() {
   if (!form.value.name.trim()) e.name = 'Nome é obrigatório.';
   if (!form.value.email.trim() || !form.value.email.includes('@')) e.email = 'E-mail inválido.';
   if (!isEditing.value && !form.value.password.trim()) e.password = 'Senha é obrigatória.';
-  if (form.value.password && form.value.password.length < 8) e.password = 'Mínimo 8 caracteres.';
+  else if (form.value.password) { const err = validatePasswordStrength(form.value.password); if (err) e.password = err; }
   errors.value = e;
   return Object.keys(e).length === 0;
 }

@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 import { useMenuStore } from "@/stores/productsManagement";
 import { useToast } from "@/composables/useToast";
 import { useConfirm } from "@/composables/useConfirm";
+import { applyPriceMask } from "@/composables/usePriceMask";
 import BaseButton from "@/components/ui/BaseButton.vue";
 import BaseInput from "@/components/ui/BaseInput.vue";
 import DataTable from "@/components/ui/DataTable.vue";
@@ -108,19 +109,7 @@ const toggleSelectAll = () => {
 
 const isSelected = (id) => selectedIds.value.includes(id);
 
-const applyBulkPriceMask = (raw) => {
-  let val = String(raw).replace(/[^\d,]/g, '');
-  const commaIdx = val.indexOf(',');
-  if (commaIdx !== -1) {
-    val = val.slice(0, commaIdx + 1) + val.slice(commaIdx + 1).replace(/,/g, '');
-    val = val.slice(0, commaIdx + 3);
-  }
-  const parts = val.split(',');
-  parts[0] = parts[0].replace(/^0+(\d)/, '$1');
-  return parts.join(',');
-};
-
-const onBulkPriceInput = (e) => { bulkPriceValue.value = applyBulkPriceMask(e.target.value); };
+const onBulkPriceInput = (e) => { const v = applyPriceMask(e.target.value); e.target.value = v; bulkPriceValue.value = v; };
 
 const applyBulk = () => {
   if (selectedIds.value.length === 0) { showToast('Selecione ao menos um produto.', 'error'); return; }
@@ -221,20 +210,8 @@ const handleImageUpload = (e) => {
   form.value.imagePreview = URL.createObjectURL(file);
 };
 
-const applyPriceMask = (raw) => {
-  let val = String(raw).replace(/[^\d,]/g, '');
-  const commaIdx = val.indexOf(',');
-  if (commaIdx !== -1) {
-    val = val.slice(0, commaIdx + 1) + val.slice(commaIdx + 1).replace(/,/g, '');
-    val = val.slice(0, commaIdx + 3);
-  }
-  const parts = val.split(',');
-  parts[0] = parts[0].replace(/^0+(\d)/, '$1');
-  return parts.join(',');
-};
-
-const onPriceInput = (e) => { form.value.price = applyPriceMask(e.target.value); };
-const onSizePriceInput = (e, i) => { form.value.sizes[i].price = applyPriceMask(e.target.value); };
+const onPriceInput = (e) => { const v = applyPriceMask(e.target.value); e.target.value = v; form.value.price = v; };
+const onSizePriceInput = (e, i) => { const v = applyPriceMask(e.target.value); e.target.value = v; form.value.sizes[i].price = v; };
 
 const save = async () => {
   errors.value = {};

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToOne } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm"
 import { SubscriptionStatus, UserStatus } from "../../enum"
 import { Plan } from "./Plan"
 import { Establishment } from "./Establishment"
@@ -62,6 +62,14 @@ export class Subscription {
     })
     price?: number
 
+    @Column({
+        name: 'Ultimo_ID_Pagamento',
+        type: 'varchar',
+        length: 255,
+        nullable: true
+    })
+    lastPaymentId?: string
+
     @ManyToOne(() => Establishment, (establishment) => establishment.subscriptions)
     @JoinColumn({
         name: 'ID_Estabelecimento'
@@ -73,11 +81,5 @@ export class Subscription {
         name: 'ID_Plano'
     })
     plan!: Plan
-
-    @ManyToOne(() => Plan, { nullable: true, eager: false })
-    @JoinColumn({
-        name: 'ID_Plano_Agendado'
-    })
-    scheduledPlan?: Plan | null
 
 }

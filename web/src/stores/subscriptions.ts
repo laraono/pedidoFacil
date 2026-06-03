@@ -3,8 +3,6 @@ import { ref, computed } from 'vue';
 import { adminSubscriptionApi, adminMetricsApi } from '@/services/adminApi';
 import { subscriptionApi } from '@/services/subscriptionApi';
 
-const PLAN_KEY = 'plan';
-
 export type SubscriptionStatus = 'Paga' | 'Pendente' | 'Expirada' | 'Cancelada';
 
 export interface PlanPrices {
@@ -25,22 +23,7 @@ export interface AdminSubscription {
 }
 
 export const useSubscriptionStore = defineStore('subscription', () => {
-  const planPrices = ref<PlanPrices>(
-    JSON.parse(localStorage.getItem('planPrices') || 'null') || { monthly: 79.90, annual: 49.90 }
-  );
-
-  function updatePlanPrices(prices: PlanPrices): void {
-    planPrices.value = { ...prices };
-    localStorage.setItem('planPrices', JSON.stringify(planPrices.value));
-  }
-
-  function setPlanToBeSubscribed(id: number): void {
-    localStorage.setItem(PLAN_KEY, JSON.stringify(id));
-  }
-
-  function getPlanToBeSubscribed(): string | null {
-    return localStorage.getItem(PLAN_KEY);
-  }
+  const planPrices = ref<PlanPrices>({ monthly: 79.90, annual: 49.90 });
 
   const subscriptionStatus = ref<SubscriptionStatus | null>(null);
 
@@ -95,9 +78,6 @@ export const useSubscriptionStore = defineStore('subscription', () => {
 
   return {
     planPrices,
-    updatePlanPrices,
-    setPlanToBeSubscribed,
-    getPlanToBeSubscribed,
     subscriptionStatus,
     fetchSubscriptionStatus,
     isActive,

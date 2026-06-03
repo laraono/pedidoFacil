@@ -6,5 +6,11 @@ export function useUtils() {
     }).format(value || 0);
   };
 
-  return { formatCurrency };
+  const parsedFeatures = (features: any): string[] => {
+    if (!features) return []
+    try { return JSON.parse(features) }
+    catch { return String(features).split(',').map((f: string) => f.trim()).filter(Boolean) }
+  };
+
+  return { formatCurrency, parsedFeatures };
 }

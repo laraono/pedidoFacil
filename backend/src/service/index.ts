@@ -68,13 +68,11 @@ const roleService = new RoleService(roleRepository, userRepository);
 
 const establishmentService = new EstablishmentService(
   establishmentRepository,
-  userRepository,
   configurationRepository,
-  roleRepository,
   mercadoPagoService,
 );
 
-const profileService = new ProfileService(userRepository, establishmentService);
+const profileService = new ProfileService(userRepository, establishmentService, refreshTokenRepository);
 
 const employeeService = new EmployeeService(userRepository, roleRepository);
 

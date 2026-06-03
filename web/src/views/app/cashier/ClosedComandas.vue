@@ -16,6 +16,9 @@ import {
   XCircle,
   AlertTriangle
 } from "lucide-vue-next";
+import { useUtils } from "@/composables/useUtils";
+
+const { formatCurrency } = useUtils();
 
 const router = useRouter();
 const closedStore = useClosedComandaStore();
@@ -93,6 +96,16 @@ function getValidSubtotal(comanda) {
   if (isCancelled(comanda)) return 0;
   const validOrders = (comanda.orders || []).filter(o => !isOrderCancelled(o));
   return validOrders.reduce((acc, o) => acc + (o.price || 0), 0);
+}
+
+function totalItems(comanda) {
+  return (
+    comanda.orders?.reduce(
+      (acc, o) =>
+        acc + (o.items?.reduce((a, i) => a + (i.amount || 1), 0) || 0),
+      0,
+    ) || 0
+  );
 }
 
 function finalTotal(comanda) {

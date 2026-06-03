@@ -1,4 +1,5 @@
 import { UserRepository } from '../repository/UserRepository';
+import { RefreshTokenRepository } from '../repository/RefreshTokenRepository';
 import { AppError } from '../middleware/error/AppError';
 import * as bcrypt from 'bcrypt';
 import { EstablishmentService } from './EstablishmentService';
@@ -9,6 +10,7 @@ export class ProfileService {
   constructor(
     private userRepository: UserRepository,
     private establishmentService: EstablishmentService,
+    private refreshTokenRepository: RefreshTokenRepository,
   ) {}
 
   async getProfile(userId: number) {
@@ -84,8 +86,9 @@ export class ProfileService {
     const isMatch = await bcrypt.compare(data.oldPassword, user.password);
     if (!isMatch) throw new AppError('A senha atual está incorreta.', 400);
 
-    user.password = await bcrypt.hash(data.newPassword, 10);
+    user.password = await bcrypt.hash(data.newPassword, 12);
     await this.userRepository.save(user);
+    await this.refreshTokenRepository.revokeAllByUserId(userId);
 
     return { message: 'Senha updated com sucesso.' };
   }

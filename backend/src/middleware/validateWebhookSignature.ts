@@ -7,6 +7,10 @@ export function validateWebhookSignature(req: Request, res: Response, next: Next
     const requestId = req.headers['x-request-id'] as string;
     const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
 
+    if (process.env.NODE_ENV === 'development') {
+        return next();
+    }
+
     if (!secret) {
         auditLog('webhook.invalid_signature', {
             ip: req.ip,

@@ -5,7 +5,9 @@
   import { request } from "@/services/api.js";
   import { planApi } from "@/services/planApi";
   import { User, Menu, X, Check } from "lucide-vue-next";
-  import { formatFrequency } from "@/utils/frequency";
+  import { monthlyEquivalent } from "@/utils/frequency";
+  import { useUtils } from "@/composables/useUtils";
+  import { BaseButton, BaseInput, BaseTextArea } from "@/components/ui";
 
   import imgLogo from "@/assets/light-logo.png";
   import imgOndas from "@/assets/ondas.png";
@@ -14,33 +16,22 @@
   import imgInterface from "@/assets/pedidos.png";
 
   const router = useRouter();
+  const { formatCurrency, parsedFeatures } = useUtils();
   const subscriptionStore = useSubscriptionStore();
   const planPrices = computed(() => subscriptionStore.planPrices);
 
   const plans = ref([]);
 
-  function parsedFeatures(features) {
-    if (!features) return [];
-    try {
-      return JSON.parse(features);
-    } catch {
-      return features
-        .split(",")
-        .map((f) => f.trim())
-        .filter(Boolean);
-    }
-  }
 
   const annualPlan = computed(
-    () =>
-      plans.value.find((p) => p.frequency === "anual") ??
-      null,
+    () => plans.value.find((p) => p.frequency === "anual") ?? null,
   );
   const monthlyPlan = computed(
-    () =>
-      plans.value.find((p) => p.frequency === "mensal") ??
-      null,
+    () => plans.value.find((p) => p.frequency === "mensal") ?? null,
   );
+
+  const monthlyFeatures = computed(() => parsedFeatures(monthlyPlan.value?.features));
+  const annualFeatures = computed(() => parsedFeatures(annualPlan.value?.features));
 
   onMounted(async () => {
     try {
@@ -158,22 +149,12 @@
         </div>
 
         <div class="flex-1 flex justify-end hidden lg:flex items-center gap-4">
-          <a
-            @click.prevent="navigateToRegister"
-            class="px-4 py-2 bg-primary text-white font-bold rounded text-sm hover:bg-primary-dark transition-colors cursor-pointer"
-          >
+          <BaseButton variant="brand" class="text-sm" @click="navigateToRegister">
             Cadastrar
-          </a>
-          <a
-            @click.prevent="navigateToLogin"
-            class="flex items-center space-x-2 text-[#212121] font-semibold text-lg cursor-pointer hover:text-accent group"
-          >
-            <span>Login</span>
-            <User
-              class="text-[#212121] group-hover:text-accent transition-colors"
-              :size="24"
-            />
-          </a>
+          </BaseButton>
+          <BaseButton variant="ghost" :icon="User" @click="navigateToLogin">
+            Login
+          </BaseButton>
         </div>
       </header>
 
@@ -198,12 +179,13 @@
               <strong class="text-[#212121]">aumentar as vendas</strong>.
             </p>
             <div class="flex flex-col lg:flex-row gap-3 w-full lg:w-auto">
-              <button
+              <BaseButton
+                variant="brand"
+                class="py-2 px-5 lg:py-5 lg:px-14 text-xs lg:text-xl shadow-xl shadow-primary/20 hover:-translate-y-1 w-auto"
                 @click="scrollToSection('planos')"
-                class="bg-primary text-white font-extrabold py-2 px-5 lg:py-5 lg:px-14 rounded lg:rounded text-xs lg:text-xl hover:bg-primary-dark transition-all shadow-xl shadow-primary/20 w-auto transform hover:-translate-y-1 active:scale-95"
               >
                 Conheça nossos planos
-              </button>
+              </BaseButton>
             </div>
           </div>
           <div
@@ -388,14 +370,7 @@
               <div
                 class="text-[#212121] text-5xl lg:text-6xl font-black mb-1 tracking-tighter"
               >
-                {{
-                  monthlyPlan
-                    ? Number(monthlyPlan.price).toLocaleString("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      })
-                    : `R$${planPrices.monthly.toFixed(2).replace(".", ",")}`
-                }}<span
+                {{ formatCurrency(monthlyPlan ? Number(monthlyPlan.price) : planPrices.monthly) }}<span
                   class="text-xl font-normal text-[#757575] tracking-normal"
                   >/mês</span
                 >
@@ -403,9 +378,9 @@
               <p class="text-xs text-[#757575] mb-2">cobrado mensalmente</p>
               <div class="w-full h-px bg-[#E0E0E0] my-8"></div>
               <div class="flex flex-col gap-5 mb-10 w-full px-2 text-left">
-                <template v-if="parsedFeatures(monthlyPlan?.features).length">
+                <template v-if="monthlyFeatures.length">
                   <div
-                    v-for="feat in parsedFeatures(monthlyPlan?.features)"
+                    v-for="feat in monthlyFeatures"
                     :key="feat"
                     class="flex items-center gap-4 text-[#757575] font-medium"
                   >
@@ -417,12 +392,9 @@
                   </div>
                 </template>
               </div>
-              <button
-                @click="navigateToRegister"
-                class="bg-primary text-white font-black py-4 px-12 rounded w-full hover:bg-primary-dark transition-colors mt-auto text-base active:scale-95"
-              >
+              <BaseButton variant="brand" class="w-full mt-auto" @click="navigateToRegister">
                 Contratar Mensal
-              </button>
+              </BaseButton>
             </div>
 
             <!-- Plano Anual -->
@@ -440,37 +412,23 @@
               <div
                 class="text-[#212121] text-5xl lg:text-6xl font-black mb-1 tracking-tighter"
               >
-                {{
-                  annualPlan
-                    ? Number(annualPlan.price / 12).toLocaleString("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      })
-                    : `R$${planPrices.annual.toFixed(2).replace(".", ",")}`
-                }}<span
+                {{ formatCurrency(annualPlan ? monthlyEquivalent(Number(annualPlan.price), 'anual') : planPrices.annual) }}<span
                   class="text-xl font-normal text-[#757575] tracking-normal"
                   >/mês</span
                 >
               </div>
               <p class="text-xs text-primary font-bold mb-2">
                 Preço total anual:
-                {{
-                  annualPlan
-                    ? Number(annualPlan.price).toLocaleString("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      })
-                    : `R$${(planPrices.annual).toFixed(2).replace(".", ",")}`
-                }}
+                {{ formatCurrency(annualPlan ? Number(annualPlan.price) : planPrices.annual) }}
               </p>
               <p class="text-xs text-[#757575] mb-1">
                 Parcele em até 12× no cartão
               </p>
               <div class="w-full h-px bg-primary/20 my-8"></div>
               <div class="flex flex-col gap-5 mb-10 w-full px-2 text-left">
-                <template v-if="parsedFeatures(annualPlan?.features).length">
+                <template v-if="annualFeatures.length">
                   <div
-                    v-for="feat in parsedFeatures(annualPlan?.features)"
+                    v-for="feat in annualFeatures"
                     :key="feat"
                     class="flex items-center gap-4 text-[#757575] font-medium"
                   >
@@ -482,12 +440,9 @@
                   </div>
                 </template>
               </div>
-              <button
-                @click="navigateToRegister"
-                class="bg-primary text-white font-black py-4 px-12 rounded w-full hover:bg-primary-dark transition-colors mt-auto text-base shadow-md shadow-primary/20 active:scale-95"
-              >
+              <BaseButton variant="brand" class="w-full mt-auto" @click="navigateToRegister">
                 Contratar Anual
-              </button>
+              </BaseButton>
             </div>
           </div>
         </section>
@@ -524,49 +479,39 @@
               >
                 {{ feedback.message }}
               </div>
-              <label
-                class="text-[#757575] text-[10px] font-black ml-2 mb-2 uppercase tracking-widest"
-                >Seu Nome</label
-              >
-              <input
+              <BaseInput
                 v-model="form.nome"
-                type="text"
-                required
-                maxlength="100"
+                label="Seu Nome"
                 placeholder="Ex: João Silva"
-                class="bg-gray-50 border border-[#E0E0E0] rounded p-5 text-[#212121] mb-6 focus:outline-none focus:border-primary/50 transition-all font-medium"
+                maxlength="100"
+                :dark="false"
+                class="mb-6"
               />
-              <label
-                class="text-[#757575] text-[10px] font-black ml-2 mb-2 uppercase tracking-widest"
-                >Seu Email</label
-              >
-              <input
+              <BaseInput
                 v-model="form.email"
                 type="email"
-                required
-                maxlength="255"
+                label="Seu Email"
                 placeholder="Ex: contato@email.com"
-                class="bg-gray-50 border border-[#E0E0E0] rounded p-5 text-[#212121] mb-6 focus:outline-none focus:border-primary/50 transition-all font-medium"
+                maxlength="255"
+                :dark="false"
+                class="mb-6"
               />
-              <label
-                class="text-[#757575] text-[10px] font-black ml-2 mb-2 uppercase tracking-widest"
-                >Mensagem</label
-              >
-              <textarea
+              <BaseTextArea
                 v-model="form.mensagem"
-                rows="4"
-                required
-                maxlength="1000"
+                label="Mensagem"
                 placeholder="Como podemos ajudar?"
-                class="bg-gray-50 border border-[#E0E0E0] rounded p-5 text-[#212121] mb-10 focus:outline-none focus:border-primary/50 resize-none transition-all font-medium"
-              ></textarea>
-              <button
+                :rows="4"
+                class="mb-10"
+              />
+              <BaseButton
                 type="submit"
-                :disabled="isSending"
-                class="bg-primary text-white font-black text-xl py-5 rounded hover:bg-primary-dark transition-all shadow-xl shadow-primary/20 active:scale-95 disabled:opacity-50"
+                variant="brand"
+                size="lg"
+                :isLoading="isSending"
+                class="w-full"
               >
-                {{ isSending ? "Enviando..." : "Enviar Mensagem" }}
-              </button>
+                Enviar Mensagem
+              </BaseButton>
             </form>
           </div>
         </section>

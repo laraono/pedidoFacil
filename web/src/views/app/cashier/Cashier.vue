@@ -430,6 +430,8 @@ import { useClosedComandaStore } from "@/stores/closedComandas";
 import { useKitchenStore } from "@/stores/kitchen";
 import { useAuthStore } from "@/stores/auth";
 import { useToast } from "@/composables/useToast";
+import { applyPriceMask, applyPercentMask } from "@/composables/usePriceMask";
+import { useUtils } from "@/composables/useUtils";
 import { request } from "@/services/api";
 import {
   Monitor,
@@ -553,6 +555,34 @@ function getActiveOrdersCount(comanda) {
     );
   }).length;
 }
+const onDiscountInput = (e) => {
+  if (discountType.value === "percent") {
+    const masked = applyPercentMask(e.target.value);
+    e.target.value = masked;
+    discountRaw.value = masked;
+    discountValue.value = parseInt(masked, 10) || 0;
+  } else {
+    const masked = applyPriceMask(e.target.value);
+    e.target.value = masked;
+    discountRaw.value = masked;
+    discountValue.value = parseFloat(masked.replace(",", ".")) || 0;
+  }
+};
+const paymentSplits = ref([{ type: "Dinheiro", amount: 0 }]);
+const splitPayment = ref(false);
+const numberOfPeople = ref(1);
+const showRulesModal = ref(false);
+const rulesModalMessage = ref("");
+const pendingCancel = ref(false);
+const manualCancelTargetId = ref(null);
+const cancelReason = ref("");
+const showCancelComandaModal = ref(false);
+const cancelComandaReason = ref("");
+const paymentFlowActive = ref(false);
+const pendingPayments = ref([]);
+const currentPaymentIndex = ref(0);
+const cashReceivedForCurrent = ref(0);
+const currentChangeBreakdown = ref({});
 
 const ordersWithStatus = computed(() => {
   if (!selectedComanda.value) return [];

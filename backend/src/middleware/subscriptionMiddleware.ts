@@ -33,18 +33,19 @@ export async function subscriptionMiddleware(req: Request, res: Response, next: 
         if (subscription.status === SubscriptionStatus.PAGA)
             return next()
 
-        // Pending: check MP to see if payment was approved
-        const order = await mercadoPagoService.getOrder(subscription.mercadoPagoId)
+        // Pending: check MP preapproval status
+        const mp = await mercadoPagoService.getSubscription(subscription.mercadoPagoId!)
 
-        if (order.status_detail === 'accredited') {
+        if (mp.status === 'authorized') {
             await subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.PAGA)
             return next()
         }
 
-        if (order.status_detail === 'in_process')
+        // MP is retrying automatically — give benefit of the doubt
+        if (mp.status === 'paused')
             return next()
 
-        if (order.status_detail === 'canceled')
+        if (mp.status === 'cancelled')
             return res.status(402).json({ message: 'Assinatura cancelada' })
 
         return res.status(402).json({ message: 'Há problemas com o pagamento da sua assinatura' })

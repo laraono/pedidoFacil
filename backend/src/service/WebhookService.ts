@@ -9,33 +9,50 @@ export class WebhookService {
         private mercadoPagoService: MercadoPagoService
     ) {}
 
-    async handleSubscriptionRenewal(mercadoPagoId: string) {
-        const subscription = await this.subscriptionRepository.findOne({
-            where: { mercadoPagoId }
-        });
+    async handleEvent(eventId: string, eventType: string) {
+        if (eventType === 'payment') {
+            let payment: { status: string; preapproval_id: string | null };
+            try {
+                payment = await this.mercadoPagoService.getPayment(eventId);
+            } catch {
+                auditLog('webhook.payment_lookup_failed', { eventId });
+                return;
+            }
+            if (!payment.preapproval_id) return;
 
-        if (!subscription) return;
+            const subscription = await this.subscriptionRepository.findOne({
+                where: { mercadoPagoId: payment.preapproval_id },
+                relations: ['plan']
+            });
+            if (!subscription) return;
 
-        const today = new Date().toDateString();
-        if (subscription.lastPayment && new Date(subscription.lastPayment).toDateString() === today) return;
+            // Idempotência: MP garante at-least-once delivery
+            if (subscription.lastPaymentId === eventId) return;
 
-        const order = await this.mercadoPagoService.getOrder(mercadoPagoId);
-        const statusDetail = order.transactions?.payments?.[0]?.status_detail;
-
-        if (statusDetail === 'accredited') {
-            await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.PAGA);
-
-            if (subscription.scheduledPlan) {
-                await this.subscriptionRepository.update(subscription.id, {
-                    plan: subscription.scheduledPlan,
-                    scheduledPlan: null as any
-                });
+            if (payment.status === 'approved') {
+                await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.PAGA);
+                await this.subscriptionRepository.update(subscription.id, { lastPaymentId: eventId });
+                auditLog('subscription.renewal_success', { subscriptionId: subscription.id });
+            } else if (payment.status === 'rejected') {
+                // MP vai retentar automaticamente — apenas logar
+                auditLog('subscription.payment_rejected', { subscriptionId: subscription.id, paymentId: eventId });
             }
 
-            auditLog('subscription.renewal_success', { subscriptionId: subscription.id, mercadoPagoId });
-        } else if (statusDetail === 'canceled') {
-            await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.CANCELADA);
-            auditLog('subscription.renewal_failed', { subscriptionId: subscription.id, mercadoPagoId, statusDetail });
+        } else if (eventType === 'subscription_preapproval') {
+            const mp = await this.mercadoPagoService.getSubscription(eventId);
+
+            const subscription = await this.subscriptionRepository.findOne({
+                where: { mercadoPagoId: eventId }
+            });
+            if (!subscription) return;
+
+            if (mp.status === 'authorized') {
+                await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.PAGA);
+                auditLog('subscription.reactivated_by_mp', { subscriptionId: subscription.id });
+            } else if (mp.status === 'cancelled') {
+                await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.CANCELADA);
+                auditLog('subscription.auto_cancelled_by_mp', { subscriptionId: subscription.id });
+            }
         }
     }
 }

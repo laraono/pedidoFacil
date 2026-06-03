@@ -38,8 +38,8 @@ export async function gerarTokenAdmin(admin: Admin) {
     const accessToken = jwt.sign(
         { id: admin.id, isAdmin: true },
         process.env.JWT_SECRET as string,
-        { 
-            expiresIn: '15m' as any 
+        {
+            expiresIn: (process.env.JWT_EXPIRES_IN || '1h') as any
         }
     );
 
@@ -47,7 +47,7 @@ export async function gerarTokenAdmin(admin: Admin) {
         { id: admin.id, isAdmin: true, isRefresh: true },
         process.env.JWT_SECRET as string,
         { 
-            expiresIn: '7d' as any 
+            expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '1h') as any
         }
     );
 

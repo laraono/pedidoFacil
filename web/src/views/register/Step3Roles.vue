@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { Check, ArrowRight, ChefHat, CreditCard, Users, ChevronDown, Tablet } from 'lucide-vue-next'
 import { PERMISSIONS } from '@/utils/permissions'
+import { BaseButton } from '@/components/ui'
 
 interface RolePayload {
   roles: Array<{ label: string; permissions: string[] }>
@@ -127,13 +128,14 @@ function handleSkip() {
             >
               <Check v-if="role.selected" :size="12" class="text-black" stroke-width="4" />
             </div>
-            <button
-              @click.stop="expandRole(role)"
-              class="p-1 rounded transition-colors hover:bg-gray-100"
+            <BaseButton
+              variant="ghost"
+              class="p-1"
               :class="role.expanded ? 'text-accent' : 'text-[#757575]'"
+              @click.stop="expandRole(role)"
             >
               <ChevronDown :size="16" class="transition-transform duration-300" :class="role.expanded ? 'rotate-180' : ''" />
-            </button>
+            </BaseButton>
           </div>
         </div>
 
@@ -190,19 +192,22 @@ function handleSkip() {
       </div>
     </div>
 
-    <button
+    <BaseButton
+      variant="brand"
+      size="lg"
+      :icon="ArrowRight"
+      class="w-full"
       @click="handleNext"
-      class="py-3.5 px-6 bg-primary text-white font-bold rounded text-base hover:bg-primary-dark transition-all flex items-center justify-center gap-3 w-full active:scale-[0.98] shadow-lg shadow-primary/30"
     >
       Continuar
-      <ArrowRight class="w-5 h-5" />
-    </button>
+    </BaseButton>
 
-    <button
+    <BaseButton
+      variant="ghost"
+      class="text-sm mt-4 underline underline-offset-4 mx-auto"
       @click="handleSkip"
-      class="text-[#757575] text-sm font-bold hover:text-primary transition-colors mt-4 underline underline-offset-4 block mx-auto"
     >
       Pular por agora
-    </button>
+    </BaseButton>
   </div>
 </template>

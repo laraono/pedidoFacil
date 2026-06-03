@@ -5,7 +5,7 @@ import { AdminController } from '../controller/AdminController';
 import { AdminService } from '../service/AdminService';
 import { AdminSubscriptionMetricsService } from '../service/AdminSubscriptionMetricsService';
 import { AppDataSource } from '../database/data-source';
-import { planController, subscriptionController } from '../controller';
+import { planController, subscriptionController, establishmentController } from '../controller';
 
 const adminService = new AdminService(AppDataSource);
 const adminController = new AdminController(adminService);
@@ -28,6 +28,9 @@ adminRouter.get('/admins/:adminId', adminController.getById);
 adminRouter.post('/admins', adminController.create);
 adminRouter.put('/admins/:adminId', adminController.update);
 adminRouter.delete('/admins/:adminId', adminController.delete);
+
+adminRouter.get('/establishments', establishmentController.listForAdmin);
+adminRouter.get('/establishments/:id', establishmentController.getDetailForAdmin);
 
 adminRouter.get('/subscriptions', subscriptionController.listSubscriptions);
 adminRouter.get('/subscriptions/:subscriptionId', subscriptionController.getSubscription);

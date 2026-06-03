@@ -23,20 +23,6 @@ establishmentRouter.get(
   establishmentController.getPublicProfile
 );
 
-establishmentRouter.post(
-  '/onboarding',
-  authenticate,
-  //validateSaveOnboarding,
-  establishmentController.onboarding
-);
-
-establishmentRouter.post(
-  '/finalize',
-  authenticate,
-  //validateFinalizeOnboarding,
-  establishmentController.finalize
-);
-
 establishmentRouter.get(
   '/profile',
   authenticate,

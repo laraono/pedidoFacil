@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { safeString } from '../../utils/safeZod';
+import { strongPasswordSchema } from '../../utils/passwordSchema';
 
 export const updateProfileSchema = z.object({
   body: z.object({
@@ -14,4 +15,12 @@ export const updateProfileSchema = z.object({
   }).strict()
 });
 
+export const changePasswordSchema = z.object({
+  body: z.object({
+    oldPassword: z.string().min(1, "A senha atual é obrigatória"),
+    newPassword: strongPasswordSchema
+  }).strict()
+});
+
 export type UpdateProfileDTO = z.infer<typeof updateProfileSchema>['body'];
+export type ChangePasswordDTO = z.infer<typeof changePasswordSchema>['body'];

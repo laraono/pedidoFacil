@@ -1,5 +1,22 @@
 import { request } from './api';
 
+export interface Plan {
+  id: number;
+  name: string;
+  price: number;
+  frequency?: string;
+  features?: string;
+  mercadoPagoId?: string;
+}
+
+export interface PlanForm {
+  id: number | null;
+  name: string;
+  price: string;
+  frequency: string;
+  features: string;
+}
+
 export const adminPlanApi = {
   listPublic: () => request('/admin/public/plans', { method: 'GET' }),
 
@@ -47,6 +64,11 @@ export const adminSubscriptionApi = {
 
   delete: (subscriptionId: number) =>
     request(`/admin/subscriptions/${subscriptionId}`, { method: 'DELETE' }),
+};
+
+export const adminEstablishmentApi = {
+  list: () => request('/admin/establishments', { method: 'GET' }),
+  getDetail: (id: number) => request(`/admin/establishments/${id}`, { method: 'GET' }),
 };
 
 export const adminMetricsApi = {

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { Eye, EyeOff, UserPlus } from 'lucide-vue-next'
 import { BaseInput, BaseButton } from '@/components/ui'
 import { isValidCPF, maskCPF } from '@/utils/validator'
+import { validatePasswordStrength, isPasswordStrong } from '@/utils/password'
 import { authApi } from '@/services/authApi'
 
 interface AccountData {
@@ -37,12 +38,8 @@ const errors = computed(() => {
   if (cpf.value && !isValidCPF(cpf.value))
     e.cpf ??= 'Insira um CPF válido.'
   if (senha.value) {
-    const missing: string[] = []
-    if (senha.value.length < 8) missing.push('8 caracteres')
-    if (!/[A-Z]/.test(senha.value)) missing.push('uma letra maiúscula')
-    if (!/[0-9]/.test(senha.value)) missing.push('um número')
-    if (!/[^A-Za-z0-9]/.test(senha.value)) missing.push('um caractere especial')
-    if (missing.length) e.senha ??= `Falta: ${missing.join(', ')}.`
+    const senhaErr = validatePasswordStrength(senha.value)
+    if (senhaErr) e.senha ??= senhaErr
   }
   if (confirmarSenha.value && senha.value !== confirmarSenha.value)
     e.confirmarSenha ??= 'As senhas não coincidem.'
@@ -53,10 +50,7 @@ const errors = computed(() => {
 const canSubmit = computed(() =>
   nome.value.trim().includes(' ') &&
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim()) &&
-  senha.value.length >= 8 &&
-  /[A-Z]/.test(senha.value) &&
-  /[0-9]/.test(senha.value) &&
-  /[^A-Za-z0-9]/.test(senha.value) &&
+  isPasswordStrong(senha.value) &&
   senha.value === confirmarSenha.value &&
   !isLoading.value,
 )

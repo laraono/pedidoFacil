@@ -4,8 +4,7 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { LogIn, Lock, User, AlertCircle, Eye, EyeOff } from 'lucide-vue-next';
 import { BaseInput, BaseButton } from '@/components/ui';
-import LandingHeader from '@/components/LandingHeader.vue';
-import imgOndas from '@/assets/ondas.png';
+import AuthLayout from '@/components/AuthLayout.vue';
 import { PERMISSIONS } from '@/utils/permissions';
 
 const authStore = useAuthStore();
@@ -46,14 +45,7 @@ const goToPlans = () => router.push({ path: '/', hash: '#planos' });
 </script>
 
 <template>
-  <div class="min-h-screen bg-page font-inter flex flex-col">
-    <LandingHeader />
-
-    <div class="flex-1 relative flex flex-col items-center justify-center p-4">
-      <div class="absolute top-0 left-0 w-full h-full z-0 pointer-events-none opacity-40"
-           :style="{ backgroundImage: `url(${imgOndas})`, backgroundSize: 'cover', backgroundPosition: 'center' }">
-      </div>
-
+  <AuthLayout>
       <div class="z-10 w-full max-w-md bg-white/90 border border-[#E0E0E0] p-8 sm:p-12 rounded shadow-2xl">
         <div class="mb-10 text-center">
           <h2 class="text-3xl font-black text-[#212121] mb-2">Bem-vindo de volta</h2>
@@ -122,6 +114,5 @@ const goToPlans = () => router.push({ path: '/', hash: '#planos' });
           </a>
         </div>
       </div>
-    </div>
-  </div>
+  </AuthLayout>
 </template>
