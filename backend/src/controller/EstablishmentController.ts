@@ -93,10 +93,6 @@ export class EstablishmentController {
       updateData.paymentMethods = JSON.parse(updateData.paymentMethods);
     }
     
-    if (updateData.pixStaticEnabled === 'true' || updateData.pixStaticEnabled === 'false') {
-      updateData.pixStaticEnabled = updateData.pixStaticEnabled === 'true';
-    }
-
     if (typeof updateData.configurations === 'string') {
       updateData.configurations = JSON.parse(updateData.configurations);
     }

@@ -52,15 +52,6 @@ export class Product {
     })
     basePrice!: number
 
-    @Column({
-        type: 'enum',
-        enum: ['Ativo', 'Inativo'],
-        name: 'Status',
-        nullable: false,
-        default: 'Ativo'
-    })
-    status!: ProductStatus | string
-
     @DeleteDateColumn({
         name: 'Data_Exclusao',
         type: 'datetime',
@@ -79,11 +70,5 @@ export class Product {
         name: 'ID_Categoria'
     })
     category!: Category
-
-    @ManyToOne(() => Establishment, (establishment) => establishment.products)
-    @JoinColumn({
-        name: 'ID_Estabelecimento'
-    })
-    establishment!: Establishment
 
 }

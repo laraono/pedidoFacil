@@ -17,13 +17,6 @@ export const UpdateEstablishmentDTO = z.object({
     
     selfServiceCode: safeString(0, 20).optional(),
 
-    pixStaticEnabled: z.preprocess((val) => {
-      if (typeof val === 'string') return val === 'true';
-      return val;
-    }, z.boolean().optional()),
-
-    pixQrCodeUrl: z.string().optional(),
-    
     configurations: z.preprocess((val) => {
       if (typeof val === 'string') {
         try { return JSON.parse(val); } catch { return {}; }

@@ -20,20 +20,6 @@ export class PaymentOrder {
     paymentId!: number
 
     @Column({
-        type: 'varchar',
-        name: 'Observacoes_Cliente',
-        nullable: true
-    })
-    observation?: string
-
-    @Column({
-        type: 'int',
-        name: 'Quantidade',
-        nullable: false
-    })
-    quantity!: number
-
-    @Column({
         name: 'Valor_Pago_Deste_Pedido',
         type: "decimal",
         precision: 10,

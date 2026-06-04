@@ -47,7 +47,7 @@ export class User {
     type: 'varchar',
     name: 'Status',
     nullable: false,
-    default: UserStatus.PENDENTE,
+    default: UserStatus.INATIVO,
   })
   status!: UserStatus;
 

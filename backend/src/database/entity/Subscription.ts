@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToOne } from "typeorm"
 import { SubscriptionStatus, UserStatus } from "../../enum"
 import { Plan } from "./Plan"
 import { Establishment } from "./Establishment"
@@ -40,13 +40,6 @@ export class Subscription {
     lastPayment?: Date
 
     @Column({
-        name: 'Recibo_URL',
-        type: 'varchar',
-        nullable: true
-    })
-    receipt?: string
-
-    @Column({
         name: 'ID_MercadoPago',
         type: 'varchar',
         nullable: true
@@ -70,7 +63,7 @@ export class Subscription {
     })
     lastPaymentId?: string
 
-    @ManyToOne(() => Establishment, (establishment) => establishment.subscriptions)
+    @OneToOne(() => Establishment, (establishment) => establishment.subscription)
     @JoinColumn({
         name: 'ID_Estabelecimento'
     })

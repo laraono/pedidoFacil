@@ -43,12 +43,7 @@ const togglePaymentMethod = (method) => {
 const selfService = ref(false);
 const originalSelfService = ref(false);
 const selfServiceCode = ref("");
-const originalSelfServiceCode = ref("");
 const codeCopied = ref(false);
-
-const generateCode = () => {
-  selfServiceCode.value = Math.floor(100000 + Math.random() * 900000).toString();
-};
 
 const totemUrl = computed(() => `${window.location.origin}/totem/${selfServiceCode.value}`);
 
@@ -67,8 +62,7 @@ const isDirty = computed(() =>
     JSON.stringify(form.value) !== JSON.stringify(originalForm.value) ||
     logoPreview.value !== originalLogo.value ||
     JSON.stringify([...paymentMethods.value].sort()) !== JSON.stringify([...originalPaymentMethods.value].sort()) ||
-    selfService.value !== originalSelfService.value ||
-    selfServiceCode.value !== originalSelfServiceCode.value
+    selfService.value !== originalSelfService.value
   )
 );
 
@@ -118,23 +112,13 @@ onMounted(async () => {
       paymentMethods.value = [...ALL_PAYMENT_METHODS];
     }
 
-    let isAuto = !!data.selfServiceEnabled;
-    if (data.serviceTypes) {
-      const typesStr = typeof data.serviceTypes === 'string' ? data.serviceTypes : JSON.stringify(data.serviceTypes);
-      if (typesStr.includes('Autoatendimento')) {
-        isAuto = true;
-      }
-    }
-
-    selfService.value = isAuto;
-    const savedCode = data.selfServiceCode || '';
-    selfServiceCode.value = savedCode || Math.floor(100000 + Math.random() * 900000).toString();
+    selfService.value = !!data.selfServiceEnabled;
+    selfServiceCode.value = data.selfServiceCode || '';
 
     originalForm.value = { ...form.value };
     originalLogo.value = logoPreview.value;
     originalPaymentMethods.value = [...paymentMethods.value];
     originalSelfService.value = !!data.selfServiceEnabled;
-    originalSelfServiceCode.value = savedCode;
   } catch (error) {
     console.error("🔎 Erro ao carregar dados:", error);
     showToast("Erro ao carregar dados do estabelecimento.", "error");
@@ -189,7 +173,6 @@ const saveSettings = async () => {
 
     formData.append('paymentMethods', JSON.stringify(paymentMethods.value));
     formData.append('selfServiceEnabled', selfService.value);
-    formData.append('selfServiceCode', selfServiceCode.value);
 
     if (logoFile.value) {
       formData.append('logo', logoFile.value);
@@ -202,7 +185,6 @@ const saveSettings = async () => {
     logoFile.value = null;
     originalPaymentMethods.value = [...paymentMethods.value];
     originalSelfService.value = selfService.value;
-    originalSelfServiceCode.value = selfServiceCode.value;
 
     showToast("Dados atualizados com sucesso!", "success");
   } catch (error) {
@@ -422,9 +404,6 @@ const saveSettings = async () => {
                   <button @click="copyCode" class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-accent-light border border-accent/30 rounded text-xs font-black transition-all text-accent">
                     <component :is="codeCopied ? CheckCheck : Copy" :size="14" />
                     {{ codeCopied ? "Copiado!" : "Copiar link" }}
-                  </button>
-                  <button @click="generateCode" class="p-2.5 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121]" title="Gerar novo código">
-                    <RefreshCw :size="14" />
                   </button>
                 </div>
               </div>

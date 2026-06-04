@@ -1,7 +1,6 @@
 import { Request, Response } from 'express'
 import rateLimit from 'express-rate-limit'
 import { AuthService } from '../service'
-import { RefreshToken } from '../database'
 import { auditLog } from '../utils/logger'
 
 export const authLimiter = rateLimit({
@@ -158,8 +157,8 @@ async login(req: Request, res: Response) {
     }
 
     async resetPassword(req: Request, res: Response) {
-        const { token, email, novaSenha } = req.body
-        const result = await this.authService.resetPassword(token, email, novaSenha)
+        const { token, novaSenha } = req.body
+        const result = await this.authService.resetPassword(token, novaSenha)
         res.json(result)
     }
 }

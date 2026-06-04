@@ -12,10 +12,6 @@ export const establishmentApi = {
         typeof data.paymentMethods === 'string'
           ? JSON.parse(data.paymentMethods)
           : data.paymentMethods || [],
-      serviceTypes:
-        typeof data.serviceTypes === 'string'
-          ? JSON.parse(data.serviceTypes)
-          : data.serviceTypes || [],
       configurations: data.configurations || { logo: null },
     };
   },

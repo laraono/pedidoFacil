@@ -6,11 +6,13 @@ import {
     ManyToOne, 
     DeleteDateColumn, 
     CreateDateColumn, 
-    JoinColumn 
+    JoinColumn, 
+    OneToOne
 } from "typeorm"
 import { Establishment } from "./Establishment"
 import { User } from "./User"
 import { PaymentOrder } from "./PaymentOrder"
+import { Coupon } from "./Coupon"
 
 export enum PaymentStatus {
     PENDING = 'Pendente',
@@ -42,15 +44,6 @@ export class Payment {
     totalValue!: number
 
     @Column({
-        name: 'Valor_Taxa_Servico',
-        type: "decimal",
-        precision: 10,
-        scale: 2,
-        default: 0.00
-    })
-    serviceTax!: number 
-
-    @Column({
         name: 'Troco',
         type: "decimal",
         precision: 10,
@@ -63,7 +56,7 @@ export class Payment {
         type: 'enum',
         enum: PaymentStatus,
         name: 'Status',
-        default: PaymentStatus.PAID
+        default: PaymentStatus.PENDING
     })
     status!: PaymentStatus
 
@@ -94,6 +87,12 @@ export class Payment {
     })
     deletedAt?: Date
 
+    @OneToOne(() => Coupon)
+    @JoinColumn({
+        name: 'ID_Cupom_Aplicado'
+    })
+    coupon!: Coupon
+    
     @ManyToOne(() => Establishment)
     @JoinColumn({ name: 'ID_Estabelecimento' })
     establishment!: Establishment
