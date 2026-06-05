@@ -3,7 +3,6 @@ import { ProductVariation } from "./ProductVariation"
 import { Category } from "./Category"
 import { ProductOrder } from "./ProductOrder"
 import { ProductStatus } from "../../enum"
-import { Establishment } from "./Establishment"
 
 @Entity({name: 'PRODUTO'})
 export class Product {
