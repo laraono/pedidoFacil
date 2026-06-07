@@ -4,7 +4,7 @@ import {
     Admin, Category, Comanda, Configuration, Coupon, Establishment,
     Order, Payment, PaymentOrder, Plan, Product, ProductOrder,
     ProductVariation, Receipt, RefreshToken, Role, StorageIten,
-    StorageMovimentation, Subscription, User, Register
+    StorageMovimentation, Subscription, SubscriptionPayment, User, Register
 } from "./entity/"
 
 export const AppDataSource = new DataSource({
@@ -20,7 +20,7 @@ export const AppDataSource = new DataSource({
         Admin, Category, Comanda, Configuration, Coupon, Establishment,
         Order, Payment, PaymentOrder, Plan, Product, ProductOrder,
         ProductVariation, Receipt, RefreshToken, Role, StorageIten,
-        StorageMovimentation, Subscription, User, Register
+        StorageMovimentation, Subscription, SubscriptionPayment, User, Register
     ],
     migrations: [__dirname + '/migration/*.ts'],
     subscribers: [],

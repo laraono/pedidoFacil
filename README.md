@@ -82,9 +82,9 @@ Utilize os scripts automatizados para subir o ambiente:
 
 ## 📖 Fluxo de Primeiro Acesso
 
-* Acesse a Landing Page e realize o cadastro do Gerente.
+* Acesse o [login](http://localhost:5173/login) do admin criado no ./install. Se tiver esquecido a senha, é possível recadastrar rodando o comando novamente. Crie ao menos 2 planos.
 
-* Preencha o Onboarding com os dados do estabelecimento.
+* Preencha o Onboarding com os dados do estabelecimento. 
 
 * Utilize a opção de Cargos Básicos para configurar cargos iniciais.
 

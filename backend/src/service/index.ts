@@ -11,10 +11,12 @@ import {
   configurationRepository,
   roleRepository,
   receiptRepository,
+  metricsRepository,
   paymentRepository,
   refreshTokenRepository,
   planRepository,
   subscriptionRepository,
+  subscriptionPaymentRepository,
 } from '../repository';
 
 import { AuthService } from './AuthService';
@@ -38,7 +40,7 @@ import { WebhookService } from './WebhookService';
 
 const categoryService = new CategoryService(categoryRepository);
 
-const metricsService = new MetricsService(receiptRepository, AppDataSource);
+const metricsService = new MetricsService(receiptRepository, metricsRepository);
 const mercadoPagoService = new MercadoPagoService();
 
 const authService = new AuthService(AppDataSource, userRepository, refreshTokenRepository, establishmentRepository, mercadoPagoService);
@@ -78,10 +80,10 @@ const employeeService = new EmployeeService(userRepository, roleRepository);
 
 const menuService = new MenuService(categoryRepository, productRepository);
 
-const subscriptionService = new SubscriptionService(planRepository, subscriptionRepository, mercadoPagoService, AppDataSource);
+const subscriptionService = new SubscriptionService(planRepository, subscriptionRepository, subscriptionPaymentRepository, mercadoPagoService, AppDataSource);
 const planService = new PlanService(planRepository, subscriptionService, mercadoPagoService, AppDataSource);
 
-const webhookService = new WebhookService(subscriptionRepository, mercadoPagoService);
+const webhookService = new WebhookService(subscriptionRepository, subscriptionPaymentRepository, mercadoPagoService);
 
 export {
   authService,

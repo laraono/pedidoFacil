@@ -1,5 +1,5 @@
 import { SubscriptionStatus } from "../enum"
-import { PlanRepository, SubscriptionRepository } from "../repository"
+import { PlanRepository, SubscriptionPaymentRepository, SubscriptionRepository } from "../repository"
 import { AppError } from "../middleware"
 import { MercadoPagoService } from "./MercadoPagoService"
 import { CreateOrderSubscriptionMP, RestoreOrderSubscriptionMP } from "../dto"
@@ -11,6 +11,7 @@ export class SubscriptionService {
     constructor(
         private planRepository: PlanRepository,
         private subscriptionRepository: SubscriptionRepository,
+        private subscriptionPaymentRepository: SubscriptionPaymentRepository,
         private mercadoPagoService: MercadoPagoService,
         private dataSource: DataSource
     ) {}
@@ -154,44 +155,30 @@ export class SubscriptionService {
 
     async getEstablishmentHistory(establishmentId: number) {
         const subscriptions = await this.subscriptionRepository.getSubscriptionByEstablishment(establishmentId)
-
-        const statusLabels: Record<string, string> = {
-            'approved': 'Aprovado',
-            'in_process': 'Em processamento',
-            'canceled': 'Cancelado',
-            'cancelled': 'Cancelado',
-            'authorized': 'Autorizado',
-            'rejected': 'Recusado',
-            'refunded': 'Estornado',
-            'charged_back': 'Contestado',
-            'pending': 'Pendente',
-        }
-
         const history: Array<any> = []
 
-        for(const sub of subscriptions) {
-            if(!sub.mercadoPagoId) continue
-            try {
-                const payments = await this.mercadoPagoService.getPaymentsByPreapproval(sub.mercadoPagoId)
-                for(const payment of payments) {
-                    const statusKey = payment.status?.toLowerCase() ?? ''
-                    history.push({
-                        amount: payment.transaction_amount,
-                        status: statusLabels[statusKey] ?? statusKey,
-                        type: payment.payment_type_id === 'credit_card' ? 'Cartão de Crédito'
-                            : payment.payment_type_id === 'debit_card' ? 'Cartão de Débito'
-                            : payment.payment_type_id === 'bank_transfer' ? 'Pix'
-                            : 'Cartão',
-                        installments: payment.installments ?? null,
-                        name: sub.plan ? sub.plan.name : '',
-                        date: payment.date_approved ?? payment.date_created,
-                        mercadoPagoId: sub.mercadoPagoId ?? null,
-                    })
-                }
-            } catch {}
+        for (const sub of subscriptions) {
+            const payments = await this.subscriptionPaymentRepository.getBySubscription(sub.id)
+            for (const p of payments) {
+                history.push({
+                    amount: p.amount,
+                    status: p.status,
+                    type: p.paymentType,
+                    name: p.planName,
+                    date: p.paidAt,
+                    mercadoPagoId: sub.mercadoPagoId ?? null,
+                })
+            }
         }
 
         return history
+    }
+
+    async getAdminMetrics(startDate: string, endDate: string) {
+        const start = new Date(startDate)
+        const end = new Date(endDate)
+        end.setHours(23, 59, 59, 999)
+        return await this.subscriptionPaymentRepository.getMetricsForPeriod(start, end)
     }
 
     async getSubscription(subscriptionId: number) {

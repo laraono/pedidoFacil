@@ -16,8 +16,11 @@ import { PaymentRepository } from './PaymentRepository';
 import { PlanRepository } from './PlanRepository';
 import { SubscriptionRepository } from './SubscriptionRepository';
 import { RegisterRepository } from './RegisterRepository';
+import { MetricsRepository } from './MetricsRepository';
+import { SubscriptionPaymentRepository } from './SubscriptionPaymentRepository';
 
 const categoryRepository = new CategoryRepository(AppDataSource);
+const metricsRepository = new MetricsRepository(AppDataSource);
 const comandaRepository = new ComandaRepository(AppDataSource);
 const establishmentRepository: EstablishmentRepository = new EstablishmentRepository(AppDataSource)
 const orderRepository = new OrderRepository(AppDataSource);
@@ -36,6 +39,7 @@ const paymentRepository = new PaymentRepository(AppDataSource);
 const planRepository = new PlanRepository(AppDataSource)
 const subscriptionRepository = new SubscriptionRepository(AppDataSource)
 const registerRepository = new RegisterRepository(AppDataSource)
+const subscriptionPaymentRepository = new SubscriptionPaymentRepository(AppDataSource)
 
 export {
     categoryRepository,
@@ -50,11 +54,13 @@ export {
     userRepository,
     couponRepository,
     configurationRepository,
-    receiptRepository, 
+    receiptRepository,
+    metricsRepository,
     paymentRepository,
     planRepository,
     subscriptionRepository,
-    registerRepository
+    registerRepository,
+    subscriptionPaymentRepository
 };
 
 export {
@@ -74,5 +80,6 @@ export {
     PaymentRepository,
     PlanRepository,
     SubscriptionRepository,
-    RegisterRepository
+    RegisterRepository,
+    SubscriptionPaymentRepository
 };

@@ -1,13 +1,14 @@
-import { 
-    Entity, 
-    PrimaryGeneratedColumn, 
-    Column, 
-    OneToMany, 
-    ManyToOne, 
-    DeleteDateColumn, 
-    CreateDateColumn, 
-    JoinColumn, 
-    OneToOne
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    OneToMany,
+    ManyToOne,
+    DeleteDateColumn,
+    CreateDateColumn,
+    JoinColumn,
+    OneToOne,
+    Index
 } from "typeorm"
 import { Establishment } from "./Establishment"
 import { User } from "./User"
@@ -22,6 +23,7 @@ export enum PaymentStatus {
 }
 
 @Entity({ name: 'PAGAMENTO' })
+@Index('idx_pagamento_est_status_data', ['establishment', 'status', 'createdAt'])
 export class Payment {
 
     @PrimaryGeneratedColumn({ name: 'ID_Pagamento' })

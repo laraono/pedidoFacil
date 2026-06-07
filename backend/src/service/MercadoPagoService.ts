@@ -253,7 +253,13 @@ export class MercadoPagoService {
         }
     }
 
-    async getPayment(paymentId: string): Promise<{ status: string; preapproval_id: string | null }> {
+    async getPayment(paymentId: string): Promise<{
+        status: string
+        preapproval_id: string | null
+        transaction_amount: number
+        payment_type_id: string
+        installments: number | null
+    }> {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
             throw new AppError('Erro de conexão com o Mercado Pago', 500)
         }
@@ -271,7 +277,10 @@ export class MercadoPagoService {
             })
             return {
                 status: answer.data.status,
-                preapproval_id: answer.data.metadata?.preapproval_id ?? answer.data.preapproval_id ?? null
+                preapproval_id: answer.data.metadata?.preapproval_id ?? answer.data.preapproval_id ?? null,
+                transaction_amount: answer.data.transaction_amount ?? 0,
+                payment_type_id: answer.data.payment_type_id ?? '',
+                installments: answer.data.installments ?? null,
             }
         } catch(error: any) {
             auditLog('mp.get_payment_error', { error: error?.response?.data ?? error?.message });

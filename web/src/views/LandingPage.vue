@@ -1,7 +1,6 @@
 <script setup>
   import { ref, computed, onMounted } from "vue";
   import { useRouter } from "vue-router";
-  import { useSubscriptionStore } from "@/stores/subscriptions";
   import { request } from "@/services/api.js";
   import { planApi } from "@/services/planApi";
   import { User, Menu, X, Check } from "lucide-vue-next";
@@ -17,8 +16,8 @@
 
   const router = useRouter();
   const { formatCurrency, parsedFeatures } = useUtils();
-  const subscriptionStore = useSubscriptionStore();
-  const planPrices = computed(() => subscriptionStore.planPrices);
+
+  const FALLBACK_PRICES = { monthly: 79.90, annual: 49.90 };
 
   const plans = ref([]);
 
@@ -370,7 +369,7 @@
               <div
                 class="text-[#212121] text-5xl lg:text-6xl font-black mb-1 tracking-tighter"
               >
-                {{ formatCurrency(monthlyPlan ? Number(monthlyPlan.price) : planPrices.monthly) }}<span
+                {{ formatCurrency(monthlyPlan ? Number(monthlyPlan.price) : FALLBACK_PRICES.monthly) }}<span
                   class="text-xl font-normal text-[#757575] tracking-normal"
                   >/mês</span
                 >
@@ -412,14 +411,14 @@
               <div
                 class="text-[#212121] text-5xl lg:text-6xl font-black mb-1 tracking-tighter"
               >
-                {{ formatCurrency(annualPlan ? monthlyEquivalent(Number(annualPlan.price), 'anual') : planPrices.annual) }}<span
+                {{ formatCurrency(annualPlan ? monthlyEquivalent(Number(annualPlan.price), 'anual') : FALLBACK_PRICES.annual) }}<span
                   class="text-xl font-normal text-[#757575] tracking-normal"
                   >/mês</span
                 >
               </div>
               <p class="text-xs text-primary font-bold mb-2">
                 Preço total anual:
-                {{ formatCurrency(annualPlan ? Number(annualPlan.price) : planPrices.annual) }}
+                {{ formatCurrency(annualPlan ? Number(annualPlan.price) : FALLBACK_PRICES.annual) }}
               </p>
               <p class="text-xs text-[#757575] mb-1">
                 Parcele em até 12× no cartão

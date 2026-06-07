@@ -74,4 +74,10 @@ export class SubscriptionController {
         return res.status(200).json(updated);
     });
 
+    getAdminMetrics = catchAsync(async (req: Request, res: Response) => {
+        const { startDate, endDate } = req.query as { startDate: string; endDate: string };
+        const metrics = await this.subscriptionService.getAdminMetrics(startDate, endDate);
+        return res.status(200).json(metrics);
+    });
+
 }

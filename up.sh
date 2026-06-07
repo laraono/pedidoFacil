@@ -101,10 +101,14 @@ info "Iniciando site..."
 npm run dev --prefix web > logs/web.log 2>&1 &
 WEB_PID=$!
 
-# Para tudo quando a pessoa pressionar Ctrl+C
-trap 'echo ""; info "Encerrando..."; kill $BACKEND_PID $WEB_PID 2>/dev/null; docker compose -f backend/docker-compose.yml down; echo ""; ok "Tudo encerrado. Até logo!"; echo ""; exit 0' INT TERM
+info "Iniciando mobile (Expo)..."
+npm run start --prefix mobile -- --non-interactive 2>&1 | tee logs/mobile.log &
+MOBILE_PID=$!
 
-# Aguarda os serviços subirem
+# Para tudo quando a pessoa pressionar Ctrl+C
+trap 'echo ""; info "Encerrando..."; kill $BACKEND_PID $WEB_PID $MOBILE_PID 2>/dev/null; docker compose -f backend/docker-compose.yml down; echo ""; ok "Tudo encerrado. Até logo!"; echo ""; exit 0' INT TERM
+
+# Aguarda os serviços iniciarem
 info "Aguardando serviços iniciarem..."
 sleep 4
 
@@ -117,9 +121,14 @@ echo -e "  Acesse no navegador:"
 echo ""
 echo -e "    ${BOLD}${YELLOW}http://localhost:5173${RESET}  ${DIM}← site principal${RESET}"
 echo ""
-echo -e "  ${DIM}Logs em: logs/backend.log${RESET}"
+echo -e "  ${DIM}O QR code do Expo aparecerá abaixo em alguns segundos.${RESET}"
+echo -e "  ${DIM}Escaneie com o Expo Go para abrir no celular.${RESET}"
+echo ""
+echo -e "  ${DIM}Logs: logs/backend.log · logs/web.log · logs/mobile.log${RESET}"
 echo ""
 echo -e "  ${DIM}Pressione Ctrl+C para encerrar tudo.${RESET}"
 echo ""
+echo -e "  ${DIM}───────────────────────────────────────────────────────${RESET}"
+echo ""
 
-wait $BACKEND_PID $WEB_PID
+wait $BACKEND_PID $WEB_PID $MOBILE_PID

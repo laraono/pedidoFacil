@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, DeleteDateColumn, JoinColumn } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, DeleteDateColumn, JoinColumn, Index } from "typeorm"
 import { OrderStatus, ServiceType } from "../../enum"
 import { Comanda } from "./Comanda"
 import { ProductOrder } from "./ProductOrder"
@@ -6,6 +6,7 @@ import { User } from "./User"
 import { PaymentOrder } from "./PaymentOrder"
 
 @Entity({name: 'PEDIDO'})
+@Index('idx_pedido_comanda_status_data', ['comanda', 'status', 'created_at'])
 export class Order {
 
     @PrimaryGeneratedColumn({

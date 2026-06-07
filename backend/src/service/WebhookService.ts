@@ -1,17 +1,25 @@
-import { SubscriptionRepository } from '../repository';
+import { SubscriptionPaymentRepository, SubscriptionRepository } from '../repository';
 import { MercadoPagoService } from './MercadoPagoService';
-import { SubscriptionStatus } from '../enum';
+import { SubscriptionPaymentStatus, SubscriptionStatus } from '../enum';
 import { auditLog } from '../utils/logger';
+
+function resolvePaymentType(id: string): string {
+    if (id === 'credit_card') return 'Cartão de Crédito'
+    if (id === 'debit_card') return 'Cartão de Débito'
+    if (id === 'bank_transfer') return 'Pix'
+    return 'Cartão'
+}
 
 export class WebhookService {
     constructor(
         private subscriptionRepository: SubscriptionRepository,
+        private subscriptionPaymentRepository: SubscriptionPaymentRepository,
         private mercadoPagoService: MercadoPagoService
     ) {}
 
     async handleEvent(eventId: string, eventType: string) {
         if (eventType === 'payment') {
-            let payment: { status: string; preapproval_id: string | null };
+            let payment: Awaited<ReturnType<MercadoPagoService['getPayment']>>;
             try {
                 payment = await this.mercadoPagoService.getPayment(eventId);
             } catch {
@@ -27,13 +35,32 @@ export class WebhookService {
             if (!subscription) return;
 
             // Idempotência: MP garante at-least-once delivery
-            if (subscription.lastPaymentId === eventId) return;
+            const alreadyProcessed = await this.subscriptionPaymentRepository.findOne({
+                where: { mercadoPagoPaymentId: eventId }
+            });
+            if (alreadyProcessed) return;
 
             if (payment.status === 'approved') {
                 await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.PAGA);
-                await this.subscriptionRepository.update(subscription.id, { lastPaymentId: eventId });
+                await this.subscriptionPaymentRepository.createPayment({
+                    mercadoPagoPaymentId: eventId,
+                    amount: payment.transaction_amount,
+                    status: SubscriptionPaymentStatus.APROVADO,
+                    paymentType: resolvePaymentType(payment.payment_type_id),
+                    planName: subscription.plan.name,
+                    paidAt: new Date(),
+                    subscription: { id: subscription.id } as any,
+                });
                 auditLog('subscription.renewal_success', { subscriptionId: subscription.id });
             } else if (payment.status === 'rejected') {
+                await this.subscriptionPaymentRepository.createPayment({
+                    mercadoPagoPaymentId: eventId,
+                    amount: payment.transaction_amount,
+                    status: SubscriptionPaymentStatus.REJEITADO,
+                    paymentType: resolvePaymentType(payment.payment_type_id),
+                    planName: subscription.plan.name,
+                    subscription: { id: subscription.id } as any,
+                });
                 // MP vai retentar automaticamente — apenas logar
                 auditLog('subscription.payment_rejected', { subscriptionId: subscription.id, paymentId: eventId });
             }

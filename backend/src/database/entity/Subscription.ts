@@ -55,14 +55,6 @@ export class Subscription {
     })
     price?: number
 
-    @Column({
-        name: 'Ultimo_ID_Pagamento',
-        type: 'varchar',
-        length: 255,
-        nullable: true
-    })
-    lastPaymentId?: string
-
     @OneToOne(() => Establishment, (establishment) => establishment.subscription)
     @JoinColumn({
         name: 'ID_Estabelecimento'

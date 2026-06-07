@@ -5,11 +5,6 @@ import { subscriptionApi } from '@/services/subscriptionApi';
 
 export type SubscriptionStatus = 'Paga' | 'Pendente' | 'Expirada' | 'Cancelada';
 
-export interface PlanPrices {
-  monthly: number;
-  annual: number;
-}
-
 export interface AdminSubscription {
   id: number;
   establishment: string;
@@ -23,8 +18,6 @@ export interface AdminSubscription {
 }
 
 export const useSubscriptionStore = defineStore('subscription', () => {
-  const planPrices = ref<PlanPrices>({ monthly: 79.90, annual: 49.90 });
-
   const subscriptionStatus = ref<SubscriptionStatus | null>(null);
 
   async function fetchSubscriptionStatus(): Promise<void> {
@@ -38,18 +31,15 @@ export const useSubscriptionStore = defineStore('subscription', () => {
 
   const isActive = computed(() => subscriptionStatus.value === 'Paga');
 
+  // ── Admin: listagem de assinaturas ──────────────────────────────────────────
+
   const adminSubscriptions = ref<AdminSubscription[]>([]);
-  const adminMetrics = ref<any>(null);
-  const adminDataLoading = ref(false);
+  const adminSubscriptionsLoading = ref(false);
 
-  async function loadAdminData(): Promise<void> {
-    adminDataLoading.value = true;
+  async function loadAdminSubscriptions(): Promise<void> {
+    adminSubscriptionsLoading.value = true;
     try {
-      const [subs, metrics] = await Promise.all([
-        adminSubscriptionApi.list(),
-        adminMetricsApi.getSubscriptionMetrics(),
-      ]);
-
+      const subs = await adminSubscriptionApi.list();
       adminSubscriptions.value = (subs || []).map((s: any) => ({
         id: s.id,
         establishment: s.establishment?.name ?? '—',
@@ -59,25 +49,55 @@ export const useSubscriptionStore = defineStore('subscription', () => {
         status: s.status,
         nextDueDate: s.expirationDate,
         amount: Number(s.plan?.price ?? 0),
-        users: (s.establishment?.roles ?? []).reduce((sum: number, r: any) => sum + (r.users?.length ?? 0), 0),
+        users: (s.establishment?.roles ?? []).reduce(
+          (sum: number, r: any) => sum + (r.users?.length ?? 0), 0
+        ),
       }));
-
-      adminMetrics.value = metrics;
-    } catch (e) {
-      console.error('Erro ao carregar dados admin:', e);
     } finally {
-      adminDataLoading.value = false;
+      adminSubscriptionsLoading.value = false;
     }
   }
 
+  // ── Admin: métricas por período ─────────────────────────────────────────────
+
+  const adminMetrics = ref<any>(null);
+  const adminMetricsLoading = ref(false);
+
+  async function loadAdminMetrics(period = '12m'): Promise<void> {
+    adminMetricsLoading.value = true;
+    try {
+      const end = new Date();
+      const start = new Date();
+      const months = period === '3m' ? 3 : period === '6m' ? 6 : 12;
+      start.setMonth(start.getMonth() - months);
+      const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+      const raw = await adminMetricsApi.getSubscriptionMetrics(fmt(start), fmt(end)) as any;
+
+      adminMetrics.value = {
+        totalAtivas: raw.totalAtivos,
+        receitaMensal: raw.mrr,
+        receitaColetada: raw.receitaColetada,
+      };
+    } finally {
+      adminMetricsLoading.value = false;
+    }
+  }
+
+  const adminDataLoading = computed(
+    () => adminSubscriptionsLoading.value || adminMetricsLoading.value
+  );
+
   return {
-    planPrices,
     subscriptionStatus,
     fetchSubscriptionStatus,
     isActive,
     adminSubscriptions,
+    adminSubscriptionsLoading,
+    loadAdminSubscriptions,
     adminMetrics,
+    adminMetricsLoading,
+    loadAdminMetrics,
     adminDataLoading,
-    loadAdminData,
   };
 });

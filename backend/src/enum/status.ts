@@ -34,3 +34,14 @@ export enum SubscriptionStatus {
     CANCELADA = 'Cancelada'
 }
 
+export enum ReceiptStatus {
+    AUTORIZADA = 'Autorizada',
+    CANCELADA = 'Cancelada',
+    ERRO = 'Erro'
+}
+
+export enum SubscriptionPaymentStatus {
+    APROVADO = 'Aprovado',
+    REJEITADO = 'Rejeitado'
+}
+

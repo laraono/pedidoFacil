@@ -18,5 +18,6 @@ subscriptionRouter.get('/subscriptions/establishment', authenticate, subscriptio
 subscriptionRouter.get('/subscriptions/history', authenticate, subscriptionController.getEstablishmentHistory)
 subscriptionRouter.patch('/subscriptions/change-plan', authenticate, subscriptionController.changePlan)
 subscriptionRouter.post('/subscriptions/:subscriptionId/cancel', authenticate, subscriptionController.cancelSubcription)
+subscriptionRouter.get('/subscriptions/admin/metrics', authenticate, subscriptionController.getAdminMetrics)
 
 export { subscriptionRouter };

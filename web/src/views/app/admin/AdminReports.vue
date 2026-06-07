@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useSubscriptionStore } from '@/stores/subscriptions';
 import { useUtils } from '@/composables/useUtils';
 import {
@@ -7,17 +7,36 @@ import {
   BarChart3, Download, Calendar, Loader2
 } from 'lucide-vue-next';
 import { PageHeader, MetricCard, StatusBadge } from '@/components/ui';
+import { useToast } from '@/composables/useToast';
 
 const subscriptionStore = useSubscriptionStore();
 const { formatCurrency } = useUtils();
+const { showToast } = useToast();
 
 const isLoaded = ref(false);
 const dateFilter = ref('12m');
 
+async function fetchMetrics(period) {
+  try {
+    await subscriptionStore.loadAdminMetrics(period);
+  } catch {
+    showToast('Erro ao carregar métricas.', 'error');
+  }
+}
+
 onMounted(async () => {
-  await subscriptionStore.loadAdminData();
+  try {
+    await Promise.all([
+      subscriptionStore.loadAdminSubscriptions(),
+      subscriptionStore.loadAdminMetrics(dateFilter.value),
+    ]);
+  } catch {
+    showToast('Erro ao carregar dados do relatório.', 'error');
+  }
   setTimeout(() => isLoaded.value = true, 60);
 });
+
+watch(dateFilter, fetchMetrics);
 
 const allSubs = computed(() => subscriptionStore.adminSubscriptions);
 const metrics = computed(() => subscriptionStore.adminMetrics);

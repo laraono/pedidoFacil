@@ -1,4 +1,8 @@
 <script setup>
+import { useUtils } from '@/composables/useUtils';
+
+const { formatCurrency } = useUtils();
+
 const props = defineProps({
   restaurantName: String,
   performanceTitle: String,
@@ -30,9 +34,10 @@ const getMetricLabel = (key) => ({
   giroMesa: 'Giro de Mesa',
 }[key] ?? key);
 
-// Values from kpis mock are already formatted strings (e.g. "R$ 1.234,56")
-// so we pass them through directly instead of trying to re-parse them
-const formatMetric = (_key, val) => val;
+const formatMetric = (key, val) => {
+  if (key === 'faturamento' || key === 'ticketMedio') return formatCurrency(val);
+  return val;
+};
 
 const maxRev = () => {
   if (typeof props.getMaxRevenue === 'function') return props.getMaxRevenue();
@@ -226,7 +231,7 @@ const maxRev = () => {
               {{ index + 1 }}. {{ waiter.name }}
               <span style="font-size:8px; color:#9ca3af; font-weight:400;">({{ waiter.orders }} ped.)</span>
             </span>
-            <span style="font-weight:900; color:#111; white-space:nowrap;">{{ waiter.revenue }}</span>
+            <span style="font-weight:900; color:#111; white-space:nowrap;">{{ formatCurrency(waiter.revenue) }}</span>
           </div>
         </div>
       </div>
@@ -297,9 +302,6 @@ const maxRev = () => {
             <th style="padding:7px 10px; text-align:right; font-size:8px; font-weight:900;
                        color:#6b7280; text-transform:uppercase; letter-spacing:0.07em;
                        border-bottom:2px solid #e5e7eb;">Faturamento</th>
-            <th style="padding:7px 10px; text-align:center; font-size:8px; font-weight:900;
-                       color:#6b7280; text-transform:uppercase; letter-spacing:0.07em;
-                       border-bottom:2px solid #e5e7eb;">Margem / Part.</th>
           </tr>
         </thead>
         <tbody>
@@ -320,21 +322,11 @@ const maxRev = () => {
             </td>
             <td style="padding:6px 10px; text-align:right; font-weight:900; color:#059669;
                        border-bottom:1px solid #f3f4f6; white-space:nowrap;">
-              {{ produto.receita }}
-            </td>
-            <td style="padding:6px 10px; text-align:center; border-bottom:1px solid #f3f4f6;">
-              <span style="background:#dcfce7; color:#166534; padding:2px 7px;
-                           border-radius:4px; font-size:8px; font-weight:900;">
-                {{ produto.margem ?? produto.participacao ?? '-' }}
-              </span>
+              {{ formatCurrency(produto.receita) }}
             </td>
           </tr>
         </tbody>
       </table>
-
-      <p style="font-size:8px; color:#9ca3af; margin-top:12px; text-align:center; font-style:italic;">
-        * A margem de lucro é uma estimativa calculada com base no CMV.
-      </p>
     </div>
 
     <!-- ════════════════════ CUPONS ════════════════════ -->

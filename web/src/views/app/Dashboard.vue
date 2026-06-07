@@ -34,7 +34,7 @@ const firstName = computed(() => {
         {{ isAdmin ? `Bem-vindo, ${firstName}!` : `Bem-vindo, ${firstName}!` }}
       </h1>
       <p class="text-[#757575] mt-2 text-lg">
-        {{ isAdmin ? 'Gerencie a plataforma PedidoFácil.' : 'O que vamos gerenciar hoje?' }}
+        {{ isAdmin ? 'Gerencie a plataforma PedidoFácil.' : 'Escolha uma área abaixo para começar.' }}
       </p>
     </header>
 
