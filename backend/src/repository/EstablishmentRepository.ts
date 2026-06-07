@@ -38,16 +38,6 @@ export class EstablishmentRepository extends Repository<Establishment> {
         })
     }
 
-    async getEstablishmentByUser(user: User) {
-        return await this.findOne({
-            where: {
-                users: {
-                    id: user.id
-                }
-            }
-        })
-    }
-
     async addMercadoPagoId(establishmentId: number, mercadoPagoId: string) {
         await this.update(establishmentId, {mercadoPagoId})
     }

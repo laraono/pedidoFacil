@@ -16,7 +16,7 @@ export class ProductRepository extends Repository<Product> {
         const skip = (page - 1) * limit;
 
         const [products, total] = await this.findAndCount({
-            where: { establishment: { id: establishmentId } }, 
+            where: { category: { establishment: { id: establishmentId } } }, 
             relations: ['category', 'productVariations'],
             take: limit,
             skip: skip
@@ -35,8 +35,7 @@ export class ProductRepository extends Repository<Product> {
 
         const [products, total] = await this.findAndCount({
             where: {
-                category: { id: categoryId },
-                establishment: { id: establishmentId } 
+                category: { id: categoryId, establishment: { id: establishmentId } }
             },
             take: limit,
             skip: skip
@@ -55,7 +54,7 @@ export class ProductRepository extends Repository<Product> {
 
         const [products, total] = await this.findAndCount({
             where: { 
-                establishment: { id: establishmentId },
+                category: { establishment: { id: establishmentId } },
                 deletedAt: Not(IsNull()) 
             },
             withDeleted: true,

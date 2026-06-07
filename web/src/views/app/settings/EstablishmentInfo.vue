@@ -1,29 +1,20 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { getImageUrl, validateImageFile } from "@/utils/imageUrl";
+import { maskCNPJ, maskPhone } from "@/utils/validator";
 import { establishmentApi } from "@/services/establishmentApi";
 import { useToast } from "@/composables/useToast";
-import {
-  Save,
-  ArrowLeft,
-  UploadCloud,
-  AlertCircle,
-  Smartphone,
-  Copy,
-  CheckCheck,
-  RefreshCw,
-  Banknote,
-} from "lucide-vue-next";
+import { useFormValidation } from "@/composables/useFormValidation";
+import { useAsyncAction } from "@/composables/useAsyncAction";
+import { BaseInput, BaseButton, BaseToggle, PageHeader } from "@/components/ui";
+import { Save, UploadCloud, AlertCircle, Smartphone, Copy, CheckCheck, Banknote } from "lucide-vue-next";
 
-const router = useRouter();
 const { showToast } = useToast();
+const { loading: isSaving, run: runSave } = useAsyncAction();
 
-const isLoading = ref(false);
 const isFetching = ref(true);
 const logoPreview = ref(null);
-const logoFile = ref(null); 
-const errors = ref({});
-const touched = ref({});
+const logoFile = ref(null);
 
 const ALL_PAYMENT_METHODS = ["Dinheiro", "Cartão Débito", "Cartão Crédito", "PIX"];
 const paymentMethods = ref([]);
@@ -34,7 +25,6 @@ const togglePaymentMethod = (method) => {
     showToast("A aceitação de dinheiro é obrigatória por lei.", "warning");
     return;
   }
-  
   const idx = paymentMethods.value.indexOf(method);
   if (idx === -1) paymentMethods.value.push(method);
   else if (paymentMethods.value.length > 1) paymentMethods.value.splice(idx, 1);
@@ -45,10 +35,8 @@ const originalSelfService = ref(false);
 const selfServiceCode = ref("");
 const codeCopied = ref(false);
 
-const totemUrl = computed(() => `${window.location.origin}/totem/${selfServiceCode.value}`);
-
 const copyCode = () => {
-  navigator.clipboard.writeText(totemUrl.value);
+  navigator.clipboard.writeText(selfServiceCode.value);
   codeCopied.value = true;
   setTimeout(() => { codeCopied.value = false; }, 2000);
 };
@@ -66,178 +54,112 @@ const isDirty = computed(() =>
   )
 );
 
-const maskCNPJ = (v) => {
-  const d = v.replace(/\D/g, "").slice(0, 14);
-  return d
-    .replace(/^(\d{2})(\d)/, "$1.$2")
-    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/\.(\d{3})(\d)/, ".$1/$2")
-    .replace(/(\d{4})(\d)/, "$1-$2");
+const validationRules = {
+  name: [{ validator: (v) => !!v?.trim(), message: "O nome fantasia é obrigatório." }],
+  cnpj: [{ validator: (v) => !v?.trim() || v.replace(/\D/g, "").length === 14, message: "CNPJ incompleto." }],
+  phone: [{ validator: (v) => !v?.trim() || v.replace(/\D/g, "").length >= 10, message: "Telefone incompleto." }],
 };
-
-const maskPhone = (v) => {
-  const d = v.replace(/\D/g, "").slice(0, 11);
-  if (d.length <= 10)
-    return d.replace(/^(\d{2})(\d)/, "($1) $2").replace(/(\d{4})(\d)/, "$1-$2");
-  return d.replace(/^(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2");
-};
-
-const getImageUrl = (imagePath) => {
-  if (!imagePath) return '';
-  if (imagePath.startsWith('http') || imagePath.startsWith('data:image') || imagePath.startsWith('blob:')) return imagePath;
-  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
-  const host = BASE_URL.replace('/api/v1', '');
-  return `${host}/uploads/${imagePath}`;
-};
+const { errors, validateAll } = useFormValidation(validationRules);
 
 onMounted(async () => {
   isFetching.value = true;
   try {
     const data = await establishmentApi.getProfile();
 
-    form.value = {
-      name: data.name || "",
-      cnpj: data.cnpj || "",
-      phone: data.phone || "",
-    };
-
+    form.value = { name: data.name || "", cnpj: data.cnpj || "", phone: data.phone || "" };
     logoPreview.value = getImageUrl(data.configurations?.logo);
 
-    if (data.paymentMethods && data.paymentMethods.length > 0) {
+    if (data.paymentMethods?.length > 0) {
       paymentMethods.value = [...data.paymentMethods];
-      if (!paymentMethods.value.includes("Dinheiro")) {
-        paymentMethods.value.push("Dinheiro");
-      }
+      if (!paymentMethods.value.includes("Dinheiro")) paymentMethods.value.push("Dinheiro");
     } else {
       paymentMethods.value = [...ALL_PAYMENT_METHODS];
     }
 
     selfService.value = !!data.selfServiceEnabled;
-    selfServiceCode.value = data.selfServiceCode || '';
+    selfServiceCode.value = data.selfServiceCode || "";
 
     originalForm.value = { ...form.value };
     originalLogo.value = logoPreview.value;
     originalPaymentMethods.value = [...paymentMethods.value];
     originalSelfService.value = !!data.selfServiceEnabled;
-  } catch (error) {
-    console.error("🔎 Erro ao carregar dados:", error);
+  } catch {
     showToast("Erro ao carregar dados do estabelecimento.", "error");
   } finally {
     isFetching.value = false;
   }
 });
 
-const validateAll = () => {
-  errors.value = {};
-  touched.value = { name: true, cnpj: true, phone: true };
-
-  if (!form.value.name.trim()) errors.value.name = "O nome fantasia é obrigatório.";
-  if (form.value.cnpj.trim() && form.value.cnpj.replace(/\D/g, "").length < 14) errors.value.cnpj = "CNPJ incompleto.";
-  if (form.value.phone.trim() && form.value.phone.replace(/\D/g, "").length < 10) errors.value.phone = "Telefone incompleto.";
-
-  return Object.keys(errors.value).length === 0;
-};
-
 const handleLogoUpload = (event) => {
   const file = event.target.files[0];
   if (!file) return;
-
-  const maxSize = 2 * 1024 * 1024; 
-  if (file.size > maxSize) {
-    showToast("Arquivo muito grande! O limite é 2MB.", "error");
-    event.target.value = ""; 
-    return;
-  }
-
+  const error = validateImageFile(file);
+  if (error) { showToast(error, "error"); event.target.value = ""; return; }
   logoFile.value = file;
   logoPreview.value = URL.createObjectURL(file);
 };
 
 const saveSettings = async () => {
-  if (!validateAll()) {
+  if (!validateAll({ name: form.value.name, cnpj: form.value.cnpj, phone: form.value.phone })) {
     showToast("Corrija os erros antes de salvar.", "error");
     return;
   }
 
-  isLoading.value = true;
+  await runSave(async () => {
+    try {
+      const formData = new FormData();
+      formData.append("name", form.value.name);
+      formData.append("cnpj", form.value.cnpj);
+      formData.append("phone", form.value.phone);
 
-  try {
-    const formData = new FormData();
-    formData.append('name', form.value.name);
-    formData.append('cnpj', form.value.cnpj);
-    formData.append('phone', form.value.phone);
-    
-    if (!paymentMethods.value.includes("Dinheiro")) {
-      paymentMethods.value.push("Dinheiro");
+      if (!paymentMethods.value.includes("Dinheiro")) paymentMethods.value.push("Dinheiro");
+      formData.append("paymentMethods", JSON.stringify(paymentMethods.value));
+      formData.append("selfServiceEnabled", selfService.value);
+      if (logoFile.value) formData.append("logo", logoFile.value);
+
+      await establishmentApi.updateProfile(formData);
+
+      originalForm.value = { ...form.value };
+      originalLogo.value = logoPreview.value;
+      logoFile.value = null;
+      originalPaymentMethods.value = [...paymentMethods.value];
+      originalSelfService.value = selfService.value;
+
+      showToast("Dados atualizados com sucesso!", "success");
+    } catch (error) {
+      const data = error.response?.data || error.data;
+      const zodErrors = data?.errors;
+      const msg = zodErrors?.length > 0
+        ? zodErrors[0].mensagem
+        : data?.message || error.message || "Erro ao salvar os dados.";
+      showToast(msg, "error");
     }
-
-    formData.append('paymentMethods', JSON.stringify(paymentMethods.value));
-    formData.append('selfServiceEnabled', selfService.value);
-
-    if (logoFile.value) {
-      formData.append('logo', logoFile.value);
-    }
-
-    await establishmentApi.updateProfile(formData);
-
-    originalForm.value = { ...form.value };
-    originalLogo.value = logoPreview.value;
-    logoFile.value = null;
-    originalPaymentMethods.value = [...paymentMethods.value];
-    originalSelfService.value = selfService.value;
-
-    showToast("Dados atualizados com sucesso!", "success");
-  } catch (error) {
-    const data = error.response?.data || error.data;
-    const zodErrors = data?.errors;
-    let errorMessage = "Erro ao salvar os dados.";
-
-    if (zodErrors && zodErrors.length > 0) {
-      errorMessage = zodErrors[0].mensagem;
-    } else {
-      errorMessage = data?.message || error.message || errorMessage;
-    }
-
-    showToast(errorMessage, "error");
-    console.error("🔎 Erro ao salvar:", error);
-  } finally {
-    isLoading.value = false;
-  }
+  });
 };
 </script>
 
 <template>
   <main class="max-w-6xl mx-auto py-12 px-6 font-inter animate-fadeIn">
-    <header class="flex items-center justify-between mb-10">
-      <div class="flex items-center gap-4">
-        <button
-          @click="router.push('/app/dashboard')"
-          class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] hover:bg-gray-100 transition-all"
-        >
-          <ArrowLeft :size="20" />
-        </button>
-        <div>
-          <h1 class="text-3xl font-black text-[#212121] tracking-tight">
-            Meu Estabelecimento
-          </h1>
-          <p class="text-[#757575] mt-1 text-sm">Dados fiscais e de contato</p>
-        </div>
-      </div>
-
-      <button
-        @click="saveSettings"
-        :disabled="!isDirty || isLoading || isFetching"
-        class="hidden sm:flex items-center gap-2 bg-primary text-white font-black px-8 py-4 rounded hover:bg-primary-dark transition-all active:scale-95 shadow-lg shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
-      >
-        <Save :size="20" />
-        {{ isLoading ? "Gravando..." : "Salvar Dados" }}
-      </button>
-    </header>
-
-    <div
-      v-if="isFetching"
-      class="flex justify-center items-center py-20 text-[#757575] font-bold"
+    <PageHeader
+      title="Meu Estabelecimento"
+      subtitle="Dados fiscais e de contato"
+      backTo="/app/dashboard"
     >
+      <template #actions>
+        <BaseButton
+          variant="primary"
+          size="lg"
+          :isLoading="isSaving"
+          :disabled="!isDirty || isFetching"
+          class="hidden sm:flex"
+          @click="saveSettings"
+        >
+          <Save :size="20" /> Salvar Dados
+        </BaseButton>
+      </template>
+    </PageHeader>
+
+    <div v-if="isFetching" class="flex justify-center items-center py-20 text-[#757575] font-bold">
       Carregando informações do estabelecimento...
     </div>
 
@@ -264,53 +186,33 @@ const saveSettings = async () => {
       <section class="lg:col-span-2">
         <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-1.5 md:col-span-2">
-              <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1">Nome do Negócio</label>
-              <input
+            <div class="md:col-span-2">
+              <BaseInput
                 v-model="form.name"
-                maxlength="80"
-                type="text"
+                label="Nome do Negócio"
                 placeholder="Ex: Hamburgueria 2000"
-                class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all"
-                :class="errors.name ? '!border-red-500 !bg-red-500/5' : ''"
+                :error="errors.name"
+                maxlength="80"
               />
-              <p v-if="errors.name" class="text-danger text-[11px] font-bold ml-1 flex items-center gap-1">
-                <AlertCircle :size="11" /> {{ errors.name }}
-              </p>
             </div>
 
-            <div class="space-y-1.5">
-              <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1">CNPJ</label>
-              <input
-                :value="form.cnpj"
-                @input="(e) => { form.cnpj = maskCNPJ(e.target.value); e.target.value = form.cnpj; }"
-                maxlength="18"
-                type="text"
-                placeholder="00.000.000/0001-00"
-                class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all"
-                :class="errors.cnpj ? '!border-red-500 !bg-red-500/5' : ''"
-              />
-              <p v-if="errors.cnpj" class="text-danger text-[11px] font-bold ml-1 flex items-center gap-1">
-                <AlertCircle :size="11" /> {{ errors.cnpj }}
-              </p>
-            </div>
+            <BaseInput
+              :model-value="form.cnpj"
+              label="CNPJ"
+              placeholder="00.000.000/0001-00"
+              :error="errors.cnpj"
+              maxlength="18"
+              @input="(e) => { form.cnpj = maskCNPJ(e.target.value); e.target.value = form.cnpj; }"
+            />
 
-            <div class="space-y-1.5">
-              <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1">WhatsApp / Contato</label>
-              <input
-                :value="form.phone"
-                @input="(e) => { const cleanValue = e.target.value.replace(/\D/g, ''); form.phone = maskPhone(cleanValue); e.target.value = form.phone; }"
-                maxlength="15"
-                type="tel"
-                inputmode="numeric"
-                placeholder="(00) 00000-0000"
-                class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100 focus:outline-none transition-all"
-                :class="errors.phone ? '!border-red-500 !bg-red-500/5' : ''"
-              />
-              <p v-if="errors.phone" class="text-danger text-[11px] font-bold ml-1 flex items-center gap-1">
-                <AlertCircle :size="11" /> {{ errors.phone }}
-              </p>
-            </div>
+            <BaseInput
+              :model-value="form.phone"
+              label="WhatsApp / Contato"
+              placeholder="(00) 00000-0000"
+              :error="errors.phone"
+              maxlength="15"
+              @input="(e) => { const d = e.target.value.replace(/\D/g, ''); form.phone = maskPhone(d); e.target.value = form.phone; }"
+            />
           </div>
         </div>
       </section>
@@ -339,14 +241,16 @@ const saveSettings = async () => {
               method === 'Dinheiro' ? 'opacity-90 cursor-not-allowed' : ''
             ]"
           >
-            <div class="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
-                 :class="paymentMethods.includes(method) ? 'bg-accent border-accent' : 'border-[#E0E0E0]'">
+            <div
+              class="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
+              :class="paymentMethods.includes(method) ? 'bg-accent border-accent' : 'border-[#E0E0E0]'"
+            >
               <CheckCheck v-if="paymentMethods.includes(method)" :size="10" class="text-white" />
             </div>
             {{ method }}
           </button>
         </div>
-        
+
         <div class="mt-6 flex items-start gap-2 p-4 bg-blue-500/5 rounded border border-blue-500/10">
           <AlertCircle :size="16" class="text-blue-500 shrink-0 mt-0.5" />
           <p class="text-xs font-bold text-[#757575] leading-relaxed">
@@ -358,19 +262,12 @@ const saveSettings = async () => {
 
     <div v-if="!isFetching" class="mt-8">
       <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl">
-        <div class="flex items-center justify-between mb-2">
-          <div>
-            <h3 class="text-base font-black text-[#212121]">Autoatendimento</h3>
-            <p class="text-sm text-[#757575] mt-1">Permite que clientes façam pedidos pelo aplicativo móvel.</p>
-          </div>
-          <button
-            @click="selfService = !selfService"
-            class="relative w-14 h-7 rounded transition-colors duration-300 flex items-center"
-            :class="selfService ? 'bg-accent' : 'bg-gray-100'"
-          >
-            <span class="absolute w-5 h-5 bg-white rounded shadow transition-all duration-300" :class="selfService ? 'left-8' : 'left-1'" />
-          </button>
-        </div>
+        <BaseToggle
+          v-model="selfService"
+          label="Autoatendimento"
+          description="Permite que clientes façam pedidos pelo aplicativo móvel."
+          class="mb-2"
+        />
 
         <Transition name="slide-down">
           <div v-if="selfService" class="mt-6 border-t border-[#E0E0E0] pt-6">
@@ -395,17 +292,16 @@ const saveSettings = async () => {
                   <p class="font-black text-[#212121] text-sm mb-1">Código de Acesso</p>
                   <p class="text-xs text-[#757575]">Compartilhe este código com seus clientes</p>
                 </div>
-                <div class="flex items-center gap-3">
-                  <div class="flex-1 bg-gray-100 border border-accent/30 rounded px-6 py-4 text-center">
-                    <span class="text-4xl font-black text-accent tracking-[0.3em]">{{ selfServiceCode }}</span>
-                  </div>
+                <div class="flex-1 bg-gray-100 border border-accent/30 rounded px-6 py-4 text-center">
+                  <span class="text-4xl font-black text-accent tracking-[0.3em]">{{ selfServiceCode }}</span>
                 </div>
-                <div class="flex gap-2">
-                  <button @click="copyCode" class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-accent-light border border-accent/30 rounded text-xs font-black transition-all text-accent">
-                    <component :is="codeCopied ? CheckCheck : Copy" :size="14" />
-                    {{ codeCopied ? "Copiado!" : "Copiar link" }}
-                  </button>
-                </div>
+                <button
+                  @click="copyCode"
+                  class="flex items-center justify-center gap-2 py-2.5 px-4 bg-accent-light border border-accent/30 rounded text-xs font-black transition-all text-accent"
+                >
+                  <component :is="codeCopied ? CheckCheck : Copy" :size="14" />
+                  {{ codeCopied ? "Copiado!" : "Copiar código" }}
+                </button>
               </div>
             </div>
           </div>
@@ -414,13 +310,16 @@ const saveSettings = async () => {
     </div>
 
     <div class="mt-8 sm:hidden">
-      <button
+      <BaseButton
+        variant="primary"
+        size="lg"
+        :isLoading="isSaving"
+        :disabled="!isDirty || isFetching"
+        class="w-full !py-5"
         @click="saveSettings"
-        :disabled="!isDirty || isLoading || isFetching"
-        class="w-full bg-primary text-white font-black py-5 rounded shadow-xl active:scale-95 transition-all disabled:opacity-40"
       >
-        {{ isLoading ? "Gravando..." : "Salvar Alterações" }}
-      </button>
+        Salvar Alterações
+      </BaseButton>
     </div>
   </main>
 </template>

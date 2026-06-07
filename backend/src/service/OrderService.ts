@@ -4,7 +4,6 @@ import {
   Product,
   ProductOrder,
   ProductVariation,
-  ProductVariationOrder,
   Comanda,
 } from '../database';
 import { OrderStatus, ComandaStatus, ServiceType } from '../enum';
@@ -89,25 +88,14 @@ export class OrderService {
 
       totalAcumulado += finalPrice * iten.quantity;
 
-      const productOrder = await manager.save(ProductOrder, {
+      await manager.save(ProductOrder, {
         orderId: order.id,
         productId: validated.product.id,
+        productVariationId: validated.productVariation?.id ?? null,
         observation: iten.observation || '',
         quantity: iten.quantity,
         price: finalPrice,
       });
-
-      if (validated.productVariation && iten.productVariationId) {
-        try {
-          await manager.save(ProductVariationOrder, {
-            productOrderId: productOrder.id,
-            productVariationId: validated.productVariation.id,
-            price: addPrice,
-          });
-        } catch (vError) {
-          console.warn('⚠️ [ITEM] Erro ao salvar variação:', vError);
-        }
-      }
     }
 
     await this.comandaService.updateComandaTotalTransaction(
@@ -143,33 +131,34 @@ export class OrderService {
     return await this.orderRepository.listOrdersByComanda(comandaId);
   }
 
-  async updateOrderStatus(orderId: number, status: OrderStatus, userId?: number, reason?: string) {
-    const updateData: any = { status };
-    const currentStatus = String(status);
+  async updateOrderStatus(orderId: number, status: OrderStatus, userId?: number, reason?: string, expectedComandaId?: number) {
+    const order = await this.dataSource.getRepository(Order).findOne({
+      where: { id: orderId }, relations: ['comanda']
+    });
 
-    if (currentStatus === 'Cancelado' || currentStatus === 'CANCELADO') {
-      if (userId) updateData.user = { id: userId }; 
+    if (!order) throw new AppError('Pedido não encontrado', 404);
+    if (!order.comanda) throw new AppError('Pedido sem comanda associada', 500);
+    if (expectedComandaId && order.comanda.id !== expectedComandaId) throw new AppError('Pedido não pertence a esta comanda', 403);
+
+    const updateData: any = { status };
+
+    if (status === OrderStatus.CANCELADO) {
+      if (userId) updateData.user = { id: userId };
       if (reason) updateData.cancellationDescription = reason;
     }
 
     await this.orderRepository.update(orderId, updateData);
 
-    const order = await this.dataSource.getRepository(Order).findOne({ 
-      where: { id: orderId }, relations: ['comanda'] 
-    });
-    
-    if (!order || !order.comanda) return { comandaCancelled: false, comandaId: null };
     const comandaId = order.comanda.id;
 
-    if (currentStatus === 'Cancelado' || currentStatus === 'CANCELADO') {
-        const allOrders = await this.dataSource.getRepository(Order).find({ where: { comanda: { id: comandaId } } });
-        
-        const allCancelled = allOrders.every(o => o.status === OrderStatus.CANCELADO);
+    if (status === OrderStatus.CANCELADO) {
+      const allOrders = await this.dataSource.getRepository(Order).find({ where: { comanda: { id: comandaId } } });
+      const allCancelled = allOrders.length > 0 && allOrders.every(o => o.status === OrderStatus.CANCELADO);
 
-        if (allCancelled && allOrders.length > 0) {
-            await this.comandaService.updateComandaStatus(comandaId, ComandaStatus.CANCELADA);
-            return { comandaCancelled: true, comandaId };
-        }
+      if (allCancelled) {
+        await this.comandaService.updateComandaStatus(comandaId, ComandaStatus.CANCELADA);
+        return { comandaCancelled: true, comandaId };
+      }
     }
 
     return { comandaCancelled: false, comandaId };
@@ -180,8 +169,7 @@ export class OrderService {
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.productOrders', 'po')
       .leftJoinAndSelect('po.product', 'product')
-      .leftJoinAndSelect('po.variations', 'variation')
-      .leftJoinAndSelect('variation.productVariation', 'pv')
+      .leftJoinAndSelect('po.productVariation', 'pv')
       .where('order.id = :id', { id: orderId })
       .getOne();
   }

@@ -8,7 +8,6 @@ import { catchAsync } from '../middleware/error/catchAsync';
 import { authenticate } from '../middleware/authenticate';
 import { validateRequest } from '../middleware/validateRequest';
 import { loginSchema } from '../dto/auth/LoginDTO';
-import { registerSchema } from '../dto/auth/RegisterDTO';
 import { registerCompleteSchema } from '../dto/auth/RegisterCompleteDTO'; 
 
 const userRepository = new UserRepository(AppDataSource);

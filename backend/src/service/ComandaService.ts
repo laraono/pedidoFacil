@@ -38,8 +38,7 @@ export class ComandaService {
       .leftJoinAndSelect('comanda.pedidos', 'pedido')
       .leftJoinAndSelect('pedido.productOrders', 'po')
       .leftJoinAndSelect('po.product', 'product')
-      .leftJoinAndSelect('po.variations', 'variation')
-      .leftJoinAndSelect('variation.productVariation', 'pv')
+      .leftJoinAndSelect('po.productVariation', 'pv')
       .where('comanda.establishment = :id', { id: establishmentId })
       .getMany();
   }
@@ -50,8 +49,7 @@ export class ComandaService {
       .leftJoinAndSelect('comanda.pedidos', 'pedido')
       .leftJoinAndSelect('pedido.productOrders', 'po')
       .leftJoinAndSelect('po.product', 'product')
-      .leftJoinAndSelect('po.variations', 'variation')
-      .leftJoinAndSelect('variation.productVariation', 'pv')
+      .leftJoinAndSelect('po.productVariation', 'pv')
       .where('comanda.status = :status', { status })
       .andWhere('comanda.establishment = :id', { id: establishmentId })
       .getMany();
@@ -63,8 +61,7 @@ export class ComandaService {
       .leftJoinAndSelect('comanda.pedidos', 'pedido')
       .leftJoinAndSelect('pedido.productOrders', 'po')
       .leftJoinAndSelect('po.product', 'product')
-      .leftJoinAndSelect('po.variations', 'variation')
-      .leftJoinAndSelect('variation.productVariation', 'pv')
+      .leftJoinAndSelect('po.productVariation', 'pv')
       .where('comanda.status IN (:...statuses)', { statuses: [ComandaStatus.FECHADA, ComandaStatus.CANCELADA] })
       .andWhere('comanda.establishment = :id', { id: establishmentId })
       .orderBy('comanda.created_at', 'DESC')

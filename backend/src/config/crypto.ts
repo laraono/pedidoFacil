@@ -11,7 +11,7 @@ export const hashToken = (token: string): string => {
 export async function gerarTokens(usuario: User) {
     const payload = { 
         id: usuario.id, 
-        estabelecimento: usuario.establishment?.id || null, 
+        estabelecimento: usuario.role?.establishment?.id || null,
         cargo: usuario.role?.id || null 
     };
 

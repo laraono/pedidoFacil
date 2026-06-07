@@ -16,7 +16,7 @@ export class OrderRepository extends Repository<Order> {
     async getOrderWithDetails(id: number) {
         return await this.findOne({
             where: { id },
-            relations: ["productOrders", "productOrders.product", "productOrders.variations", "productOrders.variations.productVariation"]
+            relations: ["productOrders", "productOrders.product", "productOrders.productVariation"]
         });
     }
 
@@ -25,8 +25,7 @@ export class OrderRepository extends Repository<Order> {
             .leftJoinAndSelect('order.comanda', 'comanda')
             .leftJoinAndSelect('order.productOrders', 'po')
             .leftJoinAndSelect('po.product', 'product')
-            .leftJoinAndSelect('po.variations', 'variation')
-            .leftJoinAndSelect('variation.productVariation', 'pv')
+            .leftJoinAndSelect('po.productVariation', 'pv')
             .where('order.establishment = :id', { id: establishmentId })
             .getMany();
     }
@@ -39,8 +38,7 @@ export class OrderRepository extends Repository<Order> {
             relations: [
                 'productOrders',
                 'productOrders.product',
-                'productOrders.variations',
-                'productOrders.variations.productVariation',
+                'productOrders.productVariation',
             ]
         });
     }

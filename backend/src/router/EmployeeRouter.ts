@@ -50,4 +50,10 @@ employeeRouter.patch(
   employeeController.reactivate,
 );
 
+employeeRouter.delete(
+  '/:id/permanent',
+  checkPermission('USUARIO_DELETE', 'ALL'),
+  employeeController.permanentDelete,
+);
+
 export { employeeRouter };

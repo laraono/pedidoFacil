@@ -20,6 +20,7 @@ defineProps({
       variant === 'secondary' ? 'btn-secondary' : '',
       variant === 'brand' ? 'btn-brand' : '',
       variant === 'ghost' ? 'btn-ghost' : '',
+      variant === 'danger' ? 'btn-danger' : '',
       size === 'lg' ? 'py-4 px-8 text-lg' : 'py-3 px-6 text-base',
       'transition-all'
     ]"

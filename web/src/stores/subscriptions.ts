@@ -50,23 +50,17 @@ export const useSubscriptionStore = defineStore('subscription', () => {
         adminMetricsApi.getSubscriptionMetrics(),
       ]);
 
-      adminSubscriptions.value = (subs || []).map((s: any) => {
-        const managerUser = s.establishment?.users?.find(
-          (u: any) => u.role?.name?.toLowerCase().includes('gerente') || u.role?.name?.toLowerCase().includes('manager')
-        ) ?? s.establishment?.users?.[0];
-
-        return {
-          id: s.id,
-          establishment: s.establishment?.name ?? '—',
-          manager: managerUser?.name ?? '—',
-          plan: s.plan?.name ?? '—',
-          planFrequency: s.plan?.frequency ?? '—',
-          status: s.status,
-          nextDueDate: s.expirationDate,
-          amount: Number(s.plan?.price ?? 0),
-          users: s.establishment?.users?.length ?? 0,
-        };
-      });
+      adminSubscriptions.value = (subs || []).map((s: any) => ({
+        id: s.id,
+        establishment: s.establishment?.name ?? '—',
+        manager: s.establishment?.manager?.name ?? '—',
+        plan: s.plan?.name ?? '—',
+        planFrequency: s.plan?.frequency ?? '—',
+        status: s.status,
+        nextDueDate: s.expirationDate,
+        amount: Number(s.plan?.price ?? 0),
+        users: (s.establishment?.roles ?? []).reduce((sum: number, r: any) => sum + (r.users?.length ?? 0), 0),
+      }));
 
       adminMetrics.value = metrics;
     } catch (e) {

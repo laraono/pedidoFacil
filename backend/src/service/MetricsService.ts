@@ -1,6 +1,6 @@
 import { Between, DataSource, IsNull, Not } from 'typeorm';
 import { ReceiptRepository } from '../repository/ReceiptRepository';
-import { ReceiptStatus } from '../database/entity/Receipt';
+import { ReceiptStatus } from '../enum';
 import { AppError } from '../middleware/error/AppError';
 import { auditLog } from '../utils/logger';
 

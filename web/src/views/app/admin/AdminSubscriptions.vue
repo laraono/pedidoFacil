@@ -34,7 +34,7 @@ const filtered = computed(() => {
   return subscriptions.value.filter(s => {
     const matchSearch = !search.value ||
       s.establishment?.name?.toLowerCase().includes(search.value.toLowerCase()) ||
-      s.establishment?.users?.some(u => u.name?.toLowerCase().includes(search.value.toLowerCase()));
+      s.establishment?.manager?.name?.toLowerCase().includes(search.value.toLowerCase());
     const matchStatus = filterStatus.value === 'todos' || s.status?.toLowerCase() === filterStatus.value;
     return matchSearch && matchStatus;
   });
@@ -48,10 +48,7 @@ const counts = computed(() => ({
   expirada: subscriptions.value.filter(s => s.status === 'Expirada').length,
 }));
 
-const getManager = (sub) => {
-  const users = sub.establishment?.users || [];
-  return users.find(u => u.role?.name?.toLowerCase().includes('gerente')) || users[0] || null;
-};
+const getManager = (sub) => sub.establishment?.manager ?? null;
 
 const { formatCurrency } = useUtils();
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';

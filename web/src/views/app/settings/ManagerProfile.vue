@@ -5,7 +5,7 @@ import { profileApi } from "@/services/profileApi";
 import { useAuthStore } from "@/stores/auth";
 import { useToast } from "@/composables/useToast";
 import { Save, ArrowLeft, AlertCircle, Lock } from "lucide-vue-next";
-import { isValidCPF, maskCPF } from "@/utils/validator";
+import { isValidCPF, maskCPF, maskPhone, maskZip } from "@/utils/validator";
 import { validatePasswordStrength } from "@/utils/password";
 import { BaseInput, BaseButton } from "@/components/ui";
 
@@ -34,19 +34,6 @@ const passwordForm = ref({
   confirmPassword: "",
 });
 
-const maskPhone = (v) => {
-  if (!v) return "";
-  const d = v.replace(/\D/g, "").slice(0, 11);
-  if (d.length <= 10)
-    return d.replace(/^(\d{2})(\d)/, "($1) $2").replace(/(\d{4})(\d)/, "$1-$2");
-  return d.replace(/^(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2");
-};
-
-const maskZip = (v) => {
-  if (!v) return "";
-  const d = v.replace(/\D/g, "").slice(0, 8);
-  return d.replace(/^(\d{5})(\d)/, "$1-$2");
-};
 
 onMounted(async () => {
   try {

@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
+import { getImageUrl } from "@/utils/imageUrl";
 import { useMenuOrderingStore as useMenuStore } from "@/stores/menu.js";
 import { useComandaStore } from "@/stores/comandaManagement";
 import { comandaApi } from "@/services/comandaApi";
@@ -62,13 +63,6 @@ const currentQuantity = ref(1);
 const currentObservation = ref("");
 const selectedSize = ref(null);
 
-const getImageUrl = (imagePath) => {
-  if (!imagePath) return '';
-  if (imagePath.startsWith('http') || imagePath.startsWith('data:image') || imagePath.startsWith('blob:')) return imagePath;
-  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
-  const host = BASE_URL.replace('/api/v1', '');
-  return `${host}/uploads/${imagePath}`;
-};
 
 onMounted(async () => {
   checkEditMode();

@@ -5,7 +5,6 @@ import { EstablishmentRepository } from './EstablishmentRepository'
 import { OrderRepository } from './OrderRepository';
 import { ProductOrderRepository } from './ProductOrderRepository';
 import { ProductRepository } from './ProductRepository';
-import { ProductVariationOrderRepository } from './ProductVariationOrderRepository';
 import { ProductVariationRepository } from './ProductVariationRepository';
 import { RefreshTokenRepository } from './RefreshTokenRepository';
 import { RoleRepository } from './RoleRepository';
@@ -27,9 +26,6 @@ const productOrderRepository = new ProductOrderRepository(AppDataSource);
 const productVariationRepository = new ProductVariationRepository(
     AppDataSource,
 );
-const productVariationOrderRepository = new ProductVariationOrderRepository(
-    AppDataSource,
-);
 const refreshTokenRepository = new RefreshTokenRepository(AppDataSource);
 const roleRepository = new RoleRepository(AppDataSource);
 const userRepository = new UserRepository(AppDataSource);
@@ -49,7 +45,6 @@ export {
     productRepository,
     productOrderRepository,
     productVariationRepository,
-    productVariationOrderRepository,
     refreshTokenRepository,
     roleRepository,
     userRepository,
@@ -69,7 +64,6 @@ export {
     ProductRepository,
     ProductOrderRepository,
     ProductVariationRepository,
-    ProductVariationOrderRepository,
     RefreshTokenRepository,
     RoleRepository,
     UserRepository,

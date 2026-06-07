@@ -1,12 +1,13 @@
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from "vue";
-import { useRouter } from "vue-router";
+import { ref, computed, onMounted, watch } from "vue";
+import { getImageUrl, validateImageFile } from "@/utils/imageUrl";
 import { useMenuStore } from "@/stores/productsManagement";
 import { useToast } from "@/composables/useToast";
 import { useConfirm } from "@/composables/useConfirm";
 import { applyPriceMask } from "@/composables/usePriceMask";
 import BaseButton from "@/components/ui/BaseButton.vue";
 import BaseInput from "@/components/ui/BaseInput.vue";
+import BaseSelect from "@/components/ui/BaseSelect.vue";
 import DataTable from "@/components/ui/DataTable.vue";
 import FormModal from "@/components/ui/FormModal.vue";
 import ConfirmModal from "@/components/ui/ConfirmModal.vue";
@@ -74,20 +75,11 @@ const bulkPriceValue = ref('');
 const bulkPriceType = ref('percent');
 const bulkAvailability = ref(true);
 const bulkCategoryId = ref('');
-const showBulkConfirm = ref(false);
-const bulkConfirmMessage = ref('');
 
 const allSelected = computed(() =>
   displayedProducts.value.length > 0 && displayedProducts.value.every(p => selectedIds.value.includes(p.id))
 );
 
-const getImageUrl = (imagePath) => {
-  if (!imagePath) return '';
-  if (imagePath.startsWith('http') || imagePath.startsWith('data:image')) return imagePath;
-  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
-  const host = BASE_URL.replace('/api/v1', '');
-  return `${host}/uploads/${imagePath}`;
-};
 
 const toggleBulkMode = () => {
   bulkMode.value = !bulkMode.value;
@@ -115,21 +107,22 @@ const applyBulk = () => {
   if (selectedIds.value.length === 0) { showToast('Selecione ao menos um produto.', 'error'); return; }
   if (!bulkAction.value) { showToast('Selecione uma ação.', 'error'); return; }
   const count = selectedIds.value.length;
+  let message = '';
   if (bulkAction.value === 'price_increase' || bulkAction.value === 'price_decrease') {
     const val = parseFloat(String(bulkPriceValue.value).replace(',', '.'));
     if (!bulkPriceValue.value || isNaN(val) || val <= 0) { showToast('Informe um valor válido para o ajuste de preço.', 'error'); return; }
     const dir = bulkAction.value === 'price_increase' ? 'Aumentar' : 'Reduzir';
-    bulkConfirmMessage.value = `${dir} o preço de ${count} produto(s) em ${bulkPriceValue.value}${bulkPriceType.value === 'percent' ? '%' : ' R$'}?`;
+    message = `${dir} o preço de ${count} produto(s) em ${bulkPriceValue.value}${bulkPriceType.value === 'percent' ? '%' : ' R$'}?`;
   } else if (bulkAction.value === 'availability') {
-    bulkConfirmMessage.value = `Marcar ${count} produto(s) como ${bulkAvailability.value ? 'disponíveis' : 'indisponíveis'}?`;
+    message = `Marcar ${count} produto(s) como ${bulkAvailability.value ? 'disponíveis' : 'indisponíveis'}?`;
   } else if (bulkAction.value === 'category') {
     if (!bulkCategoryId.value) { showToast('Selecione uma categoria.', 'error'); return; }
     const cat = categoryOptions.value.find(c => c.value === bulkCategoryId.value);
-    bulkConfirmMessage.value = `Mover ${count} produto(s) para a categoria "${cat?.label}"?`;
+    message = `Mover ${count} produto(s) para a categoria "${cat?.label}"?`;
   } else if (bulkAction.value === 'delete') {
-    bulkConfirmMessage.value = `Arquivar ${count} produto(s) selecionado(s)? Eles poderão ser restaurados.`;
+    message = `Arquivar ${count} produto(s) selecionado(s)? Eles poderão ser restaurados.`;
   }
-  showBulkConfirm.value = true;
+  showConfirm({ title: 'Confirmar edição em lote', message, onConfirm: executeBulk });
 };
 
 const executeBulk = async () => {
@@ -158,7 +151,6 @@ const executeBulk = async () => {
   }
   
   showToast(`${ids.length} produto(s) atualizado(s) com sucesso!`, 'success');
-  showBulkConfirm.value = false;
   selectedIds.value = [];
   bulkMode.value = false;
   fetchData(menuStore.currentPage);
@@ -200,12 +192,8 @@ const removeSize = (i) => form.value.sizes.splice(i, 1);
 const handleImageUpload = (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  const maxSize = 2 * 1024 * 1024; 
-  if (file.size > maxSize) {
-    showToast("Arquivo muito grande! O limite é 2MB.", "error");
-    e.target.value = "";
-    return;
-  }
+  const error = validateImageFile(file);
+  if (error) { showToast(error, "error"); e.target.value = ""; return; }
   form.value.imageFile = file;
   form.value.imagePreview = URL.createObjectURL(file);
 };
@@ -450,14 +438,13 @@ const tableActions = computed(() => bulkMode.value ? [] : [
           <input :value="form.price" @input="onPriceInput" inputmode="numeric" placeholder="0,00" class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] focus:outline-none focus:border-primary/50 transition-all" :class="errors.price ? '!border-red-500' : ''" />
           <p v-if="errors.price" class="text-danger text-[11px] font-bold mt-0.5 ml-2">{{ errors.price }}</p>
         </div>
-        <div class="flex flex-col gap-1">
-          <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-2">Categoria</label>
-          <select v-model="form.categoryId" class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] focus:outline-none focus:border-primary/50 transition-all appearance-none" :class="errors.categoryId ? '!border-red-500' : ''">
-            <option value="" disabled class="bg-white">Selecione uma categoria</option>
-            <option v-for="opt in categoryOptions" :key="opt.value" :value="opt.value" class="bg-white">{{ opt.label }}</option>
-          </select>
-          <p v-if="errors.categoryId" class="text-danger text-[11px] font-bold mt-0.5 ml-2">{{ errors.categoryId }}</p>
-        </div>
+        <BaseSelect
+          v-model="form.categoryId"
+          label="Categoria"
+          :options="categoryOptions"
+          :error="errors.categoryId"
+          placeholder="Selecione uma categoria"
+        />
         <div class="flex items-center justify-between p-4 bg-gray-50 rounded border border-[#E0E0E0]">
           <div><p class="text-sm font-bold text-[#212121]">Disponível no cardápio</p><p class="text-xs text-[#757575]">Clientes poderão pedir este produto</p></div>
           <button type="button" @click="form.available = !form.available" class="relative inline-flex h-7 w-12 items-center rounded transition-colors duration-300" :class="form.available ? 'bg-accent' : 'bg-gray-600'">
@@ -485,26 +472,5 @@ const tableActions = computed(() => bulkMode.value ? [] : [
       </div>
     </FormModal>
     <ConfirmModal :confirmModal="confirmState" @close="confirmState.show = false" />
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showBulkConfirm" class="fixed inset-0 bg-black/50 z-[110] flex items-center justify-center p-4">
-          <div class="bg-white border border-[#E0E0E0] w-full max-w-sm rounded p-8 shadow-2xl">
-            <div class="flex items-start gap-4 mb-6">
-              <div class="p-3 bg-accent-light rounded border border-accent/30 shrink-0">
-                <Layers :size="20" class="text-accent" />
-              </div>
-              <div>
-                <p class="text-[#212121] font-black text-base">Confirmar edição em lote</p>
-                <p class="text-[#757575] text-sm mt-1">{{ bulkConfirmMessage }}</p>
-              </div>
-            </div>
-            <div class="flex gap-3">
-              <button @click="showBulkConfirm = false" class="flex-1 py-3 rounded text-[#757575] font-bold hover:bg-gray-50 transition-colors border border-[#E0E0E0]">Cancelar</button>
-              <button @click="executeBulk" class="flex-1 py-3 rounded bg-primary text-white font-black hover:opacity-90 transition-opacity">Confirmar</button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
   </main>
 </template>

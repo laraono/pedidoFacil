@@ -105,12 +105,12 @@ export class EstablishmentService {
   async listForAdmin() {
     const establishments = await this.establishmentRepository.findAllForAdmin();
     return establishments.map(e => {
-      const latestSub = e.subscriptions?.sort((a, b) => b.id - a.id)[0] ?? null;
+      const latestSub = e.subscription ?? null;
       return {
         id: e.id,
         name: e.name,
         cnpj: e.cnpj,
-        status: e.deletedAt ? 'Inativo' : e.status,
+        status: e.deletedAt ? 'Inativo' : 'Ativo',
         manager: e.manager ? { id: e.manager.id, name: e.manager.name, email: (e.manager as any).email } : null,
         plan: latestSub?.plan ? { name: latestSub.plan.name } : null,
         subscription: latestSub ? { status: latestSub.status } : null,
@@ -122,7 +122,7 @@ export class EstablishmentService {
     const establishment = await this.establishmentRepository.findByIdForAdmin(id);
     if (!establishment) throw new AppError('Estabelecimento não encontrado.', 404);
 
-    const latestSub = establishment.subscriptions?.sort((a, b) => b.id - a.id)[0] ?? null;
+    const latestSub = establishment.subscription ?? null;
 
     return {
       id: establishment.id,
@@ -137,7 +137,7 @@ export class EstablishmentService {
   }
 
   async createStore(params: { address: string; city: string; state: string; user: User }) {
-    const establishment = await this.establishmentRepository.getEstablishmentByUser(params.user);
+    const establishment = await this.establishmentRepository.findByManagerId(params.user.id);
     if (!establishment || !this.mercadoPagoService) return;
 
     const storeId = await this.mercadoPagoService.createStore({

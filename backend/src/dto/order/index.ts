@@ -1,6 +1,5 @@
 export {
-    CreateOrder, ItensArray, ProductOrderParams,
-    ProductVariationOrderParams, OrderParams
+    CreateOrder, ItensArray, ProductOrderParams, OrderParams
 } from './CreateOrderDTO'
 
 export {CancelOrder, CancelOrderParams } from './CancelOrderDTO'

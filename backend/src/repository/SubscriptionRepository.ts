@@ -29,8 +29,9 @@ export class SubscriptionRepository extends Repository<Subscription>{
         return await this.find({
             relations: {
                 establishment: {
-                    users: {
-                        role: true
+                    manager: true,
+                    roles: {
+                        users: true
                     }
                 },
                 plan: true,
@@ -47,10 +48,14 @@ export class SubscriptionRepository extends Repository<Subscription>{
                 establishment: {
                     id: true,
                     name: true,
-                    users: {
+                    manager: {
                         id: true,
                         name: true,
-                        role: true
+                    },
+                    roles: {
+                        users: {
+                            id: true,
+                        }
                     }
                 }
             },

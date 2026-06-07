@@ -15,7 +15,6 @@ export {
     CreateOrder,
     ItensArray,
     ProductOrderParams,
-    ProductVariationOrderParams,
     OrderParams,
     CancelOrder, CancelOrderParams,
 } from './order';
@@ -44,4 +43,3 @@ export {
     UpdateSubscription as UpdateSubscriptionMP
 } from './mercadoPago'
 export * from './establishment/UpdateEstablishmentDTO';
-export * from './role/RoleDTO';

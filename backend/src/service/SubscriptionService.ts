@@ -185,7 +185,6 @@ export class SubscriptionService {
                         installments: payment.installments ?? null,
                         name: sub.plan ? sub.plan.name : '',
                         date: payment.date_approved ?? payment.date_created,
-                        receipt: sub.receipt ?? null,
                         mercadoPagoId: sub.mercadoPagoId ?? null,
                     })
                 }

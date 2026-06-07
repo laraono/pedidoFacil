@@ -120,9 +120,6 @@ export class Establishment {
     @OneToMany(() => Role, (role) => role.establishment)
     roles!: Role[]
 
-    @OneToMany(() => User, (user) => user.establishment)
-    users!: User[]
-
     @OneToOne(() => Subscription, (subscription) => subscription.establishment)
     subscription!: Subscription
 

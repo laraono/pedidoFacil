@@ -24,7 +24,6 @@ const routes: RouteRecordRaw[] = [
   { path: '/forgot-password', name: 'forgot-password', component: () => import('@/views/ForgotPassword.vue') },
   { path: '/reset-password', name: 'reset-password', component: () => import('@/views/ResetPassword.vue') },
   { path: '/register', name: 'register', component: Register },
-  { path: '/totem/:code', name: 'totem', component: () => import('@/views/Totem.vue') },
   {
     path: "/app",
     component: Header,
@@ -152,12 +151,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/views/app/settings/ManagerProfile.vue"),
         meta: { requiresAuth: true },
       },
-      {
-        path: "settings/register",
-        name: "manager-register",
-        component: () => import("@/views/app/settings/RegisterManagement.vue"),
-        meta: { requiresAuth: true },
-      }
+      // {
+      //   path: "settings/register",
+      //   name: "manager-register",
+      //   component: () => import("@/views/app/settings/RegisterManagement.vue"),
+      //   meta: { requiresAuth: true },
+      // }
     ],
   },
 ];

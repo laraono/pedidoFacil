@@ -2,26 +2,26 @@
 import { ref, onMounted } from 'vue';
 import { useToast } from '@/composables/useToast';
 import { useAsyncAction } from '@/composables/useAsyncAction';
+import { useConfirm } from '@/composables/useConfirm';
 import {
-  ShieldAlert, Plus, Pencil, Trash2, X,
+  ShieldAlert, Plus, Pencil, Trash2,
   CheckCircle2, Package, DollarSign
 } from 'lucide-vue-next';
 import { adminPlanApi, type Plan, type PlanForm } from '@/services/adminApi';
 import { useUtils } from '@/composables/useUtils';
 import { applyPriceMask } from '@/composables/usePriceMask';
-import { PageHeader, StatusBadge, EmptyState, BaseButton, BaseInput, BaseTextArea } from '@/components/ui';
+import { PageHeader, StatusBadge, EmptyState, BaseButton, BaseInput, BaseTextArea, FormModal, ConfirmModal } from '@/components/ui';
 
 const { showToast } = useToast();
 const { formatCurrency } = useUtils();
 const { loading: saving, run } = useAsyncAction();
+const { confirmState, showConfirm, closeConfirm } = useConfirm();
 
 const plans = ref<Plan[]>([]);
 const loading = ref(false);
 const loadError = ref(false);
 const isModalOpen = ref(false);
 const isEditing = ref(false);
-const deleteTarget = ref<Plan | null>(null);
-const confirmDelete = ref(false);
 
 const form = ref<PlanForm>({ id: null, name: '', price: '', frequency: 'mensal', features: '' });
 const errors = ref<Record<string, string>>({});
@@ -103,8 +103,17 @@ async function save() {
 }
 
 function askDelete(plan: Plan) {
-  deleteTarget.value = plan;
-  confirmDelete.value = true;
+  showConfirm({
+    title: 'Deletar Plano?',
+    message: `O plano "${plan.name}" e todas as assinaturas vinculadas serão removidos permanentemente.`,
+    onConfirm: async () => {
+      await run(async () => {
+        await adminPlanApi.delete(plan.id);
+        showToast(`Plano "${plan.name}" removido.`, 'success');
+        await load();
+      }, 'Erro ao remover plano.');
+    }
+  });
 }
 
 function onPriceInput(e: Event) {
@@ -113,18 +122,6 @@ function onPriceInput(e: Event) {
   target.value = v;
   form.value.price = v;
   delete errors.value.price;
-}
-
-async function doDelete() {
-  if (!deleteTarget.value) return;
-  const target = deleteTarget.value;
-  await run(async () => {
-    await adminPlanApi.delete(target.id);
-    showToast(`Plano "${target.name}" removido.`, 'success');
-    await load();
-  }, 'Erro ao remover plano.');
-  confirmDelete.value = false;
-  deleteTarget.value = null;
 }
 </script>
 
@@ -201,82 +198,48 @@ async function doDelete() {
     />
   </main>
 
-  <Teleport to="body">
-    <Transition name="fade">
-      <div v-if="isModalOpen" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
-        <div class="bg-white border border-[#E0E0E0] w-full max-w-md rounded-xl shadow-2xl">
-          <div class="p-6 border-b border-[#E0E0E0] flex justify-between items-center bg-gray-50">
-            <h2 class="text-xl font-black text-[#212121] flex items-center gap-3">
-              <Package :size="20" class="text-accent" />
-              {{ isEditing ? 'Editar Plano' : 'Novo Plano' }}
-            </h2>
-            <button @click="isModalOpen = false" class="p-2 text-[#757575] hover:text-[#212121]"><X :size="20" /></button>
-          </div>
-          <div class="p-6 space-y-5">
-            <BaseInput
-              v-model="form.name"
-              label="Nome do Plano"
-              placeholder="Ex: Plano Profissional"
-              :error="errors.name"
-              @input="delete errors.name"
-            />
-            <BaseInput
-              :modelValue="form.price"
-              label="Valor (R$)"
-              placeholder="79,90"
-              :icon="DollarSign"
-              :error="errors.price"
-              @input="onPriceInput"
-            />
-            <div>
-              <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1 mb-2 block">Frequência</label>
-              <div class="flex gap-3">
-                <button v-for="opt in [{ v: 'mensal', l: 'Mensal' }, { v: 'anual', l: 'Anual' }, { v: 'diario', l: 'Diário (teste)' }]" :key="opt.v"
-                  @click="form.frequency = opt.v"
-                  :class="form.frequency === opt.v ? 'border-primary bg-primary/10 text-primary font-black' : 'border-[#E0E0E0] bg-gray-50 text-[#757575]'"
-                  class="flex-1 py-2.5 rounded-lg border text-sm font-bold transition-all">{{ opt.l }}</button>
-              </div>
-            </div>
-            <BaseTextArea
-              v-model="form.features"
-              label="Funcionalidades (opcional) — uma por linha"
-              :rows="5"
-              placeholder="Ex: Até 3 usuários&#10;Relatórios mensais&#10;Suporte prioritário"
-            />
-          </div>
-          <div class="p-6 pt-0 flex gap-3">
-            <BaseButton variant="ghost" class="flex-1" @click="isModalOpen = false">Cancelar</BaseButton>
-            <BaseButton variant="primary" class="flex-1" :isLoading="saving" @click="save">
-              {{ isEditing ? 'Salvar' : 'Criar Plano' }}
-            </BaseButton>
-          </div>
+  <FormModal
+    :show="isModalOpen"
+    :title="isEditing ? 'Editar Plano' : 'Novo Plano'"
+    size="sm"
+    :is-loading="saving"
+    :save-label="isEditing ? 'Salvar' : 'Criar Plano'"
+    @close="isModalOpen = false"
+    @save="save"
+  >
+    <div class="space-y-5">
+      <BaseInput
+        v-model="form.name"
+        label="Nome do Plano"
+        placeholder="Ex: Plano Profissional"
+        :error="errors.name"
+        @input="delete errors.name"
+      />
+      <BaseInput
+        :modelValue="form.price"
+        label="Valor (R$)"
+        placeholder="79,90"
+        :icon="DollarSign"
+        :error="errors.price"
+        @input="onPriceInput"
+      />
+      <div>
+        <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1 mb-2 block">Frequência</label>
+        <div class="flex gap-3">
+          <button v-for="opt in [{ v: 'mensal', l: 'Mensal' }, { v: 'anual', l: 'Anual' }, { v: 'diario', l: 'Diário (teste)' }]" :key="opt.v"
+            @click="form.frequency = opt.v"
+            :class="form.frequency === opt.v ? 'border-primary bg-primary/10 text-primary font-black' : 'border-[#E0E0E0] bg-gray-50 text-[#757575]'"
+            class="flex-1 py-2.5 rounded-lg border text-sm font-bold transition-all">{{ opt.l }}</button>
         </div>
       </div>
-    </Transition>
-  </Teleport>
+      <BaseTextArea
+        v-model="form.features"
+        label="Funcionalidades (opcional) — uma por linha"
+        :rows="5"
+        placeholder="Ex: Até 3 usuários&#10;Relatórios mensais&#10;Suporte prioritário"
+      />
+    </div>
+  </FormModal>
 
-  <Teleport to="body">
-    <Transition name="fade">
-      <div v-if="confirmDelete" class="fixed inset-0 bg-black/50 z-[110] flex items-center justify-center p-4">
-        <div class="bg-white border border-[#E0E0E0] w-full max-w-sm rounded-xl shadow-2xl p-8 text-center">
-          <div class="w-14 h-14 rounded-full bg-red-50 border border-red-200 flex items-center justify-center mx-auto mb-5">
-            <Trash2 :size="24" class="text-red-500" />
-          </div>
-          <h3 class="text-xl font-black text-[#212121] mb-2">Deletar Plano?</h3>
-          <p class="text-[#757575] text-sm mb-6">
-            O plano <strong>"{{ deleteTarget?.name }}"</strong> e todas as assinaturas vinculadas serão removidos permanentemente.
-          </p>
-          <div class="flex gap-3">
-            <BaseButton variant="ghost" class="flex-1" @click="confirmDelete = false; deleteTarget = null">Cancelar</BaseButton>
-            <button @click="doDelete" class="flex-1 py-3 rounded-lg bg-red-500 text-white font-black hover:bg-red-600 transition-all">Deletar</button>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+  <ConfirmModal :confirm-modal="confirmState" @close="closeConfirm" />
 </template>
-
-<style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-</style>

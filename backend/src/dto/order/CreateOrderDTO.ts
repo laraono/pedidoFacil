@@ -52,12 +52,7 @@ export type ProductOrderParams = {
     order?: { id: number };
     product?: { id: number };
 };
-
-export type ProductVariationOrderParams = {
-    productOrderId: number;
-    productVariationId: number;
-    price: number;
-};
+;
 export const createTotemOrderSchema = z.object({
   body: z.object({
     itens: z.array(

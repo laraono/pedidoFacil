@@ -89,9 +89,6 @@ export class AuthService {
           manager: savedUser,
         });
 
-        // Vínculo usuário → estabelecimento
-        await manager.update(User, savedUser.id, { establishment: { id: savedEstablishment.id } });
-
         // Cargo Gerente com todas as permissões reais
         const savedManagerRole = await manager.save(Role, {
           name: 'Gerente',
@@ -183,7 +180,7 @@ export class AuthService {
     // Tokens gerados após o commit da transação
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['establishment', 'role'],
+      relations: { role: { establishment: true } },
     });
     if (!user) throw new AppError('Erro ao recuperar usuário após cadastro.', 500);
 
@@ -202,7 +199,7 @@ export class AuthService {
   async login(data: LoginDTO) {
     const user = await this.userRepository.findOne({
       where: { email: data.email },
-      relations: { establishment: true, role: true },
+      relations: { role: { establishment: true } },
     });
 
     if (user) {
@@ -219,7 +216,7 @@ export class AuthService {
         refreshToken,
         usuario: { id: user.id, nome: user.name, email: user.email, status: user.status },
         cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions } : null,
-        estabelecimentoId: user.establishment?.id ?? null,
+        estabelecimentoId: user.role?.establishment?.id ?? null,
       };
     }
 
@@ -280,7 +277,7 @@ export class AuthService {
 
     const user = await this.userRepository.findOne({
       where: { id: decoded.id, status: UserStatus.ATIVO },
-      relations: { establishment: true, role: true },
+      relations: { role: { establishment: true } },
     });
 
     if (!user) throw new AppError('Credenciais inválidas ou usuário inativo.', 403);
@@ -293,7 +290,7 @@ export class AuthService {
       refreshToken,
       usuario: { id: user.id, nome: user.name, email: user.email, status: user.status },
       cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions } : null,
-      estabelecimentoId: user.establishment?.id ?? null,
+      estabelecimentoId: user.role?.establishment?.id ?? null,
     };
   }
 
@@ -323,7 +320,7 @@ export class AuthService {
 
     const user = await this.userRepository.findOne({
       where: { id: userId, status: UserStatus.ATIVO },
-      relations: { role: true, establishment: true },
+      relations: { role: { establishment: true } },
     });
 
     if (!user) throw new AppError('Usuário inválido.', 401);
@@ -331,7 +328,7 @@ export class AuthService {
     return {
       usuario: { ...user, isAdmin: false },
       cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions } : null,
-      estabelecimentoId: user.establishment?.id ?? null,
+      estabelecimentoId: user.role?.establishment?.id ?? null,
     };
   }
 
@@ -350,7 +347,7 @@ export class AuthService {
     await this.userRepository.save(user);
 
     const frontEndUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const resetUrl = `${frontEndUrl}/reset-password?token=${resetToken}&email=${user.email}`;
+    const resetUrl = `${frontEndUrl}/reset-password?token=${resetToken}`;
 
     const transporter = nodemailer.createTransport({
       host: process.env.MAIL_HOST,
@@ -379,14 +376,14 @@ export class AuthService {
     return { message: 'Se o e-mail existir, um link de recuperação será enviado.' };
   }
 
-  async resetPassword(token: string, email: string, novaSenha: string) {
+  async resetPassword(token: string, novaSenha: string) {
     const senhaErro = validarSenhaForte(novaSenha);
     if (senhaErro) throw new AppError(senhaErro, 400);
 
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
     const user = await this.userRepository.findOne({
-      where: { email, passwordResetToken: hashedToken }
+      where: { passwordResetToken: hashedToken }
     });
 
     if (!user) throw new AppError('Token inválido ou expirado.', 400);

@@ -11,7 +11,8 @@ export const safeString = (min: number, max: number) =>
       return !htmlTagRegex.test(val);
     }, {
       message: "Caracteres especiais de HTML não são permitidos (como < ou >)."
-    });
+    })
+    .transform((val) => val.replace(/[\r\n]/g, ''));
 
 
 export const safeBase64Image = (maxMb: number) => 

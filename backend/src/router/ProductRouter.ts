@@ -4,7 +4,7 @@ import { catchAsync, subscriptionMiddleware } from '../middleware';
 import { validateUpload } from '../middleware/validateUpload';
 import { validateRequest } from '../middleware/validateRequest';
 import { authenticate } from '../middleware/authenticate';
-import { verifyTenancy } from '../middleware/tenant';
+import { verifyCategoryTenancy } from '../middleware/tenant';
 import { checkPermission } from '../middleware/roleAccessControl';
 import { createProductSchema } from '../dto/product/CreateProductDTO';
 import { updateProductSchema } from '../dto/product/UpdateProductDTO';
@@ -33,7 +33,7 @@ productRouter.get(
   '/categories/:categoryId/products',
   authenticate,
   subscriptionMiddleware,
-  verifyTenancy('CATEGORIA', 'categoryId'),
+  verifyCategoryTenancy('categoryId'),
   checkPermission('CARDAPIO'),
   catchAsync((req: Request, res: Response) => productController.listProductsByCategory(req, res))
 );

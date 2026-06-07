@@ -11,10 +11,16 @@ export class RoleService {
     ) {}
 
     async listRoles(establishmentId: number) {
-        return await this.roleRepository.find({
+        const roles = await this.roleRepository.find({
             where: { establishment: { id: establishmentId } as any },
-            order: { name: 'ASC' }
+            relations: ['users'],
+            order: { name: 'ASC' },
         });
+
+        return roles.map(({ users, ...rest }) => ({
+            ...rest,
+            usersCount: users?.length ?? 0,
+        }));
     }
 
     async createRole(establishmentId: number, data: CreateRoleDTO) {

@@ -5,6 +5,8 @@ import { auditLog } from '../utils/logger';
 export class ContactController {
   static async sendContactEmail(req: Request, res: Response) {
     const { nome, email, mensagem } = req.body;
+    const safeName = String(nome).replace(/[\r\n]/g, '');
+    const safeEmail = String(email).replace(/[\r\n]/g, '');
 
     try {
       const transporter = nodemailer.createTransport({
@@ -18,7 +20,7 @@ export class ContactController {
       });
 
       await transporter.sendMail({
-        from: `"${nome}" <${email}>`,
+        from: `"${safeName}" <${safeEmail}>`,
         to: 'pedidofacilcontato@gmail.com', 
         replyTo: email, 
         subject: 'Novo Contato pelo Site - PedidoFácil',

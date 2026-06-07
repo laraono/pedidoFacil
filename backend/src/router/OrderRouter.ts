@@ -5,7 +5,7 @@ import { totemAccess } from '../middleware/checkTotemAccess';
 import { MercadoPagoService } from '../service/MercadoPagoService';
 import rateLimit from 'express-rate-limit';
 import { authenticate } from '../middleware/authenticate';
-import { verifyTenancy } from '../middleware/tenant';
+import { verifyComandaTenancy } from '../middleware/tenant';
 import { checkPermission } from '../middleware/roleAccessControl';
 import { validateRequest } from '../middleware/validateRequest';
 import { createOrderSchema } from '../dto/order/CreateOrderDTO';
@@ -50,7 +50,7 @@ orderRouter.post(
   '/commands/:comandaId/orders',
   authenticate,
   subscriptionMiddleware,
-  verifyTenancy('COMANDA', 'comandaId'),
+  verifyComandaTenancy('comandaId'),
   checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'),
   validateRequest(createOrderSchema), 
   catchAsync((req: Request, res: Response) => orderController.createOrder(req, res))
@@ -60,7 +60,7 @@ orderRouter.get(
   '/commands/:comandaId/orders',
   authenticate,
   subscriptionMiddleware,
-  verifyTenancy('COMANDA', 'comandaId'),
+  verifyComandaTenancy('comandaId'),
   checkPermission('CAIXA'),
   catchAsync((req: Request, res: Response) => orderController.listOrdersByComanda(req, res))
 );
@@ -69,10 +69,9 @@ orderRouter.put(
   '/commands/:comandaId/orders/:orderId',
   authenticate,
   subscriptionMiddleware,
-  verifyTenancy('COMANDA', 'comandaId'),
-  verifyTenancy('PEDIDO', 'orderId'),
+  verifyComandaTenancy('comandaId'),
   checkPermission('COZINHA'),
-  validateRequest(updateOrderStatusSchema), 
+  validateRequest(updateOrderStatusSchema),
   catchAsync((req: Request, res: Response) => orderController.updateOrderStatus(req, res))
 );
 
@@ -80,8 +79,7 @@ orderRouter.post(
   '/commands/:comandaId/orders/:orderId/cancel',
   authenticate,
   subscriptionMiddleware,
-  verifyTenancy('COMANDA', 'comandaId'),
-  verifyTenancy('PEDIDO', 'orderId'),
+  verifyComandaTenancy('comandaId'),
   validateRequest(cancelOrderSchema),
   checkPermission('COZINHA'),
   catchAsync((req: Request, res: Response) => orderController.cancelOrder(req, res))

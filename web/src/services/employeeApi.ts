@@ -13,4 +13,6 @@ export const employeeApi = {
   delete: (id: number) => request(`/funcionario/${id}`, { method: 'DELETE' }),
 
   reactivate: (id: number) => request(`/funcionario/${id}/reactivate`, { method: 'PATCH' }),
+
+  permanentDelete: (id: number) => request(`/funcionario/${id}/permanent`, { method: 'DELETE' }),
 };

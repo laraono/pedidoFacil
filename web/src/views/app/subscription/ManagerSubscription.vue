@@ -1,6 +1,5 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { subscriptionApi } from '@/services/subscriptionApi';
 import { planApi } from '@/services/planApi';
@@ -10,7 +9,7 @@ import {
   Clock, History, Banknote, X, ArrowLeftRight, Info,
   XCircle, FileText, ExternalLink
 } from 'lucide-vue-next';
-import { PageHeader, BaseButton } from '@/components/ui';
+import { PageHeader, BaseButton, FormModal } from '@/components/ui';
 import { formatFrequency } from '@/utils/frequency';
 import { useUtils } from '@/composables/useUtils';
 
@@ -41,8 +40,8 @@ onMounted(async () => {
   }
 })
 
-const router = useRouter();
 const authStore = useAuthStore();
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const effectivePrice = computed(() =>
@@ -86,13 +85,11 @@ const openPlanModal = () => {
   isPlanModalOpen.value = true;
 };
 
-// Step 2: abre modal de confirmação sobre a de seleção
 const requestPlanChange = () => {
   if (!tempSelectedPlan.value || tempSelectedPlan.value.id === sub.value?.plan?.id) return;
   showConfirmPlanModal.value = true;
 };
 
-// Step 3: confirmação final — chama API e fecha ambas
 const confirmPlanChange = async () => {
   if (!tempSelectedPlan.value) { showConfirmPlanModal.value = false; return; }
   try {
@@ -174,9 +171,7 @@ const initCardForm = async () => {
         try {
           const { token } = cardFormInstance.getCardFormData();
           if (!token) throw new Error('Não foi possível gerar o token. Verifique os dados do cartão.');
-
           await subscriptionApi.restoreSubscription(sub.value.id, { cardToken: token });
-
           closePaymentModal();
           sub.value = await subscriptionApi.getEstablishmentSubscription();
           currentPlan.value = sub.value?.plan ?? {};
@@ -194,7 +189,6 @@ const initCardForm = async () => {
 const openCardModal = () => {
   serverError.value = null;
   paymentModal.value = true;
-  // initCardForm é chamado via @after-enter da Transition
 };
 
 const closePaymentModal = () => {
@@ -260,7 +254,7 @@ const closePaymentModal = () => {
         </div>
       </div>
 
-      <!-- 3. Alternar plano -->
+      <!-- 2. Alternar plano -->
       <div class="bg-white border border-[#E0E0E0] rounded p-6 flex items-center justify-between gap-4">
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#757575] mb-1">
@@ -269,7 +263,6 @@ const closePaymentModal = () => {
           </div>
           <p class="text-lg font-black text-[#212121]">{{ currentPlan?.name }}</p>
           <p class="text-xs text-[#757575] mt-0.5">{{ formatCurrency(effectivePrice) }}/{{ formatFrequency(currentPlan?.frequency) }}</p>
-
         </div>
         <button
           @click="openPlanModal"
@@ -280,7 +273,7 @@ const closePaymentModal = () => {
         </button>
       </div>
 
-      <!-- 4. Histórico de pagamentos -->
+      <!-- 3. Histórico de pagamentos -->
       <div class="bg-white border border-[#E0E0E0] rounded overflow-hidden">
         <div class="p-6 border-b border-[#E0E0E0] flex items-center gap-3">
           <History :size="18" class="text-accent" />
@@ -305,12 +298,8 @@ const closePaymentModal = () => {
               </div>
             </div>
             <div class="text-right flex flex-col items-end gap-1">
-              <p class="text-sm font-black text-[#212121]">
-                {{ formatCurrency(payment.amount) }}
-              </p>
-              <span class="text-[10px] font-black uppercase tracking-wider text-accent">
-                {{ payment.status ?? '—' }}
-              </span>
+              <p class="text-sm font-black text-[#212121]">{{ formatCurrency(payment.amount) }}</p>
+              <span class="text-[10px] font-black uppercase tracking-wider text-accent">{{ payment.status ?? '—' }}</span>
               <p v-if="payment.installments && payment.installments > 1" class="text-[10px] text-[#757575]">
                 {{ payment.installments }}x de {{ formatCurrency(payment.amount / payment.installments) }}
               </p>
@@ -335,241 +324,188 @@ const closePaymentModal = () => {
       </div>
 
     </div>
+  </main>
 
-    <!-- Modal de cancelamento (Teleport) -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showCancelModal" class="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4">
-          <div class="bg-white border border-[#E0E0E0] w-full max-w-sm rounded shadow-2xl">
-            <div class="p-6 border-b border-[#E0E0E0] flex justify-between items-center">
-              <h2 class="text-lg font-black text-[#212121] flex items-center gap-2">
-                <XCircle :size="18" class="text-danger" />
-                Cancelar Assinatura
-              </h2>
-              <button @click="showCancelModal = false" class="p-2 text-[#757575] hover:text-[#212121] transition-colors">
-                <X :size="18" />
-              </button>
+  <!-- Modal de cancelamento -->
+  <FormModal
+    :show="showCancelModal"
+    title="Cancelar Assinatura"
+    size="sm"
+    hide-save
+    @close="showCancelModal = false"
+  >
+    <div class="space-y-4">
+      <p class="text-sm text-[#757575] leading-relaxed">
+        Tem certeza que deseja cancelar sua assinatura?
+        O acesso permanece ativo até o vencimento em
+        <span class="font-bold text-[#212121]">{{ formattedDueDate }}</span>.
+      </p>
+      <div v-if="cancelError" class="bg-danger-light border border-danger text-danger p-3 rounded text-sm font-medium">
+        {{ cancelError }}
+      </div>
+    </div>
+    <template #footer-actions>
+      <BaseButton variant="danger" :isLoading="isCancelling" @click="confirmCancel">
+        Confirmar Cancelamento
+      </BaseButton>
+    </template>
+  </FormModal>
+
+  <!-- Modal de seleção de plano -->
+  <FormModal
+    :show="isPlanModalOpen"
+    title="Alterar Plano"
+    size="sm"
+    save-label="Confirmar"
+    :save-disabled="!tempSelectedPlan || tempSelectedPlan?.id === sub?.plan?.id"
+    @close="isPlanModalOpen = false"
+    @save="requestPlanChange"
+  >
+    <div class="space-y-4">
+      <div
+        v-for="plan in plans"
+        :key="plan.id"
+        @click="tempSelectedPlan = plan"
+        :class="tempSelectedPlan?.id === plan.id
+          ? 'border-accent bg-accent-light'
+          : 'border-[#E0E0E0] bg-gray-50 hover:border-accent/40'"
+        class="p-4 rounded border cursor-pointer transition-all"
+      >
+        <div class="flex items-center justify-between mb-1">
+          <div class="flex items-center gap-3">
+            <div class="w-5 h-5 rounded border-2 flex items-center justify-center"
+              :class="tempSelectedPlan?.id === plan.id ? 'border-accent' : 'border-zinc-400'">
+              <div v-if="tempSelectedPlan?.id === plan.id" class="w-2.5 h-2.5 rounded bg-accent" />
             </div>
-            <div class="p-6">
-              <p class="text-sm text-[#757575] leading-relaxed">
-                Tem certeza que deseja cancelar sua assinatura?
-                O acesso permanece ativo até o vencimento em
-                <span class="font-bold text-[#212121]">{{ formattedDueDate }}</span>.
-              </p>
-              <div v-if="cancelError" class="mt-4 bg-danger-light border border-danger text-danger p-3 rounded text-sm font-medium">
-                {{ cancelError }}
-              </div>
-            </div>
-            <div class="p-6 pt-0 flex gap-3">
-              <BaseButton variant="ghost" class="flex-1" @click="showCancelModal = false">
-                Manter Plano
-              </BaseButton>
-              <button
-                @click="confirmCancel"
-                :disabled="isCancelling"
-                class="flex-1 py-3 rounded font-black text-sm uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-2 bg-danger text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {{ isCancelling ? 'Cancelando...' : 'Confirmar Cancelamento' }}
-              </button>
-            </div>
+            <p class="font-bold text-sm" :class="tempSelectedPlan?.id === plan.id ? 'text-accent' : 'text-[#212121]'">
+              {{ plan?.name }}
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <p class="text-xs text-[#757575]">{{ formatCurrency(plan.price) }}/{{ formatFrequency(plan.frequency) }}</p>
+            <span v-if="plan.id === sub?.plan?.id" class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-accent-light text-accent rounded border border-accent/30">Atual</span>
           </div>
         </div>
-      </Transition>
-    </Teleport>
+        <ul v-if="parsedFeatures(plan.features).length" class="mt-2 space-y-1 pl-8">
+          <li
+            v-for="feat in parsedFeatures(plan.features)"
+            :key="feat"
+            class="text-xs text-[#757575] flex items-center gap-1.5"
+          >
+            <span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>
+            {{ feat }}
+          </li>
+        </ul>
+      </div>
 
-    <!-- Modal de pagamento (Teleport) -->
-    <Teleport to="body">
-      <Transition name="fade" @after-enter="initCardForm">
-        <div v-if="paymentModal" class="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4">
-          <div class="bg-white border border-[#E0E0E0] w-full max-w-lg rounded shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div class="p-6 border-b border-[#E0E0E0] flex justify-between items-center">
-              <h2 class="text-xl font-black text-[#212121]">
-                Mudar Cartão de Pagamento
-              </h2>
-              <button @click="closePaymentModal" class="p-2 text-[#757575] hover:text-[#212121] transition-colors">
-                <X :size="20" />
-              </button>
+      <div class="p-4 bg-amber-50 border border-amber-400/40 rounded flex items-start gap-3">
+        <Info :size="15" class="text-amber-500 shrink-0 mt-0.5" />
+        <p class="text-xs text-[#757575] leading-relaxed">
+          A mudança é <strong class="text-[#212121]">imediata</strong>. O novo valor será cobrado na próxima renovação.
+        </p>
+      </div>
+    </div>
+  </FormModal>
+
+  <!-- Modal de confirmação de troca de plano -->
+  <FormModal
+    :show="showConfirmPlanModal"
+    title="Confirmar Alteração de Plano"
+    size="sm"
+    save-label="Confirmar Troca"
+    :is-loading="isChanging"
+    @close="showConfirmPlanModal = false"
+    @save="confirmPlanChange"
+  >
+    <p class="text-sm text-[#757575] leading-relaxed">
+      Tem certeza que deseja trocar para o plano
+      <span class="font-bold text-[#212121]">{{ tempSelectedPlan?.name }}</span>
+      por <span class="font-bold text-[#212121]">{{ formatCurrency(tempSelectedPlan?.price) }}/{{ formatFrequency(tempSelectedPlan?.frequency) }}</span>?
+      A mudança é imediata e o novo valor será cobrado na próxima renovação.
+    </p>
+  </FormModal>
+
+  <!-- Modal de pagamento — mantido custom por precisar do @after-enter para inicializar o MP -->
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition-opacity duration-200 ease-in-out"
+      leave-active-class="transition-opacity duration-150 ease-in-out"
+      enter-from-class="opacity-0"
+      leave-to-class="opacity-0"
+      @after-enter="initCardForm"
+    >
+      <div v-if="paymentModal" class="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4">
+        <div class="bg-white border border-[#E0E0E0] w-full max-w-lg rounded shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div class="p-6 border-b border-[#E0E0E0] flex justify-between items-center">
+            <h2 class="text-xl font-black text-[#212121]">Mudar Cartão de Pagamento</h2>
+            <button @click="closePaymentModal" class="p-2 text-[#757575] hover:text-[#212121] transition-colors">
+              <X :size="20" />
+            </button>
+          </div>
+          <div class="p-6">
+            <div v-if="serverError" class="bg-danger-light border border-danger text-danger p-3 rounded mb-4 text-sm font-medium">
+              {{ serverError }}
             </div>
-            <div class="p-6">
-              <div v-if="serverError" class="bg-danger-light border border-danger text-danger p-3 rounded mb-4 text-sm font-medium">
-                {{ serverError }}
-              </div>
 
-              <div v-show="!isTokenizing">
-                <form id="mp-manager-card-form" class="space-y-4" @submit.prevent>
+            <div v-show="!isTokenizing">
+              <form id="mp-manager-card-form" class="space-y-4" @submit.prevent>
+                <div>
+                  <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Número do cartão</label>
+                  <div id="mp-mgr-cardNumber" class="w-full border border-[#E0E0E0] rounded bg-white" style="height: 42px;"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
                   <div>
-                    <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Número do cartão</label>
-                    <div id="mp-mgr-cardNumber" class="w-full border border-[#E0E0E0] rounded bg-white" style="height: 42px;"></div>
-                  </div>
-                  <div class="grid grid-cols-2 gap-3">
-                    <div>
-                      <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Validade</label>
-                      <div id="mp-mgr-expirationDate" class="w-full border border-[#E0E0E0] rounded bg-white" style="height: 42px;"></div>
-                    </div>
-                    <div>
-                      <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">CVV</label>
-                      <div id="mp-mgr-securityCode" class="w-full border border-[#E0E0E0] rounded bg-white" style="height: 42px;"></div>
-                    </div>
+                    <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Validade</label>
+                    <div id="mp-mgr-expirationDate" class="w-full border border-[#E0E0E0] rounded bg-white" style="height: 42px;"></div>
                   </div>
                   <div>
-                    <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Nome no cartão</label>
+                    <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">CVV</label>
+                    <div id="mp-mgr-securityCode" class="w-full border border-[#E0E0E0] rounded bg-white" style="height: 42px;"></div>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Nome no cartão</label>
+                  <input
+                    id="mp-mgr-cardholderName"
+                    type="text"
+                    placeholder="Como impresso no cartão"
+                    class="w-full border border-[#E0E0E0] rounded bg-white px-3 text-sm text-[#212121] placeholder-[#BDBDBD] focus:outline-none focus:border-primary transition-colors"
+                    style="height: 42px;"
+                  />
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Tipo de documento</label>
+                    <select
+                      id="mp-mgr-identificationType"
+                      class="w-full border border-[#E0E0E0] rounded bg-white px-3 text-sm text-[#212121] focus:outline-none focus:border-primary transition-colors"
+                      style="height: 42px;"
+                    ></select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Número do documento</label>
                     <input
-                      id="mp-mgr-cardholderName"
+                      id="mp-mgr-identificationNumber"
                       type="text"
-                      placeholder="Como impresso no cartão"
+                      placeholder="000.000.000-00"
                       class="w-full border border-[#E0E0E0] rounded bg-white px-3 text-sm text-[#212121] placeholder-[#BDBDBD] focus:outline-none focus:border-primary transition-colors"
                       style="height: 42px;"
                     />
                   </div>
-                  <div class="grid grid-cols-2 gap-3">
-                    <div>
-                      <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Tipo de documento</label>
-                      <select
-                        id="mp-mgr-identificationType"
-                        class="w-full border border-[#E0E0E0] rounded bg-white px-3 text-sm text-[#212121] focus:outline-none focus:border-primary transition-colors"
-                        style="height: 42px;"
-                      ></select>
-                    </div>
-                    <div>
-                      <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Número do documento</label>
-                      <input
-                        id="mp-mgr-identificationNumber"
-                        type="text"
-                        placeholder="000.000.000-00"
-                        class="w-full border border-[#E0E0E0] rounded bg-white px-3 text-sm text-[#212121] placeholder-[#BDBDBD] focus:outline-none focus:border-primary transition-colors"
-                        style="height: 42px;"
-                      />
-                    </div>
-                  </div>
-                  <BaseButton type="submit" variant="primary" class="w-full">
-                    Atualizar Cartão
-                  </BaseButton>
-                </form>
-              </div>
-
-              <div v-if="isTokenizing" class="py-12 flex flex-col items-center justify-center gap-4">
-                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
-                <p class="text-[#757575] font-medium text-sm">Processando...</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
-
-    <!-- Modal de seleção de plano (Teleport) -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="isPlanModalOpen" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
-          <div class="bg-white border border-[#E0E0E0] w-full max-w-md rounded shadow-2xl">
-            <div class="p-8 border-b border-[#E0E0E0] flex justify-between items-center">
-              <h2 class="text-xl font-black text-[#212121] flex items-center gap-3">
-                <ArrowLeftRight :size="20" class="text-accent" />
-                Alterar Plano
-              </h2>
-              <button @click="isPlanModalOpen = false" class="p-2 text-[#757575] hover:text-[#212121]">
-                <X :size="20" />
-              </button>
-            </div>
-
-            <div class="p-8 space-y-4">
-              <div
-                v-for="plan in plans"
-                :key="plan.id"
-                @click="tempSelectedPlan = plan"
-                :class="tempSelectedPlan?.id === plan.id
-                  ? 'border-accent bg-accent-light'
-                  : 'border-[#E0E0E0] bg-gray-50 hover:border-accent/40'"
-                class="p-4 rounded border cursor-pointer transition-all"
-              >
-                <div class="flex items-center justify-between mb-1">
-                  <div class="flex items-center gap-3">
-                    <div class="w-5 h-5 rounded border-2 flex items-center justify-center"
-                      :class="tempSelectedPlan?.id === plan.id ? 'border-accent' : 'border-zinc-400'">
-                      <div v-if="tempSelectedPlan?.id === plan.id" class="w-2.5 h-2.5 rounded bg-accent" />
-                    </div>
-                    <p class="font-bold text-sm" :class="tempSelectedPlan?.id === plan.id ? 'text-accent' : 'text-[#212121]'">
-                      {{ plan?.name }}
-                    </p>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <p class="text-xs text-[#757575]">{{ formatCurrency(plan.price) }}/{{ formatFrequency(plan.frequency) }}</p>
-                    <span v-if="plan.id === sub?.plan?.id" class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-accent-light text-accent rounded border border-accent/30">Atual</span>
-                  </div>
                 </div>
-                <ul v-if="parsedFeatures(plan.features).length" class="mt-2 space-y-1 pl-8">
-                  <li
-                    v-for="feat in parsedFeatures(plan.features)"
-                    :key="feat"
-                    class="text-xs text-[#757575] flex items-center gap-1.5"
-                  >
-                    <span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>
-                    {{ feat }}
-                  </li>
-                </ul>
-              </div>
-
-              <div class="p-4 bg-amber-50 border border-amber-400/40 rounded flex items-start gap-3">
-                <Info :size="15" class="text-amber-500 shrink-0 mt-0.5" />
-                <p class="text-xs text-[#757575] leading-relaxed">
-                  A mudança é <strong class="text-[#212121]">imediata</strong>. O novo valor será cobrado na próxima renovação.
-                </p>
-              </div>
+                <BaseButton type="submit" variant="primary" class="w-full">
+                  Atualizar Cartão
+                </BaseButton>
+              </form>
             </div>
 
-            <div class="p-8 pt-0 flex gap-3">
-              <BaseButton variant="ghost" class="flex-1" @click="isPlanModalOpen = false">Cancelar</BaseButton>
-              <BaseButton
-                variant="primary"
-                class="flex-1"
-                :disabled="!tempSelectedPlan || tempSelectedPlan?.id === sub?.plan?.id"
-                @click="requestPlanChange"
-              >
-                Confirmar
-              </BaseButton>
+            <div v-if="isTokenizing" class="py-12 flex flex-col items-center justify-center gap-4">
+              <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+              <p class="text-[#757575] font-medium text-sm">Processando...</p>
             </div>
           </div>
         </div>
-      </Transition>
-    </Teleport>
-
-    <!-- Modal de confirmação de troca de plano (sobrepõe o de seleção) -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showConfirmPlanModal" class="fixed inset-0 bg-black/60 z-[300] flex items-center justify-center p-4">
-          <div class="bg-white border border-[#E0E0E0] w-full max-w-sm rounded shadow-2xl">
-            <div class="p-6 border-b border-[#E0E0E0] flex justify-between items-center">
-              <h2 class="text-lg font-black text-[#212121] flex items-center gap-2">
-                <ArrowLeftRight :size="18" class="text-accent" />
-                Confirmar Alteração de Plano
-              </h2>
-              <button @click="showConfirmPlanModal = false" class="p-2 text-[#757575] hover:text-[#212121] transition-colors">
-                <X :size="18" />
-              </button>
-            </div>
-            <div class="p-6">
-              <p class="text-sm text-[#757575] leading-relaxed">
-                Tem certeza que deseja trocar para o plano
-                <span class="font-bold text-[#212121]">{{ tempSelectedPlan?.name }}</span>
-                por <span class="font-bold text-[#212121]">{{ formatCurrency(tempSelectedPlan?.price) }}/{{ formatFrequency(tempSelectedPlan?.frequency) }}</span>?
-                A mudança é imediata e o novo valor será cobrado na próxima renovação.
-              </p>
-            </div>
-            <div class="p-6 pt-0 flex gap-3">
-              <BaseButton variant="ghost" class="flex-1" @click="showConfirmPlanModal = false">Voltar</BaseButton>
-              <BaseButton variant="primary" class="flex-1" :isLoading="isChanging" @click="confirmPlanChange">
-                Confirmar Troca
-              </BaseButton>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
-
-  </main>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
-
-<style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-</style>

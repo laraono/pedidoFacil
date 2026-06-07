@@ -1,5 +1,5 @@
 import { DataSource, Repository } from "typeorm";
-import { CreateProductVariation, ProductVariationOrderParams, ProductVariationParams } from "../dto";
+import { CreateProductVariation, ProductVariationParams } from "../dto";
 import { ProductVariation } from "../database";
 
 export class ProductVariationRepository extends Repository<ProductVariation>{

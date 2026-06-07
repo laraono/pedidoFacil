@@ -4,7 +4,6 @@ import { subscriptionController } from '../controller';
 import { validateRequest } from '../middleware/validateRequest';
 import { createSubscriptionSchema } from '../dto/subscription/CreateSubscriptionDTO';
 import { restoreSubscriptionSchema } from '../dto/subscription/RestoreSubscriptionDTO';
-import { listSubscriptionsSchema } from '../dto/subscription/ListSubscriptionsDTO';
 
 const subscriptionRouter = express.Router();
 
@@ -15,8 +14,8 @@ subscriptionRouter.post('/process-order', authenticate, validateRequest(createSu
 subscriptionRouter.post('/process-order/:subscriptionId', authenticate, validateRequest(restoreSubscriptionSchema), subscriptionController.restoreSubscription);
 subscriptionRouter.put('/plans/:planId/subscriptions/:subscriptionId', authenticate, subscriptionController.updateSubscriptionPrice);
 subscriptionRouter.get('/process-oauth', subscriptionController.processCardInfo)
-subscriptionRouter.get('/subscriptions/establishment', authenticate, validateRequest(listSubscriptionsSchema), subscriptionController.getEstablishmentSubscription)
-subscriptionRouter.get('/subscriptions/history', authenticate, validateRequest(listSubscriptionsSchema), subscriptionController.getEstablishmentHistory)
+subscriptionRouter.get('/subscriptions/establishment', authenticate, subscriptionController.getEstablishmentSubscription)
+subscriptionRouter.get('/subscriptions/history', authenticate, subscriptionController.getEstablishmentHistory)
 subscriptionRouter.patch('/subscriptions/change-plan', authenticate, subscriptionController.changePlan)
 subscriptionRouter.post('/subscriptions/:subscriptionId/cancel', authenticate, subscriptionController.cancelSubcription)
 

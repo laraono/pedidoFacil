@@ -29,10 +29,7 @@ export class OrderController {
             const fullOrder = await this.orderService.getOrderWithDetails(order.id);
 
             const mappedItems = fullOrder?.productOrders?.map(po => {
-                const variationName = po.variations
-                    ?.map(v => v.productVariation?.name)
-                    .filter(Boolean)
-                    .join(', ') || '';
+                const variationName = po.productVariation?.name || '';
                 return {
                     name: po.product?.name || 'Produto',
                     variationName,
@@ -77,10 +74,7 @@ export class OrderController {
 
             const fullOrder = await this.orderService.getOrderWithDetails(order.id);
             const mappedItems = fullOrder?.productOrders?.map(po => {
-                const variationName = po.variations
-                    ?.map(v => v.productVariation?.name)
-                    .filter(Boolean)
-                    .join(', ') || '';
+                const variationName = po.productVariation?.name || '';
                 return {
                     name: po.product?.name || 'Produto',
                     variationName,
@@ -111,20 +105,21 @@ export class OrderController {
     }
 
     async updateOrderStatus(req: Request, res: Response) {
-        const { orderId } = req.params;
+        const { orderId, comandaId } = req.params;
         const { status, cancellationDescription } = req.body;
         const usuario = (req as any).usuario;
 
-        const result = await this.orderService.updateOrderStatus(
-            Number(orderId), 
-            status, 
-            usuario.id, 
-            cancellationDescription
+        await this.orderService.updateOrderStatus(
+            Number(orderId),
+            status,
+            usuario.id,
+            cancellationDescription,
+            Number(comandaId)
         );
-        
+
         getIO().to('kitchen').to('cashier').to('waiter').emit('order_status_updated', {
             orderId:   Number(orderId),
-            comandaId: req.params.comandaId ? Number(req.params.comandaId) : result.comandaId,
+            comandaId: Number(comandaId),
             status,
         });
 
@@ -144,15 +139,16 @@ export class OrderController {
     }
 
     async cancelOrder(req: Request, res: Response) {
-        const { orderId } = req.params;
+        const { orderId, comandaId } = req.params;
         const { cancellationDescription } = req.body;
         const usuario = (req as any).usuario;
-        
+
         const result = await this.orderService.updateOrderStatus(
             Number(orderId),
             OrderStatus.CANCELADO,
             usuario.id,
-            cancellationDescription
+            cancellationDescription,
+            Number(comandaId)
         );
 
         auditLog('cancel_order.success', { orderId, userId: usuario.id, description: cancellationDescription });
