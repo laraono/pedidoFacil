@@ -1,206 +1,259 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useToast } from '@/composables/useToast';
-import { Save, ArrowLeft, User, Mail, Phone, MapPin, CreditCard, AlertCircle } from 'lucide-vue-next';
-import { isValidCPF, maskCPF } from '@/utils/validator';
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { profileApi } from "@/services/profileApi";
+import { useAuthStore } from "@/stores/auth";
+import { useToast } from "@/composables/useToast";
+import { Save, ArrowLeft, AlertCircle, Lock } from "lucide-vue-next";
+import { isValidCPF, maskCPF, maskPhone, maskZip } from "@/utils/validator";
+import { validatePasswordStrength } from "@/utils/password";
+import { BaseInput, BaseButton } from "@/components/ui";
 
 const router = useRouter();
+const authStore = useAuthStore();
 const { showToast } = useToast();
 
-const PROFILE_KEY = 'managerProfile';
-
-const isLoading = ref(false);
+const isLoadingProfile = ref(false);
+const isLoadingPassword = ref(false);
 const errors = ref({});
 
 const form = ref({
-  fullName: '',
-  email: '',
-  phone: '',
-  cpf: '',
-  address: '',
-  city: '',
-  state: '',
-  zip: '',
+  fullName: "",
+  email: "",
+  phone: "",
+  cpf: "",
+  address: "",
+  city: "",
+  state: "",
+  zip: "",
 });
 
-const maskPhone = (v) => {
-  const d = v.replace(/\D/g, '').slice(0, 11);
-  if (d.length <= 10) return d.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{4})(\d)/, '$1-$2');
-  return d.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2');
-};
+const passwordForm = ref({
+  oldPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+});
 
-const maskZip = (v) => {
-  const d = v.replace(/\D/g, '').slice(0, 8);
-  return d.replace(/^(\d{5})(\d)/, '$1-$2');
-};
 
-onMounted(() => {
-  const saved = localStorage.getItem(PROFILE_KEY);
-  if (saved) {
-    Object.assign(form.value, JSON.parse(saved));
-  } else {
-    // Pre-fill from onboarding data if available
-    const onboarding = JSON.parse(localStorage.getItem('onboarding_personal') || '{}');
-    if (onboarding.nome) form.value.fullName = onboarding.nome;
-    if (onboarding.email) form.value.email = onboarding.email;
-    if (onboarding.cpf) form.value.cpf = onboarding.cpf;
+onMounted(async () => {
+  try {
+    const data = await profileApi.get();
+    form.value.fullName = data.name || "";
+    form.value.email = data.email || "";
+    form.value.cpf = data.cpf ? maskCPF(data.cpf) : "";
+    form.value.phone = data.phone ? maskPhone(data.phone) : "";
+    form.value.address = data.address || "";
+    form.value.city = data.city || "";
+    form.value.state = data.state || "";
+    form.value.zip = data.zip ? maskZip(data.zip) : "";
+  } catch (error) {
+    showToast("Erro ao carregar os dados do perfil.", "error");
   }
 });
 
-const validate = () => {
+const validateProfile = () => {
   errors.value = {};
-  if (!form.value.fullName.trim()) errors.value.fullName = 'Nome completo é obrigatório.';
-  if (!form.value.email.trim() || !form.value.email.includes('@')) errors.value.email = 'E-mail inválido.';
-  if (!form.value.phone.trim()) errors.value.phone = 'Telefone é obrigatório.';
-  if (form.value.cpf && !isValidCPF(form.value.cpf)) errors.value.cpf = 'CPF inválido.';
+  if (!form.value.fullName.trim())
+    errors.value.fullName = "Nome completo é obrigatório.";
+  if (!form.value.email.trim() || !form.value.email.includes("@"))
+    errors.value.email = "E-mail inválido.";
+  if (form.value.cpf && !isValidCPF(form.value.cpf))
+    errors.value.cpf = "CPF inválido.";
   return Object.keys(errors.value).length === 0;
 };
 
-const saveProfile = () => {
-  if (!validate()) {
-    showToast('Corrija os erros antes de salvar.', 'error');
+const validatePassword = () => {
+  errors.value = {};
+  if (!passwordForm.value.oldPassword)
+    errors.value.oldPassword = "A senha atual é obrigatória.";
+  const p = passwordForm.value.newPassword;
+  const pwErr = validatePasswordStrength(p || "");
+  if (pwErr) errors.value.newPassword = pwErr;
+  if (p && p !== passwordForm.value.confirmPassword)
+    errors.value.confirmPassword = "As senhas não coincidem.";
+  return Object.keys(errors.value).length === 0;
+};
+
+const saveProfile = async () => {
+  if (!validateProfile()) {
+    showToast("Corrija os erros antes de salvar.", "error");
     return;
   }
-  isLoading.value = true;
-  setTimeout(() => {
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(form.value));
-    showToast('Dados salvos com sucesso!', 'success');
-    isLoading.value = false;
-  }, 400);
+
+  isLoadingProfile.value = true;
+
+  try {
+    const payload = {
+      name: form.value.fullName,
+      email: form.value.email,
+      cpf: form.value.cpf ? form.value.cpf.replace(/\D/g, "") : "",
+      phone: form.value.phone ? form.value.phone.replace(/\D/g, "") : "",
+      address: form.value.address,
+      city: form.value.city,
+      state: form.value.state,
+      zip: form.value.zip ? form.value.zip.replace(/\D/g, "") : "",
+    };
+
+    const updatedUser = await profileApi.update(payload);
+    authStore.user.name = updatedUser.name;
+    authStore.user.email = updatedUser.email;
+    showToast("Dados salvos com sucesso!", "success");
+  } catch (error) {
+    const data = error.response?.data || error.data || error;
+    if (data?.errors && Array.isArray(data.errors)) {
+      data.errors.forEach((err) => {
+        let field = err.campo.replace("body.", "");
+        if (field === "name") field = "fullName";
+        errors.value[field] = err.mensagem;
+      });
+      showToast("Verifique os campos destacados em vermelho.", "error");
+    } else {
+      showToast(data?.message || "Erro ao salvar perfil.", "error");
+    }
+  } finally {
+    isLoadingProfile.value = false;
+  }
+};
+
+const savePassword = async () => {
+  if (!validatePassword()) {
+    showToast("Corrija os erros no formulário de senha.", "error");
+    return;
+  }
+
+  isLoadingPassword.value = true;
+
+  try {
+    await profileApi.changePassword({
+      oldPassword: passwordForm.value.oldPassword,
+      newPassword: passwordForm.value.newPassword,
+    });
+    showToast("Senha alterada com sucesso! Redirecionando para o login...", "success");
+    passwordForm.value = { oldPassword: "", newPassword: "", confirmPassword: "" };
+    setTimeout(async () => {
+      await authStore.logout();
+      router.push("/login");
+    }, 2500);
+  } catch (error) {
+    const data = error.response?.data || error.data || error;
+    if (data?.errors && Array.isArray(data.errors)) {
+      data.errors.forEach((err) => {
+        let field = err.campo.replace("body.", "");
+        errors.value[field] = err.mensagem;
+      });
+      showToast("Verifique os erros no formulário de senha.", "error");
+    } else {
+      showToast(data?.message || "Erro ao alterar senha.", "error");
+    }
+  } finally {
+    isLoadingPassword.value = false;
+  }
 };
 </script>
 
 <template>
   <main class="max-w-4xl mx-auto py-12 px-6 font-inter">
-
     <header class="flex items-center justify-between mb-10">
       <div class="flex items-center gap-4">
-        <button @click="router.back()"
-          class="p-3 bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-white hover:bg-white/10 transition-all">
+        <button
+          @click="router.back()"
+          class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] hover:bg-gray-100 transition-all"
+        >
           <ArrowLeft :size="20" />
         </button>
         <div>
-          <h1 class="text-3xl font-black text-white tracking-tight">Meu Perfil</h1>
-          <p class="text-gray-400 mt-1 text-sm">Dados pessoais e de contato para cobranças</p>
+          <h1 class="text-3xl font-black text-[#212121] tracking-tight">Meu Perfil</h1>
+          <p class="text-[#757575] mt-1 text-sm">Dados pessoais e de contato para cobranças</p>
         </div>
       </div>
-      <button @click="saveProfile" :disabled="isLoading"
-        class="hidden sm:flex items-center gap-2 bg-brand-green text-black font-black px-8 py-4 rounded-2xl hover:bg-brand-green-hover transition-all active:scale-95 shadow-lg shadow-brand-green/20 disabled:opacity-40 disabled:cursor-not-allowed">
-        <Save :size="18" />
-        {{ isLoading ? 'Salvando...' : 'Salvar Dados' }}
-      </button>
+      <BaseButton variant="primary" :icon="Save" :isLoading="isLoadingProfile" class="hidden sm:flex" @click="saveProfile">
+        Salvar Dados
+      </BaseButton>
     </header>
 
-    <div class="bg-dark-card border border-white/5 rounded-[2.5rem] p-8 shadow-xl">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="space-y-8">
+      <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl">
+        <h2 class="text-lg font-black text-[#212121] mb-6 flex items-center gap-2">
+          Informações Pessoais
+        </h2>
 
-        <!-- Nome completo -->
-        <div class="space-y-1.5">
-          <label class="text-xs font-black uppercase tracking-widest text-gray-300 ml-1 flex items-center gap-1.5">
-            <User :size="11" /> Nome Completo
-          </label>
-          <input v-model="form.fullName" type="text" placeholder="Ex: João da Silva"
-            class="w-full py-3.5 px-4 rounded-2xl border bg-white/5 text-white placeholder-gray-600 focus:border-brand-green/50 focus:bg-white/10 focus:outline-none transition-all"
-            :class="errors.fullName ? 'border-red-500 bg-red-500/5' : 'border-white/10'" />
-          <p v-if="errors.fullName" class="text-red-400 text-[11px] font-bold ml-1 flex items-center gap-1">
-            <AlertCircle :size="11" /> {{ errors.fullName }}
-          </p>
-        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <BaseInput v-model="form.fullName" label="Nome Completo" placeholder="Ex: João da Silva" :error="errors.fullName" />
 
-        <!-- Email -->
-        <div class="space-y-1.5">
-          <label class="text-xs font-black uppercase tracking-widest text-gray-300 ml-1 flex items-center gap-1.5">
-            <Mail :size="11" /> E-mail de Contato
-          </label>
-          <input v-model="form.email" type="email" placeholder="seu@email.com"
-            class="w-full py-3.5 px-4 rounded-2xl border bg-white/5 text-white placeholder-gray-600 focus:border-brand-green/50 focus:bg-white/10 focus:outline-none transition-all"
-            :class="errors.email ? 'border-red-500 bg-red-500/5' : 'border-white/10'" />
-          <p v-if="errors.email" class="text-red-400 text-[11px] font-bold ml-1 flex items-center gap-1">
-            <AlertCircle :size="11" /> {{ errors.email }}
-          </p>
-        </div>
+          <BaseInput v-model="form.email" type="email" label="E-mail de Login" placeholder="seu@email.com" :error="errors.email" />
 
-        <!-- Telefone -->
-        <div class="space-y-1.5">
-          <label class="text-xs font-black uppercase tracking-widest text-gray-300 ml-1 flex items-center gap-1.5">
-            <Phone :size="11" /> Telefone / WhatsApp
-          </label>
-          <input
-            :value="form.phone"
+          <BaseInput
+            :modelValue="form.phone"
+            type="tel"
+            label="Telefone / WhatsApp"
+            placeholder="(00) 00000-0000"
+            :error="errors.phone"
             @input="(e) => { form.phone = maskPhone(e.target.value); e.target.value = form.phone; }"
-            type="tel" placeholder="(00) 00000-0000"
-            class="w-full py-3.5 px-4 rounded-2xl border bg-white/5 text-white placeholder-gray-600 focus:border-brand-green/50 focus:bg-white/10 focus:outline-none transition-all"
-            :class="errors.phone ? 'border-red-500 bg-red-500/5' : 'border-white/10'" />
-          <p v-if="errors.phone" class="text-red-400 text-[11px] font-bold ml-1 flex items-center gap-1">
-            <AlertCircle :size="11" /> {{ errors.phone }}
-          </p>
-        </div>
+          />
 
-        <!-- CPF -->
-        <div class="space-y-1.5">
-          <label class="text-xs font-black uppercase tracking-widest text-gray-300 ml-1 flex items-center gap-1.5">
-            <CreditCard :size="11" /> CPF
-          </label>
-          <input
-            :value="form.cpf"
+          <BaseInput
+            :modelValue="form.cpf"
+            label="CPF"
+            placeholder="000.000.000-00"
+            maxlength="14"
+            :error="errors.cpf"
             @input="(e) => { form.cpf = maskCPF(e.target.value); e.target.value = form.cpf; }"
-            type="text" placeholder="000.000.000-00" maxlength="14"
-            class="w-full py-3.5 px-4 rounded-2xl border bg-white/5 text-white placeholder-gray-600 focus:border-brand-green/50 focus:bg-white/10 focus:outline-none transition-all"
-            :class="errors.cpf ? 'border-red-500 bg-red-500/5' : 'border-white/10'" />
-          <p v-if="errors.cpf" class="text-red-400 text-[11px] font-bold ml-1 flex items-center gap-1">
-            <AlertCircle :size="11" /> {{ errors.cpf }}
+          />
+
+          <div class="md:col-span-2">
+            <BaseInput v-model="form.address" label="Endereço" placeholder="Rua, número, complemento" />
+          </div>
+
+          <BaseInput v-model="form.city" label="Cidade" placeholder="Ex: São Paulo" />
+
+          <div class="grid grid-cols-2 gap-4">
+            <BaseInput v-model="form.state" label="Estado" placeholder="SP" maxlength="2" />
+            <BaseInput
+              :modelValue="form.zip"
+              label="CEP"
+              placeholder="00000-000"
+              maxlength="9"
+              @input="(e) => { form.zip = maskZip(e.target.value); e.target.value = form.zip; }"
+            />
+          </div>
+        </div>
+
+        <div class="mt-8 pt-8 border-t border-[#E0E0E0] bg-amber-500/5 border border-amber-500/10 rounded p-4 flex items-start gap-3">
+          <AlertCircle :size="16" class="text-amber-400 mt-0.5 shrink-0" />
+          <p class="text-xs text-amber-700 leading-relaxed">
+            Mantenha seu E-mail e CPF sempre atualizados. Eles são as chaves
+            principais para a recuperação da sua conta e emissão de notas.
           </p>
         </div>
 
-        <!-- Endereço -->
-        <div class="md:col-span-2 space-y-1.5">
-          <label class="text-xs font-black uppercase tracking-widest text-gray-300 ml-1 flex items-center gap-1.5">
-            <MapPin :size="11" /> Endereço
-          </label>
-          <input v-model="form.address" type="text" placeholder="Rua, número, complemento"
-            class="w-full py-3.5 px-4 rounded-2xl border border-white/10 bg-white/5 text-white placeholder-gray-600 focus:border-brand-green/50 focus:bg-white/10 focus:outline-none transition-all" />
+        <div class="mt-6 sm:hidden">
+          <BaseButton variant="primary" :isLoading="isLoadingProfile" class="w-full" @click="saveProfile">
+            Salvar Dados
+          </BaseButton>
         </div>
-
-        <!-- Cidade / Estado / CEP -->
-        <div class="space-y-1.5">
-          <label class="text-xs font-black uppercase tracking-widest text-gray-300 ml-1">Cidade</label>
-          <input v-model="form.city" type="text" placeholder="Ex: São Paulo"
-            class="w-full py-3.5 px-4 rounded-2xl border border-white/10 bg-white/5 text-white placeholder-gray-600 focus:border-brand-green/50 focus:bg-white/10 focus:outline-none transition-all" />
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div class="space-y-1.5">
-            <label class="text-xs font-black uppercase tracking-widest text-gray-300 ml-1">Estado</label>
-            <input v-model="form.state" type="text" placeholder="SP" maxlength="2"
-              class="w-full py-3.5 px-4 rounded-2xl border border-white/10 bg-white/5 text-white placeholder-gray-600 focus:border-brand-green/50 focus:bg-white/10 focus:outline-none transition-all uppercase" />
-          </div>
-          <div class="space-y-1.5">
-            <label class="text-xs font-black uppercase tracking-widest text-gray-300 ml-1">CEP</label>
-            <input
-              :value="form.zip"
-              @input="(e) => { form.zip = maskZip(e.target.value); e.target.value = form.zip; }"
-              type="text" placeholder="00000-000" maxlength="9"
-              class="w-full py-3.5 px-4 rounded-2xl border border-white/10 bg-white/5 text-white placeholder-gray-600 focus:border-brand-green/50 focus:bg-white/10 focus:outline-none transition-all" />
-          </div>
-        </div>
-
       </div>
 
-      <div class="mt-8 pt-8 border-t border-white/5 bg-amber-500/5 border border-amber-500/10 rounded-2xl p-4 flex items-start gap-3">
-        <AlertCircle :size="16" class="text-amber-400 mt-0.5 shrink-0" />
-        <p class="text-xs text-amber-300/80 leading-relaxed">
-          Estes dados são utilizados exclusivamente para fins de cobrança e comunicação. Mantenha-os atualizados para evitar interrupções no serviço.
-        </p>
+      <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl">
+        <h2 class="text-lg font-black text-[#212121] mb-6 flex items-center gap-2">
+          <Lock :size="20" class="text-[#757575]" /> Segurança da Conta
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="md:col-span-2">
+            <BaseInput v-model="passwordForm.oldPassword" type="password" label="Senha Atual" placeholder="••••••••" :error="errors.oldPassword" />
+          </div>
+
+          <BaseInput v-model="passwordForm.newPassword" type="password" label="Nova Senha" placeholder="••••••••" :error="errors.newPassword" />
+
+          <BaseInput v-model="passwordForm.confirmPassword" type="password" label="Confirmar Nova Senha" placeholder="••••••••" :error="errors.confirmPassword" />
+        </div>
+
+        <div class="mt-8 flex justify-end">
+          <BaseButton variant="secondary" :icon="Lock" :isLoading="isLoadingPassword" class="w-full sm:w-auto" @click="savePassword">
+            Atualizar Senha
+          </BaseButton>
+        </div>
       </div>
     </div>
-
-    <div class="mt-6 sm:hidden">
-      <button @click="saveProfile" :disabled="isLoading"
-        class="w-full bg-brand-green text-black font-black py-5 rounded-3xl shadow-xl active:scale-95 transition-all disabled:opacity-40">
-        {{ isLoading ? 'Salvando...' : 'Salvar Dados' }}
-      </button>
-    </div>
-
   </main>
 </template>

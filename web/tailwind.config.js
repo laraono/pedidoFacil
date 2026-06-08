@@ -7,6 +7,16 @@ export default {
   theme: {
     extend: {
       colors: {
+        primary: {
+          DEFAULT: 'rgb(var(--primary) / <alpha-value>)',
+          dark: 'rgb(var(--primary-dark) / <alpha-value>)',
+          light: 'rgb(var(--primary-light) / <alpha-value>)',
+        },
+        accent: {
+          DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
+          dark: 'rgb(var(--accent-dark) / <alpha-value>)',
+          light: 'rgb(var(--accent-light) / <alpha-value>)',
+        },
         purple: {
           500: '#1A55E3',
           600: '#1548C2',
@@ -32,7 +42,12 @@ export default {
         dark: {
           bg: '#0B0E11',
           card: '#1A1E24',
-        }
+        },
+        danger: {
+          DEFAULT: '#E53935',
+          light: '#FFEBEE',
+        },
+        page: '#F5F6FA',
       },
       fontFamily: {
         'inter': ['Inter', 'sans-serif'],

@@ -1,278 +1,283 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useSubscriptionStore } from '@/stores/subscriptions';
+import { useToast } from '@/composables/useToast';
+import { useAsyncAction } from '@/composables/useAsyncAction';
 import {
-  ArrowLeft, ShieldAlert, Users, CheckCircle2, AlertTriangle,
-  XCircle, Search, Calendar, CreditCard, UserCircle, X, Mail, Phone, MapPin
+  ShieldAlert, Search, Calendar, CreditCard, UserCircle, X,
+  Mail, DollarSign, ClipboardList
 } from 'lucide-vue-next';
+import { adminSubscriptionApi } from '@/services/adminApi';
+import { useUtils } from '@/composables/useUtils';
+import { applyPriceMask } from '@/composables/usePriceMask';
+import { PageHeader, StatusBadge, MetricCard } from '@/components/ui';
 
 const router = useRouter();
-const subscriptionStore = useSubscriptionStore();
+const { showToast } = useToast();
+const { loading, run: runLoad } = useAsyncAction();
+const { loading: savingPrice, run } = useAsyncAction();
 
+const subscriptions = ref([]);
 const search = ref('');
 const filterStatus = ref('todos');
+const selectedSub = ref(null);
+const editingPrice = ref(false);
+const newPrice = ref('');
 
-const selectedManager = ref(null);
-const openManagerModal = (sub) => { selectedManager.value = sub; };
-const closeManagerModal = () => { selectedManager.value = null; };
+async function load() {
+  subscriptions.value = await runLoad(() => adminSubscriptionApi.list(), 'Erro ao carregar assinaturas.') ?? subscriptions.value;
+}
 
-const allSubs = computed(() => subscriptionStore.adminSubscriptions);
+onMounted(load);
 
 const filtered = computed(() => {
-  return allSubs.value.filter(s => {
+  return subscriptions.value.filter(s => {
     const matchSearch = !search.value ||
-      s.establishment.toLowerCase().includes(search.value.toLowerCase()) ||
-      s.manager.toLowerCase().includes(search.value.toLowerCase());
-    const matchStatus = filterStatus.value === 'todos' || s.status === filterStatus.value;
+      s.establishment?.name?.toLowerCase().includes(search.value.toLowerCase()) ||
+      s.establishment?.manager?.name?.toLowerCase().includes(search.value.toLowerCase());
+    const matchStatus = filterStatus.value === 'todos' || s.status?.toLowerCase() === filterStatus.value;
     return matchSearch && matchStatus;
   });
 });
 
 const counts = computed(() => ({
-  total: allSubs.value.length,
-  ativo: allSubs.value.filter(s => s.status === 'ativo').length,
-  expirado: allSubs.value.filter(s => s.status === 'expirado').length,
-  desativado: allSubs.value.filter(s => s.status === 'desativado').length,
-  anual: allSubs.value.filter(s => s.plan === 'anual').length,
-  mensal: allSubs.value.filter(s => s.plan === 'mensal').length,
+  total: subscriptions.value.length,
+  paga: subscriptions.value.filter(s => s.status === 'Paga').length,
+  pendente: subscriptions.value.filter(s => s.status === 'Pendente').length,
+  cancelada: subscriptions.value.filter(s => s.status === 'Cancelada').length,
+  expirada: subscriptions.value.filter(s => s.status === 'Expirada').length,
 }));
 
-const statusConfig = (status) => {
-  if (status === 'ativo') return { label: 'Ativa', icon: CheckCircle2, color: 'text-brand-green', bg: 'bg-brand-green/10 border-brand-green/25' };
-  if (status === 'expirado') return { label: 'Expirada', icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/25' };
-  return { label: 'Desativada', icon: XCircle, color: 'text-zinc-500', bg: 'bg-zinc-700/20 border-zinc-600/20' };
-};
+const getManager = (sub) => sub.establishment?.manager ?? null;
 
-const formatDate = (d) =>
-  new Date(d + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+const { formatCurrency } = useUtils();
+const formatDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+
+function openDetail(sub) {
+  selectedSub.value = sub;
+  editingPrice.value = false;
+  newPrice.value = '';
+}
+
+async function cancelSub(sub) {
+  if (!confirm(`Cancelar assinatura do estabelecimento "${sub.establishment?.name}"?`)) return;
+  await run(async () => {
+    await adminSubscriptionApi.cancel(sub.id);
+    showToast('Assinatura cancelada.', 'success');
+    await load();
+    if (selectedSub.value?.id === sub.id) selectedSub.value = null;
+  }, 'Erro ao cancelar assinatura.');
+}
+
+async function deleteSub(sub) {
+  if (!confirm(`Deletar assinatura? Esta ação é irreversível.`)) return;
+  await run(async () => {
+    await adminSubscriptionApi.delete(sub.id);
+    showToast('Assinatura removida.', 'success');
+    await load();
+    if (selectedSub.value?.id === sub.id) selectedSub.value = null;
+  }, 'Erro ao remover assinatura.');
+}
+
+function onNewPriceInput(e) {
+  const v = applyPriceMask(e.target.value);
+  e.target.value = v;
+  newPrice.value = v;
+}
+
+async function savePrice() {
+  const amount = parseFloat(String(newPrice.value).replace(',', '.'));
+  if (!amount || amount <= 0) { showToast('Valor inválido.', 'error'); return; }
+  await run(async () => {
+    await adminSubscriptionApi.updatePrice(selectedSub.value.id, amount);
+    showToast('Valor atualizado!', 'success');
+    editingPrice.value = false;
+    await load();
+    selectedSub.value = subscriptions.value.find(s => s.id === selectedSub.value.id) || null;
+  }, 'Erro ao atualizar valor.');
+}
 </script>
 
 <template>
   <main class="max-w-7xl mx-auto py-12 px-6 font-inter">
 
-    <!-- Header -->
-    <header class="flex items-center gap-4 mb-10">
-      <button @click="router.push('/app/dashboard')" class="p-3 bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-white transition-colors">
-        <ArrowLeft :size="20" />
-      </button>
-      <div>
-        <div class="flex items-center gap-2 mb-1">
-          <ShieldAlert :size="16" class="text-brand-green" />
-          <span class="text-xs font-black text-brand-green uppercase tracking-widest">Painel Admin</span>
-        </div>
-        <h1 class="text-3xl font-black text-white">Assinaturas</h1>
-        <p class="text-gray-400 text-sm">Controle de todos os gerentes e seus planos</p>
-      </div>
-    </header>
+    <PageHeader
+      title="Assinaturas"
+      subtitle="Controle de todos os gerentes e seus planos"
+      :category-icon="ShieldAlert"
+      category-label="Painel Admin"
+    />
 
-    <!-- KPI cards -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-      <div class="bg-dark-card border border-white/10 rounded-2xl p-4 text-center">
-        <p class="text-3xl font-black text-white">{{ counts.total }}</p>
-        <p class="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-1">Total</p>
-      </div>
-      <div class="bg-brand-green/5 border border-brand-green/20 rounded-2xl p-4 text-center cursor-pointer hover:bg-brand-green/10 transition-colors" @click="filterStatus = 'ativo'">
-        <p class="text-3xl font-black text-brand-green">{{ counts.ativo }}</p>
-        <p class="text-[10px] font-black text-brand-green/60 uppercase tracking-widest mt-1">Ativas</p>
-      </div>
-      <div class="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 text-center cursor-pointer hover:bg-amber-500/10 transition-colors" @click="filterStatus = 'expirado'">
-        <p class="text-3xl font-black text-amber-400">{{ counts.expirado }}</p>
-        <p class="text-[10px] font-black text-amber-400/60 uppercase tracking-widest mt-1">Expiradas</p>
-      </div>
-      <div class="bg-zinc-800/50 border border-zinc-700/30 rounded-2xl p-4 text-center cursor-pointer hover:bg-zinc-700/30 transition-colors" @click="filterStatus = 'desativado'">
-        <p class="text-3xl font-black text-zinc-400">{{ counts.desativado }}</p>
-        <p class="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-1">Desativadas</p>
-      </div>
-      <div class="bg-purple-500/5 border border-purple-500/20 rounded-2xl p-4 text-center">
-        <p class="text-3xl font-black text-purple-400">{{ counts.anual }}</p>
-        <p class="text-[10px] font-black text-purple-400/60 uppercase tracking-widest mt-1">Anuais</p>
-      </div>
-      <div class="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4 text-center">
-        <p class="text-3xl font-black text-blue-400">{{ counts.mensal }}</p>
-        <p class="text-[10px] font-black text-blue-400/60 uppercase tracking-widest mt-1">Mensais</p>
-      </div>
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
+      <MetricCard label="Total" :value="counts.total" variant="default" class="cursor-pointer" @click="filterStatus = 'todos'" />
+      <MetricCard label="Pagas" :value="counts.paga" variant="accent" class="cursor-pointer" @click="filterStatus = 'paga'" />
+      <MetricCard label="Pendentes" :value="counts.pendente" variant="amber" class="cursor-pointer" @click="filterStatus = 'pendente'" />
+      <MetricCard label="Canceladas" :value="counts.cancelada" variant="red" class="cursor-pointer" @click="filterStatus = 'cancelada'" />
+      <MetricCard label="Expiradas" :value="counts.expirada" variant="default" class="cursor-pointer" @click="filterStatus = 'expirada'" />
     </div>
 
-    <!-- Filters -->
     <div class="flex flex-col sm:flex-row gap-3 mb-6">
       <div class="relative flex-1">
-        <Search :size="16" class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
-        <input
-          v-model="search"
-          type="text"
-          placeholder="Buscar por estabelecimento ou gerente..."
-          class="w-full bg-dark-card border border-white/10 rounded-2xl pl-10 pr-4 py-3 text-sm text-white outline-none focus:border-brand-green/40 placeholder:text-zinc-600"
-        />
+        <Search :size="16" class="absolute left-4 top-1/2 -translate-y-1/2 text-[#757575]" />
+        <input v-model="search" type="text" placeholder="Buscar por estabelecimento ou gerente..."
+          class="w-full bg-white border border-[#E0E0E0] rounded pl-10 pr-4 py-3 text-sm text-[#212121] outline-none focus:border-primary/40 placeholder:text-[#757575]" />
       </div>
-      <div class="flex gap-2">
-        <button
-          v-for="opt in [{ v: 'todos', l: 'Todos' }, { v: 'ativo', l: 'Ativas' }, { v: 'expirado', l: 'Expiradas' }, { v: 'desativado', l: 'Desativadas' }]"
-          :key="opt.v"
-          @click="filterStatus = opt.v"
-          :class="filterStatus === opt.v
-            ? 'bg-brand-green text-black border-brand-green'
-            : 'bg-white/5 text-zinc-400 border-white/10 hover:border-white/20'"
-          class="px-4 py-2 rounded-xl border text-xs font-black uppercase tracking-wider transition-all"
-        >
+      <div class="flex gap-2 flex-wrap">
+        <button v-for="opt in [{ v: 'todos', l: 'Todos' }, { v: 'paga', l: 'Pagas' }, { v: 'pendente', l: 'Pendentes' }, { v: 'cancelada', l: 'Canceladas' }]"
+          :key="opt.v" @click="filterStatus = opt.v"
+          :class="filterStatus === opt.v ? 'bg-primary text-white border-primary' : 'bg-gray-50 text-[#757575] border-[#E0E0E0]'"
+          class="px-4 py-2 rounded border text-xs font-black uppercase tracking-wider transition-all">
           {{ opt.l }}
         </button>
       </div>
     </div>
 
-    <!-- Table -->
-    <div class="bg-dark-card border border-white/10 rounded-[2rem] overflow-hidden">
+    <div v-if="loading" class="py-20 text-center text-[#757575]">Carregando...</div>
+
+    <div v-else class="bg-white border border-[#E0E0E0] rounded-xl overflow-hidden">
       <table class="w-full">
         <thead>
-          <tr class="border-b border-white/5 bg-black/20">
-            <th class="text-left px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500">Estabelecimento</th>
-            <th class="text-left px-4 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 hidden md:table-cell">Gerente</th>
-            <th class="text-left px-4 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500">Plano</th>
-            <th class="text-left px-4 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500">Status</th>
-            <th class="text-left px-4 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 hidden lg:table-cell">Vencimento</th>
-            <th class="text-right px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 hidden sm:table-cell">Valor</th>
-            <th class="text-right px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 hidden lg:table-cell">Usuários</th>
+          <tr class="border-b border-[#E0E0E0] bg-gray-100">
+            <th class="text-left px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[#757575]">Estabelecimento</th>
+            <th class="text-left px-4 py-4 text-[10px] font-black uppercase tracking-widest text-[#757575] hidden md:table-cell">Gerente</th>
+            <th class="text-left px-4 py-4 text-[10px] font-black uppercase tracking-widest text-[#757575]">Plano</th>
+            <th class="text-left px-4 py-4 text-[10px] font-black uppercase tracking-widest text-[#757575]">Status</th>
+            <th class="text-left px-4 py-4 text-[10px] font-black uppercase tracking-widest text-[#757575] hidden lg:table-cell">Vencimento</th>
+            <th class="text-right px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[#757575] hidden sm:table-cell">Valor</th>
             <th class="px-4 py-4"></th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-white/5">
-          <tr v-for="sub in filtered" :key="sub.id" class="hover:bg-white/[0.02] transition-colors">
+        <tbody class="divide-y divide-[#E0E0E0]">
+          <tr v-for="sub in filtered" :key="sub.id" class="hover:bg-gray-50 transition-colors">
             <td class="px-6 py-4">
-              <span class="font-bold text-white text-sm">{{ sub.establishment }}</span>
+              <span class="font-bold text-[#212121] text-sm">{{ sub.establishment?.name || '—' }}</span>
             </td>
             <td class="px-4 py-4 hidden md:table-cell">
-              <span class="text-zinc-400 text-sm">{{ sub.manager }}</span>
+              <span class="text-[#757575] text-sm">{{ getManager(sub)?.name || '—' }}</span>
             </td>
             <td class="px-4 py-4">
-              <span
-                class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border"
-                :class="sub.plan === 'anual'
-                  ? 'text-purple-400 bg-purple-500/10 border-purple-500/20'
-                  : 'text-blue-400 bg-blue-500/10 border-blue-500/20'"
-              >
-                {{ sub.plan }}
+              <span class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border text-blue-400 bg-blue-500/10 border-blue-500/20">
+                {{ sub.plan?.name || '—' }}
               </span>
             </td>
             <td class="px-4 py-4">
-              <div
-                class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border"
-                :class="statusConfig(sub.status).bg + ' ' + statusConfig(sub.status).color"
-              >
-                <component :is="statusConfig(sub.status).icon" :size="10" />
-                {{ statusConfig(sub.status).label }}
-              </div>
+              <StatusBadge :status="sub.status" type="subscription" />
             </td>
             <td class="px-4 py-4 hidden lg:table-cell">
-              <div class="flex items-center gap-1.5 text-sm text-zinc-400">
-                <Calendar :size="13" class="text-zinc-600" />
-                {{ formatDate(sub.nextDueDate) }}
+              <div class="flex items-center gap-1.5 text-sm text-[#757575]">
+                <Calendar :size="13" /> {{ formatDate(sub.expirationDate) }}
               </div>
             </td>
             <td class="px-6 py-4 text-right hidden sm:table-cell">
-              <span class="text-sm font-black text-white">
-                {{ sub.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
-              </span>
-              <span class="text-[10px] text-zinc-500 block">/mês</span>
-            </td>
-            <td class="px-6 py-4 text-right hidden lg:table-cell">
-              <div class="flex items-center justify-end gap-1.5 text-zinc-400 text-sm">
-                <Users :size="13" class="text-zinc-600" />
-                {{ sub.users }}
-              </div>
+              <span class="text-sm font-black text-[#212121]">{{ formatCurrency(sub.price || sub.plan?.price) }}</span>
             </td>
             <td class="px-4 py-4">
-              <button
-                @click="openManagerModal(sub)"
-                class="p-2 rounded-xl text-zinc-500 hover:text-brand-green hover:bg-brand-green/10 transition-all"
-                title="Ver dados do gerente"
-              >
+              <button @click="openDetail(sub)" class="p-2 rounded text-[#757575] hover:text-accent hover:bg-primary-dark/10 transition-all" title="Ver detalhes">
                 <UserCircle :size="18" />
               </button>
             </td>
           </tr>
-
-          <tr v-if="filtered.length === 0">
+          <tr v-if="!filtered.length">
             <td colspan="7" class="px-6 py-16 text-center">
-              <CreditCard :size="32" class="mx-auto mb-3 text-zinc-700" />
-              <p class="text-zinc-500 text-sm font-bold">Nenhuma assinatura encontrada</p>
+              <CreditCard :size="32" class="mx-auto mb-3 text-[#757575] opacity-30" />
+              <p class="text-[#757575] text-sm font-bold">Nenhuma assinatura encontrada</p>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-
   </main>
 
-  <!-- Manager contact modal -->
   <Teleport to="body">
     <Transition name="fade">
-      <div v-if="selectedManager" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-        <div class="bg-zinc-900 border border-white/10 w-full max-w-md rounded-[2.5rem] shadow-2xl">
-          <div class="p-8 border-b border-white/5 flex justify-between items-center bg-black/20">
+      <div v-if="selectedSub" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white border border-[#E0E0E0] w-full max-w-lg rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div class="p-6 border-b border-[#E0E0E0] flex justify-between items-center bg-gray-50 sticky top-0">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-brand-green/10 border border-brand-green/20 flex items-center justify-center">
-                <UserCircle :size="20" class="text-brand-green" />
+              <div class="w-10 h-10 rounded bg-accent-light border border-accent/30 flex items-center justify-center">
+                <ClipboardList :size="18" class="text-accent" />
               </div>
               <div>
-                <h2 class="text-lg font-black text-white">Dados do Gerente</h2>
-                <p class="text-xs text-zinc-500">{{ selectedManager.establishment }}</p>
+                <h2 class="text-lg font-black text-[#212121]">Detalhes da Assinatura</h2>
+                <p class="text-xs text-[#757575]">{{ selectedSub.establishment?.name }}</p>
               </div>
             </div>
-            <button @click="closeManagerModal" class="p-2 text-gray-400 hover:text-white transition-colors">
-              <X :size="20" />
-            </button>
+            <button @click="selectedSub = null" class="p-2 text-[#757575] hover:text-[#212121]"><X :size="20" /></button>
           </div>
 
-          <div class="p-8 space-y-4">
-            <div class="flex items-center gap-3 p-4 bg-white/5 rounded-2xl">
-              <UserCircle :size="16" class="text-zinc-400 shrink-0" />
-              <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Nome</p>
-                <p class="text-sm font-bold text-white">{{ selectedManager.manager }}</p>
+          <div class="p-6 space-y-4">
+            <div class="p-4 bg-gray-50 rounded-lg border border-[#E0E0E0]">
+              <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mb-3">Gerente Responsável</p>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <UserCircle :size="15" class="text-[#757575]" />
+                  <span class="text-sm font-bold text-[#212121]">{{ getManager(selectedSub)?.name || '—' }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <Mail :size="15" class="text-[#757575]" />
+                  <span class="text-sm text-[#757575]">{{ getManager(selectedSub)?.email || '—' }}</span>
+                </div>
               </div>
             </div>
 
-            <div class="flex items-center gap-3 p-4 bg-white/5 rounded-2xl">
-              <Mail :size="16" class="text-zinc-400 shrink-0" />
-              <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">E-mail</p>
-                <p class="text-sm font-bold text-white">{{ selectedManager.email || 'Não informado' }}</p>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="p-4 bg-gray-50 rounded-lg border border-[#E0E0E0]">
+                <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mb-2">Status</p>
+                <StatusBadge :status="selectedSub.status" type="subscription" />
+              </div>
+              <div class="p-4 bg-gray-50 rounded-lg border border-[#E0E0E0]">
+                <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mb-2">Plano</p>
+                <span class="text-sm font-black text-[#212121]">{{ selectedSub.plan?.name || '—' }}</span>
               </div>
             </div>
 
-            <div class="flex items-center gap-3 p-4 bg-white/5 rounded-2xl">
-              <Phone :size="16" class="text-zinc-400 shrink-0" />
-              <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Telefone</p>
-                <p class="text-sm font-bold text-white">{{ selectedManager.phone || 'Não informado' }}</p>
+            <div class="p-4 bg-gray-50 rounded-lg border border-[#E0E0E0]">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest">Valor da Assinatura</p>
+                <button v-if="!editingPrice" @click="editingPrice = true; newPrice = String(selectedSub.price || selectedSub.plan?.price || '').replace('.', ',')"
+                  class="text-[10px] font-black text-primary uppercase tracking-wider hover:underline">Editar</button>
+              </div>
+              <div v-if="!editingPrice">
+                <span class="text-2xl font-black text-[#212121]">{{ formatCurrency(selectedSub.price || selectedSub.plan?.price) }}</span>
+                <span class="text-[#757575] text-sm ml-1">/mês</span>
+              </div>
+              <div v-else class="flex gap-2">
+                <div class="relative flex-1">
+                  <DollarSign :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-[#757575]" />
+                  <input :value="newPrice" type="text" inputmode="numeric" placeholder="79,90"
+                    class="w-full bg-white border border-[#E0E0E0] rounded pl-8 pr-3 py-2 text-sm text-[#212121] outline-none focus:border-primary/40"
+                    @input="onNewPriceInput" />
+                </div>
+                <button @click="savePrice" :disabled="savingPrice" class="px-4 py-2 bg-primary text-white font-black rounded text-sm hover:bg-primary-dark disabled:opacity-50">
+                  {{ savingPrice ? '...' : 'Salvar' }}
+                </button>
+                <button @click="editingPrice = false" class="px-3 py-2 text-[#757575] font-bold rounded border border-[#E0E0E0] text-sm hover:bg-gray-50">
+                  <X :size="14" />
+                </button>
               </div>
             </div>
 
-            <div class="flex items-center gap-3 p-4 bg-white/5 rounded-2xl">
-              <CreditCard :size="16" class="text-zinc-400 shrink-0" />
-              <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Plano / Valor</p>
-                <p class="text-sm font-bold text-white capitalize">
-                  {{ selectedManager.plan }} —
-                  {{ selectedManager.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}/mês
-                </p>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="p-4 bg-gray-50 rounded-lg border border-[#E0E0E0]">
+                <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mb-2">Início</p>
+                <span class="text-sm font-bold text-[#212121]">{{ formatDate(selectedSub.initialDate) }}</span>
+              </div>
+              <div class="p-4 bg-gray-50 rounded-lg border border-[#E0E0E0]">
+                <p class="text-[10px] font-black text-[#757575] uppercase tracking-widest mb-2">Vencimento</p>
+                <span class="text-sm font-bold text-[#212121]">{{ formatDate(selectedSub.expirationDate) }}</span>
               </div>
             </div>
 
-            <div class="flex items-center gap-3 p-4 bg-white/5 rounded-2xl">
-              <Calendar :size="16" class="text-zinc-400 shrink-0" />
-              <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Próximo Vencimento</p>
-                <p class="text-sm font-bold text-white">{{ formatDate(selectedManager.nextDueDate) }}</p>
-              </div>
+            <div class="flex gap-3 pt-2">
+              <button v-if="selectedSub.status !== 'Cancelada'" @click="cancelSub(selectedSub)"
+                class="flex-1 py-2.5 rounded-lg border border-amber-300 text-amber-600 font-black text-sm hover:bg-amber-50 transition-colors">
+                Cancelar Assinatura
+              </button>
+              <button @click="deleteSub(selectedSub)"
+                class="flex-1 py-2.5 rounded-lg border border-red-300 text-red-500 font-black text-sm hover:bg-red-50 transition-colors">
+                Deletar
+              </button>
             </div>
-          </div>
-
-          <div class="p-8 pt-0">
-            <button @click="closeManagerModal"
-              class="w-full py-3 rounded-2xl text-zinc-400 font-bold hover:bg-white/5 transition-colors">
-              Fechar
-            </button>
           </div>
         </div>
       </div>

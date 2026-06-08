@@ -27,14 +27,14 @@ const firstName = computed(() => {
   <main class="max-w-7xl mx-auto py-12 px-6">
     <header class="mb-12">
       <div v-if="isAdmin" class="flex items-center gap-2 mb-2">
-        <ShieldAlert :size="16" class="text-brand-green" />
-        <span class="text-xs font-black text-brand-green uppercase tracking-widest">Painel Administrativo</span>
+        <ShieldAlert :size="16" class="text-accent" />
+        <span class="text-xs font-black text-accent uppercase tracking-widest">Painel Administrativo</span>
       </div>
-      <h1 class="text-4xl font-black text-white tracking-tight">
+      <h1 class="text-4xl font-black text-[#212121] tracking-tight">
         {{ isAdmin ? `Bem-vindo, ${firstName}!` : `Bem-vindo, ${firstName}!` }}
       </h1>
-      <p class="text-gray-400 mt-2 text-lg">
-        {{ isAdmin ? 'Gerencie a plataforma PedidoFácil.' : 'O que vamos gerenciar hoje?' }}
+      <p class="text-[#757575] mt-2 text-lg">
+        {{ isAdmin ? 'Gerencie a plataforma PedidoFácil.' : 'Escolha uma área abaixo para começar.' }}
       </p>
     </header>
 
@@ -43,28 +43,23 @@ const firstName = computed(() => {
         v-for="card in dashboardCards"
         :key="card.label"
         @click="router.push(card.route)"
-        class="group border rounded-[2.5rem] p-8 cursor-pointer transition-all duration-500 relative overflow-hidden flex flex-col justify-between h-64 shadow-2xl"
+        class="group border rounded p-8 cursor-pointer transition-all duration-300 relative overflow-hidden flex flex-col justify-between h-64"
         :class="isAdmin
-          ? 'bg-emerald-950/40 border-brand-green/20 hover:border-brand-green/50'
-          : 'bg-dark-card border-white/5 hover:border-brand-green/30'"
+          ? 'bg-emerald-950/40 border-accent/30 hover:border-accent/60 hover:shadow-lg'
+          : 'bg-primary/15 border-primary/20 hover:border-primary/30 hover:shadow-md hover:bg-primary/25'"
       >
-        <div
-          class="absolute -right-10 -top-10 w-40 h-40 blur-[80px] transition-all group-hover:opacity-150"
-          :class="isAdmin ? 'bg-brand-green/8' : 'bg-brand-green/5'"
-        ></div>
-
         <div class="relative z-10">
           <div
-            class="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:text-brand-green transition-all duration-500"
-            :class="isAdmin ? 'bg-brand-green/10 text-brand-green' : 'bg-white/5 group-hover:bg-brand-green/10'"
+            class="w-16 h-16 rounded flex items-center justify-center mb-6 group-hover:scale-110 transition-all duration-300"
+            :class="isAdmin ? 'bg-accent-light text-accent' : 'text-primary'"
           >
-            <component :is="card.icon" :size="32" />
+            <component :is="card.icon" :size="60" />
           </div>
-          <h2 class="text-2xl font-black text-white group-hover:text-brand-green transition-colors">{{ card.label }}</h2>
-          <p class="text-gray-400 mt-2 text-sm leading-relaxed line-clamp-2">{{ card.description }}</p>
+          <h2 class="text-2xl font-black text-[#212121] group-hover:text-primary transition-colors">{{ card.label }}</h2>
+          <p class="text-[#757575] mt-2 text-sm leading-relaxed line-clamp-2">{{ card.description }}</p>
         </div>
 
-        <div class="relative z-10 flex items-center gap-2 text-xs font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-500 text-brand-green">
+        <div class="relative z-10 flex items-center gap-2 text-xs font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-500 text-primary">
           {{ card.callToAction }} <ChevronRight :size="14" />
         </div>
       </div>

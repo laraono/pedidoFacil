@@ -1,0 +1,83 @@
+import { Request, Response } from 'express';
+import { SubscriptionService } from '../service/SubscriptionService';
+import { catchAsync } from '../middleware/error/catchAsync';
+import { MercadoPagoService } from '../service';
+import { auditLog } from '../utils/logger';
+
+export class SubscriptionController {
+    private subscriptionService: SubscriptionService;
+
+    constructor(subscriptionService: SubscriptionService) {
+        this.subscriptionService = subscriptionService
+    }
+
+    listSubscriptions = catchAsync(async (req: Request, res: Response) => {
+        const subscriptions = await this.subscriptionService.listSubscriptions();
+        return res.status(200).send(subscriptions);
+    });
+
+    listSubscriptionsByPlan = catchAsync(async (req, res: Response) => {
+        const subscriptions = await this.subscriptionService.listSubscriptionsByPlan(req.params.planId);
+        return res.status(200).send(subscriptions);
+    });
+
+    getEstablishmentSubscription = catchAsync(async (req, res: Response) => {
+        const subscription = await this.subscriptionService.getEstablishmentSubscription(req.usuario.estabelecimento);
+        return res.status(200).send(subscription);
+    });
+
+    getEstablishmentHistory = catchAsync(async (req, res: Response) => {
+        const subscription = await this.subscriptionService.getEstablishmentHistory(req.usuario.estabelecimento);
+        return res.status(200).send(subscription);
+    });
+
+    getSubscription = catchAsync(async (req, res: Response) => {
+        const subscription = await this.subscriptionService.getSubscription(req.params.subscriptionId);
+        return res.status(200).send(subscription);
+    });
+
+    cancelSubcription = catchAsync(async (req, res: Response) => {
+        const { subscriptionId } = req.params;
+        await this.subscriptionService.cancelSubscription(subscriptionId);
+        auditLog('subscription.cancelled', { subscriptionId, userId: (req as any).usuario?.id });
+        return res.sendStatus(204)
+    });
+
+    processCardInfo  = catchAsync(async (req, res: Response) => {
+        await this.subscriptionService.processCardInfo(req.body, {
+            planId: req.params.planId,
+            establishmentId: req.usuario.estabelecimento
+        });
+        return res.sendStatus(204);
+    });
+
+    restoreSubscription  = catchAsync(async (req, res: Response) => {
+        await this.subscriptionService.restoreSubscription(req.body, {
+            subscriptionId: req.params.subscriptionId,
+            establishmentId: req.usuario.estabelecimento,
+        });
+        auditLog('subscription.restored', { subscriptionId: req.params.subscriptionId, userId: (req as any).usuario?.id });
+        return res.sendStatus(204);
+    });
+
+    updateSubscriptionPrice =  catchAsync(async (req, res: Response) => {
+        const { subscriptionId } = req.params;
+        await this.subscriptionService.updateSubscriptionPrice(subscriptionId, req.body.amount);
+        auditLog('subscription.price_updated', { subscriptionId, amount: req.body.amount, userId: (req as any).usuario?.id });
+        return res.sendStatus(204);
+    });
+
+    changePlan = catchAsync(async (req, res: Response) => {
+        const establishmentId = req.usuario.estabelecimento;
+        const { planId } = req.body;
+        const updated = await this.subscriptionService.changePlan(establishmentId, planId);
+        return res.status(200).json(updated);
+    });
+
+    getAdminMetrics = catchAsync(async (req: Request, res: Response) => {
+        const { startDate, endDate } = req.query as { startDate: string; endDate: string };
+        const metrics = await this.subscriptionService.getAdminMetrics(startDate, endDate);
+        return res.status(200).json(metrics);
+    });
+
+}
