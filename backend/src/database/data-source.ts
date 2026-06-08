@@ -17,6 +17,7 @@ export const AppDataSource = new DataSource({
     database: process.env.DB_NAME || "foodsystem_db",
     synchronize: false,
     logging: false,
+    timezone: 'Z',
     entities: [
         Admin, Category, Comanda, Configuration, Coupon, Establishment,
         Order, Payment, PaymentOrder, Plan, Product, ProductOrder,

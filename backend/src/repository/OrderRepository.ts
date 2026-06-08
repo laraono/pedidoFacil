@@ -21,15 +21,18 @@ export class OrderRepository extends Repository<Order> {
     }
 
     async listOrders(establishmentId: number) {
-        return await this.createQueryBuilder('order')
-            .leftJoinAndSelect('order.comanda', 'comanda')
-            .leftJoinAndSelect('order.user', 'user')
-            .leftJoinAndSelect('order.productOrders', 'po')
-            .leftJoinAndSelect('po.product', 'product')
-            .leftJoinAndSelect('po.productVariation', 'pv')
-            .innerJoin('comanda.establishment', 'establishment')
-            .where('establishment.id = :id', { id: establishmentId })
-            .getMany();
+        return await this.find({
+            where: {
+                comanda: { establishment: { id: establishmentId } }
+            },
+            relations: [
+                'comanda',
+                'user',
+                'productOrders',
+                'productOrders.product',
+                'productOrders.productVariation',
+            ]
+        });
     }
 
     async listOrdersByComanda(comandaId: number) {

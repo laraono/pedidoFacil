@@ -28,8 +28,6 @@ export function useOrderTimer(orderOrGetter, alertMinutes) {
   }
 
   onMounted(() => {
-    const debugVal = getCreatedAt();
-    console.log('[Timer] createdAt recebido:', debugVal, '| tipo:', typeof debugVal, '| válido:', debugVal instanceof Date && !isNaN(debugVal.getTime()));
     update();
     timerInterval = setInterval(update, 1000);
   });
