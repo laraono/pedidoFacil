@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { appConfig } from "../services/apiConfig";
+import { getFullImageUrl } from "../utils/imageUtils";
 
 function isLightColor(hex) {
   if (!hex || !hex.startsWith("#") || hex.length < 7) return true;
@@ -42,10 +43,10 @@ export function ThemeProvider({ children }) {
       if (response.ok) {
         const data = await response.json();
         const config = data.configurations || {};
+        
         const logoPath = config.logo;
-        const logoUrl = logoPath
-          ? `${appConfig.BASE_IP}/uploads/${logoPath}`
-          : null;
+        const logoSource = getFullImageUrl(logoPath);
+        const logoUrl = logoSource ? logoSource.uri : null;
 
         const bgColor = config.backgroundColor || defaultTheme.fundoGeral;
         const cardColor = config.cardsColor || defaultTheme.fundoProdutos;

@@ -6,10 +6,17 @@ const packagerIp = hostUri ? hostUri.split(':')[0] : null;
 
 const DEFAULT_IP = process.env.EXPO_PUBLIC_API_URL || (packagerIp ? `http://${packagerIp}:3000` : 'http://localhost:3000');
 
+const getLocalStackUrl = (ipUrl) => {
+  if (!ipUrl) return 'http://127.0.0.1:4566';
+  const baseUrl = ipUrl.split(':').slice(0, 2).join(':'); 
+  return `${baseUrl}:4566`;
+};
+
 export const appConfig = {
   BASE_IP: DEFAULT_IP,
   API_URL: `${DEFAULT_IP}/api/v1`,
   SOCKET_URL: DEFAULT_IP,
+  LOCALSTACK_URL: getLocalStackUrl(DEFAULT_IP), 
   ESTABLISHMENT_ID: null, 
   selfServiceCode: null,
   isConfigured: false, 
@@ -25,10 +32,12 @@ export const loadAppConfig = async () => {
       appConfig.BASE_IP = DEFAULT_IP;
       appConfig.API_URL = `${DEFAULT_IP}/api/v1`;
       appConfig.SOCKET_URL = DEFAULT_IP;
+      appConfig.LOCALSTACK_URL = getLocalStackUrl(DEFAULT_IP); 
     } else if (savedIp) {
       appConfig.BASE_IP = savedIp;
       appConfig.API_URL = `${savedIp}/api/v1`;
       appConfig.SOCKET_URL = savedIp;
+      appConfig.LOCALSTACK_URL = getLocalStackUrl(savedIp); 
     }
 
     if (savedId) {
@@ -43,7 +52,7 @@ export const loadAppConfig = async () => {
       appConfig.selfServiceCode = savedCode;
     }
 
-    console.log(`[PedidoFácil] 🛰️ Configuração: IP=${appConfig.API_URL} | EstID=${appConfig.ESTABLISHMENT_ID} | Configurado=${appConfig.isConfigured}`);
+    console.log(`[PedidoFácil] 🛰️ Configuração: IP=${appConfig.API_URL} | LocalStack=${appConfig.LOCALSTACK_URL} | EstID=${appConfig.ESTABLISHMENT_ID}`);
     return appConfig.isConfigured;
   } catch (error) {
     console.error('Erro ao carregar configurações:', error);
@@ -65,6 +74,7 @@ export const saveAppConfig = async (ip, establishmentId, selfServiceCode = '') =
     appConfig.BASE_IP = cleanIp;
     appConfig.API_URL = `${cleanIp}/api/v1`;
     appConfig.SOCKET_URL = cleanIp;
+    appConfig.LOCALSTACK_URL = getLocalStackUrl(cleanIp); 
     appConfig.ESTABLISHMENT_ID = parseInt(establishmentId, 10);
     appConfig.selfServiceCode = selfServiceCode;
     appConfig.isConfigured = true; 
