@@ -17,8 +17,6 @@
   const router = useRouter();
   const { formatCurrency, parsedFeatures } = useUtils();
 
-  const FALLBACK_PRICES = { monthly: 79.90, annual: 49.90 };
-
   const plans = ref([]);
 
 
@@ -51,6 +49,11 @@
     router.push("/login");
   };
   const navigateToRegister = () => {
+    router.push("/register");
+  };
+
+  const navigateWithPlan = (plan) => {
+    if (plan?.id) localStorage.setItem('pendingPlanId', String(plan.id));
     router.push("/register");
   };
 
@@ -133,6 +136,7 @@
               >Sobre</a
             >
             <a
+              v-if="plans.length > 0"
               @click.prevent="scrollToSection('planos')"
               href="#planos"
               class="hover:text-accent transition-colors cursor-pointer"
@@ -179,6 +183,7 @@
             </p>
             <div class="flex flex-col lg:flex-row gap-3 w-full lg:w-auto">
               <BaseButton
+                v-if="plans.length > 0"
                 variant="brand"
                 class="py-2 px-5 lg:py-5 lg:px-14 text-xs lg:text-xl shadow-xl shadow-primary/20 hover:-translate-y-1 w-auto"
                 @click="scrollToSection('planos')"
@@ -348,6 +353,7 @@
         </section>
 
         <section
+          v-if="plans.length > 0"
           id="planos"
           class="w-full max-w-[1000px] px-5 lg:px-0 py-24 text-center"
         >
@@ -359,17 +365,17 @@
           <div
             class="flex flex-col lg:flex-row gap-8 justify-center items-stretch"
           >
-            <!-- Plano Mensal -->
             <div
+              v-if="monthlyPlan"
               class="flex-1 bg-white px-8 py-12 rounded border border-[#E0E0E0] flex flex-col items-center hover:border-primary/30 transition-all max-w-md mx-auto w-full hover:shadow-md"
             >
               <h3 class="text-[#212121] text-3xl font-black mb-4">
-                {{ monthlyPlan?.name ?? "Mensal" }}
+                {{ monthlyPlan.name }}
               </h3>
               <div
                 class="text-[#212121] text-5xl lg:text-6xl font-black mb-1 tracking-tighter"
               >
-                {{ formatCurrency(monthlyPlan ? Number(monthlyPlan.price) : FALLBACK_PRICES.monthly) }}<span
+                {{ formatCurrency(Number(monthlyPlan.price)) }}<span
                   class="text-xl font-normal text-[#757575] tracking-normal"
                   >/mês</span
                 >
@@ -377,27 +383,22 @@
               <p class="text-xs text-[#757575] mb-2">cobrado mensalmente</p>
               <div class="w-full h-px bg-[#E0E0E0] my-8"></div>
               <div class="flex flex-col gap-5 mb-10 w-full px-2 text-left">
-                <template v-if="monthlyFeatures.length">
-                  <div
-                    v-for="feat in monthlyFeatures"
-                    :key="feat"
-                    class="flex items-center gap-4 text-[#757575] font-medium"
-                  >
-                    <Check
-                      class="text-primary w-5 h-5 flex-shrink-0"
-                      stroke-width="3"
-                    />
-                    {{ feat }}
-                  </div>
-                </template>
+                <div
+                  v-for="feat in monthlyFeatures"
+                  :key="feat"
+                  class="flex items-center gap-4 text-[#757575] font-medium"
+                >
+                  <Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" />
+                  {{ feat }}
+                </div>
               </div>
-              <BaseButton variant="brand" class="w-full mt-auto" @click="navigateToRegister">
+              <BaseButton variant="brand" class="w-full mt-auto" @click="navigateWithPlan(monthlyPlan)">
                 Contratar Mensal
               </BaseButton>
             </div>
 
-            <!-- Plano Anual -->
             <div
+              v-if="annualPlan"
               class="flex-1 bg-primary-light px-8 py-12 rounded border-2 border-primary/30 flex flex-col items-center hover:border-primary/60 transition-all max-w-md mx-auto w-full hover:shadow-lg relative"
             >
               <div
@@ -406,40 +407,35 @@
                 RECOMENDADO
               </div>
               <h3 class="text-primary text-3xl font-black mb-4">
-                {{ annualPlan?.name ?? "Anual" }}
+                {{ annualPlan.name }}
               </h3>
               <div
                 class="text-[#212121] text-5xl lg:text-6xl font-black mb-1 tracking-tighter"
               >
-                {{ formatCurrency(annualPlan ? monthlyEquivalent(Number(annualPlan.price), 'anual') : FALLBACK_PRICES.annual) }}<span
+                {{ formatCurrency(monthlyEquivalent(Number(annualPlan.price), 'anual')) }}<span
                   class="text-xl font-normal text-[#757575] tracking-normal"
                   >/mês</span
                 >
               </div>
               <p class="text-xs text-primary font-bold mb-2">
                 Preço total anual:
-                {{ formatCurrency(annualPlan ? Number(annualPlan.price) : FALLBACK_PRICES.annual) }}
+                {{ formatCurrency(Number(annualPlan.price)) }}
               </p>
               <p class="text-xs text-[#757575] mb-1">
                 Parcele em até 12× no cartão
               </p>
               <div class="w-full h-px bg-primary/20 my-8"></div>
               <div class="flex flex-col gap-5 mb-10 w-full px-2 text-left">
-                <template v-if="annualFeatures.length">
-                  <div
-                    v-for="feat in annualFeatures"
-                    :key="feat"
-                    class="flex items-center gap-4 text-[#757575] font-medium"
-                  >
-                    <Check
-                      class="text-primary w-5 h-5 flex-shrink-0"
-                      stroke-width="3"
-                    />
-                    {{ feat }}
-                  </div>
-                </template>
+                <div
+                  v-for="feat in annualFeatures"
+                  :key="feat"
+                  class="flex items-center gap-4 text-[#757575] font-medium"
+                >
+                  <Check class="text-primary w-5 h-5 flex-shrink-0" stroke-width="3" />
+                  {{ feat }}
+                </div>
               </div>
-              <BaseButton variant="brand" class="w-full mt-auto" @click="navigateToRegister">
+              <BaseButton variant="brand" class="w-full mt-auto" @click="navigateWithPlan(annualPlan)">
                 Contratar Anual
               </BaseButton>
             </div>

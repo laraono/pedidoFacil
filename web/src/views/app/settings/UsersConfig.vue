@@ -232,7 +232,6 @@ const inactiveColumns = [
       </div>
     </Transition>
 
-    <!-- Ativos -->
     <div v-if="activeTab === 'active'" class="animate-fadeIn">
       <DataTable v-if="users.length" :columns="activeColumns" :data="users" :actions="activeActions">
         <template #cell-status="{ item }">
@@ -275,7 +274,6 @@ const inactiveColumns = [
 
     </div>
 
-    <!-- Desativados -->
     <div v-if="activeTab === 'inactive'" class="animate-fadeIn">
       <DataTable v-if="inactiveUsers.length" :columns="inactiveColumns" :data="inactiveUsers">
         <template #cell-name="{ item }">

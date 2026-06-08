@@ -6,7 +6,7 @@ import {
   ShieldAlert, TrendingUp, DollarSign, Users,
   BarChart3, Download, Calendar, Loader2
 } from 'lucide-vue-next';
-import { PageHeader, MetricCard, StatusBadge } from '@/components/ui';
+import { PageHeader, MetricCard, StatusBadge, EmptyState } from '@/components/ui';
 import { useToast } from '@/composables/useToast';
 
 const subscriptionStore = useSubscriptionStore();
@@ -134,7 +134,6 @@ const handleExport = () => window.print();
     <PageHeader
       title="Relatórios de Assinaturas"
       subtitle="Faturamento e métricas da plataforma"
-      back-to="/app/admin/subscriptions"
       :category-icon="ShieldAlert"
       category-label="Painel Admin"
     >
@@ -256,7 +255,7 @@ const handleExport = () => window.print();
         <span class="ml-auto text-xs text-[#757575] font-bold">apenas ativos</span>
       </div>
 
-      <div class="divide-y divide-white/5">
+      <div v-if="establishmentData.length" class="divide-y divide-white/5">
         <div v-for="est in establishmentData" :key="est.id" class="px-6 py-4 flex items-center gap-4">
           <div class="w-40 shrink-0">
             <p class="text-sm font-bold text-[#212121] truncate">{{ est.establishment }}</p>
@@ -277,6 +276,7 @@ const handleExport = () => window.print();
           <StatusBadge :status="planLabel(est)" type="frequency" />
         </div>
       </div>
+      <EmptyState v-else :icon="Users" message="Nenhum estabelecimento ativo" class="py-12" />
     </div>
 
   </main>

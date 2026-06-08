@@ -1,98 +1,208 @@
-# PedidoFácil 
-#### **Inclusão digital para MPEs do setor alimentício.**
+# PedidoFácil
+#### Inclusão digital para MPEs do setor alimentício.
 
-O **PedidoFácil** é um ecossistema integrado para gestão de restaurantes e pequenos comércios. O objetivo é oferecer uma ferramenta flexível, de baixo custo e com suporte a autoatendimento, facilitando a transição digital de microempreendedores.
+O **PedidoFácil** é um sistema integrado para gestão de restaurantes e pequenos comércios. Oferece controle de pedidos em tempo real, cardápio digital com autoatendimento, gestão de caixa e comandas, relatórios e controle de assinaturas — com foco em ser acessível para microempreendedores.
 
 Este projeto foi desenvolvido como requisito para a obtenção do título de Tecnólogo em **Análise e Desenvolvimento de Sistemas** na **Universidade Federal do Paraná (UFPR)**.
 
 **Orientador:** Razer Anthom Nizer Rojas Montaño
 
 **Autores:**
-* Gabriela Morais Gandine
-* João Pedro Abreu
-* Juliano da Silva Filho
-* Lara Ono Glufke Reis
-
-
----
-
-## 🛠️ Stack
-
-
-* **Frontend Web:** Vue.js 3 + TypeScript + Socket.io
-* **Mobile:** React Native
-* **Backend:** Node.js + Express + Zod
-* **Banco de Dados:** MySQL
-* **Infraestrutura:** Docker + Docker Compose + LocalStack (AWS local)
-* **Integrações:** MercadoPago (Pagamentos) e
+- Gabriela Morais Gandine
+- João Pedro Abreu
+- Juliano da Silva Filho
+- Lara Ono Glufke Reis
 
 ---
 
-## ✨ Funcionalidades Principais
+## Stack
 
-### 🌐 Landing Page & Onboarding
-* Exploração de funcionalidades e planos.
-* Fluxo de cadastro de gerente e estabelecimento com onboarding guiado.
-
-### 💼 Gestão Administrativa (Gerente/Estabelecimento)
-* **Controle de Acesso:** Gestão de cargos flexíveis e personalizáveis com permissões granulares.
-* **Catálogo:** Cadastro e gestão de produtos e categorias.
-* **Visual:** Personalização de dados do estabelecimento e identidade visual do cardápio.
-* **Assinaturas:** Histórico de pagamentos e migração de planos via integração com **MercadoPago**.
-
-### 🍽️ Operacional
-* **Módulo Cozinha:** Visualização e controle de pedidos em tempo real.
-* **Módulo Garçom:** Interface para adição de produtos e atendimento.
-* **Comandas:** Gestão de comandas ativas e histórico de pagamentos.
-* **Autoatendimento:** Suporte para pedidos via aplicativo móvel.
-
-### 🧾 Fiscal e Relatórios
-* **Notas Fiscais:** Emissão e gestão via API **FocusNFE**.
-* **Dashboard:** Gráficos de performance e vendas.
-
-### 🔐 Administração do Sistema (Super Admin)
-* Controle de assinaturas vigentes, gestão de usuários administradores e monitoramento de gerentes.
-
+| Camada | Tecnologias |
+|---|---|
+| Frontend Web | Vue 3 (Composition API) · TypeScript · Vite · Tailwind CSS · Socket.io |
+| Mobile | React Native · Expo |
+| Backend | Node.js · Express · TypeORM · Zod |
+| Banco de Dados | MySQL |
+| Infraestrutura | Docker · Docker Compose · LocalStack (AWS local — upload de imagens) |
+| Integrações | MercadoPago (pagamentos e assinaturas) |
 
 ---
 
-## 🚀 Como Executar
+## Funcionalidades
+
+### Landing Page & Onboarding
+- Apresentação de planos e funcionalidades.
+- Fluxo guiado de cadastro de gerente e estabelecimento.
+
+### Administração do Sistema (Super Admin)
+- Gestão de estabelecimentos, administradores e assinaturas vigentes.
+- Criação e edição de planos disponíveis.
+- Relatórios e métricas de desempenho.
+
+### Gestão do Estabelecimento (Gerente)
+- Cadastro e edição de produtos e categorias.
+- Configuração de cargos e acessos por funcionário.
+- Criação e controle de cupons de desconto.
+- Histórico de pagamentos e administração da assinatura da plataforma.
+- Configurações de dados e identidade visual do cardápio.
+- Métricas de vendas, produtos e operação.
+
+### Operação
+- **Cardápio Digital:** pedidos via web ou aplicativo mobile (autoatendimento).
+- **Módulo Cozinha:** fila de pedidos em tempo real.
+- **Módulo Caixa:** gestão de comandas ativas, fluxo de pagamento e histórico de comandas fechadas.
+
+---
+
+## Como Executar
 
 ### Pré-requisitos
-* Docker e Docker Compose instalados.
-* Node.js (versão LTS).
 
-### Configuração Inicial
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/laraono/pedidofacil.git
+- [Docker](https://docs.docker.com/get-docker/) instalado e rodando.
+- [Node.js LTS](https://nodejs.org/) instalado.
 
-Configure o arquivo .env na raiz do projeto com as credenciais de banco de dados e chaves das APIs (JWT, MercadoPago).
+### 1. Clone o repositório
 
-# Instalação
+```bash
+git clone https://github.com/laraono/pedidofacil.git
+cd pedidofacil
+```
 
-Utilize os scripts automatizados para subir o ambiente:
+### 2. Configure o ambiente
 
-## Instala as dependências e prepara o ambiente
+Copie os arquivos de exemplo:
 
-./install
+```bash
+cp backend/.env.example backend/.env
+cp web/.env.example web/.env
+```
 
-## Inicializa os containers e o sistema
-./up
+Preencha as credenciais do banco de dados em `backend/.env`. O `JWT_SECRET` é gerado automaticamente pelo script de instalação — não é necessário preencher manualmente.
 
-## 📖 Fluxo de Primeiro Acesso
+As demais variáveis (`MERCADOPAGO_*`, `LOCALSTACK_TOKEN`, `MAIL_*`) podem ser obtidas pelas instruções da 2.1, ou, opocionalmente, devido a complexidade das configurações, o `.env.example` traz credenciais de teste criadas para este projeto, que podem ser usadas para evitar os tutoriais de configuração abaixo.
 
-* Acesse o [login](http://localhost:5173/login) do admin criado no ./install. Se tiver esquecido a senha, é possível recadastrar rodando o comando novamente. Crie ao menos 2 planos.
+### 2.1 Integrações
 
-* Preencha o Onboarding com os dados do estabelecimento. 
+#### MercadoPago (assinaturas e pagamentos)
 
-* Utilize a opção de Cargos Básicos para configurar cargos iniciais.
+Necessário para o fluxo completo de planos e assinaturas.
 
-* Cadastre seus produtos e comece a operar pelo módulo de Cardápio.
+##### Criando as contas de teste
 
+1. Acesse a [documentação oficial de contas de teste](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/accounts) e crie **dois** usuários de teste: um **vendedor** e um **consumidor**.
+2. Anote o usuário e a senha de ambos — você vai precisar deles para logar.
 
-#### Obrigada! :-D
+##### Obtendo as credenciais
+
+3. Acesse o MercadoPago **logado como a conta do vendedor de teste**.
+4. Vá em **Suas integrações** e crie uma nova integração para essa conta.
+5. Copie as credenciais e preencha em `backend/.env` e `web/.env`:
+
+| Variável | Onde preencher |
+|---|---|
+| `MERCADOPAGO_ACCESS_TOKEN_ASSINATURA` | `backend/.env` |
+| `MERCADOPAGO_USER_ID` | `backend/.env` |
+| `VITE_MP_PUBLIC_KEY` | `web/.env` |
+
+A documentação oficial de credenciais está em: https://www.mercadopago.com.br/developers/pt/docs/subscriptions/additional-content/your-integrations/credentials
+
+##### Testando pagamentos
+
+6. Para testar o fluxo de assinatura, use os [cartões de teste oficiais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards) e faça o pagamento com as credenciais de comprador.
+   > O e-mail do consumidor a utilizar nas etapas do Mercado Pago segue o padrão `test_user_<ADICIONE O USER ID>@testuser.com` e será necessário no fluxo de cadastro na etapa de assinatura.
+7. (Opcional) Planos criados e assinaturas podem ser consultados na conta principal do MercadoPago (conta real, não a de teste).
+
+##### Configurando Webhooks (opcional)
+
+Os webhooks permitem que o MercadoPago notifique o sistema sobre renovações, cancelamentos e alterações em assinaturas.
+
+Para receber webhooks localmente, é necessário expor o backend com uma URL pública. Recomenda-se o uso do [ngrok](https://ngrok.com/download/linux):
+
+```bash
+# Após instalar e autenticar o ngrok:
+ngrok http 3000
+```
+
+O ngrok gerará uma URL pública (ex: `https://xxxx.ngrok.io`). Configure-a em `backend/.env`:
+
+```
+MP_BACK_URL=https://xxxx.ngrok.io
+```
+
+Em seguida, registre essa URL nas configurações de webhook da sua integração no MercadoPago, habilitando os eventos de **pagamentos**, **planos** e **assinaturas**. O tutorial oficial está na [etapa 1.4 desta documentação](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/notifications/webhooks#configuraoviasuasintegraes).
+
+Para simular notificações sem aguardar eventos reais, é possível usar a opção de "Simular notificação" no painel do MercadoPago, ou cancelar diretamente uma assinatura na conta do consumidor de teste — a notificação aparecerá nos logs do backend.
 
 ---
 
-_Projeto desenvolvido como TCC para o curso de Análise e Desenvolvimento de Sistemas - UFPR._
+#### LocalStack (upload de imagens)
+
+Simula a AWS localmente para armazenamento de imagens de produtos.
+
+1. Crie uma conta gratuita em [localstack.cloud](https://localstack.cloud/pricing).
+2. Obtenha seu token pessoal no [dashboard](https://app.localstack.cloud/getting-started).
+3. Configure em `backend/.env`:
+
+```
+LOCALSTACK_TOKEN=seu_token_aqui
+```
+
+---
+
+#### E-mail (recuperação de senha)
+
+Necessário apenas para testar o fluxo de "esqueci minha senha". Use as credenciais SMTP do Gmail em `backend/.env`:
+
+```
+MAIL_USER=seu_email@gmail.com
+MAIL_PASS=sua_senha_de_app
+```
+
+Para obter a senha de app do Gmail, consulte o [tutorial da HostGator](https://www.hostgator.com.br/blog/como-usar-o-servidor-smtp-do-google/) (guia prático) ou a [documentação oficial do Google](https://knowledge.workspace.google.com/admin/gmail/advanced/route-outgoing-smtp-relay-messages-through-google?hl=pt-br) (oficial, porém voltada ao Google Workspace).
+
+---
+
+### 3. Instale e prepare o ambiente
+
+```bash
+./install.sh
+```
+
+O script irá:
+1. Verificar Docker e Node.js.
+2. Instalar dependências do backend, web e mobile.
+3. Subir o banco de dados via Docker e executar as migrations.
+4. Gerar o `JWT_SECRET` automaticamente.
+5. Criar seu primeiro acesso de administrador (nome, e-mail e senha).
+
+### 4. Inicie o sistema
+
+```bash
+./up.sh
+```
+
+Acesse no navegador: **http://localhost:5173**
+
+O QR code do Expo (mobile) aparecerá no terminal — escaneie com o app **Expo Go**.
+
+Logs ficam em `logs/backend.log`, `logs/web.log` e `logs/mobile.log`.
+
+---
+
+## Primeiro Acesso
+
+1. Acesse `http://localhost:5173/login` e entre com o e-mail e senha criados no `./install.sh`.
+2. Acesse o painel **Admin** e crie ao menos 2 planos antes de continuar.
+3. Faça logout e acesse a landing page. Clique em um dos planos para iniciar o cadastro de um gerente e preencha o onboarding com dados do estabelecimento.
+   > Para o onboarding, é possível usar dados gerados pelos geradores de [CNPJ](https://www.4devs.com.br/gerador_de_cnpj), [CPF](https://www.4devs.com.br/gerador_de_cpf) e [CEP](https://www.4devs.com.br/gerador_de_cep) para testes.
+   
+   - Para a etapa 4, de assinatura, use os [cartões de teste oficiais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards) e faça o pagamento **com o e-mail da conta do consumidor de teste** obtida na etapa 2.1, seção do Mercado Pago, ou disponibilizada a seguir: 
+   
+      - Planos criados (vendedor) e assinaturas (consumidor) podem ser consultados nas suas respectivas contas do MercadoPago.
+   
+4. Use a opção **Cargos Básicos** para configurar os cargos iniciais.
+5. Cadastre produtos e comece a operar pelo **Cardápio**.
+
+---
+
+_Projeto desenvolvido como TCC para o curso de Análise e Desenvolvimento de Sistemas — UFPR._

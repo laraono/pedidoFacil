@@ -6,7 +6,10 @@ import { useAuthStore } from "@/stores/auth";
 import { useToast } from "@/composables/useToast";
 import { useReceipt } from "@/composables/useReceipt";
 import { request } from "@/services/api";
-import { initCashierSocket, destroyCashierSocket } from "@/stores/cashierSocket";
+import {
+  initCashierSocket,
+  destroyCashierSocket,
+} from "@/stores/cashierSocket";
 import { getSocket } from "@/services/socket";
 import localStorageService from "@/services/localStorageService";
 
@@ -16,7 +19,6 @@ export function useCashier() {
   const kitchenStore = useKitchenStore();
   const authStore = useAuthStore();
   const { showToast } = useToast();
-  const { emitReceipt } = useReceipt();
 
   const comandaUnitLabel = localStorageService.getComandaUnitLabel() || "Mesa";
 
@@ -69,7 +71,9 @@ export function useCashier() {
         }
       });
       socket.on("order_cancelled", (data: any) => {
-        const order = kitchenStore.orders.find((o: any) => o.id === data.orderId);
+        const order = kitchenStore.orders.find(
+          (o: any) => o.id === data.orderId,
+        );
         if (order) (order as any).status = "cancelled";
       });
     }
@@ -84,7 +88,10 @@ export function useCashier() {
     try {
       return (
         JSON.parse(localStorage.getItem("paymentMethods") || "null") || [
-          "Dinheiro", "Cartão Débito", "Cartão Crédito", "PIX",
+          "Dinheiro",
+          "Cartão Débito",
+          "Cartão Crédito",
+          "PIX",
         ]
       );
     } catch {
@@ -96,26 +103,39 @@ export function useCashier() {
     if (!selectedComanda.value) return [];
     return selectedComanda.value.orders
       .map((order: any) => {
-        const kitchenOrder = kitchenStore.orders.find((o: any) => o.id === order.id);
+        const kitchenOrder = kitchenStore.orders.find(
+          (o: any) => o.id === order.id,
+        );
         return {
           ...order,
           status: kitchenOrder
             ? (kitchenOrder as any).status
-            : BACKEND_TO_LOCAL_STATUS[order.status] || order.status || "pending",
+            : BACKEND_TO_LOCAL_STATUS[order.status] ||
+              order.status ||
+              "pending",
         };
       })
-      .filter((o: any) => !['cancelled', 'Cancelado', 'CANCELADO', 'finished', 'FINALIZADO'].includes(o.status));
+      .filter(
+        (o: any) =>
+          ![
+            "cancelled",
+            "Cancelado",
+            "CANCELADO",
+            "finished",
+            "FINALIZADO",
+          ].includes(o.status),
+      );
   });
 
   function openDetails(comanda: any) {
     selectedComanda.value = comanda;
     showDetails.value = true;
-    
+
     activeCoupon.value = comanda.coupon || null;
     discountType.value = comanda.discountType || null;
     discountValue.value = comanda.discountValue || null;
   }
-  
+
   function closeDetails() {
     showDetails.value = false;
     selectedComanda.value = null;
@@ -126,18 +146,28 @@ export function useCashier() {
 
   const manualCancelTargetId = ref<number | null>(null);
   const showCancelComandaModal = ref(false);
-  const openManualCancel = (id: number) => { manualCancelTargetId.value = id; };
-  const dismissManualCancel = () => { manualCancelTargetId.value = null; };
+  const openManualCancel = (id: number) => {
+    manualCancelTargetId.value = id;
+  };
+  const dismissManualCancel = () => {
+    manualCancelTargetId.value = null;
+  };
 
   const confirmManualCancel = async (reason: string) => {
     if (!reason || !reason.trim()) return;
     try {
-      await request(`/commands/${selectedComanda.value.id}/orders/${manualCancelTargetId.value}/cancel`, { 
-        method: "POST", body: { cancellationDescription: reason } as any 
-      });
-      manualCancelTargetId.value = null; 
+      await request(
+        `/commands/${selectedComanda.value.id}/orders/${manualCancelTargetId.value}/cancel`,
+        {
+          method: "POST",
+          body: { cancellationDescription: reason } as any,
+        },
+      );
+      manualCancelTargetId.value = null;
       showToast("Cancelamento solicitado!", "success");
-    } catch (error) { showToast("Erro ao cancelar.", "error"); }
+    } catch (error) {
+      showToast("Erro ao cancelar.", "error");
+    }
   };
 
   const confirmCancelComanda = async (reason: string) => {
@@ -150,21 +180,24 @@ export function useCashier() {
       showCancelComandaModal.value = false;
       await request(`/commands/${comandaId}/cancel`, {
         method: "POST",
-        body: { reason: reason, userId: Number(authStore.user?.id || 1) } as any,
+        body: {
+          reason: reason,
+          userId: Number(authStore.user?.id || 1),
+        } as any,
       });
 
-      closedComandaStore.addClosedComanda({ 
-        ...comandaToCancel, 
-        closedAt: new Date().toISOString(), 
-        status: "CANCELADO", 
-        cancelReason: reason 
+      closedComandaStore.addClosedComanda({
+        ...comandaToCancel,
+        closedAt: new Date().toISOString(),
+        status: "CANCELADO",
+        cancelReason: reason,
       });
-      
+
       comandaStore.removeComanda(comandaId);
-      closeDetails(); 
+      closeDetails();
       showToast("Comanda cancelada!", "success");
-    } catch (error) { 
-      showToast("Erro ao cancelar a comanda.", "error"); 
+    } catch (error) {
+      showToast("Erro ao cancelar a comanda.", "error");
     }
   };
 
@@ -179,17 +212,21 @@ export function useCashier() {
 
   function handleFinalizePayload(payload: any) {
     activeCheckout.value = payload;
-    
+
     activeCoupon.value = payload.appliedCoupon || null;
     discountType.value = payload.discountType || null;
     discountValue.value = payload.discountValue || null;
 
     if (payload.hasPreparing) {
-      rulesModalMessage.value = "Existem pedidos em preparo. Serão cobrados mesmo assim. Continuar?";
-      pendingCancel.value = false; showRulesModal.value = true;
+      rulesModalMessage.value =
+        "Existem pedidos em preparo. Serão cobrados mesmo assim. Continuar?";
+      pendingCancel.value = false;
+      showRulesModal.value = true;
     } else if (payload.hasPending) {
-      rulesModalMessage.value = "Existem pedidos aguardando. Para cancelá-los, informe o motivo.";
-      pendingCancel.value = true; showRulesModal.value = true;
+      rulesModalMessage.value =
+        "Existem pedidos aguardando. Para cancelá-los, informe o motivo.";
+      pendingCancel.value = true;
+      showRulesModal.value = true;
     } else {
       startPaymentFlow();
     }
@@ -197,35 +234,44 @@ export function useCashier() {
 
   const confirmRules = async (reason: string | null) => {
     if (pendingCancel.value && reason) {
-      const pendingOrders = ordersWithStatus.value.filter((o: any) => o.status === "pending");
+      const pendingOrders = ordersWithStatus.value.filter(
+        (o: any) => o.status === "pending",
+      );
       try {
         for (const order of pendingOrders) {
-          await request(`/commands/${selectedComanda.value.id}/orders/${order.id}/cancel`, { 
-            method: "POST", body: { cancellationDescription: reason } as any 
-          });
+          await request(
+            `/commands/${selectedComanda.value.id}/orders/${order.id}/cancel`,
+            {
+              method: "POST",
+              body: { cancellationDescription: reason } as any,
+            },
+          );
         }
       } catch (e) {
         showToast("Erro ao cancelar pedidos pendentes.", "error");
-        return; 
+        return;
       }
     }
-    showRulesModal.value = false; 
+    showRulesModal.value = false;
     startPaymentFlow();
   };
 
   function startPaymentFlow() {
     const checkout = activeCheckout.value;
     if (!checkout) return;
-    
+
     pendingPayments.value = checkout.paymentSplits
       .filter((m: any) => m.amount > 0)
       .map((p: any) => ({ ...p, _success: false }));
-      
-    paymentFlowActive.value = true; 
+
+    paymentFlowActive.value = true;
     showDetails.value = false;
   }
-  
-  function cancelPaymentFlow() { paymentFlowActive.value = false; showDetails.value = true; }
+
+  function cancelPaymentFlow() {
+    paymentFlowActive.value = false;
+    showDetails.value = true;
+  }
 
   async function finishPaymentFlow() {
     const checkout = activeCheckout.value;
@@ -233,7 +279,7 @@ export function useCashier() {
 
     try {
       const index = pendingPayments.value.findIndex((p: any) => !p._success);
-      if (index === -1) return; 
+      if (index === -1) return;
 
       const payment = pendingPayments.value[index];
       const isLast = index === pendingPayments.value.length - 1;
@@ -242,11 +288,13 @@ export function useCashier() {
         method: "POST",
         body: {
           payment: { type: payment.type, amount: Number(payment.amount) },
-          selectedOrderIds: checkout.selectedOrderIds ? checkout.selectedOrderIds.map(Number) : [],
+          selectedOrderIds: checkout.selectedOrderIds
+            ? checkout.selectedOrderIds.map(Number)
+            : [],
           isLastPayment: isLast,
           discountType: discountType.value,
           discountValue: discountValue.value,
-          couponId: activeCoupon.value?.id || null
+          couponId: activeCoupon.value?.id || null,
         } as any,
       });
 
@@ -258,7 +306,10 @@ export function useCashier() {
         closeDetails();
         showToast("Comanda paga com sucesso!", "success");
       } else {
-        showToast(`Pagamento ${index + 1} aprovado! Aguardando o próximo.`, "success");
+        showToast(
+          `Pagamento ${index + 1} aprovado! Aguardando o próximo.`,
+          "success",
+        );
       }
     } catch (error: any) {
       showToast(error.response?.data?.message || "Erro no pagamento.", "error");
@@ -268,12 +319,33 @@ export function useCashier() {
   }
 
   return {
-    comandaUnitLabel, comandaStore, kitchenStore, enabledPaymentMethods,
-    selectedComanda, showDetails, openDetails, closeDetails, ordersWithStatus,
-    manualCancelTargetId, showCancelComandaModal, openManualCancel, dismissManualCancel, 
-    confirmManualCancel, confirmCancelComanda, showRulesModal, pendingCancel, 
-    rulesModalMessage, confirmRules, paymentFlowActive, pendingPayments, 
-    isProcessingPayment, cancelPaymentFlow, finishPaymentFlow, handleFinalizePayload,
-    activeCoupon, discountType, discountValue
+    comandaUnitLabel,
+    comandaStore,
+    kitchenStore,
+    enabledPaymentMethods,
+    selectedComanda,
+    showDetails,
+    openDetails,
+    closeDetails,
+    ordersWithStatus,
+    manualCancelTargetId,
+    showCancelComandaModal,
+    openManualCancel,
+    dismissManualCancel,
+    confirmManualCancel,
+    confirmCancelComanda,
+    showRulesModal,
+    pendingCancel,
+    rulesModalMessage,
+    confirmRules,
+    paymentFlowActive,
+    pendingPayments,
+    isProcessingPayment,
+    cancelPaymentFlow,
+    finishPaymentFlow,
+    handleFinalizePayload,
+    activeCoupon,
+    discountType,
+    discountValue,
   };
 }

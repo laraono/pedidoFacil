@@ -102,7 +102,6 @@ function askDelete(user) {
     <PageHeader
       title="Usuários Admin"
       subtitle="Gerenciar contas com acesso ao painel administrativo"
-      back-to="/app/admin/subscriptions"
       :category-icon="ShieldAlert"
       category-label="Painel Admin"
     >

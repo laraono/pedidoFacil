@@ -4,7 +4,7 @@ import { AppError } from "../middleware";
 import { PlanRepository } from "../repository";
 import { MercadoPagoService } from "./MercadoPagoService";
 import { SubscriptionService } from "./SubscriptionService";
-import { Plan } from "../database";
+import { Plan, Subscription } from "../database";
 import { SubscriptionStatus } from "../enum";
 
 export class PlanService {
@@ -17,6 +17,15 @@ export class PlanService {
     ) {}
 
     async createPlan(params: CreatePlanParams) {
+        const existing = await this.planRepository.listPlans();
+        if (existing.length >= 2) {
+            throw new AppError('Limite de 2 planos atingido. Remova um plano antes de criar outro.', 400);
+        }
+        const frequencyConflict = existing.find(p => p.frequency === params.frequency);
+        if (frequencyConflict) {
+            throw new AppError(`Já existe um plano ${params.frequency}. Remova-o antes de criar outro.`, 400);
+        }
+
         return await this.dataSource.transaction(async (transactionalEntityManager) => {
             const localRepositoryParams: CreatePlan = {
                 name: params.name,
@@ -67,6 +76,7 @@ export class PlanService {
             await this.subscriptionService.cancelSubscription(subscription.id)
         }
 
+        await this.dataSource.getRepository(Subscription).delete({ plan: { id: planId } })
         await this.planRepository.deletePlan(planId)
     }
 

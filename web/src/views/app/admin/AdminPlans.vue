@@ -130,12 +130,11 @@ function onPriceInput(e: Event) {
     <PageHeader
       title="Planos"
       subtitle="CRUD de planos — máximo de 2 planos ativos"
-      back-to="/app/admin/subscriptions"
       :category-icon="ShieldAlert"
       category-label="Painel Admin"
     >
       <template #actions>
-        <BaseButton variant="primary" :icon="Plus" @click="openCreate">
+        <BaseButton variant="primary" :icon="Plus" @click="openCreate" :disabled="plans.length >= 2">
           Novo Plano
         </BaseButton>
       </template>

@@ -18,6 +18,7 @@ import { SubscriptionRepository } from './SubscriptionRepository';
 import { RegisterRepository } from './RegisterRepository';
 import { MetricsRepository } from './MetricsRepository';
 import { SubscriptionPaymentRepository } from './SubscriptionPaymentRepository';
+import { AdminSubscriptionMetricsRepository } from './AdminSubscriptionMetricsRepository';
 
 const categoryRepository = new CategoryRepository(AppDataSource);
 const metricsRepository = new MetricsRepository(AppDataSource);
@@ -39,7 +40,8 @@ const paymentRepository = new PaymentRepository(AppDataSource);
 const planRepository = new PlanRepository(AppDataSource)
 const subscriptionRepository = new SubscriptionRepository(AppDataSource)
 const registerRepository = new RegisterRepository(AppDataSource)
-const subscriptionPaymentRepository = new SubscriptionPaymentRepository(AppDataSource)
+const subscriptionPaymentRepository = new SubscriptionPaymentRepository(AppDataSource);
+const adminSubscriptionMetricsRepository = new AdminSubscriptionMetricsRepository(AppDataSource);
 
 export {
     categoryRepository,
@@ -60,7 +62,8 @@ export {
     planRepository,
     subscriptionRepository,
     registerRepository,
-    subscriptionPaymentRepository
+    subscriptionPaymentRepository,
+    adminSubscriptionMetricsRepository,
 };
 
 export {
@@ -81,5 +84,6 @@ export {
     PlanRepository,
     SubscriptionRepository,
     RegisterRepository,
-    SubscriptionPaymentRepository
+    SubscriptionPaymentRepository,
+    AdminSubscriptionMetricsRepository,
 };

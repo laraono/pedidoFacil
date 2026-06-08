@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref } from "vue";
 
 export interface ValidationRule {
   validator: (value: unknown) => boolean;
@@ -33,7 +33,7 @@ export function useFormValidation(rules: ValidationRules = {}) {
 
   const validateAll = (form: Record<string, unknown>): boolean => {
     let isValid = true;
-    Object.keys(rules).forEach(field => {
+    Object.keys(rules).forEach((field) => {
       if (!validateField(field, form[field])) {
         isValid = false;
       }
@@ -46,6 +46,6 @@ export function useFormValidation(rules: ValidationRules = {}) {
     touched,
     validateField,
     touchField,
-    validateAll
+    validateAll,
   };
 }

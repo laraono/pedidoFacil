@@ -8,7 +8,6 @@ import { BaseButton, BaseInput } from '@/components/ui'
 
 const { formatCurrency, parsedFeatures } = useUtils()
 
-// Estado no window — sobrevive a HMR (re-avaliação de módulo) e a remounts
 const WIN = window as any
 if (!WIN.__mpState) WIN.__mpState = { mp: null as any, cardForm: null as any, lastUnmountAt: 0 }
 
@@ -18,8 +17,6 @@ async function getOrCreateMp(): Promise<any> {
   WIN.__mpState.mp = new WIN.MercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY, { locale: 'pt-BR' })
   return WIN.__mpState.mp
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
 
 const props = defineProps<{ isSubmitting: boolean; payerEmail: string }>()
 const emit = defineEmits<{
@@ -38,7 +35,6 @@ function isAnnual(plan: any) {
 }
 
 const initCardForm = async () => {
-  // Garante que o SDK teve tempo de limpar os contextos do unmount anterior
   const elapsed = Date.now() - WIN.__mpState.lastUnmountAt
   if (elapsed < 500) {
     await new Promise(resolve => setTimeout(resolve, 500 - elapsed))
@@ -118,10 +114,16 @@ const goBack = () => {
   error.value = null
 }
 
-planApi.list().then(data => { plans.value = data })
+planApi.list().then(async data => {
+  plans.value = data
+  const pendingId = localStorage.getItem('pendingPlanId')
+  if (pendingId) {
+    localStorage.removeItem('pendingPlanId')
+    const match = data.find((p: any) => String(p.id) === pendingId)
+    if (match) await selectPlan(match)
+  }
+})
 
-// onBeforeUnmount garante que o DOM ainda existe quando unmount() é chamado,
-// permitindo que o SDK remova os iframes e limpe os contextos corretamente.
 onBeforeUnmount(() => {
   try { WIN.__mpState.cardForm?.unmount() } catch {}
   WIN.__mpState.cardForm = null
@@ -136,7 +138,6 @@ onBeforeUnmount(() => {
       <p class="text-[#757575] text-sm">Simples, transparente e sem surpresas.</p>
     </div>
 
-    <!-- Seleção de plano -->
     <div v-show="!showPayment" class="flex flex-col gap-4">
       <div
         v-for="plan in plans"
@@ -171,7 +172,6 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Formulário de pagamento — sempre no DOM para o SDK do MP não perder os elementos -->
     <div v-show="showPayment">
       <BaseButton
         variant="ghost"
@@ -230,7 +230,6 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <!-- issuer e installments são exigidos pelo SDK mas ocultos pois são irrelevantes para assinaturas -->
           <select id="mp-issuer" class="hidden"></select>
           <select id="mp-installments" class="hidden"></select>
 

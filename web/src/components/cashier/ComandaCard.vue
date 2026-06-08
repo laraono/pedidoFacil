@@ -33,90 +33,59 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
-import { Receipt } from "lucide-vue-next";
-import { useUtils } from "@/composables/useUtils";
+  import { computed } from "vue";
+  import { Receipt } from "lucide-vue-next";
+  import { useUtils } from "@/composables/useUtils";
+  import { isOrderActive } from "@/utils/checkoutUtils";
 
-const { formatCurrency } = useUtils();
+  const { formatCurrency } = useUtils();
 
-const props = defineProps({
-  comanda: { type: Object, required: true },
-  comandaUnitLabel: { type: String, default: "Mesa" },
-  kitchenOrders: { type: Array, default: () => [] },
-});
+  const props = defineProps({
+    comanda: { type: Object, required: true },
+    comandaUnitLabel: { type: String, default: "Mesa" },
+    kitchenOrders: { type: Array, default: () => [] },
+  });
 
-defineEmits(["click"]);
+  defineEmits(["click"]);
 
-const BACKEND_TO_LOCAL_STATUS = {
-  Aguardando_Preparo: "pending",
-  Em_Preparo: "preparing",
-  Pronto: "ready",
-  Finalizado: "finished",
-  Cancelado: "cancelled",
-};
-
-const typeLabel = computed(() =>
-  props.comanda.isAutoatendimento ? "Autoatendimento" : props.comandaUnitLabel,
-);
-
-const mainLabel = computed(() => {
-  if (props.comanda.customerName) return props.comanda.customerName;
-  if (props.comanda.isAutoatendimento && props.comanda.description)
-    return props.comanda.description;
-  return (
-    props.comanda.label || props.comanda.description || `#${props.comanda.id}`
+  const typeLabel = computed(() =>
+    props.comanda.isAutoatendimento
+      ? "Autoatendimento"
+      : props.comandaUnitLabel,
   );
-});
 
-const remainingTotal = computed(() => {
-  if (!props.comanda.orders) return 0;
-  let total = 0;
+  const mainLabel = computed(() => {
+    if (props.comanda.customerName) return props.comanda.customerName;
+    if (props.comanda.isAutoatendimento && props.comanda.description)
+      return props.comanda.description;
+    return (
+      props.comanda.label || props.comanda.description || `#${props.comanda.id}`
+    );
+  });
 
-  props.comanda.orders.forEach((o) => {
-    const kitchenOrder = props.kitchenOrders.find((ko) => ko.id === o.id);
-    const status = kitchenOrder
-      ? kitchenOrder.status
-      : BACKEND_TO_LOCAL_STATUS[o.status] || o.status;
+  const activeOrders = computed(() =>
+    (props.comanda.orders || []).filter((o) =>
+      isOrderActive(o, props.kitchenOrders),
+    ),
+  );
 
-    if (
-      status !== "cancelled" &&
-      status !== "Cancelado" &&
-      status !== "CANCELADO" &&
-      status !== "finished" &&
-      status !== "FINALIZADO"
-    ) {
-      let orderTotal = 0;
+  const activeOrdersCount = computed(() => activeOrders.value.length);
+
+  const remainingTotal = computed(() =>
+    activeOrders.value.reduce((total, o) => {
       const items = o.items || o.productOrders || [];
-      items.forEach((i) => {
-        const price = Number(i.price ?? i.Preco_Unitario_Momento ?? 0);
-        const amount = Number(i.amount || i.quantity || 1);
-        orderTotal += price * amount;
-      });
-
+      const orderTotal = items.reduce((sum, i) => {
+        return (
+          sum +
+          Number(i.price ?? i.Preco_Unitario_Momento ?? 0) *
+            Number(i.amount || i.quantity || 1)
+        );
+      }, 0);
       const paid = (o.paymentOrders || []).reduce(
         (sum, po) => sum + Number(po.price || 0),
         0,
       );
-      total += Math.max(0, orderTotal - paid);
-    }
-  });
-  return total;
-});
-
-const activeOrdersCount = computed(() => {
-  if (!props.comanda.orders) return 0;
-  return props.comanda.orders.filter((o) => {
-    const kitchenOrder = props.kitchenOrders.find((ko) => ko.id === o.id);
-    const status = kitchenOrder
-      ? kitchenOrder.status
-      : BACKEND_TO_LOCAL_STATUS[o.status] || o.status;
-    return (
-      status !== "cancelled" &&
-      status !== "Cancelado" &&
-      status !== "CANCELADO" &&
-      status !== "finished" &&
-      status !== "FINALIZADO"
-    );
-  }).length;
-});
+      return total + Math.max(0, orderTotal - paid);
+    }, 0),
+  );
 </script>

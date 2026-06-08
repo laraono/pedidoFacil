@@ -42,7 +42,7 @@
 </template>
 
 <script setup>
-import { Printer } from "lucide-vue-next";
-defineProps({ isOpen: Boolean });
-defineEmits(["close", "print"]);
+  import { Printer } from "lucide-vue-next";
+  defineProps({ isOpen: Boolean });
+  defineEmits(["close", "print"]);
 </script>

@@ -31,8 +31,6 @@ export const useSubscriptionStore = defineStore('subscription', () => {
 
   const isActive = computed(() => subscriptionStatus.value === 'Paga');
 
-  // ── Admin: listagem de assinaturas ──────────────────────────────────────────
-
   const adminSubscriptions = ref<AdminSubscription[]>([]);
   const adminSubscriptionsLoading = ref(false);
 
@@ -58,26 +56,21 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     }
   }
 
-  // ── Admin: métricas por período ─────────────────────────────────────────────
-
   const adminMetrics = ref<any>(null);
   const adminMetricsLoading = ref(false);
 
-  async function loadAdminMetrics(period = '12m'): Promise<void> {
+  async function loadAdminMetrics(period: '3m' | '6m' | '12m' = '12m'): Promise<void> {
     adminMetricsLoading.value = true;
     try {
-      const end = new Date();
-      const start = new Date();
-      const months = period === '3m' ? 3 : period === '6m' ? 6 : 12;
-      start.setMonth(start.getMonth() - months);
-      const fmt = (d: Date) => d.toISOString().slice(0, 10);
-
-      const raw = await adminMetricsApi.getSubscriptionMetrics(fmt(start), fmt(end)) as any;
-
+      const raw = await adminMetricsApi.getSubscriptionMetrics(period) as any;
       adminMetrics.value = {
-        totalAtivas: raw.totalAtivos,
-        receitaMensal: raw.mrr,
-        receitaColetada: raw.receitaColetada,
+        totalAtivas: raw.totalAtivas,
+        receitaMensal: raw.receitaMensal,
+        inadimplentes: raw.inadimplentes,
+        canceladas: raw.canceladas,
+        totalGeral: raw.totalGeral,
+        porPlano: raw.porPlano,
+        novosPorMes: raw.novosPorMes,
       };
     } finally {
       adminMetricsLoading.value = false;

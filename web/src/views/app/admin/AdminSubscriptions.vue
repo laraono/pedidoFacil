@@ -5,7 +5,7 @@ import { useToast } from '@/composables/useToast';
 import { useAsyncAction } from '@/composables/useAsyncAction';
 import {
   ShieldAlert, Search, Calendar, CreditCard, UserCircle, X,
-  Mail, DollarSign, Package, BarChart3, ClipboardList, Settings
+  Mail, DollarSign, ClipboardList
 } from 'lucide-vue-next';
 import { adminSubscriptionApi } from '@/services/adminApi';
 import { useUtils } from '@/composables/useUtils';
@@ -104,25 +104,9 @@ async function savePrice() {
     <PageHeader
       title="Assinaturas"
       subtitle="Controle de todos os gerentes e seus planos"
-      back-to="/app/dashboard"
       :category-icon="ShieldAlert"
       category-label="Painel Admin"
-    >
-      <template #actions>
-        <button @click="router.push('/app/admin/establishments')" class="flex items-center gap-2 px-4 py-2.5 border border-[#E0E0E0] bg-white text-[#757575] font-black rounded text-sm hover:text-[#212121] hover:border-primary/30 transition-all">
-          <ClipboardList :size="15" /> Estabelecimentos
-        </button>
-        <button @click="router.push('/app/admin/plans')" class="flex items-center gap-2 px-4 py-2.5 border border-[#E0E0E0] bg-white text-[#757575] font-black rounded text-sm hover:text-[#212121] hover:border-primary/30 transition-all">
-          <Package :size="15" /> Planos
-        </button>
-        <button @click="router.push('/app/admin/users')" class="flex items-center gap-2 px-4 py-2.5 border border-[#E0E0E0] bg-white text-[#757575] font-black rounded text-sm hover:text-[#212121] hover:border-primary/30 transition-all">
-          <Settings :size="15" /> Admins
-        </button>
-        <button @click="router.push('/app/admin/reports')" class="flex items-center gap-2 px-4 py-2.5 bg-primary text-white font-black rounded text-sm hover:bg-primary-dark transition-all">
-          <BarChart3 :size="15" /> Métricas
-        </button>
-      </template>
-    </PageHeader>
+    />
 
     <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
       <MetricCard label="Total" :value="counts.total" variant="default" class="cursor-pointer" @click="filterStatus = 'todos'" />

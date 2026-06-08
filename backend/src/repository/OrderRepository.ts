@@ -27,7 +27,7 @@ export class OrderRepository extends Repository<Order> {
             .leftJoinAndSelect('order.productOrders', 'po')
             .leftJoinAndSelect('po.product', 'product')
             .leftJoinAndSelect('po.productVariation', 'pv')
-            .where('order.establishment = :id', { id: establishmentId })
+            .where('order.establishment.id = :id', { id: establishmentId })
             .getMany();
     }
 

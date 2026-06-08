@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref } from "vue";
 
 export interface Toast {
   id: number;
@@ -9,7 +9,11 @@ export interface Toast {
 const toasts = ref<Toast[]>([]);
 
 export function useToast() {
-  const showToast = (message: string, type = 'success', duration = 3000): void => {
+  const showToast = (
+    message: string,
+    type = "success",
+    duration = 3000,
+  ): void => {
     const id = Date.now();
     toasts.value.push({ id, message, type });
 
@@ -19,7 +23,7 @@ export function useToast() {
   };
 
   const removeToast = (id: number): void => {
-    toasts.value = toasts.value.filter(t => t.id !== id);
+    toasts.value = toasts.value.filter((t) => t.id !== id);
   };
 
   return { toasts, showToast, removeToast };

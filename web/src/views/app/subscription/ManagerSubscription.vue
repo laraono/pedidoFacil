@@ -42,13 +42,9 @@ onMounted(async () => {
 
 const authStore = useAuthStore();
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
 const effectivePrice = computed(() =>
   sub.value?.price ?? sub.value?.plan?.price ?? 0
 );
-
-// ── Status ────────────────────────────────────────────────────────────────────
 
 const isActive = computed(() => sub.value?.status === 'Paga');
 
@@ -72,8 +68,6 @@ const formattedDueDate = computed(() => {
   if (!date) return '—';
   return new Date(date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 });
-
-// ── Troca de plano ────────────────────────────────────────────────────────────
 
 const isPlanModalOpen = ref(false);
 const showConfirmPlanModal = ref(false);
@@ -106,8 +100,6 @@ const confirmPlanChange = async () => {
   }
 };
 
-// ── Cancelamento ──────────────────────────────────────────────────────────────
-
 const showCancelModal = ref(false);
 const isCancelling = ref(false);
 const cancelError = ref('');
@@ -126,8 +118,6 @@ const confirmCancel = async () => {
     isCancelling.value = false;
   }
 };
-
-// ── Pagamento (mp.cardForm) ───────────────────────────────────────────────────
 
 let mp = null;
 let cardFormInstance = null;
@@ -156,6 +146,8 @@ const initCardForm = async () => {
       expirationDate: { id: 'mp-mgr-expirationDate', placeholder: 'MM/AA' },
       securityCode: { id: 'mp-mgr-securityCode', placeholder: 'CVV' },
       cardholderName: { id: 'mp-mgr-cardholderName' },
+      issuer: { id: 'mp-mgr-issuer', placeholder: 'Banco emissor' },
+      installments: { id: 'mp-mgr-installments' },
       identificationType: { id: 'mp-mgr-identificationType' },
       identificationNumber: { id: 'mp-mgr-identificationNumber' },
     },
@@ -214,7 +206,6 @@ const closePaymentModal = () => {
 
     <div v-if="sub" class="space-y-6">
 
-      <!-- 1. Card de status e cobrança -->
       <div class="rounded p-8 border border-[#E0E0E0] bg-white flex flex-col sm:flex-row sm:items-center gap-6">
         <div class="flex-1">
           <div class="flex items-center gap-3 mb-3">
@@ -254,7 +245,6 @@ const closePaymentModal = () => {
         </div>
       </div>
 
-      <!-- 2. Alternar plano -->
       <div class="bg-white border border-[#E0E0E0] rounded p-6 flex items-center justify-between gap-4">
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#757575] mb-1">
@@ -273,7 +263,6 @@ const closePaymentModal = () => {
         </button>
       </div>
 
-      <!-- 3. Histórico de pagamentos -->
       <div class="bg-white border border-[#E0E0E0] rounded overflow-hidden">
         <div class="p-6 border-b border-[#E0E0E0] flex items-center gap-3">
           <History :size="18" class="text-accent" />
@@ -326,7 +315,6 @@ const closePaymentModal = () => {
     </div>
   </main>
 
-  <!-- Modal de cancelamento -->
   <FormModal
     :show="showCancelModal"
     title="Cancelar Assinatura"
@@ -351,7 +339,6 @@ const closePaymentModal = () => {
     </template>
   </FormModal>
 
-  <!-- Modal de seleção de plano -->
   <FormModal
     :show="isPlanModalOpen"
     title="Alterar Plano"
@@ -407,7 +394,6 @@ const closePaymentModal = () => {
     </div>
   </FormModal>
 
-  <!-- Modal de confirmação de troca de plano -->
   <FormModal
     :show="showConfirmPlanModal"
     title="Confirmar Alteração de Plano"
@@ -425,7 +411,6 @@ const closePaymentModal = () => {
     </p>
   </FormModal>
 
-  <!-- Modal de pagamento — mantido custom por precisar do @after-enter para inicializar o MP -->
   <Teleport to="body">
     <Transition
       enter-active-class="transition-opacity duration-200 ease-in-out"
@@ -473,6 +458,8 @@ const closePaymentModal = () => {
                     style="height: 42px;"
                   />
                 </div>
+                <select id="mp-mgr-issuer" class="hidden"></select>
+                <select id="mp-mgr-installments" class="hidden"></select>
                 <div class="grid grid-cols-2 gap-3">
                   <div>
                     <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Tipo de documento</label>

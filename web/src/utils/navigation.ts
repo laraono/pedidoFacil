@@ -1,7 +1,7 @@
 import {
   ChefHat, UtensilsCrossed, Users,
   DollarSign, HamburgerIcon, Package, Receipt, Settings, BarChart2,
-  CreditCard, ShieldAlert, UserCog, Tag, FileText, Calculator
+  CreditCard, ShieldAlert, UserCog, Tag, FileText, Calculator, Store
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import { PERMISSIONS, type Permission } from '@/utils/permissions';
@@ -188,11 +188,11 @@ export const adminMenuItems: AdminMenuItem[] = [
     adminOnly: true
   },
   {
-    label: 'Métricas',
-    route: '/app/admin/metrics',
-    icon: BarChart2,
-    description: 'KPIs e métricas de assinaturas.',
-    callToAction: 'Ver Métricas',
+    label: 'Estabelecimentos',
+    route: '/app/admin/establishments',
+    icon: Store,
+    description: 'Lista de todos os estabelecimentos cadastrados.',
+    callToAction: 'Ver Estabelecimentos',
     adminOnly: true
   },
   {

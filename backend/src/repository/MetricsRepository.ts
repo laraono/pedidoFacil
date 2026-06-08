@@ -45,10 +45,10 @@ export class MetricsRepository {
 
     async getCouponUsage(establishmentId: number, start: Date, end: Date) {
         return this.dataSource.query(`
-            SELECT cup.Codigo as code, cup.Tipo_Desconto as type, cup.Valor_Desconto as discount, COUNT(pag.ID_Pagamento) as uses
-            FROM PAGAMENTO pag
-            INNER JOIN CUPOM_DESCONTO cup ON pag.ID_Cupom_Aplicado = cup.ID_Cupom
-            WHERE pag.ID_Estabelecimento = ? AND pag.Status = 'Aprovado' AND pag.Data_Hora_Pagamento BETWEEN ? AND ?
+            SELECT cup.Codigo as code, cup.Tipo_Desconto as type, cup.Valor_Desconto as discount, COUNT(cmd.ID_Comanda) as uses
+            FROM COMANDA cmd
+            INNER JOIN CUPOM_DESCONTO cup ON cmd.ID_Cupom_Aplicado = cup.ID_Cupom
+            WHERE cmd.ID_Estabelecimento = ? AND cmd.Status = 'Fechada' AND cmd.Data_Abertura BETWEEN ? AND ?
             GROUP BY cup.ID_Cupom
             ORDER BY uses DESC
         `, [establishmentId, start, end]).catch((e: any) => {

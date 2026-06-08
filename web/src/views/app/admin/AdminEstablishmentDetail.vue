@@ -1,14 +1,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useAsyncAction } from '@/composables/useAsyncAction';
 import { useUtils } from '@/composables/useUtils';
-import { Building2, User, CreditCard, ArrowLeft, History } from 'lucide-vue-next';
+import { Building2, User, CreditCard, History } from 'lucide-vue-next';
 import { adminEstablishmentApi } from '@/services/adminApi';
 import { PageHeader, StatusBadge, DataTable, EmptyState } from '@/components/ui';
 
 const route = useRoute();
-const router = useRouter();
+
 const { loading, run: runLoad } = useAsyncAction();
 const { formatCurrency } = useUtils();
 
@@ -64,19 +64,12 @@ const paymentColumns = [
       :category-icon="Building2"
       category-label="Painel Admin"
     >
-      <template #actions>
-        <button @click="router.push('/app/admin/establishments')"
-          class="flex items-center gap-2 px-4 py-2.5 border border-[#E0E0E0] bg-white text-[#757575] font-black rounded text-sm hover:text-[#212121] hover:border-primary/30 transition-all">
-          <ArrowLeft :size="15" /> Voltar
-        </button>
-      </template>
     </PageHeader>
 
     <div v-if="loading" class="py-20 text-center testablishments/ext-[#757575]">Carregando...</div>
 
     <div v-else-if="detail" class="space-y-6">
 
-      <!-- Gerente -->
       <div class="bg-white border border-[#E0E0E0] rounded-xl p-6">
         <div class="flex items-center gap-2 mb-4">
           <User :size="16" class="text-[#757575]" />
@@ -90,7 +83,6 @@ const paymentColumns = [
         </div>
       </div>
 
-      <!-- Estabelecimento -->
       <div class="bg-white border border-[#E0E0E0] rounded-xl p-6">
         <div class="flex items-center gap-2 mb-4">
           <Building2 :size="16" class="text-[#757575]" />
@@ -113,7 +105,6 @@ const paymentColumns = [
         </div>
       </div>
 
-      <!-- Assinatura / Plano -->
       <div class="bg-white border border-[#E0E0E0] rounded-xl p-6">
         <div class="flex items-center gap-2 mb-4">
           <CreditCard :size="16" class="text-[#757575]" />
@@ -141,7 +132,6 @@ const paymentColumns = [
         <p v-else class="text-sm text-[#757575]">Sem assinatura ativa.</p>
       </div>
 
-      <!-- Histórico de Pagamentos -->
       <div class="bg-white border border-[#E0E0E0] rounded-xl p-6">
         <div class="flex items-center gap-2 mb-4">
           <History :size="16" class="text-[#757575]" />

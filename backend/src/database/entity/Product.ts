@@ -1,8 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, DeleteDateColumn, CreateDateColumn, JoinColumn } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, DeleteDateColumn, JoinColumn } from "typeorm"
 import { ProductVariation } from "./ProductVariation"
 import { Category } from "./Category"
 import { ProductOrder } from "./ProductOrder"
-import { ProductStatus } from "../../enum"
 
 @Entity({name: 'PRODUTO'})
 export class Product {
@@ -41,6 +40,14 @@ export class Product {
         nullable: false
     })
     estocavel!: boolean
+
+    @Column({
+        type: 'varchar',
+        name: 'Status',
+        nullable: false,
+        default: 'Ativo'
+    })
+    status!: string
 
     @Column({
         name: 'Preco_Base',

@@ -1,18 +1,20 @@
 <script setup>
-defineProps({
-  label: String,
-  modelValue: String,
-  placeholder: String,
-  rows: { type: Number, default: 3 },
-  error: String
-});
+  defineProps({
+    label: String,
+    modelValue: String,
+    placeholder: String,
+    rows: { type: Number, default: 3 },
+    error: String,
+  });
 
-const emit = defineEmits(['update:modelValue']);
+  const emit = defineEmits(["update:modelValue"]);
 </script>
 
 <template>
   <div class="space-y-2 w-full text-left">
-    <label v-if="label" class="text-sm font-medium text-[#757575] ml-2">{{ label }}</label>
+    <label v-if="label" class="text-sm font-medium text-[#757575] ml-2">{{
+      label
+    }}</label>
     <textarea
       :value="modelValue"
       @input="emit('update:modelValue', $event.target.value)"

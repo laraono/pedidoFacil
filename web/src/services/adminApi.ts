@@ -72,6 +72,7 @@ export const adminEstablishmentApi = {
 };
 
 export const adminMetricsApi = {
-  getSubscriptionMetrics: (startDate: string, endDate: string) =>
-    request(`/subscriptions/admin/metrics?startDate=${startDate}&endDate=${endDate}`, { method: 'GET' }),
+  getSubscriptionMetrics: (period: '3m' | '6m' | '12m' = '12m') =>
+    request(`/admin/metrics/subscriptions?period=${period}`, { method: 'GET' }),
+  getMasterId: () => request('/admin/admins/master-id', { method: 'GET' }),
 };
