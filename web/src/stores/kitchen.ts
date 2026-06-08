@@ -36,6 +36,8 @@ export interface KitchenOrder {
   status: OrderStatus;
   createdAt: Date;
   items: KitchenOrderItem[];
+  userId?: number;
+  user?: { id: number };
 }
 
 export const useKitchenStore = defineStore('kitchen', () => {
@@ -62,6 +64,8 @@ export const useKitchenStore = defineStore('kitchen', () => {
             waiter: pedido.serviceType === 'AUTOATENDIMENTO' || pedido.serviceType === 'TOTEM' ? 'Totem' : (pedido.serviceType || 'Balcão'),
             status: mappedStatus,
             createdAt: pedido.created_at ? new Date(pedido.created_at) : new Date(),
+            userId: pedido.user?.id,
+            user: pedido.user ? { id: pedido.user.id } : undefined,
             items: pedido.productOrders?.map((po: any) => {
               const variationName = po.variations
                 ?.map((v: any) => v.productVariation?.name)
@@ -157,6 +161,8 @@ export const useKitchenStore = defineStore('kitchen', () => {
         waiter: data.source === 'totem' ? 'Totem' : (data.source || 'Caixa/Web'),
         status: 'pending',
         createdAt: new Date(data.createdAt),
+        userId: data.userId || data.user?.id,
+        user: data.user ? { id: data.user.id } : undefined,
         items: (data.items || []).map((i: any) => ({
           name: i.name || 'Produto',
           variationName: i.variationName || '',

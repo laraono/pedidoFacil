@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, De
 import { ComandaStatus, DiscountType } from "../../enum"
 import { Order } from "./Order"
 import { Establishment } from "./Establishment"
-import { User } from "./User"
+import { Coupon } from "./Coupon"
 
 @Entity({name: 'COMANDA'})
 @Index('idx_comanda_est_status_data', ['establishment', 'status', 'created_at'])
@@ -78,10 +78,10 @@ export class Comanda {
     })
     establishment!: Establishment
 
-    @ManyToOne(() => User)
-    @JoinColumn({
-        name: 'ID_Usuario_Abertura'
-    })
-    user!: User
 
+    @ManyToOne(() => Coupon)
+    @JoinColumn({
+        name: 'ID_Cupom_Aplicado'
+    })
+    coupon!: Coupon
 }

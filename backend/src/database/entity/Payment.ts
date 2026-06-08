@@ -88,12 +88,6 @@ export class Payment {
         nullable: true
     })
     deletedAt?: Date
-
-    @OneToOne(() => Coupon)
-    @JoinColumn({
-        name: 'ID_Cupom_Aplicado'
-    })
-    coupon!: Coupon
     
     @ManyToOne(() => Establishment)
     @JoinColumn({ name: 'ID_Estabelecimento' })

@@ -23,8 +23,9 @@ export class OrderController {
             const order = await this.orderService.createOrder({
                 ...req.body,
                 comandaId: Number(comandaId),
-                establishmentId: usuario.estabelecimento 
-            });
+                establishmentId: usuario.estabelecimento,
+                userId: usuario.id || usuario.ID_Usuario 
+            }) as any;
 
             const fullOrder = await this.orderService.getOrderWithDetails(order.id);
 
@@ -45,6 +46,8 @@ export class OrderController {
                 items:        mappedItems,
                 createdAt:    new Date().toISOString(),
                 source:       req.body.source || 'web',
+                userId:       usuario.id || usuario.ID_Usuario,
+                user:         { id: usuario.id || usuario.ID_Usuario }
             });
 
             return res.status(201).json(order);
@@ -70,7 +73,7 @@ export class OrderController {
                 establishmentId: usuario.estabelecimento,
                 comandaLabel: comandaLabel,
                 customerName: req.body.customerName ?? null
-            });
+            }) as any;
 
             const fullOrder = await this.orderService.getOrderWithDetails(order.id);
             const mappedItems = fullOrder?.productOrders?.map(po => {
@@ -91,6 +94,8 @@ export class OrderController {
                 items:        mappedItems,
                 createdAt:    new Date().toISOString(),
                 source:       'totem',
+                userId:       null,
+                user:         null
             });
 
             return res.status(201).json({
@@ -109,7 +114,7 @@ export class OrderController {
         const { status, cancellationDescription } = req.body;
         const usuario = (req as any).usuario;
 
-        await this.orderService.updateOrderStatus(
+        const result = await this.orderService.updateOrderStatus(
             Number(orderId),
             status,
             usuario.id,
@@ -122,6 +127,13 @@ export class OrderController {
             comandaId: Number(comandaId),
             status,
         });
+
+        if ((status === 'Pronto' || status === 'ready') && result.orderUserId) {
+            getIO().emit(`user_notification_${result.orderUserId}`, {
+                orderId: Number(orderId),
+                comanda: req.params.comandaId ? Number(req.params.comandaId) : result.comandaId
+            });
+        }
 
         res.sendStatus(204);
     }

@@ -94,7 +94,7 @@
                 Pedidos aguardando preparo
               </p>
               <p class="text-yellow-400/80 text-xs mt-1">
-                Um ou mais itens ainda não foram enviados para a cozinha. Será
+                Um ou mais items ainda não foram enviados para a cozinha. Será
                 necessário cancelá-los para finalizar.
               </p>
             </div>
@@ -151,9 +151,7 @@
                     }}
                   </span>
                   <button
-                    v-if="
-                      order.status !== 'ready' && order.status !== 'finished'
-                    "
+                    v-if="order.status !== 'finished' && order.status !== 'FINALIZADO'"
                     @click.stop.prevent="$emit('cancel-order', order.id)"
                     class="text-danger hover:bg-danger-light p-1.5 rounded transition-all"
                     title="Cancelar Pedido"
@@ -183,13 +181,12 @@
                 </div>
               </div>
 
-              <div
-                class="text-right font-black text-[#212121] text-sm mt-3 pt-3 border-t border-[#E0E0E0] border-dashed"
-              >
-                Total Pedido:
-                <span class="text-blue-400 ml-2"
-                  >R$ {{ getOrderTotal(order).toFixed(2) }}</span
-                >
+              <div class="text-right font-black text-[#212121] text-sm mt-3 pt-3 border-t border-[#E0E0E0] border-dashed">
+                <div v-if="getOrderPaid(order) > 0" class="text-xs text-amber-500 mb-1 uppercase tracking-widest font-bold">
+                  Valor Original: R$ {{ getOrderOriginalTotal(order).toFixed(2) }} | Já Pago: R$ {{ getOrderPaid(order).toFixed(2) }}
+                </div>
+                Total Restante do Pedido:
+                <span class="text-blue-400 ml-2">R$ {{ getOrderTotal(order).toFixed(2) }}</span>
               </div>
             </div>
           </div>
@@ -307,9 +304,14 @@
                   Cupom: − R$ {{ couponDiscount.toFixed(2) }}
                 </div>
               </div>
-              <span class="text-4xl font-black text-accent tracking-tighter"
-                >R$ {{ totalWithDiscount.toFixed(2) }}</span
-              >
+              <div class="flex flex-col items-end">
+                <span v-if="discountValue > 0 || appliedCoupon" class="text-sm font-bold text-[#757575] line-through mb-1">
+                  R$ {{ subtotal.toFixed(2) }}
+                </span>
+                <span class="text-4xl font-black text-accent tracking-tighter">
+                  R$ {{ totalWithDiscount.toFixed(2) }}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -603,10 +605,18 @@ function getGroupedOrderItems(order) {
   return groups;
 }
 
-function getOrderTotal(order) {
+function getOrderOriginalTotal(order) {
   const items = getGroupedOrderItems(order);
   if (items.length === 0) return Number(order.price ?? 0);
   return items.reduce((sum, item) => sum + item.total, 0);
+}
+
+function getOrderPaid(order) {
+  return (order.paymentOrders || []).reduce((sum, po) => sum + Number(po.price || 0), 0);
+}
+
+function getOrderTotal(order) {
+  return Math.max(0, getOrderOriginalTotal(order) - getOrderPaid(order));
 }
 
 function getComandaMainLabel(comanda) {
@@ -698,6 +708,7 @@ const applyDiscountMask = (raw) => {
   parts[0] = parts[0].replace(/^0+(\d)/, "$1");
   return parts.join(",");
 };
+
 const onDiscountInput = (e) => {
   if (discountType.value === "percent") {
     const digits = e.target.value.replace(/\D/g, "");
@@ -723,9 +734,18 @@ const applyCoupon = () => {
     couponError.value = "Este cupom está vencido.";
     return;
   }
+  
+  if (coupon.type === 'fixed') {
+    if ((subtotal.value - coupon.value) < 1.00) {
+       couponError.value = "O valor final com este cupom fica menor que R$ 1,00.";
+       return;
+    }
+  }
+
   appliedCoupon.value = coupon;
   couponError.value = "";
 };
+
 const removeCoupon = () => {
   appliedCoupon.value = null;
   couponCodeInput.value = "";
@@ -747,12 +767,14 @@ watch(numberOfPeople, (newVal) => {
 function distributeEqually() {
   const num = numberOfPeople.value;
   const total = totalWithDiscount.value;
-  const each = Math.floor((total / num) * 100) / 100;
+  const each = Number((total / num).toFixed(2)); 
+  
   paymentSplits.value = Array.from({ length: num }, (_, i) => ({
     type: "Dinheiro",
-    amount: i === 0 ? total - each * (num - 1) : each,
+    amount: i === 0 ? Number((total - (each * (num - 1))).toFixed(2)) : each,
   }));
 }
+
 function addPaymentSplit() {
   paymentSplits.value.push({ type: "Dinheiro", amount: 0 });
 }

@@ -16,6 +16,9 @@ export interface Comanda {
   total: number;
   closedAt?: any;
   paymentDetails?: any;
+  discountType?: string | null;
+  discountValue?: number | null;
+  coupon?: any | null;
 }
 
 export const useComandaStore = defineStore('comanda', () => {
@@ -33,7 +36,10 @@ export const useComandaStore = defineStore('comanda', () => {
                 customerName: c.customerName ?? undefined,
                 isAutoatendimento: !!c.customerName || (c.description || '').startsWith('Totem #'),
                 total: Number(c.total),
-                orders: c.pedidos || []
+                orders: c.pedidos || [],
+                discountType: c.discountType || c.Tipo_Desconto_Aplicado || null,
+                discountValue: Number(c.discountValue || c.Valor_Desconto_Aplicado || 0),
+                coupon: c.coupon || null,
             }));
         } catch (error) {
             console.error("Erro ao carregar comandas do banco:", error);

@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from "vue";
+import { onMounted, onUnmounted, ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useKitchenStore } from "@/stores/kitchen";
@@ -17,6 +17,7 @@ import {
   XCircle,
   ArrowLeft,
   Clock,
+  User 
 } from "lucide-vue-next";
 
 const AUDIO_URL = "https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/pause.wav";
@@ -32,6 +33,10 @@ const showTimerSettings = ref(false);
 const alertMinutes = ref(
   Number(localStorage.getItem("kitchenAlertMinutes") || 15),
 );
+
+const showOnlyMyOrders = ref(false);
+
+const locallyFinishedOrders = ref(JSON.parse(localStorage.getItem("kitchenLocallyFinished") || "[]"));
 
 const saveAlertMinutes = () => {
   const val = Math.max(1, Math.min(120, alertMinutes.value));
@@ -75,7 +80,17 @@ const handleMove = (id, status) => {
   kitchenStore.moveOrder(id, status);
 };
 
-const handleFinish = (id) => kitchenStore.finishOrder(id);
+const handleFinish = (id) => {
+  if (!locallyFinishedOrders.value.includes(id)) {
+    locallyFinishedOrders.value.push(id);
+    
+    if (locallyFinishedOrders.value.length > 300) {
+      locallyFinishedOrders.value = locallyFinishedOrders.value.slice(-200);
+    }
+    
+    localStorage.setItem("kitchenLocallyFinished", JSON.stringify(locallyFinishedOrders.value));
+  }
+};
 
 const cancelTargetId = ref(null);
 const cancelReason = ref("");
@@ -118,10 +133,37 @@ const columns = [
   },
 ];
 
+const filterKitchenOrders = (orders) => {
+  if (!orders) return [];
+  return orders.filter(order => {
+    if (showOnlyMyOrders.value) {
+      const orderUserId = order.user?.id || order.userId;
+      if (orderUserId !== authStore.user?.id) return false;
+    }
+
+    if (locallyFinishedOrders.value.includes(order.id)) return false;
+
+    const isFinished = order.status === 'finished' || order.status === 'Finalizado' || order.status === 'FINALIZADO';
+    
+    if (isFinished) {
+      const isAutoatendimento = order.isAutoatendimento || (order.comanda && order.comanda.isAutoatendimento);
+      
+      if (!isAutoatendimento) {
+         return false; 
+      }
+    }
+
+    return true;
+  });
+};
+
 const columnOrders = (key) => {
-  if (key === "pending") return kitchenStore.pendingOrders;
-  if (key === "preparing") return kitchenStore.preparingOrders;
-  return kitchenStore.readyOrders;
+  let orders = [];
+  if (key === "pending") orders = kitchenStore.pendingOrders;
+  else if (key === "preparing") orders = kitchenStore.preparingOrders;
+  else orders = kitchenStore.readyOrders;
+  
+  return filterKitchenOrders(orders);
 };
 
 const indicatorColor = (color) => {
@@ -153,6 +195,16 @@ const indicatorColor = (color) => {
         </div>
 
         <div class="flex items-center gap-3">
+          <button
+            @click="showOnlyMyOrders = !showOnlyMyOrders"
+            class="flex items-center gap-2 px-3 py-2 rounded transition-all border font-black text-[10px] sm:text-xs uppercase tracking-widest"
+            :class="showOnlyMyOrders ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-gray-50 text-[#757575] border-[#E0E0E0] hover:bg-gray-100'"
+            title="Mostrar apenas pedidos feitos por mim"
+          >
+            <User :size="16" />
+            <span class="hidden md:inline">{{ showOnlyMyOrders ? 'Meus Pedidos' : 'Todos os Pedidos' }}</span>
+          </button>
+
           <div class="relative">
             <button
               @click="showTimerSettings = !showTimerSettings"
@@ -229,7 +281,9 @@ const indicatorColor = (color) => {
 
             <div v-if="columnOrders(col.key).length === 0" class="flex flex-col items-center justify-center h-40 text-[#757575]">
               <Bell :size="48" class="mb-2 opacity-20" />
-              <p class="text-[10px] font-black uppercase tracking-[0.2em]">Cozinha Limpa</p>
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-center mt-2">
+                {{ showOnlyMyOrders ? 'Nenhum pedido seu' : 'Cozinha Limpa' }}
+              </p>
             </div>
           </div>
         </section>
@@ -243,8 +297,8 @@ const indicatorColor = (color) => {
         >
           <div class="relative">
             <List :size="24" stroke-width="3" />
-            <span v-if="kitchenStore.pendingOrders.length > 0" class="absolute -top-2 -right-3 bg-yellow-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-white">
-              {{ kitchenStore.pendingOrders.length }}
+            <span v-if="columnOrders('pending').length > 0" class="absolute -top-2 -right-3 bg-yellow-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-white">
+              {{ columnOrders('pending').length }}
             </span>
           </div>
           <span class="text-[9px] font-black uppercase tracking-widest mt-1">Fila</span>
@@ -257,8 +311,8 @@ const indicatorColor = (color) => {
         >
           <div class="relative">
             <ChefHat :size="24" stroke-width="3" />
-            <span v-if="kitchenStore.preparingOrders.length > 0" class="absolute -top-2 -right-3 bg-blue-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-white">
-              {{ kitchenStore.preparingOrders.length }}
+            <span v-if="columnOrders('preparing').length > 0" class="absolute -top-2 -right-3 bg-blue-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-white">
+              {{ columnOrders('preparing').length }}
             </span>
           </div>
           <span class="text-[9px] font-black uppercase tracking-widest mt-1">Preparo</span>
@@ -271,8 +325,8 @@ const indicatorColor = (color) => {
         >
           <div class="relative">
             <CheckCircle :size="24" stroke-width="3" />
-            <span v-if="kitchenStore.readyOrders.length > 0" class="absolute -top-2 -right-3 bg-primary text-white text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-white">
-              {{ kitchenStore.readyOrders.length }}
+            <span v-if="columnOrders('ready').length > 0" class="absolute -top-2 -right-3 bg-primary text-white text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-white">
+              {{ columnOrders('ready').length }}
             </span>
           </div>
           <span class="text-[9px] font-black uppercase tracking-widest mt-1">Pronto</span>

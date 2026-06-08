@@ -95,29 +95,34 @@ export class ComandaController {
         res.sendStatus(204);
     }
 
-    async checkout(req: Request, res: Response) {
+    async processPayment(req: Request, res: Response) {
         const { comandaId } = req.params;
         const user = (req as any).user || (req as any).usuario; 
 
         try {
             if (!user) {
-                return res.status(401).json({ error: "Sessão inválida: Usuário não encontrado no request." });
+                return res.status(401).json({ error: "Sessão inválida." });
             }
 
             const userId = user.id || user.ID_Usuario;
             const estabelecimentoId = user.estabelecimento || user.ID_Estabelecimento;
 
             if (!userId || !estabelecimentoId) {
-                auditLog('auth.token_incompleto', { ip: req.ip, timestamp: new Date().toISOString() });
-                return res.status(400).json({ error: "Token inválido ou incompleto." });
+                return res.status(400).json({ error: "Token inválido." });
             }
             
-                const payment = await this.comandaService.checkoutComanda(
-                    Number(comandaId),
-                    Number(userId),
-                    Number(estabelecimentoId),
-                    req.body
-                );
+            const result = await this.comandaService.processPartialPayment(
+                Number(comandaId),
+                Number(userId),
+                Number(estabelecimentoId),
+                req.body.payment,
+                req.body.selectedOrderIds,
+                req.body.isLastPayment, 
+                req.body.cpfcnpj,
+                req.body.discountType,  
+                req.body.discountValue, 
+                req.body.couponId       
+            );
 
             auditLog('checkout.success', {
                 comandaId: Number(comandaId),
@@ -126,7 +131,7 @@ export class ComandaController {
                 timestamp: new Date().toISOString(),
             });
 
-            return res.status(200).json(payment);
+            return res.status(200).json(result);
 
         } catch (error: any) {
             auditLog('checkout.failure', {
@@ -135,7 +140,7 @@ export class ComandaController {
                 timestamp: new Date().toISOString(),
             });
             
-            return res.status(500).json({ error: "Erro interno ao processar o pagamento." });
+            return res.status(500).json({ error: error.message || "Erro interno ao processar o pagamento." });
         }
     }
 }
