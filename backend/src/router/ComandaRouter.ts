@@ -7,6 +7,7 @@ import { checkPermission } from '../middleware/roleAccessControl';
 import { validateRequest } from '../middleware/validateRequest'; 
 import { createComandaSchema } from '../dto/comanda/CreateComandaDTO'; 
 import { cancelComandaSchema } from '../dto/comanda/CancelComandaDTO';
+import { checkoutComandaSchema } from '../dto/comanda/CheckoutComandaDTO';
 
 export const comandaRouter = express.Router();
 
@@ -63,10 +64,10 @@ comandaRouter.put(
 );
 
 comandaRouter.post(
-  '/commands/:comandaId/checkout',
+  '/commands/:comandaId/payment',
   authenticate,
   subscriptionMiddleware,
   verifyTenancy('COMANDA', 'comandaId'),
   checkPermission('CAIXA'),
-  catchAsync((req: Request, res: Response) => comandaController.checkout(req, res)),
+  catchAsync((req: Request, res: Response) => comandaController.processPayment(req, res)),
 );

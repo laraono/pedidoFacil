@@ -40,7 +40,7 @@ const applyValueMask = (raw) => {
 const onValueInput = (e) => {
   if (form.value.type === 'percent') {
     const digits = e.target.value.replace(/\D/g, '');
-    const num = Math.min(100, parseInt(digits, 10) || 0);
+    const num = Math.min(99, parseInt(digits, 10) || 0);
     form.value.value = num === 0 ? '' : String(num);
   } else {
     form.value.value = applyValueMask(e.target.value);
@@ -53,7 +53,10 @@ const validate = () => {
   
   const parsed = parseFloat(String(form.value.value).replace(',', '.'));
   if (!form.value.value || isNaN(parsed) || parsed <= 0) e.value = 'Valor do desconto inválido.';
-  if (form.value.type === 'percent' && parsed > 100) e.value = 'Percentual não pode exceder 100%.';
+  
+  if (form.value.type === 'percent' && parsed >= 100) {
+    e.value = 'O percentual de desconto deve ser de no máximo 99%.';
+  }
   
   if (form.value.expiresAt) {
     const today = new Date();
@@ -339,3 +342,11 @@ const statusOf = (c) => {
     </Teleport>
   </main>
 </template>
+
+<style scoped>
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+</style>

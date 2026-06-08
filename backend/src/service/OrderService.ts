@@ -41,8 +41,9 @@ export class OrderService {
         serviceType: createOrder.serviceType,
         comanda: comanda,
         establishment: { id: createOrder.establishmentId },
+        user: createOrder.userId ? { id: createOrder.userId } : undefined,
         isDelivered: false,
-      });
+      }) as any;
 
       await this.saveItens(createOrder.itens, order, manager);
 
@@ -58,7 +59,7 @@ export class OrderService {
         status: ComandaStatus.ABERTA,
         total: 0,
         establishment: { id: data.establishmentId },
-      });
+      }) as Comanda;
 
       const order = await manager.save(Order, {
         status: 'Aguardando_Preparo' as OrderStatus,
@@ -66,7 +67,7 @@ export class OrderService {
         comanda: comanda,
         establishment: { id: data.establishmentId },
         isDelivered: false,
-      });
+      }) as Order;
 
       await this.saveItens(data.itens, order, manager);
 
@@ -125,7 +126,8 @@ export class OrderService {
 
     if (!product) throw new AppError(`Produto ${iten.productId} não existe`, 400);
 
-    let productVariation = null;
+    let productVariation: ProductVariation | null = null;
+    
     if (iten.productVariationId) {
       productVariation = await manager.findOne(ProductVariation, {
         where: { id: iten.productVariationId },
@@ -155,10 +157,12 @@ export class OrderService {
     await this.orderRepository.update(orderId, updateData);
 
     const order = await this.dataSource.getRepository(Order).findOne({ 
-      where: { id: orderId }, relations: ['comanda'] 
+      where: { id: orderId }, relations: ['comanda', 'user'] 
     });
     
-    if (!order || !order.comanda) return { comandaCancelled: false, comandaId: null };
+    const orderUserId = order?.user?.id; 
+
+    if (!order || !order.comanda) return { comandaCancelled: false, comandaId: null, orderUserId };
     const comandaId = order.comanda.id;
 
     if (currentStatus === 'Cancelado' || currentStatus === 'CANCELADO') {
@@ -168,11 +172,11 @@ export class OrderService {
 
         if (allCancelled && allOrders.length > 0) {
             await this.comandaService.updateComandaStatus(comandaId, ComandaStatus.CANCELADA);
-            return { comandaCancelled: true, comandaId };
+            return { comandaCancelled: true, comandaId, orderUserId };
         }
     }
 
-    return { comandaCancelled: false, comandaId };
+    return { comandaCancelled: false, comandaId, orderUserId };
   }
 
   async getOrderWithDetails(orderId: number) {

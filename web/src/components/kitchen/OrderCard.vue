@@ -11,7 +11,7 @@ const props = defineProps({
 const unitLabel = localStorageService.getComandaUnitLabel();
 const isAutoatendimento = computed(() => props.order.source === 'totem' || (props.order.comanda || '').startsWith('Totem #'));
 
-const emit = defineEmits(['move', 'cancel']);
+const emit = defineEmits(['move', 'cancel', 'finish']);
 
 const elapsedTime = ref('00:00');
 const isDelayed = ref(false);
@@ -136,7 +136,6 @@ const groupedItems = computed(() => {
             {{ elapsedTime }}
           </div>
 
-          <!-- Cancel button -->
           <button
             v-if="order.status !== 'ready'"
             @click.stop="$emit('cancel', order.id)"
@@ -198,7 +197,7 @@ const groupedItems = computed(() => {
 
         <button
           v-if="order.status === 'ready'"
-          @click="$emit('move', order.id, 'finished')"
+          @click="isAutoatendimento ? $emit('move', order.id, 'finished') : $emit('finish', order.id)"
           class="w-full py-4 bg-gray-100 hover:bg-gray-200 text-[#212121] border border-[#E0E0E0] rounded font-black uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-3 transition-all"
         >
           Finalizar Entrega

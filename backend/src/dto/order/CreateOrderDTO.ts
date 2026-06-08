@@ -69,7 +69,6 @@ export const createTotemOrderSchema = z.object({
       }).strict()
     ).min(1, "O pedido deve ter pelo menos um item"),
     
-    // Novas chaves liberadas no validador para o Totem
     customerName: safeString(0, 100).optional().nullable(),
     description: safeString(0, 100).optional().nullable()
     
