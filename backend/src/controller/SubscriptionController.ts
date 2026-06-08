@@ -23,13 +23,11 @@ export class SubscriptionController {
 
     getEstablishmentSubscription = catchAsync(async (req, res: Response) => {
         const subscription = await this.subscriptionService.getEstablishmentSubscription(req.usuario.estabelecimento);
-        console.log(subscription)
         return res.status(200).send(subscription);
     });
 
     getEstablishmentHistory = catchAsync(async (req, res: Response) => {
         const subscription = await this.subscriptionService.getEstablishmentHistory(req.usuario.estabelecimento);
-        console.log(subscription)
         return res.status(200).send(subscription);
     });
 
@@ -45,20 +43,19 @@ export class SubscriptionController {
         return res.sendStatus(204)
     });
 
-    deleteSubcription = catchAsync(async (req, res: Response) => {
-        const { subscriptionId } = req.params;
-        await this.subscriptionService.deleteSubscription(subscriptionId);
-        auditLog('subscription.deleted', { subscriptionId, userId: (req as any).usuario?.id });
-        return res.sendStatus(204)
-    });
-
     processCardInfo  = catchAsync(async (req, res: Response) => {
-        await this.subscriptionService.processCardInfo(req.body, req.params);
+        await this.subscriptionService.processCardInfo(req.body, {
+            planId: req.params.planId,
+            establishmentId: req.usuario.estabelecimento
+        });
         return res.sendStatus(204);
     });
 
     restoreSubscription  = catchAsync(async (req, res: Response) => {
-        await this.subscriptionService.restoreSubscription(req.body, req.params);
+        await this.subscriptionService.restoreSubscription(req.body, {
+            subscriptionId: req.params.subscriptionId,
+            establishmentId: req.usuario.estabelecimento,
+        });
         auditLog('subscription.restored', { subscriptionId: req.params.subscriptionId, userId: (req as any).usuario?.id });
         return res.sendStatus(204);
     });
@@ -70,11 +67,17 @@ export class SubscriptionController {
         return res.sendStatus(204);
     });
 
-    schedulePlan = catchAsync(async (req, res: Response) => {
+    changePlan = catchAsync(async (req, res: Response) => {
         const establishmentId = req.usuario.estabelecimento;
         const { planId } = req.body;
-        const updated = await this.subscriptionService.schedulePlan(establishmentId, planId ?? null);
+        const updated = await this.subscriptionService.changePlan(establishmentId, planId);
         return res.status(200).json(updated);
+    });
+
+    getAdminMetrics = catchAsync(async (req: Request, res: Response) => {
+        const { startDate, endDate } = req.query as { startDate: string; endDate: string };
+        const metrics = await this.subscriptionService.getAdminMetrics(startDate, endDate);
+        return res.status(200).json(metrics);
     });
 
 }

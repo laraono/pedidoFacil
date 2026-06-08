@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import { DataSource } from 'typeorm';
 import { Admin } from '../database/entity/Admin';
+import { RefreshToken } from '../database/entity/RefreshToken';
 import { AppError } from '../middleware/error/AppError';
 
 export type CreateAdminDTO = {
@@ -70,9 +71,25 @@ export class AdminService {
         return { id: admin.id, name: admin.name, email: admin.email };
     }
 
-    async delete(adminId: number) {
+    async getMasterId(): Promise<number> {
+        const master = await this.repo.findOne({ order: { id: 'ASC' } });
+        return master?.id ?? 1;
+    }
+
+    async delete(requesterId: number, adminId: number) {
+        const masterId = await this.getMasterId();
+
+        if (adminId === masterId) {
+            throw new AppError('O admin master não pode ser removido.', 403);
+        }
+        if (requesterId !== masterId) {
+            throw new AppError('Apenas o admin master pode remover outros admins.', 403);
+        }
+
         const admin = await this.repo.findOne({ where: { id: adminId } });
         if (!admin) throw new AppError('Admin não encontrado.', 404);
+
+        await this.dataSource.getRepository(RefreshToken).delete({ admin: { id: adminId } });
         await this.repo.remove(admin);
     }
 }

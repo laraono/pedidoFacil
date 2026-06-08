@@ -1,16 +1,19 @@
-import { 
-    Entity, 
-    PrimaryGeneratedColumn, 
-    Column, 
-    OneToMany, 
-    ManyToOne, 
-    DeleteDateColumn, 
-    CreateDateColumn, 
-    JoinColumn 
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    OneToMany,
+    ManyToOne,
+    DeleteDateColumn,
+    CreateDateColumn,
+    JoinColumn,
+    OneToOne,
+    Index
 } from "typeorm"
 import { Establishment } from "./Establishment"
 import { User } from "./User"
 import { PaymentOrder } from "./PaymentOrder"
+import { Coupon } from "./Coupon"
 
 export enum PaymentStatus {
     PENDING = 'Pendente',
@@ -20,6 +23,7 @@ export enum PaymentStatus {
 }
 
 @Entity({ name: 'PAGAMENTO' })
+@Index('idx_pagamento_est_status_data', ['establishment', 'status', 'createdAt'])
 export class Payment {
 
     @PrimaryGeneratedColumn({ name: 'ID_Pagamento' })
@@ -42,15 +46,6 @@ export class Payment {
     totalValue!: number
 
     @Column({
-        name: 'Valor_Taxa_Servico',
-        type: "decimal",
-        precision: 10,
-        scale: 2,
-        default: 0.00
-    })
-    serviceTax!: number 
-
-    @Column({
         name: 'Troco',
         type: "decimal",
         precision: 10,
@@ -63,7 +58,7 @@ export class Payment {
         type: 'enum',
         enum: PaymentStatus,
         name: 'Status',
-        default: PaymentStatus.PAID
+        default: PaymentStatus.PENDING
     })
     status!: PaymentStatus
 
@@ -93,7 +88,7 @@ export class Payment {
         nullable: true
     })
     deletedAt?: Date
-
+    
     @ManyToOne(() => Establishment)
     @JoinColumn({ name: 'ID_Estabelecimento' })
     establishment!: Establishment

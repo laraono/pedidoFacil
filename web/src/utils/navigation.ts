@@ -1,7 +1,7 @@
 import {
   ChefHat, UtensilsCrossed, Users,
   DollarSign, HamburgerIcon, Package, Receipt, Settings, BarChart2,
-  CreditCard, ShieldAlert, UserCog, Tag, FileText, Calculator
+  CreditCard, ShieldAlert, UserCog, Tag, FileText, Calculator, Store
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import { PERMISSIONS, type Permission } from '@/utils/permissions';
@@ -31,22 +31,30 @@ export interface AdminMenuItem {
   adminOnly: true;
 }
 
+export const SUBSCRIPTION_GUARDED_ROUTES = [
+  '/app/menu',
+  '/app/cashier',
+  '/app/kitchen',
+  '/app/closed',
+  '/app/reports',
+];
+
 export const allMenuItems: MenuItem[] = [
   {
     label: 'Estabelecimento',
     route: '/app/settings/establishment',
     icon: Settings,
     image: establishmentImage,
-    description: 'Gerencie dados gerais do estabelecimento.',
-    callToAction: 'Editar Info',
+    description: 'Configure o nome, logo, CNPJ e formas de pagamento do seu negócio.',
+    callToAction: 'Gerenciar Estabelecimento',
     permission: PERMISSIONS.CONFIGURACAO
   },
   {
-    label: 'Cargos e Permissões',
+    label: 'Cargos',
     route: '/app/settings/roles',
     icon: Users,
     image: rolesImage,
-    description: 'Configure os cargos da sua equipe.',
+    description: 'Defina quem pode acessar cada parte do sistema — cozinha, caixa ou cardápio.',
     callToAction: 'Gerenciar Cargos',
     permission: PERMISSIONS.CONFIGURACAO
   },
@@ -55,16 +63,16 @@ export const allMenuItems: MenuItem[] = [
     route: '/app/menu?editMode=true',
     icon: Users,
     image: menuConfigImage,
-    description: 'Personalize o Estilo do Menu.',
+    description: 'Deixe o cardápio com a cara do seu negócio: cores, fontes e visual dos produtos.',
     callToAction: 'Personalize',
     permission: PERMISSIONS.CONFIGURACAO
   },
   {
-    label: 'Gerenciar Usuários',
+    label: 'Usuários',
     route: '/app/settings/users',
     icon: Users,
     image: rolesImage,
-    description: 'Adicione, Edite e Remova Usuários',
+    description: 'Cadastre os funcionários e dê acesso ao sistema para cada um deles.',
     callToAction: 'Gerenciar',
     permission: PERMISSIONS.CONFIGURACAO
   },
@@ -73,7 +81,7 @@ export const allMenuItems: MenuItem[] = [
     route: '/app/settings/categories',
     icon: UtensilsCrossed,
     image: rolesImage,
-    description: 'Organize as seções do seu cardápio.',
+    description: 'Crie grupos no cardápio, como Entradas, Bebidas e Pratos Principais.',
     callToAction: 'Gerenciar Categorias',
     permission: PERMISSIONS.CONFIGURACAO
   },
@@ -82,7 +90,7 @@ export const allMenuItems: MenuItem[] = [
     route: '/app/settings/products',
     icon: Package,
     image: productsImage,
-    description: 'Configure seus pratos e preços.',
+    description: 'Cadastre os itens do cardápio com nome, descrição, preço e variações.',
     callToAction: 'Gerenciar Produtos',
     permission: PERMISSIONS.CONFIGURACAO
   },
@@ -91,7 +99,7 @@ export const allMenuItems: MenuItem[] = [
     route: '/app/settings/coupons',
     icon: Tag,
     image: rolesImage,
-    description: 'Crie e gerencie cupons promocionais.',
+    description: 'Crie códigos de desconto para atrair e fidelizar clientes.',
     callToAction: 'Gerenciar Cupons',
     permission: PERMISSIONS.CUPONS
   },
@@ -100,7 +108,7 @@ export const allMenuItems: MenuItem[] = [
     route: '/app/settings/nf',
     icon: FileText,
     image: rolesImage,
-    description: 'Emissão e gestão de NF-e.',
+    description: 'Emita notas fiscais eletrônicas (NF-e) para as suas vendas.',
     callToAction: 'Gerenciar NF',
     permission: PERMISSIONS.NOTA_FISCAL
   },
@@ -109,7 +117,7 @@ export const allMenuItems: MenuItem[] = [
     route: '/app/menu',
     icon: HamburgerIcon,
     image: menuImage,
-    description: 'Acesse o cardápio digital.',
+    description: 'Abra o cardápio digital para anotar o pedido de uma mesa ou comanda.',
     callToAction: 'Fazer Pedido',
     permission: PERMISSIONS.CRIAR_PEDIDO
   },
@@ -117,7 +125,7 @@ export const allMenuItems: MenuItem[] = [
     label: 'Caixa',
     route: '/app/cashier',
     icon: DollarSign,
-    description: 'Pagamento e fechamento de comandas.',
+    description: 'Veja as comandas abertas, feche a conta e registre o pagamento.',
     callToAction: 'Abrir Caixa',
     permission: PERMISSIONS.CAIXA
   },
@@ -125,7 +133,7 @@ export const allMenuItems: MenuItem[] = [
     label: 'Cozinha',
     route: '/app/kitchen',
     icon: ChefHat,
-    description: 'Fila de produção e status dos pedidos.',
+    description: 'Veja em tempo real os pedidos que chegaram e marque-os como prontos.',
     callToAction: 'Ver Pedidos',
     permission: PERMISSIONS.COZINHA
   },
@@ -133,7 +141,7 @@ export const allMenuItems: MenuItem[] = [
     label: 'Finalizados',
     route: '/app/closed',
     icon: Receipt,
-    description: 'Histórico de comandas concluídas.',
+    description: 'Consulte todas as comandas já pagas e fechadas.',
     callToAction: 'Ver Histórico',
     permission: PERMISSIONS.COMANDAS_FINALIZADAS
   },
@@ -141,14 +149,14 @@ export const allMenuItems: MenuItem[] = [
     label: 'Relatórios',
     route: '/app/reports',
     icon: BarChart2,
-    description: 'Gráficos e relatórios.',
+    description: 'Veja gráficos de faturamento, produtos mais vendidos e desempenho da equipe.',
     permission: PERMISSIONS.RELATORIOS
   },
   {
     label: 'Assinatura',
     route: '/app/subscription',
     icon: CreditCard,
-    description: 'Gerencie seu plano e pagamentos.',
+    description: 'Veja e gerencie seu plano ativo, data de vencimento e forma de pagamento.',
     callToAction: 'Ver Assinatura',
     permission: PERMISSIONS.ASSINATURA
   },
@@ -156,16 +164,8 @@ export const allMenuItems: MenuItem[] = [
     label: 'Meu Perfil',
     route: '/app/settings/profile',
     icon: Users,
-    description: 'Dados pessoais para contato e cobranças.',
+    description: 'Atualize seus dados pessoais, senha de acesso e informações de contato.',
     callToAction: 'Editar Perfil',
-    permission: PERMISSIONS.CONFIGURACAO
-  },
-  {
-    label: 'Terminal',
-    route: '/app/settings/register',
-    icon: Calculator,
-    description: 'Gerencie terminais de máquinas de cartão.',
-    callToAction: 'Ver terminal',
     permission: PERMISSIONS.CONFIGURACAO
   },
 ];
@@ -188,11 +188,11 @@ export const adminMenuItems: AdminMenuItem[] = [
     adminOnly: true
   },
   {
-    label: 'Métricas',
-    route: '/app/admin/metrics',
-    icon: BarChart2,
-    description: 'KPIs e métricas de assinaturas.',
-    callToAction: 'Ver Métricas',
+    label: 'Estabelecimentos',
+    route: '/app/admin/establishments',
+    icon: Store,
+    description: 'Lista de todos os estabelecimentos cadastrados.',
+    callToAction: 'Ver Estabelecimentos',
     adminOnly: true
   },
   {

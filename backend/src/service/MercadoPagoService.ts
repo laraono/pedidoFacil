@@ -1,11 +1,12 @@
 import { CreateOrderPaymentMP, CreateOrderSubscriptionMP, CreatePlanMercadoPago, CreateRegisterParamsMP, CreateStoreParamsMP, UpdatePlanMercadoPago, UpdateSubscriptionMP } from '../dto';
 import { AppError } from '../middleware';
+import { auditLog } from '../utils/logger';
 import axios, { AxiosError } from 'axios'
 import opencage from 'opencage-api-client';
 import crypto from 'crypto';
 import { MercadoPagoConfig, OAuth } from 'mercadopago'
 
-const { v4 } = require('uuid');
+const v4 = () => crypto.randomUUID();
 
 type CreateOrderType = {
     id: string,
@@ -76,8 +77,8 @@ export class MercadoPagoService {
                 headers
             })
             return answer.data
-        } catch(error) {
-            console.log(error)
+        } catch(error: any) {
+            auditLog('mp.create_plan_error', { error: error?.message, response: error?.response?.data });
             throw new AppError('Erro criando plano', 500)
         }
     }
@@ -100,8 +101,8 @@ export class MercadoPagoService {
                 headers
             })
             return answer.data
-        } catch(error) {
-            console.log(error)
+        } catch(error: any) {
+            auditLog('mp.update_plan_error', { error: error?.message });
             throw new AppError('Erro criando plano', 500)
         }
     }
@@ -125,10 +126,7 @@ export class MercadoPagoService {
             return answer.data
         } catch(err: any) {
 
-            for(const error of err.response.data.errors) {
-                console.log(error)
-                console.log('DETALHES', error.details)
-            }
+            auditLog('mp.get_plans_error', { errors: err?.response?.data?.errors });
             throw new AppError('Erro buscando planos', 500)
         }
     }
@@ -161,11 +159,9 @@ export class MercadoPagoService {
 
             return answer.data
         } catch(err: any) {
-            console.log(err.response.data)
-            console.log()
-            console.log()
-
-            throw new AppError('Erro criando assinatura', 500)
+            const mpError = err?.response?.data
+            auditLog('mp.create_subscription_error', { error: mpError });
+            throw new AppError('Ocorreu um erro no Mercado Pago. Verifique os dados do cartão e tente novamente.', 500)
         }
     }
 
@@ -186,9 +182,13 @@ export class MercadoPagoService {
                 headers
             })
 
-            return answer.data.status
-        } catch(error) {
-            throw new AppError('Erro criando plano', 500)
+            return {
+                status: answer.data.status as string,
+                next_payment_date: answer.data.next_payment_date as string | null
+            }
+        } catch(error: any) {
+            auditLog('mp.get_subscription_error', { error: error?.response?.data ?? error?.message });
+            throw new AppError('Erro ao consultar assinatura no Mercado Pago', 500)
         }
     }
 
@@ -218,7 +218,8 @@ export class MercadoPagoService {
 
             return answer.data.id
 
-        } catch(error) {
+        } catch(error: any) {
+            auditLog('mp.update_subscription_value_error', { error: error?.response?.data ?? error?.message });
             throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
@@ -233,7 +234,7 @@ export class MercadoPagoService {
             'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA 
         }
 
-        const status = {status: 'canceled'}
+        const status = {status: 'cancelled'}
 
         try {
             const answer = await axios({
@@ -245,8 +246,91 @@ export class MercadoPagoService {
 
             return answer.data.id
 
-        } catch(error) {
+        } catch(error: any) {
+            auditLog('mp.cancel_subscription_error', { error: error?.response?.data ?? error?.message });
             throw new AppError('Erro de conexão com o Mercado Pago',  500)
+        }
+    }
+
+    async getPayment(paymentId: string): Promise<{
+        status: string
+        preapproval_id: string | null
+        transaction_amount: number
+        payment_type_id: string
+        installments: number | null
+    }> {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
+            throw new AppError('Erro de conexão com o Mercado Pago', 500)
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA
+        }
+
+        try {
+            const answer = await axios({
+                method: 'get',
+                url: `https://api.mercadopago.com/v1/payments/${paymentId}`,
+                headers
+            })
+            return {
+                status: answer.data.status,
+                preapproval_id: answer.data.metadata?.preapproval_id ?? answer.data.preapproval_id ?? null,
+                transaction_amount: answer.data.transaction_amount ?? 0,
+                payment_type_id: answer.data.payment_type_id ?? '',
+                installments: answer.data.installments ?? null,
+            }
+        } catch(error: any) {
+            auditLog('mp.get_payment_error', { error: error?.response?.data ?? error?.message });
+            throw new AppError('Erro ao consultar pagamento no Mercado Pago', 500)
+        }
+    }
+
+    async getPaymentsByPreapproval(preapprovalId: string): Promise<any[]> {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
+            throw new AppError('Erro de conexão com o Mercado Pago', 500)
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA
+        }
+
+        try {
+            const answer = await axios({
+                method: 'get',
+                url: 'https://api.mercadopago.com/v1/payments/search',
+                headers,
+                params: { preapproval_id: preapprovalId }
+            })
+            return answer.data.results ?? []
+        } catch(error: any) {
+            auditLog('mp.get_payments_by_preapproval_error', { error: error?.response?.data ?? error?.message });
+            throw new AppError('Erro ao buscar pagamentos da assinatura', 500)
+        }
+    }
+
+    async updateSubscriptionCard(preapprovalId: string, cardToken: string): Promise<void> {
+        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
+            throw new AppError('Erro de conexão com o Mercado Pago', 500)
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA
+        }
+
+        try {
+            await axios({
+                method: 'put',
+                url: `https://api.mercadopago.com/preapproval/${preapprovalId}`,
+                headers,
+                data: { card_token_id: cardToken }
+            })
+        } catch(error: any) {
+            auditLog('mp.update_subscription_card_error', { error: error?.response?.data ?? error?.message });
+            throw new AppError('Erro ao atualizar cartão da assinatura', 500)
         }
     }
 
@@ -292,8 +376,8 @@ export class MercadoPagoService {
 
             return answer.data.id
 
-        } catch(error) {
-            console.log('ERRO', error)
+        } catch(error: any) {
+            auditLog('mp.create_store_error', { error: error?.message });
             throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
@@ -324,14 +408,15 @@ export class MercadoPagoService {
 
             return answer.data.id
 
-        } catch(error) {
+        } catch(error: any) {
+            auditLog('mp.create_register_error', { error: error?.response?.data ?? error?.message });
             throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
 
     async getTerminals({ store, pos }: { store?: string; pos?: string }) {
         if (!process.env.MERCADOPAGO_ACCESS_TOKEN_TERMINAL) {
-            throw new AppError('Missing API Credentials', 500);
+            throw new AppError('Credenciais do Mercado Pago não configuradas.', 500);
         }
 
         const headers = {
@@ -353,14 +438,15 @@ export class MercadoPagoService {
             });
 
             return response.data.terminals;
-        } catch (error) {
+        } catch (error: any) {
+            auditLog('mp.get_terminals_error', { error: error?.response?.data ?? error?.message });
             throw new AppError('Erro ao buscar terminais', 500);
         }
     }
 
     async activeTerminal(terminalId: string) {
         if (!process.env.MERCADOPAGO_ACCESS_TOKEN_TERMINAL) {
-            throw new AppError('Missing API Credentials', 500);
+            throw new AppError('Credenciais do Mercado Pago não configuradas.', 500);
         }
 
         const headers = {
@@ -380,7 +466,8 @@ export class MercadoPagoService {
             });
 
             return response.data.terminals;
-        } catch (error) {
+        } catch (error: any) {
+            auditLog('mp.activate_terminal_error', { error: error?.response?.data ?? error?.message });
             throw new AppError('Erro ao ativar terminal', 500);
         }
     }
@@ -421,7 +508,8 @@ export class MercadoPagoService {
 
             return answer.data
 
-        } catch(error) {
+        } catch(error: any) {
+            auditLog('mp.create_order_error', { error: error?.response?.data ?? error?.message });
             throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
@@ -448,7 +536,8 @@ export class MercadoPagoService {
             if(answer.data.status === 'canceled') return true
             else return false
 
-        } catch(error) {
+        } catch(error: any) {
+            auditLog('mp.update_order_error', { error: error?.response?.data ?? error?.message });
             throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
@@ -474,7 +563,8 @@ export class MercadoPagoService {
             if(answer.data.status === 'canceled') return true
             else return false
 
-        } catch(error) {
+        } catch(error: any) {
+            auditLog('mp.cancel_order_error', { error: error?.response?.data ?? error?.message });
             throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
@@ -500,7 +590,8 @@ export class MercadoPagoService {
             if(answer.data.status === 'refunded') return true
             else return false
 
-        } catch(error) {
+        } catch(error: any) {
+            auditLog('mp.refund_order_error', { error: error?.response?.data ?? error?.message });
             throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
@@ -524,7 +615,8 @@ export class MercadoPagoService {
 
             return answer.data
 
-        } catch(error) {
+        } catch(error: any) {
+            auditLog('mp.get_order_error', { error: error?.response?.data ?? error?.message });
             throw new AppError('Erro ao conectar ao Mercado Pago', 500)
         }
     }
@@ -538,17 +630,15 @@ export class MercadoPagoService {
                 
                 return place.geometry
             } else {
-                console.log('Status', data.status.message);
-                console.log('total_results', data.total_results);
+                auditLog('mp.geocode_no_results', { status: data.status.message, total: data.total_results });
             }
         })
-        .catch((error) => {
-            console.log('error', error.message);
-            if (error.status.code === 402) {
-                console.log('hit free trial daily limit');
-                console.log('become a customer: https://opencagedata.com/pricing');
+        .catch((error: any) => {
+            if (error.status?.code === 402) {
+                auditLog('mp.geocode_rate_limit', { error: error.message });
                 throw new AppError('Erro de conexão com o Mercado Pago',  500)
             }
+            auditLog('mp.geocode_error', { error: error?.message });
         });
     }
 
@@ -581,7 +671,8 @@ export class MercadoPagoService {
                     response_type: 'code'
                 }
             })
-        } catch(error) {
+        } catch(error: any) {
+            auditLog('mp.get_access_token_error', { error: error?.response?.data ?? error?.message });
             throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
@@ -612,8 +703,8 @@ export class MercadoPagoService {
                 code: authCode,
                 redirect_uri: '' // TODO,
             }
-        }).then((result) => console.log(result))
-	    .catch((error) => console.log(error));
+        }).then(() => {})
+	    .catch((error: any) => auditLog('mp.oauth_error', { error: error?.message }));
 
     }
 
@@ -653,6 +744,7 @@ export class MercadoPagoService {
                 pixExpiresAt: data.date_of_expiration ?? null
             };
         } catch (err: any) {
+            auditLog('mp.create_totem_payment_error', { error: err?.response?.data ?? err?.message });
             const msg = err.response?.data?.message ?? 'Erro ao processar pagamento';
             throw new AppError(msg, err.response?.status ?? 500);
         }
@@ -683,7 +775,7 @@ export class MercadoPagoService {
 
         } catch(err: any) {
 
-            console.log('ERRO',  err.response.data)
+            auditLog('mp.totem_payment_error', { error: err?.response?.data });
             throw new AppError(err.response.data.message, 500)
         }
     }
@@ -709,8 +801,7 @@ export class MercadoPagoService {
             return answer.data
 
         } catch(error:any) {
-            console.log('ERRO',  error.response.data)
-
+            auditLog('mp.process_order_error', { error: error?.response?.data });
             throw new AppError(error.response.data.message, 500)
         }
     }
@@ -737,6 +828,7 @@ export class MercadoPagoService {
             return answer.data
 
         } catch(error: any) {
+            auditLog('mp.create_subscription_order_error', { error: error?.response?.data ?? error?.message });
             if( error.response.data.errors) {
                 for(const e of  error.response.data.errors) {
                     throw new AppError(e.message, 500)

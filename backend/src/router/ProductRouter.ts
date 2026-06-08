@@ -3,12 +3,11 @@ import { productController } from '../controller';
 import { catchAsync, subscriptionMiddleware } from '../middleware';
 import { validateUpload } from '../middleware/validateUpload';
 import { validateRequest } from '../middleware/validateRequest';
+import { authenticate } from '../middleware/authenticate';
+import { verifyCategoryTenancy } from '../middleware/tenant';
+import { checkPermission } from '../middleware/roleAccessControl';
 import { createProductSchema } from '../dto/product/CreateProductDTO';
 import { updateProductSchema } from '../dto/product/UpdateProductDTO';
-import { validateListProductsByCategories } from '../validator/product';
-import { authenticate } from '../middleware/authenticate';
-import { verifyTenancy } from '../middleware/tenant';
-import { checkPermission } from '../middleware/roleAccessControl';
 
 export const productRouter = express.Router();
 
@@ -34,7 +33,7 @@ productRouter.get(
   '/categories/:categoryId/products',
   authenticate,
   subscriptionMiddleware,
-  verifyTenancy('CATEGORIA', 'categoryId'),
+  verifyCategoryTenancy('categoryId'),
   checkPermission('CARDAPIO'),
   catchAsync((req: Request, res: Response) => productController.listProductsByCategory(req, res))
 );
@@ -43,8 +42,7 @@ productRouter.get(
   '/categories/:categoryId/products/active',
   authenticate,
   subscriptionMiddleware,
-  checkPermission('CARDAPIO'),
-  validateListProductsByCategories,
+  checkPermission('CARDAPIO'), 
   catchAsync((req: Request, res: Response) => productController.listProductsByCategory(req, res))
 );
 
@@ -54,6 +52,7 @@ productRouter.put(
   subscriptionMiddleware,
   checkPermission('CARDAPIO'),
   validateUpload.single('imagem'),
+  validateRequest(updateProductSchema), 
   catchAsync((req: Request, res: Response) => productController.updateProduct(req, res))
 );
 

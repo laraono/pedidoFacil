@@ -1,12 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, DeleteDateColumn, JoinColumn, OneToOne } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, DeleteDateColumn, JoinColumn, Index } from "typeorm"
 import { OrderStatus, ServiceType } from "../../enum"
 import { Comanda } from "./Comanda"
 import { ProductOrder } from "./ProductOrder"
-import { Establishment } from "./Establishment"
 import { User } from "./User"
 import { PaymentOrder } from "./PaymentOrder"
 
 @Entity({name: 'PEDIDO'})
+@Index('idx_pedido_comanda_status_data', ['comanda', 'status', 'created_at'])
 export class Order {
 
     @PrimaryGeneratedColumn({
@@ -44,23 +44,6 @@ export class Order {
     })
     serviceType!: ServiceType
 
-    @Column({
-        name: 'Custo_Adicional_Viagem',
-        type: "decimal",
-        precision: 10,
-        scale: 2,
-        nullable: true
-    })
-    tripPrice?: number
-
-    @Column({
-        type: 'boolean',
-        name: 'seEntregue',
-        nullable: false,
-        default: false
-    })
-    isDelivered!: boolean
-
     @CreateDateColumn({ 
         name:  'Data_Hora_Chegada',
         type: "timestamp", 
@@ -81,20 +64,21 @@ export class Order {
     })
     comanda!: Comanda
 
-    @ManyToOne(() => Establishment, (establishment) => establishment.orders)
-    @JoinColumn({
-        name: 'ID_Estabelecimento'
-    })
-    establishment!: Establishment
 
     @OneToMany(() => ProductOrder, (productOrders) => productOrders.order)
     productOrders!: ProductOrder[]
 
-    @OneToOne(() => User)
+    @ManyToOne(() => User)
     @JoinColumn({
         name: 'ID_Usuario_Cancelador'
     })
     user!: User
+
+    @ManyToOne(() => User, { nullable: true })
+    @JoinColumn({
+        name: 'ID_Usuario_Criador'
+    })
+    createdBy?: User | null
 
     @OneToMany(() => PaymentOrder, (paymentOrder) => paymentOrder.order)
     paymentOrders!: PaymentOrder[]

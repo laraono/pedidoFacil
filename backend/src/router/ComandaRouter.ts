@@ -1,10 +1,13 @@
 import express, { Request, Response } from 'express';
 import { comandaController } from '../controller';
-import { validateCancelComanda, validateCreateComanda, validateListComandas, validateListComandasByStatus } from '../validator';
 import { catchAsync, subscriptionMiddleware } from '../middleware';
 import { authenticate } from '../middleware/authenticate';
-import { verifyTenancy } from '../middleware/tenant';
+import { verifyComandaTenancy } from '../middleware/tenant';
 import { checkPermission } from '../middleware/roleAccessControl';
+import { validateRequest } from '../middleware/validateRequest'; 
+import { createComandaSchema } from '../dto/comanda/CreateComandaDTO'; 
+import { cancelComandaSchema } from '../dto/comanda/CancelComandaDTO';
+import { checkoutComandaSchema } from '../dto/comanda/CheckoutComandaDTO';
 
 export const comandaRouter = express.Router();
 
@@ -29,7 +32,7 @@ comandaRouter.get(
   authenticate,
   subscriptionMiddleware,
   checkPermission('COMANDAS_FINALIZADAS'),
-  catchAsync((req: Request, res: Response) => comandaController.listComandasByStatus(req, res)),
+  catchAsync((req: Request, res: Response) => comandaController.listComandasHistory(req, res)),
 );
 
 comandaRouter.post(
@@ -37,7 +40,7 @@ comandaRouter.post(
   authenticate,
   subscriptionMiddleware,
   checkPermission('CAIXA', 'CRIAR_PEDIDO'),
-  validateCreateComanda,
+  validateRequest(createComandaSchema), 
   catchAsync((req: Request, res: Response) => comandaController.createComanda(req, res)),
 );
 
@@ -45,9 +48,9 @@ comandaRouter.post(
   '/commands/:comandaId/cancel',
   authenticate,
   subscriptionMiddleware,
-  verifyTenancy('COMANDA', 'comandaId'),
+  verifyComandaTenancy('comandaId'),
   checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'),
-  validateCancelComanda,
+  validateRequest(cancelComandaSchema), 
   catchAsync((req: Request, res: Response) => comandaController.cancelComanda(req, res)),
 );
 
@@ -55,16 +58,16 @@ comandaRouter.put(
   '/commands/:comandaId',
   authenticate,
   subscriptionMiddleware,
-  verifyTenancy('COMANDA', 'comandaId'),
+  verifyComandaTenancy('comandaId'),
   checkPermission('CAIXA', 'CRIAR_PEDIDO'),
   catchAsync((req: Request, res: Response) => comandaController.updateComandaStatus(req, res)),
 );
 
 comandaRouter.post(
-  '/commands/:comandaId/checkout',
+  '/commands/:comandaId/payment',
   authenticate,
   subscriptionMiddleware,
-  verifyTenancy('COMANDA', 'comandaId'),
+  verifyComandaTenancy('comandaId'),
   checkPermission('CAIXA'),
-  catchAsync((req: Request, res: Response) => comandaController.checkout(req, res)),
+  catchAsync((req: Request, res: Response) => comandaController.processPayment(req, res)),
 );

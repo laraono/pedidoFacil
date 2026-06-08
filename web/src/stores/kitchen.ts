@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { request } from '@/services/api';
-import { connectSocket, disconnectSocket, getSocket } from '@/services/socket';
+import { connectSocket, getSocket } from '@/services/socket';
 
 export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'finished' | 'cancelled';
 
@@ -36,6 +36,9 @@ export interface KitchenOrder {
   status: OrderStatus;
   createdAt: Date;
   items: KitchenOrderItem[];
+  userId?: number;
+  user?: { id: number };
+  source?: string;
 }
 
 export const useKitchenStore = defineStore('kitchen', () => {
@@ -53,27 +56,29 @@ export const useKitchenStore = defineStore('kitchen', () => {
 
       data.forEach((pedido: any) => {
         const mappedStatus = dbToFrontMap[pedido.status];
-        
         if (mappedStatus && mappedStatus !== 'finished' && mappedStatus !== 'cancelled') {
+          const rawDate = pedido.created_at;
+          const parsedDate = rawDate
+            ? new Date(typeof rawDate === 'string' ? rawDate.replace(' ', 'T') : rawDate)
+            : null;
+          const createdAt = parsedDate && !isNaN(parsedDate.getTime()) ? parsedDate : new Date();
+
           allOrders.push({
             id: pedido.id,
             comandaId: pedido.comanda?.id || 0,
             comanda: pedido.comanda?.description || `Totem #${pedido.id}`,
-            waiter: pedido.serviceType === 'AUTOATENDIMENTO' || pedido.serviceType === 'TOTEM' ? 'Totem' : (pedido.serviceType || 'Balcão'),
+            waiter: pedido.serviceType === 'AUTOATENDIMENTO' || pedido.serviceType === 'TOTEM' || pedido.serviceType === 'Autoatendimento' ? 'Totem' : (pedido.serviceType || 'Balcão'),
+            source: pedido.serviceType === 'Autoatendimento' ? 'totem' : undefined,
             status: mappedStatus,
-            createdAt: pedido.created_at ? new Date(pedido.created_at) : new Date(),
-            items: pedido.productOrders?.map((po: any) => {
-              const variationName = po.variations
-                ?.map((v: any) => v.productVariation?.name)
-                .filter(Boolean)
-                .join(', ') || '';
-              return {
-                name: po.product?.name || 'Produto Excluído',
-                variationName,
-                amount: po.quantity,
-                obs: po.observation || '',
-              };
-            }) || []
+            createdAt,
+            userId: pedido.user?.id,
+            user: pedido.user ? { id: pedido.user.id } : undefined,
+            items: pedido.productOrders?.map((po: any) => ({
+              name: po.product?.name || 'Produto Excluído',
+              variationName: po.productVariation?.name || '',
+              amount: po.quantity,
+              obs: po.observation || '',
+            })) || []
           });
         }
       });
@@ -155,8 +160,11 @@ export const useKitchenStore = defineStore('kitchen', () => {
         comandaId: data.comandaId,
         comanda: data.comandaLabel,
         waiter: data.source === 'totem' ? 'Totem' : (data.source || 'Caixa/Web'),
+        source: data.source || undefined,
         status: 'pending',
-        createdAt: new Date(data.createdAt),
+        createdAt: data.createdAt ? (() => { const d = new Date(typeof data.createdAt === 'string' ? data.createdAt.replace(' ', 'T') : data.createdAt); return isNaN(d.getTime()) ? new Date() : d; })() : new Date(),
+        userId: data.userId || data.user?.id,
+        user: data.user ? { id: data.user.id } : undefined,
         items: (data.items || []).map((i: any) => ({
           name: i.name || 'Produto',
           variationName: i.variationName || '',
@@ -190,9 +198,8 @@ export const useKitchenStore = defineStore('kitchen', () => {
     const socket = getSocket();
     if (socket) {
       socket.off('new_order');
-      socket.off('order_status_updated'); 
+      socket.off('order_status_updated');
     }
-    disconnectSocket();
   }
 
   return {

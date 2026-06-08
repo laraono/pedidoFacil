@@ -2,20 +2,58 @@ import { Router } from 'express';
 import { employeeController } from '../controller';
 import { authenticate } from '../middleware/authenticate';
 import { checkPermission } from '../middleware/roleAccessControl';
-import { validateCreateEmployee, validateUpdateEmployee } from '../validator/employee/employeeSchema';
 import { subscriptionMiddleware } from '../middleware';
+import { validateRequest } from '../middleware/validateRequest';
+import { createEmployeeSchema } from '../dto/employee/CreateEmployeeDTO';
+import { updateEmployeeSchema } from '../dto/employee/UpdateEmployeeDTO';
 
 const employeeRouter = Router();
 
 employeeRouter.use(authenticate);
 employeeRouter.use(subscriptionMiddleware);
 
-employeeRouter.get('/', checkPermission('USUARIO_VIEW', 'ALL'), employeeController.list);
-employeeRouter.get('/inactive', checkPermission('USUARIO_VIEW', 'ALL'), employeeController.listInactive);
+employeeRouter.get(
+  '/',
+  checkPermission('FUNCIONARIOS'),
+  employeeController.list,
+);
 
-employeeRouter.post('/', checkPermission('USUARIO_CREATE', 'ALL'), validateCreateEmployee, employeeController.create);
-employeeRouter.put('/:id', checkPermission('USUARIO_EDIT', 'ALL'), validateUpdateEmployee, employeeController.update);
-employeeRouter.delete('/:id', checkPermission('USUARIO_DELETE', 'ALL'), employeeController.delete);
-employeeRouter.patch('/:id/reactivate', checkPermission('USUARIO_EDIT', 'ALL'), employeeController.reactivate);
+employeeRouter.get(
+  '/inactive',
+  checkPermission('FUNCIONARIOS'),
+  employeeController.listInactive,
+);
+
+employeeRouter.post(
+  '/',
+  checkPermission('FUNCIONARIOS'),
+  validateRequest(createEmployeeSchema),
+  employeeController.create,
+);
+
+employeeRouter.put(
+  '/:id',
+  checkPermission('FUNCIONARIOS'),
+  validateRequest(updateEmployeeSchema),
+  employeeController.update,
+);
+
+employeeRouter.delete(
+  '/:id',
+  checkPermission('FUNCIONARIOS'),
+  employeeController.delete,
+);
+
+employeeRouter.patch(
+  '/:id/reactivate',
+  checkPermission('FUNCIONARIOS'),
+  employeeController.reactivate,
+);
+
+employeeRouter.delete(
+  '/:id/permanent',
+  checkPermission('FUNCIONARIOS'),
+  employeeController.permanentDelete,
+);
 
 export { employeeRouter };

@@ -1,7 +1,13 @@
 import { ProductService } from '../service';
 import { Request, Response } from 'express';
 import { getIO } from '../socket';
-import { deleteFile } from '../utils/fileHelper';
+import path from 'path';
+import { 
+    ensureBucketExists, 
+    generateUniqueImageKey, 
+    uploadToS3, 
+    getImageContentType 
+} from "../service/S3Service"; 
 
 export class ProductController {
   private productService: ProductService;
@@ -17,7 +23,29 @@ export class ProductController {
         id: (req as any).usuario.estabelecimento,
     };
     
-    productDTO.product.image = req.file ? req.file.filename : null;
+    if (req.file) {
+        const bucketName = process.env.AWS_BUCKET_NAME || 'pedidofacil-uploads';
+        
+        await ensureBucketExists(bucketName);
+
+        const key = generateUniqueImageKey(req.file.buffer);
+        const extension = path.extname(req.file.originalname) || '.jpg';
+        const fullKey = `${key}${extension}`;
+
+        const contentType = getImageContentType(req.file);
+
+        const uploadResult = await uploadToS3({
+            bucket: bucketName,
+            key: fullKey,
+            body: req.file.buffer,
+            contentType: contentType
+        });
+
+        productDTO.product.image = uploadResult.Location;
+    } else {
+        productDTO.product.image = null;
+    }
+
     productDTO.product.estocavel = false; 
 
     const productId = await this.productService.createProduct(productDTO);
@@ -52,21 +80,33 @@ export class ProductController {
 
   async updateProduct(req: Request, res: Response) {
     const id = Number(req.params.id);
-    
     let productData = { ...req.body };
 
     if (req.file) {
-      const oldProduct = await this.productService.getProduct(id);
-      if (oldProduct && oldProduct.image) {
-        deleteFile(oldProduct.image);
-      }
-      productData.image = req.file.filename;
+        const bucketName = process.env.AWS_BUCKET_NAME || 'pedidofacil-uploads';
+        
+        await ensureBucketExists(bucketName);
+
+        const key = generateUniqueImageKey(req.file.buffer);
+        const extension = path.extname(req.file.originalname) || '.jpg';
+        const fullKey = `${key}${extension}`;
+
+        const contentType = getImageContentType(req.file);
+
+        const uploadResult = await uploadToS3({
+            bucket: bucketName,
+            key: fullKey,
+            body: req.file.buffer,
+            contentType: contentType
+        });
+
+        productData.image = uploadResult.Location;
     }
 
     await this.productService.updateProduct(id, productData);
 
     getIO().emit('menu_updated');
-    res.status(200).json({ message: 'Produto atualizado com sucesso' });
+    res.status(200).json({ message: 'Produto updated com sucesso' });
   }
 
   async deleteProduct(req: Request, res: Response) {

@@ -1,3 +1,14 @@
+<!-- 
+
+
+
+############################################
+
+ Fluxo desativado. Requer integração e configuração prévia com o terminal de cartão. 
+
+ ###########################################
+
+
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
@@ -263,4 +274,4 @@ const handlePermanentDelete = async (register) => {
 .fade-leave-to {
   opacity: 0;
 }
-</style>
+</style> -->

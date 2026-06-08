@@ -23,18 +23,7 @@ import ProductModal from "../components/ProductModal";
 
 import { fetchFullMenu } from "../stores/menuStore";
 import { connectMobileSocket } from "../services/socketService";
-
-const API_BASE_URL = "http://192.168.1.39:3000";
-
-const getFullImageUrl = (imagePath) => {
-  
-  if (!imagePath) return null; 
-  if (typeof imagePath !== "string") return imagePath; 
-  if (imagePath.startsWith("http") || imagePath.startsWith("data:")) {
-    return { uri: imagePath }; 
-  }
-  return { uri: `${API_BASE_URL}/uploads/${imagePath}` };
-};
+import { getFullImageUrl } from "../utils/imageUtils";
 
 export default function MenuScreen() {
   const [categories, setCategories] = useState([]);

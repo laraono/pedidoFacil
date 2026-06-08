@@ -6,9 +6,10 @@ export class WebhookController {
     constructor(private webhookService: WebhookService) {}
 
     handlePayment = catchAsync(async (req: Request, res: Response) => {
-        const mercadoPagoId = req.body?.data?.id;
-        if (mercadoPagoId) {
-            await this.webhookService.handleSubscriptionRenewal(mercadoPagoId);
+        const eventId = req.body?.data?.id;
+        const eventType: string = req.body?.type ?? 'payment';
+        if (eventId) {
+            await this.webhookService.handleEvent(eventId, eventType);
         }
         return res.sendStatus(200);
     });

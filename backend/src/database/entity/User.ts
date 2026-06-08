@@ -5,9 +5,9 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  DeleteDateColumn,
 } from 'typeorm';
 import { UserStatus } from '../../enum';
-import { Establishment } from './Establishment';
 import { Role } from './Role';
 import { StorageMovimentation } from './StorageMovimentation';
 import { Payment } from './Payment';
@@ -47,7 +47,7 @@ export class User {
     type: 'varchar',
     name: 'Status',
     nullable: false,
-    default: UserStatus.PENDENTE,
+    default: UserStatus.INATIVO,
   })
   status!: UserStatus;
 
@@ -56,7 +56,7 @@ export class User {
     name: 'CPF',
     nullable: true,
     length: 14,
-    unique: true,
+    unique: false,
   })
   cpf!: string | null;
 
@@ -89,11 +89,12 @@ export class User {
   @Column({ type: 'varchar', name: 'CEP', nullable: true, length: 10 })
   zip!: string | null;
 
-  @ManyToOne(() => Establishment, (establishment) => establishment.users)
-  @JoinColumn({
-    name: 'ID_Estabelecimento',
+  @DeleteDateColumn({
+    name: 'Data_Exclusao',
+    type: 'datetime',
+    nullable: true,
   })
-  establishment!: Establishment;
+  deletedAt?: Date;
 
   @ManyToOne(() => Role, (role) => role.users)
   @JoinColumn({

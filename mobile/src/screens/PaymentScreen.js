@@ -49,15 +49,15 @@ export default function PaymentScreen() {
 
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [isSimulatingPayment, setIsSimulatingPayment] = useState(false);
 
   const loadEstablishmentData = useCallback(async () => {
     try {
       const url = `${appConfig.API_URL}/estabelecimento/${appConfig.ESTABLISHMENT_ID}/public`;
       const response = await fetch(url, {
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
-          'x-totem-code': appConfig.selfServiceCode 
+          'x-totem-code': appConfig.selfServiceCode
         }
       });
       
@@ -109,13 +109,20 @@ export default function PaymentScreen() {
         navigation.navigate("OrderConfirmed", {
           ticket: orderData.ticket,
           label: orderData.label,
+          customerName: customerName,
         });
       } else {
-        navigation.navigate("MPBricks", {
-          amount: totalComDesconto,
-          method: selectedMethod,
-          orderId: orderData.id,
-        });
+        setIsSimulatingPayment(true);
+
+        setTimeout(() => {
+          setIsSimulatingPayment(false);
+          clearCart();
+          navigation.navigate("OrderConfirmed", {
+            ticket: orderData.ticket,
+            label: orderData.label,
+            customerName: customerName,
+          });
+        }, 3000);
       }
     } catch (error) {
       console.error("[PaymentScreen] Erro:", error);
@@ -205,7 +212,7 @@ export default function PaymentScreen() {
           disabled={!selectedMethod || isSubmitting}
           onPress={handleConfirm}
         >
-          {isSubmitting ? (
+          {isSubmitting && !isSimulatingPayment ? (
             <ActivityIndicator size="small" color={theme.textoBotoes} />
           ) : (
             <>
@@ -221,6 +228,15 @@ export default function PaymentScreen() {
           <Text style={styles.btnCancelText}>Cancelar e Sair</Text>
         </TouchableOpacity>
       </View>
+
+      {/* 🌟 OVERLAY DE SIMULAÇÃO DE PAGAMENTO */}
+      {isSimulatingPayment && (
+        <View style={styles.simulationOverlay}>
+          <ActivityIndicator size="large" color={theme.corBotoes} />
+          <Text style={styles.simulationTitle}>Processando pagamento...</Text>
+          <Text style={styles.simulationSubtitle}>Aguardando confirmação da máquina</Text>
+        </View>
+      )}
 
     </SafeAreaView>
   );
@@ -285,4 +301,27 @@ const getStyles = (theme, width) =>
     btnConfirmText: { color: theme.textoBotoes, fontSize: 18, fontWeight: "900", textTransform: "uppercase" },
     btnCancel: { alignSelf: "center", marginTop: 16 },
     btnCancelText: { color: "#E53935", fontSize: 14, fontWeight: "900", textTransform: "uppercase", textDecorationLine: "underline" },
+    
+    simulationOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.85)',
+      zIndex: 9999,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    simulationTitle: {
+      color: '#FFFFFF',
+      fontSize: 22,
+      fontWeight: '900',
+      marginTop: 24,
+      textAlign: 'center',
+    },
+    simulationSubtitle: {
+      color: '#AAAAAA',
+      fontSize: 14,
+      fontWeight: 'bold',
+      marginTop: 8,
+      textAlign: 'center',
+    }
   });

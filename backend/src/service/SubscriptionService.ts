@@ -1,5 +1,5 @@
 import { SubscriptionStatus } from "../enum"
-import { PlanRepository, SubscriptionRepository } from "../repository"
+import { PlanRepository, SubscriptionPaymentRepository, SubscriptionRepository } from "../repository"
 import { AppError } from "../middleware"
 import { MercadoPagoService } from "./MercadoPagoService"
 import { CreateOrderSubscriptionMP, RestoreOrderSubscriptionMP } from "../dto"
@@ -11,28 +11,24 @@ export class SubscriptionService {
     constructor(
         private planRepository: PlanRepository,
         private subscriptionRepository: SubscriptionRepository,
+        private subscriptionPaymentRepository: SubscriptionPaymentRepository,
         private mercadoPagoService: MercadoPagoService,
         private dataSource: DataSource
     ) {}
 
     async cancelSubscription(subscriptionId: number) {
         const subscription = await this.subscriptionRepository.getSubscription(subscriptionId)
-
-        if(!subscription) {
-            throw new AppError('Assinatura não encontrada', 404)
+        if(!subscription) throw new AppError('Assinatura não encontrada', 404)
+        if(subscription.mercadoPagoId) {
+            await this.mercadoPagoService.cancelSubscription(subscription.mercadoPagoId)
         }
-
         await this.subscriptionRepository.updateSubscriptionStatus(subscriptionId, SubscriptionStatus.CANCELADA)
     }
 
     async updateSubscriptionPrice(subscriptionId: number, amount: number) {
         const subscription = await this.subscriptionRepository.getSubscription(subscriptionId)
-
-        if(!subscription) {
-            throw new AppError('Assinatura não encontrada', 404)
-        }
-
-        await this.mercadoPagoService.updateSubscriptionValue({subscriptionId: subscription.mercadoPagoId, amount})
+        if(!subscription) throw new AppError('Assinatura não encontrada', 404)
+        await this.mercadoPagoService.updateSubscriptionValue({ subscriptionId: subscription.mercadoPagoId!, amount })
         await this.subscriptionRepository.updateSubscriptionPrice(subscriptionId, amount)
     }
 
@@ -42,213 +38,150 @@ export class SubscriptionService {
 
     async listSubscriptionsByPlan(planId: number) {
         const plan = await this.planRepository.getPlan(planId)
-
-        if(!plan) {
-            throw new AppError('Plano não encontrado', 404)
-        }
-
+        if(!plan) throw new AppError('Plano não encontrado', 404)
         return await this.subscriptionRepository.listSubscriptionsByPlan(plan)
     }
 
     async processCardInfo(
         mercadoPagoParams: CreateOrderSubscriptionMP,
-        {planId, establishmentId}: {planId: number, establishmentId: number}
+        { planId, establishmentId }: { planId: number, establishmentId: number }
     ) {
         return await this.dataSource.transaction(async (transactionManager) => {
-            const plan = await transactionManager.findOne(Plan, {
-                where: {
-                    id: planId
-                }
-            })
+            const plan = await transactionManager.findOne(Plan, { where: { id: planId } })
+            if(!plan) throw new AppError('Plano não encontrado', 404)
+            if(!plan.mercadoPagoId) throw new AppError('Plano não configurado no Mercado Pago', 500)
 
-            if(!plan) {
-                throw new AppError('Plano não encontrado', 404)
-            }
+            const establishment = await transactionManager.findOne(Establishment, { where: { id: establishmentId } })
+            if(!establishment) throw new AppError('Estabelecimento não encontrado', 404)
 
-            const establishment = await transactionManager.findOne(Establishment, {
-                where: {
-                    id: establishmentId
-                }
-            })
-
-            if(!establishment) {
-                throw new AppError('Estabelecimento não encontrado', 404)
-            }
-
-            const [existingSubscription] = await transactionManager.find(Subscription, {
-                where: {
-                    establishment
-                }
-            })
-
+            const [existingSubscription] = await transactionManager.find(Subscription, { where: { establishment } })
             if(existingSubscription) {
-                await transactionManager.update(Subscription, {id: existingSubscription.id}, {status: SubscriptionStatus.CANCELADA})
+                if(existingSubscription.mercadoPagoId) {
+                    try { await this.mercadoPagoService.cancelSubscription(existingSubscription.mercadoPagoId) } catch {}
+                }
+                await transactionManager.update(Subscription, { id: existingSubscription.id }, { status: SubscriptionStatus.CANCELADA })
             }
 
-            mercadoPagoParams.total_amount = mercadoPagoParams.total_amount.toString()
-            mercadoPagoParams.transactions.payments[0].amount = mercadoPagoParams.transactions.payments[0].amount.toString()
+            const cardToken = mercadoPagoParams.cardToken
+            const payerEmail = mercadoPagoParams.payerEmail
 
-            const createdSubscription = await this.mercadoPagoService.createSubscriptionOrder(mercadoPagoParams)
+            const created = await this.mercadoPagoService.createSubscription({
+                preapproval_plan_id: plan.mercadoPagoId,
+                payer_email: payerEmail,
+                card_token_id: cardToken,
+                reason: plan.name,
+                status: 'authorized'
+            })
 
-            const expirationDate = new Date();
-            if (plan.frequency === 'anual') {
-                expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+            const expirationDate = new Date()
+            if(plan.frequency === 'anual') {
+                expirationDate.setFullYear(expirationDate.getFullYear() + 1)
             } else {
-                expirationDate.setMonth(expirationDate.getMonth() + 1);
+                expirationDate.setMonth(expirationDate.getMonth() + 1)
             }
 
-            const intialSubscription = {
+            return await transactionManager.save(Subscription, {
                 initialDate: new Date(),
                 establishment,
                 expirationDate,
-                lastPayment: new Date(),
                 status: SubscriptionStatus.PENDENTE,
                 price: plan.price,
                 plan,
-                mercadoPagoId: createdSubscription.id
-            }
-
-            const subscription = await transactionManager.save(Subscription, intialSubscription)
-
-            return subscription
-
+                mercadoPagoId: created.id
+            })
         })
     }
 
     async restoreSubscription(
         mercadoPagoParams: RestoreOrderSubscriptionMP,
-        {subscriptionId, establishmentId}: {subscriptionId: number, establishmentId: number}
+        { subscriptionId, establishmentId }: { subscriptionId: number, establishmentId: number }
     ) {
         return await this.dataSource.transaction(async (transactionManager) => {
-            const subscription = await transactionManager.findOne(Subscription, {
-                where: {
-                    id: subscriptionId
-                }
-            })
+            const subscription = await transactionManager.findOne(Subscription, { where: { id: subscriptionId } })
+            if(!subscription || !subscription.mercadoPagoId) throw new AppError('Assinatura não encontrada', 404)
 
-            if(!subscription || !subscription.mercadoPagoId) {
-                throw new AppError('Assinatura não encontrada', 404)
-            }
+            const establishment = await transactionManager.findOne(Establishment, { where: { id: establishmentId } })
+            if(!establishment) throw new AppError('Estabelecimento não encontrado', 404)
 
-            const establishment = await transactionManager.findOne(Establishment, {
-                where: {
-                    id: establishmentId
-                }
-            })
+            const cardToken = mercadoPagoParams.cardToken
+            await this.mercadoPagoService.updateSubscriptionCard(subscription.mercadoPagoId, cardToken)
 
-            if(!establishment) {
-                throw new AppError('Estabelecimento não encontrado', 404)
-            }
-
-            const order = await this.mercadoPagoService.getOrder(subscription.mercadoPagoId)
-
-            const transactionId = order.transactions.payments[0].id
-
-            await this.mercadoPagoService.updateOrder(subscription.mercadoPagoId, transactionId, mercadoPagoParams.payments[0].payment_method)
-
-            await transactionManager.update(
-                Subscription, 
-                {id: subscriptionId}, 
-                {
-                    status: SubscriptionStatus.PENDENTE, 
-                }
-            )
+            await transactionManager.update(Subscription, { id: subscriptionId }, { status: SubscriptionStatus.PENDENTE })
 
             return subscription
         })
     }
 
-    async getEstablishmentSubscription(establishmentId: number) {
+    async changePlan(establishmentId: number, planId: number) {
         const [subscription] = await this.subscriptionRepository.getSubscriptionByEstablishment(establishmentId)
+        if(!subscription) throw new AppError('Assinatura não encontrada', 404)
 
-        if (!subscription) return null
+        const newPlan = await this.planRepository.getPlan(planId)
+        if(!newPlan) throw new AppError('Plano não encontrado', 404)
 
-        if (subscription.mercadoPagoId && subscription.status !== SubscriptionStatus.PAGA) {
-            try {
-                const order = await this.mercadoPagoService.getOrder(subscription.mercadoPagoId)
-                if (order.status_detail === 'accredited') {
-                    await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.PAGA)
-                    subscription.status = SubscriptionStatus.PAGA
-                }
-            } catch {}
+        await this.subscriptionRepository.update(subscription.id, { plan: { id: planId } } as any)
+
+        if(subscription.mercadoPagoId) {
+            await this.mercadoPagoService.updateSubscriptionValue({
+                subscriptionId: subscription.mercadoPagoId,
+                amount: newPlan.price
+            })
         }
-
-        return subscription
-    }
-
-    async schedulePlan(establishmentId: number, planId: number | null) {
-        const [subscription] = await this.subscriptionRepository.getSubscriptionByEstablishment(establishmentId)
-        if (!subscription) throw new Error('Assinatura não encontrada')
-
-        await this.subscriptionRepository.update(subscription.id, {
-            scheduledPlan: planId ? { id: planId } : null
-        } as any)
 
         const [updated] = await this.subscriptionRepository.getSubscriptionByEstablishment(establishmentId)
         return updated
     }
 
-    async getEstablishmentHistory(establishmentId: number) {
-        const subscriptions = await this.subscriptionRepository.getSubscriptionByEstablishment(establishmentId)
+    async getEstablishmentSubscription(establishmentId: number) {
+        const [subscription] = await this.subscriptionRepository.getSubscriptionByEstablishment(establishmentId)
+        if(!subscription) return null
 
-        const statusLabels: Record<string, string> = {
-            'accredited': 'Aprovado',
-            'in_process': 'Em processamento',
-            'canceled': 'Cancelado',
-            'cancelled': 'Cancelado',
-            'pending_capture': 'Aguardando captura',
-            'authorized': 'Autorizado',
-            'rejected': 'Recusado',
-            'refunded': 'Estornado',
-            'charged_back': 'Contestado',
-            'pending': 'Pendente',
+        if(subscription.mercadoPagoId) {
+            try {
+                const mp = await this.mercadoPagoService.getSubscription(subscription.mercadoPagoId)
+                if(mp.status === 'authorized' && subscription.status !== SubscriptionStatus.PAGA) {
+                    await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.PAGA)
+                    subscription.status = SubscriptionStatus.PAGA
+                } else if(mp.status === 'cancelled') {
+                    await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.CANCELADA)
+                    subscription.status = SubscriptionStatus.CANCELADA
+                }
+                return { ...subscription, nextPaymentDate: mp.next_payment_date }
+            } catch {}
         }
 
+        return subscription
+    }
+
+    async getEstablishmentHistory(establishmentId: number) {
+        const subscriptions = await this.subscriptionRepository.getSubscriptionByEstablishment(establishmentId)
         const history: Array<any> = []
 
-        for(const sub of subscriptions) {
-            if (!sub.mercadoPagoId) continue
-
-            try {
-                const order = await this.mercadoPagoService.getOrder(sub.mercadoPagoId)
-                const payment = order.transactions.payments[0]
-                const statusKey = payment.status_detail?.toLowerCase() ?? ''
-                const data = {
-                    amount: payment.paid_amount,
-                    status: statusLabels[statusKey] ?? payment.status_detail,
-                    type: payment.payment_method?.type === 'credit_card' ? 'Cartão de Crédito'
-                        : payment.payment_method?.type === 'debit_card' ? 'Cartão de Débito'
-                        : payment.payment_method?.type === 'bank_transfer' ? 'Pix'
-                        : 'Cartão',
-                    installments: payment.payment_method?.installments ?? null,
-                    name: sub.plan ? sub.plan.name : '',
-                    date: order.last_updated_date,
-                    receipt: sub.receipt ?? null,
+        for (const sub of subscriptions) {
+            const payments = await this.subscriptionPaymentRepository.getBySubscription(sub.id)
+            for (const p of payments) {
+                history.push({
+                    amount: p.amount,
+                    status: p.status,
+                    type: p.paymentType,
+                    name: p.planName,
+                    date: p.paidAt,
                     mercadoPagoId: sub.mercadoPagoId ?? null,
-                }
-                history.push(data)
-            } catch {}
+                })
+            }
         }
 
         return history
     }
 
+    async getAdminMetrics(startDate: string, endDate: string) {
+        const start = new Date(startDate)
+        const end = new Date(endDate)
+        end.setHours(23, 59, 59, 999)
+        return await this.subscriptionPaymentRepository.getMetricsForPeriod(start, end)
+    }
+
     async getSubscription(subscriptionId: number) {
-        const subscription = await this.subscriptionRepository.getSubscription(subscriptionId)
-
-        return subscription
+        return await this.subscriptionRepository.getSubscription(subscriptionId)
     }
-
-    async deleteSubscription(subscriptionId: number) {
-        const subscription = await this.subscriptionRepository.getSubscription(subscriptionId)
-
-        if(!subscription) {
-            throw new AppError('Assinatura não encontrada', 404)
-        }
-
-        await this.mercadoPagoService.cancelSubscription(subscription.mercadoPagoId)
-        await this.subscriptionRepository.deleteSubscription(subscriptionId)
-
-    }
-
 }

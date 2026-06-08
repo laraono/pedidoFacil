@@ -1,7 +1,13 @@
 import { CategoryService } from "../service";
 import { Request, Response } from 'express';
 import { getIO } from '../socket';
-import { deleteFile } from '../utils/fileHelper';
+import path from 'path';
+import { 
+    ensureBucketExists, 
+    generateUniqueImageKey, 
+    uploadToS3, 
+    getImageContentType 
+} from "../service/S3Service"; 
 
 export class CategoryController {
 
@@ -16,7 +22,24 @@ export class CategoryController {
         categoryData.establishment = { id: (req as any).usuario.estabelecimento };
         
         if (req.file) {
-            categoryData.image = req.file.filename;
+            const bucketName = process.env.AWS_BUCKET_NAME || 'pedidofacil-uploads';
+            
+            await ensureBucketExists(bucketName);
+
+            const key = generateUniqueImageKey(req.file.buffer);
+            const extension = path.extname(req.file.originalname) || '.jpg';
+            const fullKey = `${key}${extension}`;
+
+            const contentType = getImageContentType(req.file);
+
+            const uploadResult = await uploadToS3({
+                bucket: bucketName,
+                key: fullKey,
+                body: req.file.buffer,
+                contentType: contentType
+            });
+
+            categoryData.image = uploadResult.Location;
         }
         
         const categoryId = await this.categoryService.createCategory(categoryData);
@@ -26,10 +49,10 @@ export class CategoryController {
     }
 
     async listCategories(req: Request, res: Response) {
-        const estabelecimentoId = (req as any).usuario.estabelecimento; 
-        
-        if (req.query.deleted === 'true') {
-            const categories = await this.categoryService.listDeletedCategories(estabelecimentoId);
+        const estabelecimentoId = (req as any).usuario.estabelecimento;
+
+        if (req.query.inactive === 'true') {
+            const categories = await this.categoryService.listInactiveCategories(estabelecimentoId);
             return res.status(200).send(categories);
         }
 
@@ -38,19 +61,29 @@ export class CategoryController {
     }
 
     async updateCategory(req: Request, res: Response) {
-     
         const id = Number(req.params.id);
         let categoryData = { ...req.body };
 
         if (req.file) {
-            const oldCategory = await this.categoryService.getCategory(id);
+            const bucketName = process.env.AWS_BUCKET_NAME || 'pedidofacil-uploads';
             
-            if (oldCategory && oldCategory.image) {
-                deleteFile(oldCategory.image);
-            }
+            await ensureBucketExists(bucketName);
+
+            const key = generateUniqueImageKey(req.file.buffer);
+            const extension = path.extname(req.file.originalname) || '.jpg';
+            const fullKey = `${key}${extension}`;
+
+            const contentType = getImageContentType(req.file);
+
+            const uploadResult = await uploadToS3({
+                bucket: bucketName,
+                key: fullKey,
+                body: req.file.buffer,
+                contentType: contentType
+            });
             
-            categoryData.image = req.file.filename;
-            categoryData.imagem = req.file.filename; 
+            categoryData.image = uploadResult.Location;
+            categoryData.imagem = uploadResult.Location; 
         }
 
         await this.categoryService.updateCategory(id, categoryData);
@@ -59,17 +92,21 @@ export class CategoryController {
         res.sendStatus(204);
     }
 
-    async deleteCategory(req: Request, res: Response) {
-        await this.categoryService.softDeleteCategory(Number(req.params.id));
-        
-        getIO().emit('menu_updated'); 
+    async deactivateCategory(req: Request, res: Response) {
+        await this.categoryService.deactivateCategory(Number(req.params.id));
+        getIO().emit('menu_updated');
         res.sendStatus(204);
     }
 
-    async restoreCategory(req: Request, res: Response) {
-        await this.categoryService.restoreCategory(Number(req.params.id));
-        
-        getIO().emit('menu_updated'); 
+    async reactivateCategory(req: Request, res: Response) {
+        await this.categoryService.reactivateCategory(Number(req.params.id));
+        getIO().emit('menu_updated');
+        res.sendStatus(204);
+    }
+
+    async deleteCategory(req: Request, res: Response) {
+        await this.categoryService.softDeleteCategory(Number(req.params.id));
+        getIO().emit('menu_updated');
         res.sendStatus(204);
     }
 }

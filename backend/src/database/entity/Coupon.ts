@@ -37,13 +37,6 @@ export class Coupon {
     value!: number
 
     @Column({
-        type: 'int',
-        name: 'Quantidade_Disponivel',
-        nullable: true,
-    })
-    quantity!: number
-
-    @Column({
         type: 'date',
         name: 'Data_Validade',
         nullable: true,

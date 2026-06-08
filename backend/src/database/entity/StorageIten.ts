@@ -25,7 +25,7 @@ export class StorageIten {
         name: 'Unidade_Medida',
         nullable: false,
     })
-    unitity!: string
+    unit!: string
 
     @Column({
         type: 'int',

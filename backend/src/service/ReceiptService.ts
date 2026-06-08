@@ -2,7 +2,7 @@ import { ReceiptRepository } from '../repository/ReceiptRepository';
 import { EstablishmentRepository } from '../repository/EstablishmentRepository';
 import { PaymentRepository } from '../repository/PaymentRepository';
 import { AppError } from '../middleware/error/AppError';
-import { ReceiptStatus } from '../database/entity/Receipt';
+import { ReceiptStatus } from '../enum';
 
 export class ReceiptService {
     constructor(

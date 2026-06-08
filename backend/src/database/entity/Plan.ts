@@ -42,6 +42,14 @@ export class Plan {
     })
     features?: string
 
+    @Column({
+        name: 'ID_MercadoPago_Plano',
+        type: 'varchar',
+        length: 255,
+        nullable: true
+    })
+    mercadoPagoId?: string
+
     @OneToMany(() => Subscription, (subscription) => subscription.establishment)
     subscriptions!: Subscription[]
 }

@@ -4,13 +4,7 @@ import {
 } from "typeorm";
 import { Payment } from "./Payment";
 import { Establishment } from "./Establishment";
-
-export enum ReceiptStatus {
-    AUTORIZADA = 'autorizada',
-    ERRO = 'erro',
-    CANCELADA = 'cancelada',
-    PENDENTE = 'pendente'
-}
+import { ReceiptStatus } from '../../enum';
 
 @Entity({ name: 'NOTA_FISCAL' })
 export class Receipt {
@@ -40,11 +34,11 @@ export class Receipt {
     @DeleteDateColumn({ name: 'Data_Exclusao', nullable: true })
     deletedAt?: Date | null; 
 
-    @ManyToOne(() => Establishment)
-    @JoinColumn({ name: 'ID_Estabelecimento' })
-    establishment!: Establishment;
-
     @OneToOne(() => Payment)
     @JoinColumn({ name: 'ID_Pagamento' })
     payment!: Payment;
+
+    @ManyToOne(() => Establishment)
+    @JoinColumn({ name: 'ID_Estabelecimento' })
+    establishment!: Establishment;
 }

@@ -1,7 +1,6 @@
 import { Request, Response } from 'express'
 import rateLimit from 'express-rate-limit'
 import { AuthService } from '../service'
-import { RefreshToken } from '../database'
 import { auditLog } from '../utils/logger'
 
 export const authLimiter = rateLimit({
@@ -14,10 +13,10 @@ export const authLimiter = rateLimit({
             timestamp: new Date().toISOString(),
         });
         
-        res.status(429).json({
-            error: 'Muitas tentativas. Tente novamente mais tarde.',
-            retryAfter: Math.ceil((req as any).rateLimit.resetTime / 1000)
-        })
+        // res.status(429).json({
+        //     error: 'Muitas tentativas. Tente novamente mais tarde.',
+        //     retryAfter: Math.ceil((req as any).rateLimit.resetTime / 1000)
+        // })
     }
 })
 
@@ -29,34 +28,45 @@ export class AuthController {
         this.authService = authService
     }
 
-    async registerManager(req: Request, res: Response) {
+    async checkEmail(req: Request, res: Response) {
+        const result = await this.authService.checkEmailAvailable(req.body.email)
+        res.json(result)
+    }
+
+    async checkCpf(req: Request, res: Response) {
+        const result = await this.authService.checkCpfAvailable(req.body.cpf)
+        res.json(result)
+    }
+
+    async registerComplete(req: Request, res: Response) {
         try {
-        const { accessToken, refreshToken, usuario } = await this.authService.registerManager(req.body)
+            const { accessToken, refreshToken, usuario, cargo, estabelecimentoId } =
+                await this.authService.registerComplete(req.body)
 
-        if (refreshToken) {
-            res.cookie('refreshToken', refreshToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-                maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN || '7') * 24 * 60 * 60 * 1000
+            if (refreshToken) {
+                res.cookie('refreshToken', refreshToken, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+                    maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN || '7') * 24 * 60 * 60 * 1000
+                })
+            }
+
+            auditLog('register.success', {
+                ip: req.ip,
+                email: req.body.email,
+                userId: usuario.id,
+                timestamp: new Date().toISOString(),
             })
-        }
 
-        auditLog('register.success', {
-                    ip: req.ip,
-                    email: req.body.email,
-                    userId: usuario.id,
-                    timestamp: new Date().toISOString(),
-        });
-
-        res.status(201).json({ accessToken, usuario });
+            res.status(201).json({ accessToken, usuario, cargo, estabelecimentoId })
         } catch (err) {
             auditLog('register.failure', {
                 ip: req.ip,
                 email: req.body.email,
                 timestamp: new Date().toISOString(),
-            });
-            throw err;
+            })
+            throw err
         }
     }
 
@@ -112,13 +122,12 @@ async login(req: Request, res: Response) {
 
     async logout(req: Request, res: Response) {
         const token = req.cookies.refreshToken
-        const { refreshToken } = req.body;
 
         if (!token) {
             return res.status(204).send()
         }
 
-        await this.authService.logout(refreshToken)
+        await this.authService.logout(token)
 
         res.clearCookie('refreshToken')
         res.status(204).send()
@@ -148,8 +157,8 @@ async login(req: Request, res: Response) {
     }
 
     async resetPassword(req: Request, res: Response) {
-        const { token, email, novaSenha } = req.body
-        const result = await this.authService.resetPassword(token, email, novaSenha)
+        const { token, novaSenha } = req.body
+        const result = await this.authService.resetPassword(token, novaSenha)
         res.json(result)
     }
 }

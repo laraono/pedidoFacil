@@ -79,10 +79,6 @@ export class CouponService {
             throw new AppError('Cupom inválido ou inexistente.', 404);
         }
 
-        if (coupon.quantity !== null && coupon.quantity <= 0) {
-            throw new AppError('Este cupom já atingiu o limite de usos.', 400);
-        }
-
         if (coupon.expirationDate) {
             const today = new Date();
             const expiration = new Date(`${coupon.expirationDate}T12:00:00`);

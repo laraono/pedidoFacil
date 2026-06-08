@@ -1,27 +1,28 @@
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from "vue";
-import { useRouter } from "vue-router";
+import { ref, computed, onMounted, watch } from "vue";
+import { getImageUrl, validateImageFile } from "@/utils/imageUrl";
 import { useMenuStore } from "@/stores/productsManagement";
 import { useToast } from "@/composables/useToast";
 import { useConfirm } from "@/composables/useConfirm";
+import { applyPriceMask } from "@/composables/usePriceMask";
 import BaseButton from "@/components/ui/BaseButton.vue";
 import BaseInput from "@/components/ui/BaseInput.vue";
+import BaseSelect from "@/components/ui/BaseSelect.vue";
 import DataTable from "@/components/ui/DataTable.vue";
 import FormModal from "@/components/ui/FormModal.vue";
 import ConfirmModal from "@/components/ui/ConfirmModal.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import ToastMessage from "@/components/ui/ToastMessage.vue";
-import { 
-  PlusCircle, Edit, Archive, RotateCcw, Trash2, Image as ImageIcon, 
-  Layers, CheckSquare, Square, TrendingUp, TrendingDown, ToggleLeft, 
-  FolderInput, X, Search, ChevronLeft, ChevronRight 
+import {
+  PlusCircle, Edit, EyeOff, Eye, Trash2, Image as ImageIcon,
+  Layers, CheckSquare, Square, TrendingUp, TrendingDown, ToggleLeft,
+  FolderInput, X, Search, ChevronLeft, ChevronRight
 } from "lucide-vue-next";
 
 const menuStore = useMenuStore();
 const { showToast } = useToast();
 const { confirmState, showConfirm } = useConfirm();
 
-const showDeleted = ref(false);
 const showModal = ref(false);
 const isEditing = ref(false);
 const isLoading = ref(false);
@@ -34,7 +35,7 @@ const itemsPerPage = ref(8);
 const fetchData = async (page = 1) => {
   isLoading.value = true;
   try {
-    await menuStore.loadProducts(page, itemsPerPage.value, showDeleted.value, searchQuery.value);
+    await menuStore.loadProducts(page, itemsPerPage.value, false, searchQuery.value);
   } finally {
     isLoading.value = false;
   }
@@ -45,7 +46,7 @@ onMounted(async () => {
   await fetchData();
 });
 
-watch([searchQuery, showDeleted], () => {
+watch([searchQuery], () => {
   fetchData(1);
 });
 
@@ -73,20 +74,11 @@ const bulkPriceValue = ref('');
 const bulkPriceType = ref('percent');
 const bulkAvailability = ref(true);
 const bulkCategoryId = ref('');
-const showBulkConfirm = ref(false);
-const bulkConfirmMessage = ref('');
 
 const allSelected = computed(() =>
   displayedProducts.value.length > 0 && displayedProducts.value.every(p => selectedIds.value.includes(p.id))
 );
 
-const getImageUrl = (imagePath) => {
-  if (!imagePath) return '';
-  if (imagePath.startsWith('http') || imagePath.startsWith('data:image')) return imagePath;
-  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
-  const host = BASE_URL.replace('/api/v1', '');
-  return `${host}/uploads/${imagePath}`;
-};
 
 const toggleBulkMode = () => {
   bulkMode.value = !bulkMode.value;
@@ -108,39 +100,28 @@ const toggleSelectAll = () => {
 
 const isSelected = (id) => selectedIds.value.includes(id);
 
-const applyBulkPriceMask = (raw) => {
-  let val = String(raw).replace(/[^\d,]/g, '');
-  const commaIdx = val.indexOf(',');
-  if (commaIdx !== -1) {
-    val = val.slice(0, commaIdx + 1) + val.slice(commaIdx + 1).replace(/,/g, '');
-    val = val.slice(0, commaIdx + 3);
-  }
-  const parts = val.split(',');
-  parts[0] = parts[0].replace(/^0+(\d)/, '$1');
-  return parts.join(',');
-};
-
-const onBulkPriceInput = (e) => { bulkPriceValue.value = applyBulkPriceMask(e.target.value); };
+const onBulkPriceInput = (e) => { const v = applyPriceMask(e.target.value); e.target.value = v; bulkPriceValue.value = v; };
 
 const applyBulk = () => {
   if (selectedIds.value.length === 0) { showToast('Selecione ao menos um produto.', 'error'); return; }
   if (!bulkAction.value) { showToast('Selecione uma ação.', 'error'); return; }
   const count = selectedIds.value.length;
+  let message = '';
   if (bulkAction.value === 'price_increase' || bulkAction.value === 'price_decrease') {
     const val = parseFloat(String(bulkPriceValue.value).replace(',', '.'));
     if (!bulkPriceValue.value || isNaN(val) || val <= 0) { showToast('Informe um valor válido para o ajuste de preço.', 'error'); return; }
     const dir = bulkAction.value === 'price_increase' ? 'Aumentar' : 'Reduzir';
-    bulkConfirmMessage.value = `${dir} o preço de ${count} produto(s) em ${bulkPriceValue.value}${bulkPriceType.value === 'percent' ? '%' : ' R$'}?`;
+    message = `${dir} o preço de ${count} produto(s) em ${bulkPriceValue.value}${bulkPriceType.value === 'percent' ? '%' : ' R$'}?`;
   } else if (bulkAction.value === 'availability') {
-    bulkConfirmMessage.value = `Marcar ${count} produto(s) como ${bulkAvailability.value ? 'disponíveis' : 'indisponíveis'}?`;
+    message = `Marcar ${count} produto(s) como ${bulkAvailability.value ? 'disponíveis' : 'indisponíveis'}?`;
   } else if (bulkAction.value === 'category') {
     if (!bulkCategoryId.value) { showToast('Selecione uma categoria.', 'error'); return; }
     const cat = categoryOptions.value.find(c => c.value === bulkCategoryId.value);
-    bulkConfirmMessage.value = `Mover ${count} produto(s) para a categoria "${cat?.label}"?`;
+    message = `Mover ${count} produto(s) para a categoria "${cat?.label}"?`;
   } else if (bulkAction.value === 'delete') {
-    bulkConfirmMessage.value = `Arquivar ${count} produto(s) selecionado(s)? Eles poderão ser restaurados.`;
+    message = `Inativar ${count} produto(s) selecionado(s)?`;
   }
-  showBulkConfirm.value = true;
+  showConfirm({ title: 'Confirmar edição em lote', message, onConfirm: executeBulk });
 };
 
 const executeBulk = async () => {
@@ -164,12 +145,11 @@ const executeBulk = async () => {
     } else if (bulkAction.value === 'category') {
       await menuStore.updateProduct({ ...p, categoryId: bulkCategoryId.value });
     } else if (bulkAction.value === 'delete') {
-      await menuStore.softDeleteProduct(p.id);
+      await menuStore.updateProduct({ ...p, available: false });
     }
   }
   
   showToast(`${ids.length} produto(s) atualizado(s) com sucesso!`, 'success');
-  showBulkConfirm.value = false;
   selectedIds.value = [];
   bulkMode.value = false;
   fetchData(menuStore.currentPage);
@@ -211,30 +191,14 @@ const removeSize = (i) => form.value.sizes.splice(i, 1);
 const handleImageUpload = (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  const maxSize = 2 * 1024 * 1024; 
-  if (file.size > maxSize) {
-    showToast("Arquivo muito grande! O limite é 2MB.", "error");
-    e.target.value = "";
-    return;
-  }
+  const error = validateImageFile(file);
+  if (error) { showToast(error, "error"); e.target.value = ""; return; }
   form.value.imageFile = file;
   form.value.imagePreview = URL.createObjectURL(file);
 };
 
-const applyPriceMask = (raw) => {
-  let val = String(raw).replace(/[^\d,]/g, '');
-  const commaIdx = val.indexOf(',');
-  if (commaIdx !== -1) {
-    val = val.slice(0, commaIdx + 1) + val.slice(commaIdx + 1).replace(/,/g, '');
-    val = val.slice(0, commaIdx + 3);
-  }
-  const parts = val.split(',');
-  parts[0] = parts[0].replace(/^0+(\d)/, '$1');
-  return parts.join(',');
-};
-
-const onPriceInput = (e) => { form.value.price = applyPriceMask(e.target.value); };
-const onSizePriceInput = (e, i) => { form.value.sizes[i].price = applyPriceMask(e.target.value); };
+const onPriceInput = (e) => { const v = applyPriceMask(e.target.value); e.target.value = v; form.value.price = v; };
+const onSizePriceInput = (e, i) => { const v = applyPriceMask(e.target.value); e.target.value = v; form.value.sizes[i].price = v; };
 
 const save = async () => {
   errors.value = {};
@@ -274,9 +238,9 @@ const save = async () => {
   } finally { isLoading.value = false; }
 };
 
-const handleDelete = (p) => showConfirm({ title: "Arquivar Produto", message: "Arquivar " + p.name + "?", onConfirm: async () => { await menuStore.softDeleteProduct(p.id); showToast(p.name + " arquivado.", "success"); fetchData(menuStore.currentPage); } });
-const handleRestore = (p) => showConfirm({ title: "Restaurar Produto", message: "Restaurar " + p.name + "?", onConfirm: async () => { await menuStore.restoreProduct(p.id); showToast(p.name + " restaurado.", "success"); fetchData(menuStore.currentPage); } });
-const handlePermanentDelete = (p) => showConfirm({ title: "Excluir Permanentemente", message: "Excluir " + p.name + " para sempre?", onConfirm: () => { menuStore.permanentlyDeleteProduct(p.id); showToast(p.name + " removido localmente.", "success"); } });
+const handleDeactivate = (p) => showConfirm({ title: "Inativar Produto", message: "Inativar " + p.name + "?", onConfirm: async () => { await menuStore.updateProduct({ id: p.id, available: false }); showToast(p.name + " inativado.", "success"); fetchData(menuStore.currentPage); } });
+const handleReactivate = (p) => showConfirm({ title: "Ativar Produto", message: "Ativar " + p.name + "?", onConfirm: async () => { await menuStore.updateProduct({ id: p.id, available: true }); showToast(p.name + " ativado.", "success"); fetchData(menuStore.currentPage); } });
+const handleDelete = (p) => showConfirm({ title: "Excluir Produto", message: "Excluir " + p.name + " definitivamente?", onConfirm: async () => { await menuStore.softDeleteProduct(p.id); showToast(p.name + " excluído.", "success"); fetchData(menuStore.currentPage); } });
 
 const tableColumns = computed(() => {
   const base = [ { key: "image", label: "Foto" }, { key: "name", label: "Produto", sortable: true }, { key: "category", label: "Categoria" }, { key: "price", label: "Preço" }, { key: "status", label: "Status" } ];
@@ -285,10 +249,10 @@ const tableColumns = computed(() => {
 });
 
 const tableActions = computed(() => bulkMode.value ? [] : [
-  { icon: Edit, tooltip: "Editar", handler: openEdit, condition: (p) => !p.deletedAt },
-  { icon: Archive, tooltip: "Arquivar", handler: handleDelete, condition: (p) => !p.deletedAt, class: "text-[#757575] hover:text-orange-400 hover:bg-orange-500/10 p-2 rounded transition-all" },
-  { icon: RotateCcw, tooltip: "Restaurar", handler: handleRestore, condition: (p) => p.deletedAt, class: "text-[#757575] hover:text-accent hover:bg-primary-dark/10 p-2 rounded transition-all" },
-  { icon: Trash2, tooltip: "Excluir", handler: handlePermanentDelete, condition: (p) => p.deletedAt, class: "text-[#757575] hover:text-danger hover:bg-danger-light p-2 rounded transition-all" },
+  { icon: Edit, tooltip: "Editar", handler: openEdit, condition: () => true },
+  { icon: EyeOff, tooltip: "Inativar", handler: handleDeactivate, condition: (p) => p.available !== false, class: "text-[#757575] hover:text-orange-400 hover:bg-orange-500/10 p-2 rounded transition-all" },
+  { icon: Eye, tooltip: "Ativar", handler: handleReactivate, condition: (p) => p.available === false, class: "text-[#757575] hover:text-accent hover:bg-primary-dark/10 p-2 rounded transition-all" },
+  { icon: Trash2, tooltip: "Excluir", handler: handleDelete, condition: () => true, class: "text-[#757575] hover:text-red-500 hover:bg-red-500/10 p-2 rounded transition-all" },
 ]);
 </script>
 
@@ -297,25 +261,16 @@ const tableActions = computed(() => bulkMode.value ? [] : [
     <ToastMessage />
     <PageHeader title="Gerenciar Produtos" subtitle="Controle do cardápio">
       <template #actions>
-        <button @click="showDeleted = !showDeleted" class="px-5 py-3 rounded flex items-center gap-2 font-bold text-sm border transition-all" :class="showDeleted ? 'bg-gray-100 text-[#212121] border-[#E0E0E0]' : 'bg-white text-[#757575] border-[#E0E0E0] hover:bg-gray-100 hover:text-[#212121]'">
-          <Archive :size="18" /> {{ showDeleted ? 'Ver Ativos' : 'Ver Arquivados' }}
-        </button>
         <button
-          v-if="!showDeleted"
           @click="toggleBulkMode"
           class="px-5 py-3 rounded flex items-center gap-2 font-bold text-sm border transition-all"
           :class="bulkMode ? 'bg-accent-light text-accent border-accent/40' : 'bg-white text-[#757575] border-[#E0E0E0] hover:bg-gray-100 hover:text-[#212121]'"
         >
           <Layers :size="18" /> {{ bulkMode ? 'Cancelar Lote' : 'Edição em Lote' }}
         </button>
-        <BaseButton v-if="!showDeleted && !bulkMode" @click="openAdd" :icon="PlusCircle">Novo Produto</BaseButton>
+        <BaseButton v-if="!bulkMode" @click="openAdd" :icon="PlusCircle">Novo Produto</BaseButton>
       </template>
     </PageHeader>
-
-    <div v-if="showDeleted" class="mb-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded flex items-center justify-between">
-      <p class="text-orange-400 text-sm font-bold flex items-center gap-2"><Archive :size="16" /> Visualizando produtos arquivados.</p>
-      <button @click="showDeleted = false" class="text-orange-300 hover:text-orange-100 text-sm font-bold underline">Voltar para ativos</button>
-    </div>
 
     <div class="mb-6 relative">
       <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -350,7 +305,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
           { key: 'price_decrease', icon: TrendingDown, label: 'Reduzir Preço' },
           { key: 'availability', icon: ToggleLeft, label: 'Disponibilidade' },
           { key: 'category', icon: FolderInput, label: 'Categoria' },
-          { key: 'delete', icon: Archive, label: 'Arquivar' },
+          { key: 'delete', icon: EyeOff, label: 'Inativar' },
         ]" :key="opt.key"
           @click="bulkAction = opt.key"
           class="flex items-center gap-2 px-4 py-2 rounded text-sm font-bold border transition-all"
@@ -399,8 +354,8 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         <button @click="applyBulk" class="py-2.5 px-6 bg-primary text-white font-black text-sm rounded hover:opacity-90 transition-opacity">Aplicar</button>
       </div>
       <div v-else-if="bulkAction === 'delete'" class="flex items-center gap-3">
-        <p class="text-sm text-[#757575]">Os produtos selecionados serão arquivados.</p>
-        <button @click="applyBulk" class="py-2.5 px-6 bg-orange-500 text-[#212121] font-black text-sm rounded hover:bg-orange-400 transition-colors">Arquivar Selecionados</button>
+        <p class="text-sm text-[#757575]">Os produtos selecionados serão inativados.</p>
+        <button @click="applyBulk" class="py-2.5 px-6 bg-orange-500 text-[#212121] font-black text-sm rounded hover:bg-orange-400 transition-colors">Inativar Selecionados</button>
       </div>
     </div>
 
@@ -429,15 +384,14 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         </div>
       </template>
       <template #cell-name="{ item }">
-        <span class="font-bold text-[#212121]" :class="{ 'opacity-50': item.deletedAt }">{{ item.name }}</span>
+        <span class="font-bold text-[#212121]" :class="{ 'opacity-50': item.available === false }">{{ item.name }}</span>
         <p v-if="item.description" class="text-[#757575] text-xs mt-0.5 truncate max-w-[200px]">{{ item.description }}</p>
       </template>
       <template #cell-price="{ item }">
         <span class="text-accent font-black">R$ {{ Number(item.price ?? item.sizes?.[0]?.price ?? 0).toFixed(2) }}</span>
       </template>
       <template #cell-status="{ item }">
-        <span v-if="item.deletedAt" class="px-3 py-1 bg-gray-100 text-[#757575] border border-[#E0E0E0] rounded text-[10px] font-black uppercase tracking-widest">Arquivado</span>
-        <span v-else-if="item.available === false" class="px-3 py-1 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded text-[10px] font-black uppercase tracking-widest">Pausa</span>
+        <span v-if="item.available === false" class="px-3 py-1 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded text-[10px] font-black uppercase tracking-widest">Inativo</span>
         <span v-else class="px-3 py-1 bg-accent-light text-accent border border-accent/30 rounded text-[10px] font-black uppercase tracking-widest">Ativo</span>
       </template>
     </DataTable>
@@ -473,14 +427,13 @@ const tableActions = computed(() => bulkMode.value ? [] : [
           <input :value="form.price" @input="onPriceInput" inputmode="numeric" placeholder="0,00" class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] focus:outline-none focus:border-primary/50 transition-all" :class="errors.price ? '!border-red-500' : ''" />
           <p v-if="errors.price" class="text-danger text-[11px] font-bold mt-0.5 ml-2">{{ errors.price }}</p>
         </div>
-        <div class="flex flex-col gap-1">
-          <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-2">Categoria</label>
-          <select v-model="form.categoryId" class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] focus:outline-none focus:border-primary/50 transition-all appearance-none" :class="errors.categoryId ? '!border-red-500' : ''">
-            <option value="" disabled class="bg-white">Selecione uma categoria</option>
-            <option v-for="opt in categoryOptions" :key="opt.value" :value="opt.value" class="bg-white">{{ opt.label }}</option>
-          </select>
-          <p v-if="errors.categoryId" class="text-danger text-[11px] font-bold mt-0.5 ml-2">{{ errors.categoryId }}</p>
-        </div>
+        <BaseSelect
+          v-model="form.categoryId"
+          label="Categoria"
+          :options="categoryOptions"
+          :error="errors.categoryId"
+          placeholder="Selecione uma categoria"
+        />
         <div class="flex items-center justify-between p-4 bg-gray-50 rounded border border-[#E0E0E0]">
           <div><p class="text-sm font-bold text-[#212121]">Disponível no cardápio</p><p class="text-xs text-[#757575]">Clientes poderão pedir este produto</p></div>
           <button type="button" @click="form.available = !form.available" class="relative inline-flex h-7 w-12 items-center rounded transition-colors duration-300" :class="form.available ? 'bg-accent' : 'bg-gray-600'">
@@ -508,26 +461,5 @@ const tableActions = computed(() => bulkMode.value ? [] : [
       </div>
     </FormModal>
     <ConfirmModal :confirmModal="confirmState" @close="confirmState.show = false" />
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showBulkConfirm" class="fixed inset-0 bg-black/50 z-[110] flex items-center justify-center p-4">
-          <div class="bg-white border border-[#E0E0E0] w-full max-w-sm rounded p-8 shadow-2xl">
-            <div class="flex items-start gap-4 mb-6">
-              <div class="p-3 bg-accent-light rounded border border-accent/30 shrink-0">
-                <Layers :size="20" class="text-accent" />
-              </div>
-              <div>
-                <p class="text-[#212121] font-black text-base">Confirmar edição em lote</p>
-                <p class="text-[#757575] text-sm mt-1">{{ bulkConfirmMessage }}</p>
-              </div>
-            </div>
-            <div class="flex gap-3">
-              <button @click="showBulkConfirm = false" class="flex-1 py-3 rounded text-[#757575] font-bold hover:bg-gray-50 transition-colors border border-[#E0E0E0]">Cancelar</button>
-              <button @click="executeBulk" class="flex-1 py-3 rounded bg-primary text-white font-black hover:opacity-90 transition-opacity">Confirmar</button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
   </main>
 </template>

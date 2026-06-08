@@ -13,8 +13,6 @@ export const createCouponSchema = z.object({
       value: z.coerce
         .number()
         .positive('O valor do desconto deve ser maior que zero'),
-      quantity: z.number().int().nonnegative().optional().nullable(),
-
       expirationDate: z
         .string()
         .refine((val) => !isNaN(Date.parse(val)), 'Data de expiração inválida')

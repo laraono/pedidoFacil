@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { safeString } from '../../utils/safeZod';
 
 export const loginSchema = z.object({
   body: z.object({

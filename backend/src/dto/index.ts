@@ -1,4 +1,4 @@
-export { RegisterDTO, LoginDTO } from './auth';
+export { LoginDTO } from './auth';
 export { 
     CreateCategory, 
     CreateCategoryParams, 
@@ -15,7 +15,6 @@ export {
     CreateOrder,
     ItensArray,
     ProductOrderParams,
-    ProductVariationOrderParams,
     OrderParams,
     CancelOrder, CancelOrderParams,
 } from './order';
@@ -43,7 +42,4 @@ export {
     RestoreOrderSubscription as RestoreOrderSubscriptionMP,
     UpdateSubscription as UpdateSubscriptionMP
 } from './mercadoPago'
-export * from './establishment/SaveOnboardingStepDTO';
-export * from './establishment/FinalizeOnboardingDTO';
 export * from './establishment/UpdateEstablishmentDTO';
-export * from './role/RoleDTO';

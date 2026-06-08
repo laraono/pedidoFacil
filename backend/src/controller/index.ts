@@ -1,15 +1,15 @@
 import {
-    authService, 
-    categoryService, 
-    comandaService, 
-    employeeService, 
-    orderService, 
-    productService, 
-    profileService, 
-    couponService, 
+    authService,
+    categoryService,
+    comandaService,
+    employeeService,
+    orderService,
+    productService,
+    profileService,
+    couponService,
     establishmentService,
     roleService,
-    receiptService,    
+    receiptService,
     metricsService,
     menuService,
     paymentService,
@@ -42,10 +42,10 @@ const comandaController = new ComandaController(comandaService)
 const orderController = new OrderController(orderService)
 const productController = new ProductController(productService)
 const couponController = new CouponController(couponService)
-const establishmentController = new EstablishmentController(establishmentService)
+const establishmentController = new EstablishmentController(establishmentService, subscriptionService)
 const roleController = new RoleController(roleService)
 const employeeController = new EmployeeController(employeeService) 
-const profileController = new ProfileController(profileService) 
+const profileController = new ProfileController(profileService)
 const receiptController = new ReceiptController(receiptService)
 const metricsController = new MetricsController(metricsService)
 const menuController = new MenuController(menuService) 

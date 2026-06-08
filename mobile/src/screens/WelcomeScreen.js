@@ -53,7 +53,6 @@ export default function WelcomeScreen() {
       activeOpacity={1}
       onPress={handleStart}
     >
-      {/* StatusBar mantido da feature-104 */}
       <StatusBar 
         barStyle="light-content" 
         backgroundColor={theme.fundoGeral || C.background} 

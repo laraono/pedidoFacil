@@ -1,45 +1,41 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
-import { PERMISSIONS } from '@/utils/permissions';
+import {
+  createRouter,
+  createWebHistory,
+  type RouteRecordRaw,
+} from "vue-router";
+import { useAuthStore } from "@/stores/auth";
+import { useSubscriptionStore } from "@/stores/subscriptions";
+import { PERMISSIONS } from "@/utils/permissions";
 
 import LandingPage from "@/views/LandingPage.vue";
 import Login from "@/views/Login.vue";
-import RegisterManager from "@/views/RegisterManager.vue";
-import EstablishmentName from "@/views/onboarding/EstablishmentName.vue";
-import ServiceType from "@/views/onboarding/ServiceType.vue";
-import SubscriptionPage from "@/views/onboarding/SubscriptionPage.vue";
+import Register from "@/views/Register.vue";
 
 import Header from "@/views/app/Header.vue";
-import Dashboard from '@/views/app/Dashboard.vue';
-import ManagerReports from '@/views/app/ManagerReports.vue';
-import EstablishmentInfo from '@/views/app/settings/EstablishmentInfo.vue';
-import RolePermissions from '@/views/app/settings/RolePermissions.vue';
-import MenuProducts from '@/views/app/settings/ProductsManagement.vue';
-import MenuCategories from '@/views/app/settings/CategoriesManagement.vue';
-import Menu from '@/views/app/Menu.vue';
-import CreateUsers from '@/views/app/settings/UsersConfig.vue';
+import Dashboard from "@/views/app/Dashboard.vue";
+import ManagerReports from "@/views/app/ManagerReports.vue";
+import EstablishmentInfo from "@/views/app/settings/EstablishmentInfo.vue";
+import RolePermissions from "@/views/app/settings/RolePermissions.vue";
+import MenuProducts from "@/views/app/settings/ProductsManagement.vue";
+import MenuCategories from "@/views/app/settings/CategoriesManagement.vue";
+import Menu from "@/views/app/Menu.vue";
+import CreateUsers from "@/views/app/settings/UsersConfig.vue";
 import KitchenTerminal from "@/views/app/kitchen/KitchenTerminal.vue";
 
 const routes: RouteRecordRaw[] = [
-  { path: '/', name: 'landing', component: LandingPage },
-  { path: '/login', name: 'login', component: Login },
-  { path: '/forgot-password', name: 'forgot-password', component: () => import('@/views/ForgotPassword.vue') },
-  { path: '/reset-password', name: 'reset-password', component: () => import('@/views/ResetPassword.vue') },
-  { path: '/register', name: 'register', component: RegisterManager },
+  { path: "/", name: "landing", component: LandingPage },
+  { path: "/login", name: "login", component: Login },
   {
-    path: '/onboarding/name',
-    name: 'OnboardingName',
-    component: EstablishmentName,
-    meta: { requiresAuth: true }
+    path: "/forgot-password",
+    name: "forgot-password",
+    component: () => import("@/views/ForgotPassword.vue"),
   },
   {
-    path: '/onboarding/type',
-    name: 'OnboardingType',
-    component: ServiceType,
-    meta: { requiresAuth: true }
+    path: "/reset-password",
+    name: "reset-password",
+    component: () => import("@/views/ResetPassword.vue"),
   },
-  { path: '/onboarding/subscription', name: 'OnboardingSubscription', component: SubscriptionPage },
-  { path: '/totem/:code', name: 'totem', component: () => import('@/views/Totem.vue') },
+  { path: "/register", name: "register", component: Register },
   {
     path: "/app",
     component: Header,
@@ -122,7 +118,8 @@ const routes: RouteRecordRaw[] = [
       {
         path: "subscription",
         name: "subscription",
-        component: () => import("@/views/app/subscription/ManagerSubscription.vue"),
+        component: () =>
+          import("@/views/app/subscription/ManagerSubscription.vue"),
         meta: { requiresAuth: true, permission: PERMISSIONS.ASSINATURA },
       },
       {
@@ -150,17 +147,24 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, requiresAdmin: true },
       },
       {
+        path: "admin/establishments",
+        name: "admin-establishments",
+        component: () => import("@/views/app/admin/AdminEstablishments.vue"),
+        meta: { requiresAuth: true, requiresAdmin: true },
+      },
+      {
+        path: "admin/establishments/:id",
+        name: "admin-establishment-detail",
+        component: () =>
+          import("@/views/app/admin/AdminEstablishmentDetail.vue"),
+        meta: { requiresAuth: true, requiresAdmin: true },
+      },
+      {
         path: "settings/profile",
         name: "manager-profile",
         component: () => import("@/views/app/settings/ManagerProfile.vue"),
         meta: { requiresAuth: true },
       },
-      {
-        path: "settings/register",
-        name: "manager-register",
-        component: () => import("@/views/app/settings/RegisterManagement.vue"),
-        meta: { requiresAuth: true },
-      }
     ],
   },
 ];
@@ -175,8 +179,8 @@ const router = createRouter({
         setTimeout(() => resolve({ el: to.hash, behavior: "smooth" }), 300);
       });
     }
-    return { top: 0, behavior: 'instant' as const };
-  }
+    return { top: 0, behavior: "instant" as const };
+  },
 });
 
 const ESTABLISHMENT_PREFIXES = [
@@ -195,31 +199,34 @@ router.beforeEach(async (to) => {
 
   if (to.meta.requiresAuth) {
     const valid = await auth.validateSession();
-    if (!valid) return { path: '/login' };
-  }
+    if (!valid) return { path: "/login" };
 
-  if (auth.isAuthenticated) {
-    const hasEstablishment = auth.user?.estabelecimentoId != null;
-
-    if (!auth.isAdmin && !hasEstablishment && to.path.startsWith('/app')) {
-      return { path: "/onboarding/name" };
-    }
-
-    if ((hasEstablishment || auth.isAdmin) && to.path.startsWith('/onboarding') && to.path !== '/onboarding/subscription') {
-      return { name: "dashboard" };
+    if (!auth.isAdmin && auth.user?.estabelecimentoId) {
+      await useSubscriptionStore().fetchSubscriptionStatus();
     }
   }
 
-  if (auth.isAdmin && ESTABLISHMENT_PREFIXES.some(p => to.path.startsWith(p))) {
-    return { name: 'admin-subscriptions' };
+  if (auth.isAuthenticated && to.path === "/register") {
+    return { name: "dashboard" };
+  }
+
+  if (auth.isAdmin && to.path === "/app/dashboard") {
+    return { name: "admin-reports" };
+  }
+
+  if (
+    auth.isAdmin &&
+    ESTABLISHMENT_PREFIXES.some((p) => to.path.startsWith(p))
+  ) {
+    return { name: "admin-reports" };
   }
 
   if (to.meta.requiresAdmin && !auth.isAdmin) {
-    return { name: 'dashboard' };
+    return { name: "dashboard" };
   }
 
   if (to.meta.permission && !auth.hasPermission(to.meta.permission as string)) {
-    return { name: 'dashboard' };
+    return { name: "dashboard" };
   }
 });
 

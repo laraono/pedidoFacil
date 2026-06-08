@@ -1,64 +1,45 @@
-import { DataSource } from 'typeorm';
-import { SubscriptionStatus } from '../enum';
+import { AdminSubscriptionMetricsRepository } from '../repository/AdminSubscriptionMetricsRepository';
+import { SubscriptionPaymentRepository } from '../repository/SubscriptionPaymentRepository';
 
 export class AdminSubscriptionMetricsService {
-    constructor(private dataSource: DataSource) {}
+    constructor(
+        private repo: AdminSubscriptionMetricsRepository,
+        private paymentRepo: SubscriptionPaymentRepository,
+    ) {}
 
-    async getMetrics() {
-        const [activeResult] = await this.dataSource.query(`
-            SELECT COUNT(*) as total FROM ASSINATURA
-            WHERE Status = ?
-        `, [SubscriptionStatus.PAGA]);
+    async getMetrics(period: '3m' | '6m' | '12m' = '12m') {
+        const intervalMonths = period === '3m' ? 3 : period === '6m' ? 6 : 12;
 
-        const [revenueResult] = await this.dataSource.query(`
-            SELECT COALESCE(SUM(a.Valor), 0) as total
-            FROM ASSINATURA a
-            WHERE a.Status = ?
-        `, [SubscriptionStatus.PAGA]);
+        const end = new Date();
+        const start = new Date();
+        start.setMonth(start.getMonth() - intervalMonths);
 
-        const [overdueResult] = await this.dataSource.query(`
-            SELECT COUNT(*) as total FROM ASSINATURA
-            WHERE Status = ? AND Data_Vencimento_Prox < CURDATE()
-        `, [SubscriptionStatus.PENDENTE]);
-
-        const [canceledResult] = await this.dataSource.query(`
-            SELECT COUNT(*) as total FROM ASSINATURA
-            WHERE Status = ?
-        `, [SubscriptionStatus.CANCELADA]);
-
-        const byPlan = await this.dataSource.query(`
-            SELECT p.Nome as planName, p.ID_Plano as planId,
-                   COUNT(a.ID_Assinatura) as total,
-                   SUM(CASE WHEN a.Status = 'Paga' THEN 1 ELSE 0 END) as ativas,
-                   SUM(CASE WHEN a.Status = 'Cancelada' THEN 1 ELSE 0 END) as canceladas,
-                   SUM(CASE WHEN a.Status = 'Pendente' THEN 1 ELSE 0 END) as pendentes,
-                   SUM(CASE WHEN a.Status = 'Expirada' THEN 1 ELSE 0 END) as expiradas
-            FROM PLANO p
-            LEFT JOIN ASSINATURA a ON a.ID_Plano = p.ID_Plano
-            GROUP BY p.ID_Plano, p.Nome
-            ORDER BY p.Nome ASC
-        `);
-
-        const newPerMonth = await this.dataSource.query(`
-            SELECT DATE_FORMAT(Data_Inicio, '%Y-%m') as mes,
-                   COUNT(*) as novos
-            FROM ASSINATURA
-            WHERE Data_Inicio >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
-            GROUP BY DATE_FORMAT(Data_Inicio, '%Y-%m')
-            ORDER BY mes ASC
-        `);
-
-        const [totalResult] = await this.dataSource.query(`
-            SELECT COUNT(*) as total FROM ASSINATURA
-        `);
+        const [
+            totalAtivas,
+            inadimplentes,
+            canceladas,
+            totalGeral,
+            porPlanoRaw,
+            novosPorMesRaw,
+            revenueMetrics,
+        ] = await Promise.all([
+            this.repo.getActiveCount(),
+            this.repo.getOverdueCount(),
+            this.repo.getCanceledCount(),
+            this.repo.getTotalCount(),
+            this.repo.getByPlan(),
+            this.repo.getNewPerMonth(intervalMonths),
+            this.paymentRepo.getMetricsForPeriod(start, end),
+        ]);
 
         return {
-            totalAtivas: Number(activeResult.total),
-            receitaMensal: Number(revenueResult.total),
-            inadimplentes: Number(overdueResult.total),
-            canceladas: Number(canceledResult.total),
-            totalGeral: Number(totalResult.total),
-            porPlano: byPlan.map((row: any) => ({
+            totalAtivas,
+            inadimplentes,
+            canceladas,
+            totalGeral,
+            receitaMensal: revenueMetrics.mrr,
+            receitaColetada: revenueMetrics.receitaColetada,
+            porPlano: porPlanoRaw.map((row: any) => ({
                 planId: row.planId,
                 planName: row.planName,
                 total: Number(row.total),
@@ -67,7 +48,7 @@ export class AdminSubscriptionMetricsService {
                 pendentes: Number(row.pendentes),
                 expiradas: Number(row.expiradas),
             })),
-            novosPorMes: newPerMonth.map((row: any) => ({
+            novosPorMes: novosPorMesRaw.map((row: any) => ({
                 mes: row.mes,
                 novos: Number(row.novos),
             })),

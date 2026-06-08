@@ -11,10 +11,12 @@ import {
   configurationRepository,
   roleRepository,
   receiptRepository,
+  metricsRepository,
   paymentRepository,
   refreshTokenRepository,
   planRepository,
   subscriptionRepository,
+  subscriptionPaymentRepository,
 } from '../repository';
 
 import { AuthService } from './AuthService';
@@ -36,11 +38,12 @@ import { SubscriptionService } from './SubscriptionService';
 import { PlanService } from './PlanService';
 import { WebhookService } from './WebhookService';  
 
-const authService = new AuthService(AppDataSource, userRepository, refreshTokenRepository);
 const categoryService = new CategoryService(categoryRepository);
 
-const metricsService = new MetricsService(receiptRepository, AppDataSource);
+const metricsService = new MetricsService(receiptRepository, metricsRepository);
 const mercadoPagoService = new MercadoPagoService();
+
+const authService = new AuthService(AppDataSource, userRepository, refreshTokenRepository, establishmentRepository, mercadoPagoService);
 
 const receiptService = new ReceiptService(receiptRepository, paymentRepository, establishmentRepository);
 const paymentService = new PaymentService(AppDataSource, mercadoPagoService, paymentRepository, orderRepository);
@@ -67,22 +70,20 @@ const roleService = new RoleService(roleRepository, userRepository);
 
 const establishmentService = new EstablishmentService(
   establishmentRepository,
-  userRepository,
   configurationRepository,
-  roleRepository,
   mercadoPagoService,
 );
 
-const profileService = new ProfileService(userRepository, establishmentService);
+const profileService = new ProfileService(userRepository, establishmentService, refreshTokenRepository);
 
 const employeeService = new EmployeeService(userRepository, roleRepository);
 
 const menuService = new MenuService(categoryRepository, productRepository);
 
-const subscriptionService = new SubscriptionService(planRepository, subscriptionRepository, mercadoPagoService, AppDataSource);
+const subscriptionService = new SubscriptionService(planRepository, subscriptionRepository, subscriptionPaymentRepository, mercadoPagoService, AppDataSource);
 const planService = new PlanService(planRepository, subscriptionService, mercadoPagoService, AppDataSource);
 
-const webhookService = new WebhookService(subscriptionRepository, mercadoPagoService);
+const webhookService = new WebhookService(subscriptionRepository, subscriptionPaymentRepository, mercadoPagoService);
 
 export {
   authService,

@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref } from "vue";
 
 export interface ConfirmOptions {
   title?: string;
@@ -14,11 +14,11 @@ interface ConfirmState extends ConfirmOptions {
 
 const confirmState = ref<ConfirmState>({
   show: false,
-  title: '',
-  message: '',
+  title: "",
+  message: "",
   onConfirm: null,
   data: null,
-  isError: false
+  isError: false,
 });
 
 export function useConfirm() {
@@ -41,6 +41,6 @@ export function useConfirm() {
     confirmState,
     showConfirm,
     closeConfirm,
-    handleConfirm
+    handleConfirm,
   };
 }

@@ -4,7 +4,6 @@ import {
   Product,
   ProductOrder,
   ProductVariation,
-  ProductVariationOrder,
   Comanda,
 } from '../database';
 import { OrderStatus, ComandaStatus, ServiceType } from '../enum';
@@ -41,8 +40,9 @@ export class OrderService {
         serviceType: createOrder.serviceType,
         comanda: comanda,
         establishment: { id: createOrder.establishmentId },
+        user: createOrder.userId ? { id: createOrder.userId } : undefined,
         isDelivered: false,
-      });
+      }) as any;
 
       await this.saveItens(createOrder.itens, order, manager);
 
@@ -58,7 +58,7 @@ export class OrderService {
         status: ComandaStatus.ABERTA,
         total: 0,
         establishment: { id: data.establishmentId },
-      });
+      }) as Comanda;
 
       const order = await manager.save(Order, {
         status: 'Aguardando_Preparo' as OrderStatus,
@@ -66,7 +66,7 @@ export class OrderService {
         comanda: comanda,
         establishment: { id: data.establishmentId },
         isDelivered: false,
-      });
+      }) as Order;
 
       await this.saveItens(data.itens, order, manager);
 
@@ -89,25 +89,14 @@ export class OrderService {
 
       totalAcumulado += finalPrice * iten.quantity;
 
-      const productOrder = await manager.save(ProductOrder, {
-        orderId: order.id,
-        productId: validated.product.id,
+      await manager.save(ProductOrder, {
+        order: { id: order.id },
+        product: { id: validated.product.id },
+        productVariationId: validated.productVariation?.id ?? null,
         observation: iten.observation || '',
         quantity: iten.quantity,
         price: finalPrice,
       });
-
-      if (validated.productVariation && iten.productVariationId) {
-        try {
-          await manager.save(ProductVariationOrder, {
-            productOrderId: productOrder.id,
-            productVariationId: validated.productVariation.id,
-            price: addPrice,
-          });
-        } catch (vError) {
-          console.warn('⚠️ [ITEM] Erro ao salvar variação:', vError);
-        }
-      }
     }
 
     await this.comandaService.updateComandaTotalTransaction(
@@ -125,7 +114,8 @@ export class OrderService {
 
     if (!product) throw new AppError(`Produto ${iten.productId} não existe`, 400);
 
-    let productVariation = null;
+    let productVariation: ProductVariation | null = null;
+    
     if (iten.productVariationId) {
       productVariation = await manager.findOne(ProductVariation, {
         where: { id: iten.productVariationId },
@@ -143,17 +133,39 @@ export class OrderService {
     return await this.orderRepository.listOrdersByComanda(comandaId);
   }
 
-  async updateOrderStatus(orderId: number, status: OrderStatus, userId?: number, reason?: string) {
+  async updateOrderStatus(orderId: number, status: OrderStatus, userId?: number, reason?: string, expectedComandaId?: number) {
+    const order = await this.dataSource.getRepository(Order).findOne({
+      where: { id: orderId }, relations: ['comanda', 'user'] 
+    });
+    
+    if (!order) throw new AppError('Pedido não encontrado', 404);
+    if (!order.comanda) throw new AppError('Pedido sem comanda associada', 500);
+    if (expectedComandaId && order.comanda.id !== expectedComandaId) throw new AppError('Pedido não pertence a esta comanda', 403);
+
+    const orderUserId = order?.user?.id; 
+
     const updateData: any = { status };
 
-    const currentStatus = String(status);
-
-    if (currentStatus === 'Cancelado' || currentStatus === 'CANCELADO') {
-      if (userId) updateData.user = { id: userId }; 
+    if (status === OrderStatus.CANCELADO) {
+      if (userId) updateData.user = { id: userId };
       if (reason) updateData.cancellationDescription = reason;
     }
 
     await this.orderRepository.update(orderId, updateData);
+
+    const comandaId = order.comanda.id;
+
+    if (status === OrderStatus.CANCELADO) {
+      const allOrders = await this.dataSource.getRepository(Order).find({ where: { comanda: { id: comandaId } } });
+      const allCancelled = allOrders.length > 0 && allOrders.every(o => o.status === OrderStatus.CANCELADO);
+
+      if (allCancelled) {
+        await this.comandaService.updateComandaStatus(comandaId, ComandaStatus.CANCELADA);
+        return { comandaCancelled: true, comandaId, orderUserId, comandaLabel: order.comanda.description };
+      }
+    }
+
+    return { comandaCancelled: false, comandaId, orderUserId, comandaLabel: order.comanda.description };
   }
 
   async getOrderWithDetails(orderId: number) {
@@ -161,8 +173,7 @@ export class OrderService {
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.productOrders', 'po')
       .leftJoinAndSelect('po.product', 'product')
-      .leftJoinAndSelect('po.variations', 'variation')
-      .leftJoinAndSelect('variation.productVariation', 'pv')
+      .leftJoinAndSelect('po.productVariation', 'pv')
       .where('order.id = :id', { id: orderId })
       .getOne();
   }

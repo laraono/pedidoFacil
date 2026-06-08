@@ -10,22 +10,22 @@ receiptRouter.use(authenticate, subscriptionMiddleware)
 
 receiptRouter.post(
   '/',
-  authenticate, receiptLimiter,
-  checkPermission('RECEIPTS_MANAGE', 'ALL'),
+  receiptLimiter,
+  checkPermission('NOTA_FISCAL'),
   receiptController.create,
 );
 
 receiptRouter.get(
   '/',
-  authenticate, receiptLimiter,
-  checkPermission('RECEIPTS_VIEW', 'ALL'),
+  receiptLimiter,
+  checkPermission('NOTA_FISCAL'),
   receiptController.list,
 );
 
 receiptRouter.delete(
   '/:id',
-  authenticate, receiptLimiter,
-  checkPermission('RECEIPTS_MANAGE', 'ALL'),
+  receiptLimiter,
+  checkPermission('NOTA_FISCAL'),
   receiptController.delete,
 );
 

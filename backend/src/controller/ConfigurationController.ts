@@ -1,8 +1,14 @@
 import { Request, Response } from 'express';
 import { ConfigurationService } from '../service/ConfigurationService';
 import { getIO } from '../socket';
-import { deleteFile } from '../utils/fileHelper';
+import path from 'path';
 import { auditLog } from '../utils/logger';
+import { 
+    ensureBucketExists, 
+    generateUniqueImageKey, 
+    uploadToS3, 
+    getImageContentType 
+} from "../service/S3Service"; 
 
 export class ConfigurationController {
   private configurationService: ConfigurationService;
@@ -17,16 +23,24 @@ export class ConfigurationController {
 
     try {
       if (req.file) {
-        const oldConfig =
-          await this.configurationService.getOrCreateConfiguration(
-            establishmentId,
-          );
+        const bucketName = process.env.AWS_BUCKET_NAME || 'pedidofacil-uploads';
+        
+        await ensureBucketExists(bucketName);
 
-        if (oldConfig && oldConfig.logo) {
-          deleteFile(oldConfig.logo);
-        }
+        const key = generateUniqueImageKey(req.file.buffer);
+        const extension = path.extname(req.file.originalname) || '.jpg';
+        const fullKey = `config-logo-${key}${extension}`;
 
-        configData.logo = req.file.filename;
+        const contentType = getImageContentType(req.file);
+
+        const uploadResult = await uploadToS3({
+            bucket: bucketName,
+            key: fullKey,
+            body: req.file.buffer,
+            contentType: contentType
+        });
+
+        configData.logo = uploadResult.Location;
       }
 
       const updatedConfig = await this.configurationService.updateConfiguration(
@@ -60,7 +74,7 @@ export class ConfigurationController {
         );
       return res.status(200).json(config);
     } catch (error) {
-      console.error('Erro ao buscar configurações:', error);
+      auditLog('config.fetch_error', { error: (error as Error).message, timestamp: new Date().toISOString() });
       return res
         .status(500)
         .json({ message: 'Erro ao buscar as configurações.' });

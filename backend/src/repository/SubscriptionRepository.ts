@@ -29,8 +29,9 @@ export class SubscriptionRepository extends Repository<Subscription>{
         return await this.find({
             relations: {
                 establishment: {
-                    users: {
-                        role: true
+                    manager: true,
+                    roles: {
+                        users: true
                     }
                 },
                 plan: true,
@@ -47,10 +48,14 @@ export class SubscriptionRepository extends Repository<Subscription>{
                 establishment: {
                     id: true,
                     name: true,
-                    users: {
+                    manager: {
                         id: true,
                         name: true,
-                        role: true
+                    },
+                    roles: {
+                        users: {
+                            id: true,
+                        }
                     }
                 }
             },
@@ -82,7 +87,6 @@ export class SubscriptionRepository extends Repository<Subscription>{
             relations: {
                 establishment: true,
                 plan: true,
-                scheduledPlan: true
             }
         })
     }
@@ -93,9 +97,16 @@ export class SubscriptionRepository extends Repository<Subscription>{
 
     async updateSubscriptionStatus(subscriptionId: number, status: SubscriptionStatus) {
         if (status === SubscriptionStatus.PAGA) {
-            await this.update(subscriptionId, {status, lastPayment: new Date(), expirationDate: new Date(new Date().getTime() + (1000 * 60 * 60 * 24 * 30))})
+            const subscription = await this.findOne({ where: { id: subscriptionId }, relations: { plan: true } });
+            const expirationDate = new Date();
+            if (subscription?.plan?.frequency === 'anual') {
+                expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+            } else {
+                expirationDate.setMonth(expirationDate.getMonth() + 1);
+            }
+            await this.update(subscriptionId, { status, lastPayment: new Date(), expirationDate });
         } else {
-            await this.update(subscriptionId, {status})
+            await this.update(subscriptionId, { status });
         }
     }
 

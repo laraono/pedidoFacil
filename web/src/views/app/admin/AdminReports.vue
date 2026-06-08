@@ -1,34 +1,54 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useSubscriptionStore } from '@/stores/subscriptions';
+import { useUtils } from '@/composables/useUtils';
 import {
-  ArrowLeft, ShieldAlert, TrendingUp, DollarSign, Users,
+  ShieldAlert, TrendingUp, DollarSign, Users,
   BarChart3, Download, Calendar, Loader2
 } from 'lucide-vue-next';
+import { PageHeader, MetricCard, StatusBadge, EmptyState } from '@/components/ui';
+import { useToast } from '@/composables/useToast';
 
-const router = useRouter();
 const subscriptionStore = useSubscriptionStore();
+const { formatCurrency } = useUtils();
+const { showToast } = useToast();
 
 const isLoaded = ref(false);
 const dateFilter = ref('12m');
 
+async function fetchMetrics(period) {
+  try {
+    await subscriptionStore.loadAdminMetrics(period);
+  } catch {
+    showToast('Erro ao carregar métricas.', 'error');
+  }
+}
+
 onMounted(async () => {
-  await subscriptionStore.loadAdminData();
+  try {
+    await Promise.all([
+      subscriptionStore.loadAdminSubscriptions(),
+      subscriptionStore.loadAdminMetrics(dateFilter.value),
+    ]);
+  } catch {
+    showToast('Erro ao carregar dados do relatório.', 'error');
+  }
   setTimeout(() => isLoaded.value = true, 60);
 });
+
+watch(dateFilter, fetchMetrics);
 
 const allSubs = computed(() => subscriptionStore.adminSubscriptions);
 const metrics = computed(() => subscriptionStore.adminMetrics);
 const isLoading = computed(() => subscriptionStore.adminDataLoading);
 
 const totalActive = computed(() =>
-  metrics.value ? metrics.value.totalAtivas : allSubs.value.filter(s => s.status === 'ativo').length
+  metrics.value ? metrics.value.totalAtivas : allSubs.value.filter(s => s.status === 'Paga').length
 );
 
 const totalMRR = computed(() =>
   metrics.value ? metrics.value.receitaMensal : allSubs.value
-    .filter(s => s.status === 'ativo')
+    .filter(s => s.status === 'Paga')
     .reduce((acc, s) => acc + s.amount, 0)
 );
 
@@ -55,7 +75,7 @@ const totalMonthly = computed(() => {
 });
 
 const avgUsers = computed(() => {
-  const active = allSubs.value.filter(s => s.status === 'ativo');
+  const active = allSubs.value.filter(s => s.status === 'Paga');
   if (!active.length) return 0;
   return Math.round(active.reduce((a, s) => a + s.users, 0) / active.length);
 });
@@ -92,7 +112,7 @@ const ticketAnual = computed(() => {
 
 const establishmentData = computed(() =>
   [...allSubs.value]
-    .filter(s => s.status === 'ativo')
+    .filter(s => s.status === 'Paga')
     .sort((a, b) => b.users - a.users)
 );
 
@@ -111,22 +131,13 @@ const handleExport = () => window.print();
 <template>
   <main class="max-w-7xl mx-auto py-12 px-6 font-inter">
 
-    <header class="flex items-center justify-between gap-4 mb-10">
-      <div class="flex items-center gap-4">
-        <button @click="router.push('/app/dashboard')" class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] transition-colors">
-          <ArrowLeft :size="20" />
-        </button>
-        <div>
-          <div class="flex items-center gap-2 mb-1">
-            <ShieldAlert :size="16" class="text-accent" />
-            <span class="text-xs font-black text-accent uppercase tracking-widest">Painel Admin</span>
-          </div>
-          <h1 class="text-3xl font-black text-[#212121]">Relatórios de Assinaturas</h1>
-          <p class="text-[#757575] text-sm">Faturamento e métricas da plataforma</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3">
+    <PageHeader
+      title="Relatórios de Assinaturas"
+      subtitle="Faturamento e métricas da plataforma"
+      :category-icon="ShieldAlert"
+      category-label="Painel Admin"
+    >
+      <template #actions>
         <Loader2 v-if="isLoading" :size="18" class="text-accent animate-spin" />
         <div class="flex bg-white border border-[#E0E0E0] rounded overflow-hidden">
           <button
@@ -145,45 +156,14 @@ const handleExport = () => window.print();
         >
           <Download :size="15" /> Exportar
         </button>
-      </div>
-    </header>
+      </template>
+    </PageHeader>
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      <div class="bg-white border border-[#E0E0E0] rounded p-6">
-        <div class="flex items-center gap-2 text-[#757575] text-xs font-black uppercase tracking-widest mb-3">
-          <DollarSign :size="14" /> MRR
-        </div>
-        <p class="text-3xl font-black text-[#212121]">
-          {{ totalMRR.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
-        </p>
-        <p class="text-xs text-[#757575] mt-1">receita mensal recorrente</p>
-      </div>
-
-      <div class="bg-white border border-[#E0E0E0] rounded p-6">
-        <div class="flex items-center gap-2 text-[#757575] text-xs font-black uppercase tracking-widest mb-3">
-          <Users :size="14" /> Assinantes Ativos
-        </div>
-        <p class="text-3xl font-black text-accent">{{ totalActive }}</p>
-        <p class="text-xs text-[#757575] mt-1">de {{ allSubs.length }} cadastrados</p>
-      </div>
-
-      <div class="bg-white border border-[#E0E0E0] rounded p-6">
-        <div class="flex items-center gap-2 text-[#757575] text-xs font-black uppercase tracking-widest mb-3">
-          <TrendingUp :size="14" /> ARR Estimado
-        </div>
-        <p class="text-3xl font-black text-[#212121]">
-          {{ (totalMRR * 12).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
-        </p>
-        <p class="text-xs text-[#757575] mt-1">receita anual recorrente</p>
-      </div>
-
-      <div class="bg-white border border-[#E0E0E0] rounded p-6">
-        <div class="flex items-center gap-2 text-[#757575] text-xs font-black uppercase tracking-widest mb-3">
-          <Users :size="14" /> Média de Usuários
-        </div>
-        <p class="text-3xl font-black text-[#212121]">{{ avgUsers }}</p>
-        <p class="text-xs text-[#757575] mt-1">por estabelecimento ativo</p>
-      </div>
+      <MetricCard label="MRR" :value="formatCurrency(totalMRR)" :icon="DollarSign" description="receita mensal recorrente" />
+      <MetricCard label="Assinantes Ativos" :value="totalActive" :icon="Users" :description="`de ${allSubs.length} cadastrados`" variant="accent" />
+      <MetricCard label="ARR Estimado" :value="formatCurrency(totalMRR * 12)" :icon="TrendingUp" description="receita anual recorrente" />
+      <MetricCard label="Média de Usuários" :value="avgUsers" :icon="Users" description="por estabelecimento ativo" />
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -261,7 +241,7 @@ const handleExport = () => window.print();
             </div>
             <div class="flex justify-between text-sm">
               <span class="text-[#757575]">MRR atual</span>
-              <span class="font-black text-[#212121]">{{ totalMRR.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}</span>
+              <span class="font-black text-[#212121]">{{ formatCurrency(totalMRR) }}</span>
             </div>
           </div>
         </div>
@@ -275,7 +255,7 @@ const handleExport = () => window.print();
         <span class="ml-auto text-xs text-[#757575] font-bold">apenas ativos</span>
       </div>
 
-      <div class="divide-y divide-white/5">
+      <div v-if="establishmentData.length" class="divide-y divide-white/5">
         <div v-for="est in establishmentData" :key="est.id" class="px-6 py-4 flex items-center gap-4">
           <div class="w-40 shrink-0">
             <p class="text-sm font-bold text-[#212121] truncate">{{ est.establishment }}</p>
@@ -293,16 +273,10 @@ const handleExport = () => window.print();
             <span class="text-sm font-black text-[#212121]">{{ est.users }}</span>
             <span class="text-xs text-[#757575]"> usuários</span>
           </div>
-          <span
-            class="shrink-0 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border"
-            :class="planLabel(est) === 'anual'
-              ? 'text-purple-400 bg-primary/10 border-primary/20'
-              : 'text-blue-400 bg-blue-500/10 border-blue-500/20'"
-          >
-            {{ planLabel(est) }}
-          </span>
+          <StatusBadge :status="planLabel(est)" type="frequency" />
         </div>
       </div>
+      <EmptyState v-else :icon="Users" message="Nenhum estabelecimento ativo" class="py-12" />
     </div>
 
   </main>
@@ -320,9 +294,9 @@ const handleExport = () => window.print();
 
     <div style="display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 20px;">
       <div v-for="kpi in [
-        { label: 'MRR', value: totalMRR.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) },
+        { label: 'MRR', value: formatCurrency(totalMRR) },
         { label: 'Assinantes Ativos', value: totalActive },
-        { label: 'ARR Estimado', value: (totalMRR*12).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) },
+        { label: 'ARR Estimado', value: formatCurrency(totalMRR * 12) },
         { label: 'Média Usuários', value: avgUsers },
       ]" :key="kpi.label" style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; background: #f9fafb;">
         <p style="font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; color: #9ca3af; margin: 0 0 4px;">{{ kpi.label }}</p>
@@ -383,7 +357,7 @@ const handleExport = () => window.print();
             <span :style="{ background: planLabel(est) === 'anual' ? '#f3e8ff' : '#dbeafe', color: planLabel(est) === 'anual' ? '#7e22ce' : '#1d4ed8', padding: '2px 6px', borderRadius: '4px', fontSize: '8px', fontWeight: '900' }">{{ planLabel(est) }}</span>
           </td>
           <td style="padding: 5px 10px; text-align: right; font-weight: 900; border-bottom: 1px solid #f3f4f6;">{{ est.users }}</td>
-          <td style="padding: 5px 10px; text-align: right; font-weight: 900; color: #059669; border-bottom: 1px solid #f3f4f6;">{{ est.amount.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }}</td>
+          <td style="padding: 5px 10px; text-align: right; font-weight: 900; color: #059669; border-bottom: 1px solid #f3f4f6;">{{ formatCurrency(est.amount) }}</td>
         </tr>
       </tbody>
     </table>

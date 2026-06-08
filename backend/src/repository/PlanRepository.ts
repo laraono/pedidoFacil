@@ -21,7 +21,7 @@ export class PlanRepository extends Repository<Plan>{
     }
 
     async deletePlan(planId: number) {
-        await this.softDelete(planId)
+        await this.delete(planId)
     }
 
     async listPlans() {

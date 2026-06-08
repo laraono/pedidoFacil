@@ -1,9 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, DeleteDateColumn, CreateDateColumn, JoinColumn } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, DeleteDateColumn, JoinColumn } from "typeorm"
 import { ProductVariation } from "./ProductVariation"
 import { Category } from "./Category"
 import { ProductOrder } from "./ProductOrder"
-import { ProductStatus } from "../../enum"
-import { Establishment } from "./Establishment"
 
 @Entity({name: 'PRODUTO'})
 export class Product {
@@ -44,6 +42,14 @@ export class Product {
     estocavel!: boolean
 
     @Column({
+        type: 'varchar',
+        name: 'Status',
+        nullable: false,
+        default: 'Ativo'
+    })
+    status!: string
+
+    @Column({
         name: 'Preco_Base',
         type: "decimal",
         precision: 10,
@@ -51,15 +57,6 @@ export class Product {
         nullable: false
     })
     basePrice!: number
-
-    @Column({
-        type: 'enum',
-        enum: ['Ativo', 'Inativo'],
-        name: 'Status',
-        nullable: false,
-        default: 'Ativo'
-    })
-    status!: ProductStatus | string
 
     @DeleteDateColumn({
         name: 'Data_Exclusao',
@@ -79,11 +76,5 @@ export class Product {
         name: 'ID_Categoria'
     })
     category!: Category
-
-    @ManyToOne(() => Establishment, (establishment) => establishment.products)
-    @JoinColumn({
-        name: 'ID_Estabelecimento'
-    })
-    establishment!: Establishment
 
 }

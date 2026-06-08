@@ -23,16 +23,14 @@ export class OrderController {
             const order = await this.orderService.createOrder({
                 ...req.body,
                 comandaId: Number(comandaId),
-                establishmentId: usuario.estabelecimento 
-            });
+                establishmentId: usuario.estabelecimento,
+                userId: usuario.id || usuario.ID_Usuario 
+            }) as any;
 
             const fullOrder = await this.orderService.getOrderWithDetails(order.id);
 
             const mappedItems = fullOrder?.productOrders?.map(po => {
-                const variationName = po.variations
-                    ?.map(v => v.productVariation?.name)
-                    .filter(Boolean)
-                    .join(', ') || '';
+                const variationName = po.productVariation?.name || '';
                 return {
                     name: po.product?.name || 'Produto',
                     variationName,
@@ -46,13 +44,15 @@ export class OrderController {
                 comandaId:    Number(comandaId),
                 comandaLabel: req.body.comandaLabel || `Comanda #${comandaId}`,
                 items:        mappedItems,
-                createdAt:    new Date().toISOString(),
+                createdAt:    (fullOrder?.created_at || order.created_at) ? new Date(fullOrder?.created_at || order.created_at).toISOString() : new Date().toISOString(),
                 source:       req.body.source || 'web',
+                userId:       usuario.id || usuario.ID_Usuario,
+                user:         { id: usuario.id || usuario.ID_Usuario }
             });
 
             return res.status(201).json(order);
         } catch (error: any) {
-            console.error("🔥 Erro ao criar pedido:", error.message);
+            console.error("Erro ao criar pedido:", error.message);
             return res.status(400).json({ error: error.message || "Erro interno" });
         }
     }
@@ -66,21 +66,19 @@ export class OrderController {
             }
 
             const randomTicket = Math.floor(100 + Math.random() * 900).toString();
-            const comandaLabel = `Totem #${randomTicket}`;
+            const customerName = (req.body.customerName as string | undefined)?.trim() || null;
+            const comandaLabel = customerName || `Totem #${randomTicket}`;
 
             const order = await this.orderService.createTotemOrder({
                 ...req.body,
                 establishmentId: usuario.estabelecimento,
                 comandaLabel: comandaLabel,
-                customerName: req.body.customerName ?? null
-            });
+                customerName,
+            }) as any;
 
             const fullOrder = await this.orderService.getOrderWithDetails(order.id);
             const mappedItems = fullOrder?.productOrders?.map(po => {
-                const variationName = po.variations
-                    ?.map(v => v.productVariation?.name)
-                    .filter(Boolean)
-                    .join(', ') || '';
+                const variationName = po.productVariation?.name || '';
                 return {
                     name: po.product?.name || 'Produto',
                     variationName,
@@ -93,10 +91,12 @@ export class OrderController {
                 orderId:      order.id,
                 comandaId:    order.comanda.id,
                 comandaLabel: comandaLabel,
-                customerName: req.body.customerName ?? null,
+                customerName: customerName,
                 items:        mappedItems,
-                createdAt:    new Date().toISOString(),
+                createdAt:    (fullOrder?.created_at || order.created_at) ? new Date(fullOrder?.created_at || order.created_at).toISOString() : new Date().toISOString(),
                 source:       'totem',
+                userId:       null,
+                user:         null
             });
 
             return res.status(201).json({
@@ -105,27 +105,36 @@ export class OrderController {
                 label: comandaLabel
             });
         } catch (error: any) {
-            console.error("🔥 Erro no pedido Totem:", error.message);
+            console.error("Erro no pedido Totem:", error.message);
             return res.status(400).json({ error: error.message || "Erro interno ao processar pedido" });
         }
     }
 
     async updateOrderStatus(req: Request, res: Response) {
-        const { orderId } = req.params;
+        const { orderId, comandaId } = req.params;
         const { status, cancellationDescription } = req.body;
         const usuario = (req as any).usuario;
 
-        await this.orderService.updateOrderStatus(
-            Number(orderId), 
-            status, 
-            usuario.id, 
-            cancellationDescription
+        const result = await this.orderService.updateOrderStatus(
+            Number(orderId),
+            status,
+            usuario.id,
+            cancellationDescription,
+            Number(comandaId)
         );
+
         getIO().to('kitchen').to('cashier').to('waiter').emit('order_status_updated', {
             orderId:   Number(orderId),
-            comandaId: req.params.comandaId ? Number(req.params.comandaId) : null,
+            comandaId: Number(comandaId),
             status,
         });
+
+        if ((status === 'Pronto' || status === 'ready') && result.orderUserId) {
+            getIO().emit(`user_notification_${result.orderUserId}`, {
+                orderId: Number(orderId),
+                comanda: result.comandaLabel
+            });
+        }
 
         res.sendStatus(204);
     }
@@ -143,21 +152,30 @@ export class OrderController {
     }
 
     async cancelOrder(req: Request, res: Response) {
-        const { orderId } = req.params;
+        const { orderId, comandaId } = req.params;
         const { cancellationDescription } = req.body;
         const usuario = (req as any).usuario;
-        await this.orderService.updateOrderStatus(
+
+        const result = await this.orderService.updateOrderStatus(
             Number(orderId),
             OrderStatus.CANCELADO,
             usuario.id,
-            cancellationDescription
+            cancellationDescription,
+            Number(comandaId)
         );
 
-        auditLog('cancel_order.success', {
-                    orderId,
-                    userId: usuario.id,
-                    description: cancellationDescription
+        auditLog('cancel_order.success', { orderId, userId: usuario.id, description: cancellationDescription });
+        
+        getIO().to('kitchen').to('cashier').emit('order_cancelled', {
+            orderId: Number(orderId),
+            comandaId: result.comandaId
         });
+
+        if (result.comandaCancelled) {
+            getIO().to('kitchen').to('cashier').emit('comanda_cancelled', {
+                comandaId: result.comandaId
+            });
+        }
            
         res.sendStatus(204);
     }

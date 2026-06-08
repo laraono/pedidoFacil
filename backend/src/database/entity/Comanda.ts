@@ -1,11 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, DeleteDateColumn, ManyToOne, JoinColumn, OneToOne } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, DeleteDateColumn, ManyToOne, JoinColumn, Index } from "typeorm"
 import { ComandaStatus, DiscountType } from "../../enum"
 import { Order } from "./Order"
 import { Establishment } from "./Establishment"
-import { User } from "./User"
 import { Coupon } from "./Coupon"
 
 @Entity({name: 'COMANDA'})
+@Index('idx_comanda_est_status_data', ['establishment', 'status', 'created_at'])
 export class Comanda {
 
     @PrimaryGeneratedColumn({
@@ -20,14 +20,6 @@ export class Comanda {
         length: 100
     })
     description!: string
-
-    @Column({
-        type: 'varchar',
-        name: 'Nome_Cliente',
-        nullable: true,
-        length: 100
-    })
-    customerName?: string
 
     @Column({
         type: 'varchar',
@@ -86,16 +78,10 @@ export class Comanda {
     })
     establishment!: Establishment
 
-    @OneToOne(() => User)
-    @JoinColumn({
-        name: 'ID_Usuario_Abertura'
-    })
-    user!: User
 
-    @OneToOne(() => Coupon)
+    @ManyToOne(() => Coupon)
     @JoinColumn({
         name: 'ID_Cupom_Aplicado'
     })
     coupon!: Coupon
-
 }

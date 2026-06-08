@@ -4,6 +4,7 @@ import { s3Client } from "../config";
 import { AppError } from "../middleware";
 import crypto from 'crypto';
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { S3ServiceException } from "@aws-sdk/client-s3";
 
 export interface UploadFileParams {
     bucket: string;
@@ -66,10 +67,18 @@ export async function doesBucketExist(bucketName: string): Promise<boolean> {
         await s3Client.send(command);
         return true; 
     } catch (error) {
-        if (error instanceof NotFound || error.name === 'NotFound') {
-            return false; 
+        if (error instanceof S3ServiceException) {
+            if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
+                return false; 
+            }
         }
-        console.error('Error checking bucket:', error);
+
+        if (error instanceof Error) {
+            console.error('Error checking bucket:', error.message);
+        } else {
+            console.error('Unknown error checking bucket:', error);
+        }
+
         throw new AppError('Erro fazendo upload da imagem', 500);
     }
 }

@@ -2,10 +2,9 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import { LogIn, Lock, User, AlertCircle } from 'lucide-vue-next';
+import { LogIn, Lock, User, AlertCircle, Eye, EyeOff } from 'lucide-vue-next';
 import { BaseInput, BaseButton } from '@/components/ui';
-import LandingHeader from '@/components/LandingHeader.vue';
-import imgOndas from '@/assets/ondas.png';
+import AuthLayout from '@/components/AuthLayout.vue';
 import { PERMISSIONS } from '@/utils/permissions';
 
 const authStore = useAuthStore();
@@ -15,6 +14,9 @@ const email = ref('');
 const senha = ref('');
 const isLoading = ref(false);
 const serverError = ref(null);
+const showPassword = ref(false);
+
+if (authStore.isAuthenticated) router.push('/app/dashboard');
 
 onMounted(() => window.scrollTo(0, 0));
 
@@ -30,18 +32,10 @@ const handleLogin = async () => {
       return;
     }
 
-    const rotasPossiveis = [
-      { permission: PERMISSIONS.RELATORIOS, route: '/app/dashboard' },
-      { permission: PERMISSIONS.COZINHA, route: '/app/kitchen' },
-      { permission: PERMISSIONS.CONFIGURACAO, route: '/app/settings/establishment' },
-      { permission: PERMISSIONS.ASSINATURA, route: '/app/subscription' }
-    ];
-
-    const destino = rotasPossiveis.find(item => authStore.hasPermission(item.permission));
-    router.push(destino ? destino.route : '/app/dashboard');
+    router.push('/app/dashboard');
 
   } catch (err) {
-    serverError.value = `Erro: ${err.message || 'Falha de login'}`;
+    serverError.value = 'Falha no login';
   } finally {
     isLoading.value = false;
   }
@@ -51,18 +45,11 @@ const goToPlans = () => router.push({ path: '/', hash: '#planos' });
 </script>
 
 <template>
-  <div class="min-h-screen bg-page font-inter flex flex-col">
-    <LandingHeader />
-
-    <div class="flex-1 relative flex flex-col items-center justify-center p-4">
-      <div class="absolute top-0 left-0 w-full h-full z-0 pointer-events-none opacity-40"
-           :style="{ backgroundImage: `url(${imgOndas})`, backgroundSize: 'cover', backgroundPosition: 'center' }">
-      </div>
-
+  <AuthLayout>
       <div class="z-10 w-full max-w-md bg-white/90 border border-[#E0E0E0] p-8 sm:p-12 rounded shadow-2xl">
         <div class="mb-10 text-center">
           <h2 class="text-3xl font-black text-[#212121] mb-2">Bem-vindo de volta</h2>
-          <p class="text-[#757575]">Entre para gerir o seu restaurante</p>
+          <p class="text-[#757575]">Acesse sua conta e faça login</p>
         </div>
 
         <div v-if="serverError" class="mb-6 p-4 bg-danger-light border border-danger rounded flex items-center gap-3 text-danger text-sm">
@@ -82,12 +69,22 @@ const goToPlans = () => router.push({ path: '/', hash: '#planos' });
 
           <BaseInput
             v-model="senha"
-            type="password"
+            :type="showPassword ? 'text' : 'password'"
             placeholder="Senha"
             :icon="Lock"
             dark
             required
-          />
+          >
+            <template #suffix>
+              <button
+                type="button"
+                @click="showPassword = !showPassword"
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-[#757575] hover:text-accent"
+              >
+                <component :is="showPassword ? EyeOff : Eye" class="w-5 h-5" />
+              </button>
+            </template>
+          </BaseInput>
 
           <div class="flex justify-end">
             <a @click.prevent="router.push('/forgot-password')" href="/forgot-password"
@@ -105,7 +102,7 @@ const goToPlans = () => router.push({ path: '/', hash: '#planos' });
               :isLoading="isLoading"
               :icon="LogIn"
             >
-              Entrar no sistema
+              Entrar
             </BaseButton>
           </div>
         </form>
@@ -113,10 +110,9 @@ const goToPlans = () => router.push({ path: '/', hash: '#planos' });
         <div class="mt-10 pt-6 border-t border-[#E0E0E0] text-center">
           <p class="text-[#757575] text-sm mb-3">Ainda não é cliente?</p>
           <a @click.prevent="goToPlans" href="/#planos" class="text-accent font-bold hover:text-[#212121] transition-colors cursor-pointer">
-            Conheça os nossos planos →
+            Conheça os nossos planos
           </a>
         </div>
       </div>
-    </div>
-  </div>
+  </AuthLayout>
 </template>

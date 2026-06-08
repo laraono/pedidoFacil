@@ -5,7 +5,6 @@ import { EstablishmentRepository } from './EstablishmentRepository'
 import { OrderRepository } from './OrderRepository';
 import { ProductOrderRepository } from './ProductOrderRepository';
 import { ProductRepository } from './ProductRepository';
-import { ProductVariationOrderRepository } from './ProductVariationOrderRepository';
 import { ProductVariationRepository } from './ProductVariationRepository';
 import { RefreshTokenRepository } from './RefreshTokenRepository';
 import { RoleRepository } from './RoleRepository';
@@ -17,17 +16,18 @@ import { PaymentRepository } from './PaymentRepository';
 import { PlanRepository } from './PlanRepository';
 import { SubscriptionRepository } from './SubscriptionRepository';
 import { RegisterRepository } from './RegisterRepository';
+import { MetricsRepository } from './MetricsRepository';
+import { SubscriptionPaymentRepository } from './SubscriptionPaymentRepository';
+import { AdminSubscriptionMetricsRepository } from './AdminSubscriptionMetricsRepository';
 
 const categoryRepository = new CategoryRepository(AppDataSource);
+const metricsRepository = new MetricsRepository(AppDataSource);
 const comandaRepository = new ComandaRepository(AppDataSource);
 const establishmentRepository: EstablishmentRepository = new EstablishmentRepository(AppDataSource)
 const orderRepository = new OrderRepository(AppDataSource);
 const productRepository = new ProductRepository(AppDataSource);
 const productOrderRepository = new ProductOrderRepository(AppDataSource);
 const productVariationRepository = new ProductVariationRepository(
-    AppDataSource,
-);
-const productVariationOrderRepository = new ProductVariationOrderRepository(
     AppDataSource,
 );
 const refreshTokenRepository = new RefreshTokenRepository(AppDataSource);
@@ -40,6 +40,8 @@ const paymentRepository = new PaymentRepository(AppDataSource);
 const planRepository = new PlanRepository(AppDataSource)
 const subscriptionRepository = new SubscriptionRepository(AppDataSource)
 const registerRepository = new RegisterRepository(AppDataSource)
+const subscriptionPaymentRepository = new SubscriptionPaymentRepository(AppDataSource);
+const adminSubscriptionMetricsRepository = new AdminSubscriptionMetricsRepository(AppDataSource);
 
 export {
     categoryRepository,
@@ -49,17 +51,19 @@ export {
     productRepository,
     productOrderRepository,
     productVariationRepository,
-    productVariationOrderRepository,
     refreshTokenRepository,
     roleRepository,
     userRepository,
     couponRepository,
     configurationRepository,
-    receiptRepository, 
+    receiptRepository,
+    metricsRepository,
     paymentRepository,
     planRepository,
     subscriptionRepository,
-    registerRepository
+    registerRepository,
+    subscriptionPaymentRepository,
+    adminSubscriptionMetricsRepository,
 };
 
 export {
@@ -69,7 +73,6 @@ export {
     ProductRepository,
     ProductOrderRepository,
     ProductVariationRepository,
-    ProductVariationOrderRepository,
     RefreshTokenRepository,
     RoleRepository,
     UserRepository,
@@ -80,5 +83,7 @@ export {
     PaymentRepository,
     PlanRepository,
     SubscriptionRepository,
-    RegisterRepository
+    RegisterRepository,
+    SubscriptionPaymentRepository,
+    AdminSubscriptionMetricsRepository,
 };

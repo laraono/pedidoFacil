@@ -20,24 +20,26 @@ export default function OrderConfirmedScreen() {
 
   const ticket = route.params?.ticket || "";
   const label = route.params?.label || (ticket ? `Totem #${ticket}` : "—");
+  const customerName = route.params?.customerName || null;
+
+  const isPaid = route.params?.isPaid || false;
 
   const [seconds, setSeconds] = useState(COUNTDOWN);
 
   const styles = useMemo(() => getStyles(theme), [theme]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          navigation.reset({ index: 0, routes: [{ name: "Welcome" }] });
-          return 0;
-        }
-        return prev - 1;
-      });
+    if (seconds <= 0) {
+      navigation.reset({ index: 0, routes: [{ name: "Welcome" }] });
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setSeconds((prev) => prev - 1);
     }, 1000);
-    return () => clearInterval(interval);
-  }, [navigation]);
+
+    return () => clearTimeout(timer);
+  }, [seconds, navigation]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -51,14 +53,16 @@ export default function OrderConfirmedScreen() {
         <Text style={styles.title}>Pedido realizado!</Text>
 
         <View style={styles.ticketBox}>
-          <Text style={styles.ticketCaption}>Seu número</Text>
-          <Text style={styles.ticketNumber}>{label}</Text>
+          <Text style={styles.ticketCaption}>{customerName ? "Olá," : "Seu número"}</Text>
+          <Text style={styles.ticketNumber}>{customerName || label}</Text>
         </View>
 
         <View style={styles.instructionBox}>
           <Feather name="map-pin" size={22} color={theme.corCategorias} />
           <Text style={styles.instructionText}>
-            Dirija-se ao caixa para{"\n"}efetuar o pagamento
+            {isPaid || customerName
+              ? "Aguarde ser chamado\npelo seu nome"
+              : "Dirija-se ao caixa para\nefetuar o pagamento"}
           </Text>
         </View>
 

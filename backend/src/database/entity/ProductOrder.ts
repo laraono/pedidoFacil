@@ -1,9 +1,9 @@
 import { Entity, Column, OneToMany, PrimaryGeneratedColumn, JoinColumn, CreateDateColumn, DeleteDateColumn, ManyToOne } from "typeorm"
 import { Product } from "./Product"
 import { Order } from "./Order"
-import { ProductVariationOrder } from "./ProductVariationOrder"
+import { ProductVariation } from "./ProductVariation"
 
-@Entity({name: 'ItemPedido'})
+@Entity({name: 'ITEM_PEDIDO'})
 export class ProductOrder {
 
     @PrimaryGeneratedColumn({
@@ -13,16 +13,11 @@ export class ProductOrder {
     id!: number
 
     @Column({
-        name: 'ID_Pedido',
-        type: 'int'
-    })
-    orderId!: number
-
-    @Column({
-        name: 'ID_Produto',
-        type: 'int'
-    })
-    productId!: number
+            name: 'ID_Variacao',
+            type: 'int',
+            nullable: true
+        })
+    productVariationId?: number | null
 
     @Column({
         type: 'varchar',
@@ -68,7 +63,8 @@ export class ProductOrder {
     @JoinColumn({name: 'ID_Pedido'})
     order!: Order
 
-    @OneToMany(() => ProductVariationOrder, (variation) => variation.productOrder)
-    variations!: ProductVariationOrder[]
+    @ManyToOne(() => ProductVariation, (productVariation) => productVariation.productOrders, { nullable: true })
+    @JoinColumn({name: 'ID_Variacao'})
+    productVariation?: ProductVariation | null
 
 }

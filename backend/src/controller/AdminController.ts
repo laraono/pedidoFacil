@@ -26,7 +26,13 @@ export class AdminController {
     });
 
     delete = catchAsync(async (req: Request, res: Response) => {
-        await this.adminService.delete(Number(req.params.adminId));
+        const requesterId = Number((req as any).usuario?.id);
+        await this.adminService.delete(requesterId, Number(req.params.adminId));
         return res.sendStatus(204);
+    });
+
+    getMasterId = catchAsync(async (_req: Request, res: Response) => {
+        const masterId = await this.adminService.getMasterId();
+        return res.status(200).json({ masterId });
     });
 }

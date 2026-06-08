@@ -4,8 +4,6 @@ import { PaymentStatus } from '../database/entity/Payment';
 import { AppError } from '../middleware/error/AppError';
 import { MercadoPagoService } from './MercadoPagoService';
 import { OrderRepository, PaymentRepository } from '../repository';
-import { OrderStatus } from '../enum';
-import { getIO } from '../socket';
 
 export class PaymentService {
     constructor(
@@ -13,7 +11,7 @@ export class PaymentService {
         private mercadoPagoService: MercadoPagoService,
         private paymentRepository: PaymentRepository,
         private orderRepository: OrderRepository,
-        ) {}
+    ) {}
 
     async processCheckoutPayments(
         comandaId: number,
@@ -80,12 +78,6 @@ export class PaymentService {
                     price: amountToDistribute 
                 });
 
-                await this.orderRepository.updateOrderStatus(order.id, OrderStatus.FINALIZADO)
-                getIO().to('cashier').emit('order_status_updated', {
-                    orderId: order.id,
-                    status: OrderStatus.FINALIZADO
-                })
-
                 await manager.save(PaymentOrder, paymentOrder);
             }
         }
@@ -137,7 +129,7 @@ export class PaymentService {
 
             if (!payment) throw new AppError('Pagamento não encontrado.', 404);
 
-            if(payment.mercadoPagoOrderId) await this.mercadoPagoService.refundOrder(payment.mercadoPagoOrderId)
+            if(payment.mercadoPagoOrderId) await this.mercadoPagoService.refundOrder(payment.mercadoPagoOrderId);
 
             if (payment.status === PaymentStatus.REFUNDED) throw new AppError('Pagamento já está estornado.', 400);
 
@@ -150,8 +142,8 @@ export class PaymentService {
     async processTerminalPayment({amount, orderId, terminal}: {amount: number, orderId: number, terminal: string}) {
         const answer = await this.mercadoPagoService.createOrder({
             amount, orderId, terminal 
-        })
+        });
 
-        return answer
+        return answer;
     }
 }

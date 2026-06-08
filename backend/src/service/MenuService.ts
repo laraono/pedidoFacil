@@ -16,7 +16,7 @@ export class MenuService {
 
         const products = await this.productRepository.find({
             where: { 
-                establishment: { id: establishmentId },
+                category: { establishment: { id: establishmentId } },
                 ...(editMode ? {} : { status: ProductStatus.ATIVO })
             },
             relations: ['category', 'productVariations'],

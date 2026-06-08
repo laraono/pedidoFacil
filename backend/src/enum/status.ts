@@ -13,19 +13,18 @@ export enum ComandaStatus {
 }
 
 export enum ProductStatus {
-    ATIVO ='Ativo',
-    ARQUIVADO = 'Arquivado'
+    ATIVO = 'Ativo',
+    INATIVO = 'Inativo'
 }
 
 export enum CategoryStatus {
-    ATIVA ='Ativa',
-    ARVUIVADA = 'Arquivada'
+    ATIVA = 'Ativa',
+    INATIVA = 'Inativa'
 }
 
 export enum UserStatus {
     ATIVO ='Ativo',
     INATIVO = 'Inativo',
-    PENDENTE = 'Pendente'
 }
 
 export enum SubscriptionStatus {
@@ -33,5 +32,16 @@ export enum SubscriptionStatus {
     PAGA = 'Paga',
     EXPIRADA = 'Expirada',
     CANCELADA = 'Cancelada'
+}
+
+export enum ReceiptStatus {
+    AUTORIZADA = 'Autorizada',
+    CANCELADA = 'Cancelada',
+    ERRO = 'Erro'
+}
+
+export enum SubscriptionPaymentStatus {
+    APROVADO = 'Aprovado',
+    REJEITADO = 'Rejeitado'
 }
 

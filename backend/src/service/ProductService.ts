@@ -1,7 +1,8 @@
-import { CreateProductDTO } from "../dto/product/CreateProductDTO"; 
+import { CreateProductDTO } from "../dto/product/CreateProductDTO";
 import { AppError } from "../middleware/error/AppError";
 import { ProductRepository, ProductVariationRepository } from "../repository";
 import { CategoryService } from "./CategoryService";
+import { ProductStatus } from "../enum";
 
 export class ProductService {
     private categoryService: CategoryService
@@ -73,7 +74,7 @@ export class ProductService {
         if (data.categoryId !== undefined) updateData.category = { id: data.categoryId };
         
         if (data.available !== undefined) {
-            updateData.status = data.available ? 'Ativo' : 'Inativo';
+            updateData.status = data.available ? ProductStatus.ATIVO : ProductStatus.INATIVO;
         }
 
         await this.productRepository.updateProduct(productId, updateData);

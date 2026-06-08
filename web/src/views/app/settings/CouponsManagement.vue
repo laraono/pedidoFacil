@@ -2,66 +2,58 @@
 import { ref, onMounted } from 'vue';
 import { useCouponStore } from '@/stores/coupons';
 import { useToast } from '@/composables/useToast';
-import BaseButton from '@/components/ui/BaseButton.vue';
-import BaseInput from '@/components/ui/BaseInput.vue';
-import FormModal from '@/components/ui/FormModal.vue';
-import PageHeader from '@/components/ui/PageHeader.vue';
-import ToastMessage from '@/components/ui/ToastMessage.vue';
+import { useConfirm } from '@/composables/useConfirm';
+import { useAsyncAction } from '@/composables/useAsyncAction';
+import { useUtils } from '@/composables/useUtils';
+import { applyPriceMask, applyPercentMask } from '@/composables/usePriceMask';
+import {
+  BaseButton, BaseInput, BaseSelect, BaseToggle,
+  ConfirmModal, EmptyState, FormModal, PageHeader, ToastMessage,
+} from '@/components/ui';
 import { PlusCircle, Edit, Trash2, Tag, Power, Calendar, BadgePercent, DollarSign } from 'lucide-vue-next';
 
 const store = useCouponStore();
 const { showToast } = useToast();
+const { confirmState, showConfirm, closeConfirm } = useConfirm();
+const { loading: isLoading, run: runSave } = useAsyncAction();
+const { run } = useAsyncAction();
+const { formatCurrency } = useUtils();
 
 const showModal = ref(false);
 const isEditing = ref(false);
-const isLoading = ref(false);
 const errors = ref({});
-const confirmDelete = ref(null);
 
 onMounted(() => {
   store.loadData();
 });
 
+const typeOptions = [
+  { value: 'percent', label: 'Percentual (%)' },
+  { value: 'fixed',   label: 'Valor fixo (R$)' },
+];
+
 const emptyForm = () => ({ id: null, code: '', description: '', type: 'percent', value: '', expiresAt: '', active: true });
 const form = ref(emptyForm());
 
-const applyValueMask = (raw) => {
-  let val = String(raw).replace(/[^\d,]/g, '');
-  const commaIdx = val.indexOf(',');
-  if (commaIdx !== -1) {
-    val = val.slice(0, commaIdx + 1) + val.slice(commaIdx + 1).replace(/,/g, '');
-    val = val.slice(0, commaIdx + 3);
-  }
-  const parts = val.split(',');
-  parts[0] = parts[0].replace(/^0+(\d)/, '$1');
-  return parts.join(',');
-};
-
 const onValueInput = (e) => {
-  if (form.value.type === 'percent') {
-    const digits = e.target.value.replace(/\D/g, '');
-    const num = Math.min(100, parseInt(digits, 10) || 0);
-    form.value.value = num === 0 ? '' : String(num);
-  } else {
-    form.value.value = applyValueMask(e.target.value);
-  }
+  const v = form.value.type === 'percent' ? applyPercentMask(e.target.value) : applyPriceMask(e.target.value);
+  e.target.value = v;
+  form.value.value = v;
 };
 
 const validate = () => {
   const e = {};
   if (!form.value.code?.trim()) e.code = 'Código do cupom é obrigatório.';
-  
+
   const parsed = parseFloat(String(form.value.value).replace(',', '.'));
   if (!form.value.value || isNaN(parsed) || parsed <= 0) e.value = 'Valor do desconto inválido.';
   if (form.value.type === 'percent' && parsed > 100) e.value = 'Percentual não pode exceder 100%.';
-  
+
   if (form.value.expiresAt) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const selectedDate = new Date(`${form.value.expiresAt}T12:00:00`);
-    if (selectedDate < today) {
-      e.expiresAt = 'A data não pode ser anterior a hoje.';
-    }
+    if (selectedDate < today) e.expiresAt = 'A data não pode ser anterior a hoje.';
   }
 
   errors.value = e;
@@ -84,66 +76,67 @@ const openEdit = (c) => {
   showModal.value = true;
 };
 
-const save = async () => {
+const save = () => runSave(async () => {
   errors.value = {};
-
-  if (!validate()) { 
-    const firstErrorMsg = Object.values(errors.value)[0];
-    showToast(firstErrorMsg || 'Corrija os erros no formulário.', 'error'); 
-    return; 
+  if (!validate()) {
+    showToast(Object.values(errors.value)[0] || 'Corrija os erros no formulário.', 'error');
+    return;
   }
-  
-  isLoading.value = true;
+
+  const parsed = parseFloat(String(form.value.value).replace(',', '.'));
+  const payload = {
+    id: form.value.id,
+    code: form.value.code.trim().toUpperCase(),
+    description: form.value.description,
+    type: form.value.type,
+    value: parsed,
+    expiresAt: form.value.expiresAt || null,
+    active: form.value.active,
+  };
+
   try {
-    const parsed = parseFloat(String(form.value.value).replace(',', '.'));
-    const payload = {
-      id: form.value.id,
-      code: form.value.code.trim().toUpperCase(),
-      description: form.value.description,
-      type: form.value.type,
-      value: parsed,
-      expiresAt: form.value.expiresAt || null,
-      active: form.value.active,
-    };
-    
-    if (isEditing.value) await store.updateCoupon(payload); 
+    if (isEditing.value) await store.updateCoupon(payload);
     else await store.addCoupon(payload);
-    
     showToast(isEditing.value ? 'Cupom atualizado!' : 'Cupom criado!', 'success');
     showModal.value = false;
-  } catch (error) { 
+  } catch (error) {
     const data = error.response?.data || error.data || error;
-    
     if (data?.errors && Array.isArray(data.errors)) {
       data.errors.forEach((err) => {
-        let field = err.campo.replace("body.", "");
-        errors.value[field] = err.mensagem;
+        errors.value[err.campo.replace('body.', '')] = err.mensagem;
       });
-      showToast("Verifique os campos destacados em vermelho.", "error"); 
+      showToast('Verifique os campos destacados em vermelho.', 'error');
     } else {
-      showToast(data?.message || "Erro ao salvar cupom.", "error"); 
+      throw error;
     }
-  } finally { 
-    isLoading.value = false; 
   }
-};
+});
 
-const toggleActive = (c) => {
-  store.updateCoupon({ ...c, active: !c.active });
-  showToast(c.active !== false ? `${c.code} desativado.` : `${c.code} ativado.`, 'success');
-};
+const toggleActive = (c) => run(
+  async () => {
+    await store.updateCoupon({ ...c, active: !c.active });
+    showToast(c.active !== false ? `${c.code} desativado.` : `${c.code} ativado.`, 'success');
+  },
+  'Erro ao atualizar cupom.'
+);
 
-const doDelete = async () => {
-  if (!confirmDelete.value) return;
-  await store.removeCoupon(confirmDelete.value.id);
-  showToast(`Cupom ${confirmDelete.value.code} excluído.`, 'success');
-  confirmDelete.value = null;
+const requestDelete = (coupon) => {
+  showConfirm({
+    title: 'Excluir cupom?',
+    message: `O cupom ${coupon.code} será removido permanentemente.`,
+    onConfirm: () => run(
+      async () => {
+        await store.removeCoupon(coupon.id);
+        showToast(`Cupom ${coupon.code} excluído.`, 'success');
+      },
+      'Erro ao excluir cupom.'
+    ),
+  });
 };
 
 const formatDate = (dateString) => {
   if (!dateString) return '';
-  const [year, month, day] = dateString.split('T')[0].split('-');
-  return `${day}/${month}/${year}`;
+  return new Intl.DateTimeFormat('pt-BR').format(new Date(`${dateString.split('T')[0]}T12:00:00`));
 };
 
 const isExpired = (c) => {
@@ -170,10 +163,7 @@ const statusOf = (c) => {
       </template>
     </PageHeader>
 
-    <div v-if="store.coupons.length === 0" class="flex flex-col items-center justify-center py-20 text-[#757575]">
-      <Tag :size="48" class="mb-4 opacity-20" />
-      <p class="font-black uppercase tracking-widest text-sm opacity-40">Nenhum cupom cadastrado</p>
-    </div>
+    <EmptyState v-if="store.coupons.length === 0" :icon="Tag" message="Nenhum cupom cadastrado" />
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
       <div
@@ -199,7 +189,7 @@ const statusOf = (c) => {
         <div class="flex items-center gap-2 p-3 bg-gray-50 rounded border border-[#E0E0E0]">
           <component :is="coupon.type === 'percent' ? BadgePercent : DollarSign" :size="16" class="text-accent shrink-0" />
           <span class="text-accent font-black text-xl">
-            {{ coupon.type === 'percent' ? coupon.value + '%' : 'R$ ' + Number(coupon.value).toFixed(2) }}
+            {{ coupon.type === 'percent' ? coupon.value + '%' : formatCurrency(coupon.value) }}
           </span>
           <span class="text-[#757575] text-xs ml-1">{{ coupon.type === 'percent' ? 'de desconto' : 'fixo' }}</span>
         </div>
@@ -224,7 +214,7 @@ const statusOf = (c) => {
             <button @click="openEdit(coupon)" class="p-2 text-[#757575] hover:text-[#212121] hover:bg-gray-50 rounded transition-all" title="Editar">
               <Edit :size="16" />
             </button>
-            <button @click="confirmDelete = coupon" class="p-2 text-[#757575] hover:text-danger hover:bg-danger-light rounded transition-all" title="Excluir">
+            <button @click="requestDelete(coupon)" class="p-2 text-[#757575] hover:text-danger hover:bg-danger-light rounded transition-all" title="Excluir">
               <Trash2 :size="16" />
             </button>
           </div>
@@ -257,85 +247,46 @@ const statusOf = (c) => {
           :maxlength="80"
         />
         <div class="flex gap-4">
-          <div class="flex-1 flex flex-col gap-1">
-            <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-2">Tipo</label>
-            <select
-              v-model="form.type"
-              @change="form.value = ''"
-              class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] focus:outline-none focus:border-primary/50 transition-all appearance-none"
+          <BaseSelect
+            v-model="form.type"
+            label="Tipo"
+            :options="typeOptions"
+            class="flex-1"
+            @update:modelValue="form.value = ''"
+          />
+          <div class="flex-1">
+            <BaseInput
+              :value="form.value"
+              :label="form.type === 'percent' ? 'Desconto (%)' : 'Desconto (R$)'"
+              :placeholder="form.type === 'percent' ? '0' : '0,00'"
+              :error="errors.value"
+              @input="onValueInput"
             >
-              <option value="percent" class="bg-white">Percentual (%)</option>
-              <option value="fixed" class="bg-white">Valor fixo (R$)</option>
-            </select>
-          </div>
-          <div class="flex-1 flex flex-col gap-1">
-            <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-2">
-              {{ form.type === 'percent' ? 'Desconto (%)' : 'Desconto (R$)' }}
-            </label>
-            <div class="relative">
-              <input
-                :value="form.value"
-                @input="onValueInput"
-                inputmode="numeric"
-                :placeholder="form.type === 'percent' ? '0' : '0,00'"
-                class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] focus:outline-none focus:border-primary/50 transition-all pr-10"
-                :class="errors.value ? '!border-red-500' : ''"
-              />
-              <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-[#757575] pointer-events-none">
-                {{ form.type === 'percent' ? '%' : 'R$' }}
-              </span>
-            </div>
-            <p v-if="errors.value" class="text-danger text-[11px] font-bold mt-0.5 ml-2">{{ errors.value }}</p>
+              <template #suffix>
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-[#757575] pointer-events-none">
+                  {{ form.type === 'percent' ? '%' : 'R$' }}
+                </span>
+              </template>
+            </BaseInput>
           </div>
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-2">Data de Validade (opcional)</label>
-          <input
+          <BaseInput
             v-model="form.expiresAt"
             type="date"
-            class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] focus:outline-none focus:border-primary/50 transition-all"
-            :class="errors.expiresAt ? '!border-red-500' : ''"
+            label="Data de Validade (opcional)"
+            :error="errors.expiresAt"
           />
-          <p v-if="errors.expiresAt" class="text-danger text-[11px] font-bold mt-0.5 ml-2">{{ errors.expiresAt }}</p>
-          <p v-else class="text-[#757575] text-[10px] ml-2">Deixe em branco para cupom sem validade.</p>
+          <p v-if="!errors.expiresAt" class="text-[#757575] text-[10px] ml-2">Deixe em branco para cupom sem validade.</p>
         </div>
-        <div class="flex items-center justify-between p-4 bg-gray-50 rounded border border-[#E0E0E0]">
-          <div>
-            <p class="text-sm font-bold text-[#212121]">Cupom ativo</p>
-            <p class="text-xs text-[#757575]">Cupons inativos não podem ser usados no caixa</p>
-          </div>
-          <button
-            type="button"
-            @click="form.active = !form.active"
-            class="relative inline-flex h-7 w-12 items-center rounded transition-colors duration-300"
-            :class="form.active ? 'bg-accent' : 'bg-gray-600'"
-          >
-            <span class="inline-block h-5 w-5 transform rounded bg-white transition-transform duration-300" :class="form.active ? 'translate-x-6' : 'translate-x-1'" />
-          </button>
-        </div>
+        <BaseToggle
+          v-model="form.active"
+          label="Cupom ativo"
+          description="Cupons inativos não podem ser usados no caixa"
+        />
       </div>
     </FormModal>
 
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="confirmDelete" class="fixed inset-0 bg-black/50  z-[110] flex items-center justify-center p-4">
-          <div class="bg-white border border-[#E0E0E0] w-full max-w-sm rounded p-8 shadow-2xl">
-            <div class="flex items-start gap-4 mb-6">
-              <div class="p-3 bg-danger-light rounded border border-danger shrink-0">
-                <Trash2 :size="20" class="text-danger" />
-              </div>
-              <div>
-                <p class="text-[#212121] font-black text-base">Excluir cupom?</p>
-                <p class="text-[#757575] text-sm mt-1">O cupom <span class="text-[#212121] font-bold font-mono">{{ confirmDelete.code }}</span> será removido permanentemente.</p>
-              </div>
-            </div>
-            <div class="flex gap-3">
-              <button @click="confirmDelete = null" class="flex-1 py-3 rounded text-[#757575] font-bold hover:bg-gray-50 transition-colors border border-[#E0E0E0]">Cancelar</button>
-              <button @click="doDelete" class="flex-1 py-3 rounded bg-danger text-white font-black hover:bg-red-400 transition-colors">Excluir</button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
+    <ConfirmModal :confirm-modal="confirmState" @close="closeConfirm" />
   </main>
 </template>

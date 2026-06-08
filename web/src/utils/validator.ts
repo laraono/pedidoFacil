@@ -92,9 +92,26 @@ const maskCNPJ = (value: string): string => {
 };
 
 
+const maskPhone = (value: string): string => {
+    const d = value.replace(/\D/g, '').slice(0, 11);
+    if (d.length <= 10)
+        return d.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{4})(\d)/, '$1-$2');
+    return d.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2');
+};
+
+
+const maskZip = (value: string): string => {
+    if (!value) return '';
+    const d = value.replace(/\D/g, '').slice(0, 8);
+    return d.replace(/^(\d{5})(\d)/, '$1-$2');
+};
+
+
 export {
     isValidCPF,
     isValidCNPJ,
     maskCPF,
-    maskCNPJ
+    maskCNPJ,
+    maskPhone,
+    maskZip,
 };

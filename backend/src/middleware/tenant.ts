@@ -1,32 +1,37 @@
-import { AppDataSource, Comanda, Order } from '../database';
+import { AppDataSource, Comanda } from '../database';
+import { Category } from '../database/entity/Category';
 import { Request, Response, NextFunction } from 'express';
 
-const entityMap = {
-    COMANDA: Comanda,
-    PEDIDO: Order,
-} as const;
-
-export function verifyTenancy(tabela: string, paramId: string) {
+export function verifyComandaTenancy(paramId: string) {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
             const establishmentId = (req as any).usuario.estabelecimento;
-            const recursoId = req.params[paramId];
-
-            const entity = entityMap[tabela as keyof typeof entityMap];
-
-            const repo = AppDataSource.getRepository(entity);
-            const resource = await repo.findOne({
-                where: { id: Number(recursoId) },
+            const comanda = await AppDataSource.getRepository(Comanda).findOne({
+                where: { id: Number(req.params[paramId]) },
                 relations: { establishment: true },
             });
 
-            if (!resource) {
-                return res.status(404).json({ error: 'Recurso não encontrado.' });
-            }
+            if (!comanda) return res.status(404).json({ error: 'Comanda não encontrada.' });
+            if (comanda.establishment.id !== establishmentId) return res.status(403).json({ error: 'Acesso negado.' });
 
-            if (resource.establishment.id !== establishmentId) {
-                return res.status(403).json({ error: 'Acesso negado.' });
-            }
+            next();
+        } catch (err) {
+            next(err);
+        }
+    };
+}
+
+export function verifyCategoryTenancy(paramId: string) {
+    return async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const establishmentId = (req as any).usuario.estabelecimento;
+            const category = await AppDataSource.getRepository(Category).findOne({
+                where: { id: Number(req.params[paramId]) },
+                relations: { establishment: true },
+            });
+
+            if (!category) return res.status(404).json({ error: 'Categoria não encontrada.' });
+            if (category.establishment.id !== establishmentId) return res.status(403).json({ error: 'Acesso negado.' });
 
             next();
         } catch (err) {

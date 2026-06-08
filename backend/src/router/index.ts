@@ -11,6 +11,7 @@ export { employeeRouter } from './EmployeeRouter'
 export { profileRouter } from './ProfileRouter'
 export { couponRouter } from './CouponRouter'
 export { menuRouter } from './MenuRouter';
+export { totemRouter } from './TotemRouter';
 export { configRouter } from './ConfigurationRouter'
 export { paymentRouter } from './PaymentRouter'
 export { planRouter } from './PlanRouter'

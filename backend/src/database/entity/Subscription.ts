@@ -40,13 +40,6 @@ export class Subscription {
     lastPayment?: Date
 
     @Column({
-        name: 'Recibo_URL',
-        type: 'varchar',
-        nullable: true
-    })
-    receipt?: string
-
-    @Column({
         name: 'ID_MercadoPago',
         type: 'varchar',
         nullable: true
@@ -62,7 +55,7 @@ export class Subscription {
     })
     price?: number
 
-    @ManyToOne(() => Establishment, (establishment) => establishment.subscriptions)
+    @OneToOne(() => Establishment, (establishment) => establishment.subscription)
     @JoinColumn({
         name: 'ID_Estabelecimento'
     })
@@ -73,11 +66,5 @@ export class Subscription {
         name: 'ID_Plano'
     })
     plan!: Plan
-
-    @ManyToOne(() => Plan, { nullable: true, eager: false })
-    @JoinColumn({
-        name: 'ID_Plano_Agendado'
-    })
-    scheduledPlan?: Plan | null
 
 }

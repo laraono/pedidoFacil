@@ -2,7 +2,6 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, CreateDat
 import { Product } from "./Product"
 import { ProductOrder } from "./ProductOrder"
 import { ProductStatus } from "../../enum"
-import { ProductVariationOrder } from "./ProductVariationOrder"
 
 @Entity({name: 'PRODUTO_VARIACAO'})
 export class ProductVariation {
@@ -50,7 +49,7 @@ export class ProductVariation {
     })
     product!: Product
 
-    @OneToMany(() => ProductVariationOrder, (productVariationOrder) => productVariationOrder.productVariation)
-    productVariationOrders!: ProductVariationOrder[]
+    @OneToMany(() => ProductOrder, (productOrder) => productOrder.productVariation)
+    productOrders!: ProductOrder[]
 
 }

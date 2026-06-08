@@ -58,7 +58,6 @@ const fetchReceipts = async () => {
     
     const data = await receiptApi.list(filters);
     
-    // Mapeamento do formato do Backend para o template do Vue
     receipts.value = data.map(nf => ({
       id: nf.id,
       numero: nf.receiptNumber,
@@ -84,13 +83,11 @@ const fetchMetrics = async () => {
   }
 };
 
-// Se a aba de status mudar, recarrega a lista
 watch(activeTab, () => {
   currentPage.value = 1;
   fetchReceipts();
 });
 
-// Se a data mudar, recarrega a lista e as métricas
 watch([dateFrom, dateTo], () => {
   if (dateFrom.value && dateTo.value) {
     currentPage.value = 1;
@@ -106,7 +103,6 @@ const tabs = [
   { key: 'cancelada', label: 'Canceladas' },
 ];
 
-// O filtro de status e data agora acontece no back. Aqui só filtramos a busca por texto.
 const filteredNFs = computed(() => {
   let list = receipts.value;
   if (searchQuery.value.trim()) {
@@ -130,13 +126,12 @@ const formatDate = (iso) => {
     d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 };
 
-// Integração das Ações Reais
 const cancel = async (nf) => {
   try {
     await receiptApi.cancel(nf.id);
     showToast(`Nota ${nf.numero} cancelada com sucesso.`, 'success');
-    await fetchReceipts(); // Atualiza a lista
-    await fetchMetrics();  // Atualiza os cards
+    await fetchReceipts();
+    await fetchMetrics();
   } catch (error) {
     showToast(error.message || "Erro ao cancelar nota.", 'error');
   }

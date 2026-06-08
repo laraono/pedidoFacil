@@ -1,5 +1,7 @@
 import { z } from 'zod';
-import { safeString } from '../../utils/safeZod'; // Ajuste o caminho se necessário
+import { safeString } from '../../utils/safeZod'; 
+import { Category } from "../../database";
+import { ProductParams } from "./CreateProductDTO";
 
 export const updateProductSchema = z.object({
   body: z.object({
@@ -26,3 +28,24 @@ export const updateProductSchema = z.object({
     ).optional())
   })
 });
+
+export type UpdateProductDTO = z.infer<typeof updateProductSchema>['body'];
+
+export type EditProductParams = {
+    name: string;
+    description?: string; 
+    category: Category;
+    basePrice: number;
+    image?: string;
+};
+
+export type EditProductVariation = {
+    id?: number;
+    name: string;
+    addPrice: number;
+};
+
+export type EditProduct = {
+    product: ProductParams;
+    productVariations: Array<EditProductVariation>;
+};

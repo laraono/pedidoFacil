@@ -16,19 +16,23 @@ export class OrderRepository extends Repository<Order> {
     async getOrderWithDetails(id: number) {
         return await this.findOne({
             where: { id },
-            relations: ["productOrders", "productOrders.product", "productOrders.variations", "productOrders.variations.productVariation"]
+            relations: ["productOrders", "productOrders.product", "productOrders.productVariation", "user"]
         });
     }
 
     async listOrders(establishmentId: number) {
-        return await this.createQueryBuilder('order')
-            .leftJoinAndSelect('order.comanda', 'comanda')
-            .leftJoinAndSelect('order.productOrders', 'po')
-            .leftJoinAndSelect('po.product', 'product')
-            .leftJoinAndSelect('po.variations', 'variation')
-            .leftJoinAndSelect('variation.productVariation', 'pv')
-            .where('order.establishment = :id', { id: establishmentId })
-            .getMany();
+        return await this.find({
+            where: {
+                comanda: { establishment: { id: establishmentId } }
+            },
+            relations: [
+                'comanda',
+                'user',
+                'productOrders',
+                'productOrders.product',
+                'productOrders.productVariation',
+            ]
+        });
     }
 
     async listOrdersByComanda(comandaId: number) {
@@ -37,10 +41,10 @@ export class OrderRepository extends Repository<Order> {
                 comanda: { id: comandaId }
             },
             relations: [
+                'user', 
                 'productOrders',
                 'productOrders.product',
-                'productOrders.variations',
-                'productOrders.variations.productVariation',
+                'productOrders.productVariation',
             ]
         });
     }

@@ -50,6 +50,10 @@
     @apply bg-primary text-white font-bold rounded transition-all duration-200 hover:bg-primary-dark hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2;
   }
 
+  .btn-danger {
+    @apply px-6 py-3 bg-danger text-white font-bold rounded transition-all duration-200 hover:bg-red-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm;
+  }
+
   .btn-primary-admin {
     @apply py-3 px-6 bg-primary text-white font-black rounded hover:bg-primary-dark transition-all active:scale-95 shadow-sm flex items-center justify-center gap-2;
   }
