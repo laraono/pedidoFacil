@@ -52,7 +52,7 @@ export class OrderController {
 
             return res.status(201).json(order);
         } catch (error: any) {
-            console.error("🔥 Erro ao criar pedido:", error.message);
+            console.error("Erro ao criar pedido:", error.message);
             return res.status(400).json({ error: error.message || "Erro interno" });
         }
     }
@@ -104,7 +104,7 @@ export class OrderController {
                 label: comandaLabel
             });
         } catch (error: any) {
-            console.error("🔥 Erro no pedido Totem:", error.message);
+            console.error("Erro no pedido Totem:", error.message);
             return res.status(400).json({ error: error.message || "Erro interno ao processar pedido" });
         }
     }
