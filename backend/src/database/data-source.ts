@@ -1,4 +1,5 @@
 import "reflect-metadata"
+import "dotenv/config"
 import { DataSource } from "typeorm"
 import {
     Admin, Category, Comanda, Configuration, Coupon, Establishment,
@@ -22,6 +23,6 @@ export const AppDataSource = new DataSource({
         ProductVariation, Receipt, RefreshToken, Role, StorageIten,
         StorageMovimentation, Subscription, SubscriptionPayment, User, Register
     ],
-    migrations: [__dirname + '/migration/*.ts'],
+    migrations: [__dirname + '/migration/*{.ts,.js}'],
     subscribers: [],
 })

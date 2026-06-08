@@ -161,8 +161,7 @@ export class MercadoPagoService {
         } catch(err: any) {
             const mpError = err?.response?.data
             auditLog('mp.create_subscription_error', { error: mpError });
-            const msg = mpError?.error ?? mpError?.message ?? JSON.stringify(mpError) ?? 'Erro criando assinatura'
-            throw new AppError(msg, 500)
+            throw new AppError('Ocorreu um erro no Mercado Pago. Verifique os dados do cartão e tente novamente.', 500)
         }
     }
 

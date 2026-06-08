@@ -57,9 +57,7 @@ export default function PaymentScreen() {
       const url = `${appConfig.API_URL}/estabelecimento/${appConfig.ESTABLISHMENT_ID}/public`;
       const response = await fetch(url, {
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
-          'x-totem-code': appConfig.selfServiceCode 
+          'x-totem-code': appConfig.selfServiceCode
         }
       });
       
@@ -111,18 +109,20 @@ export default function PaymentScreen() {
         navigation.navigate("OrderConfirmed", {
           ticket: orderData.ticket,
           label: orderData.label,
+          customerName: customerName,
         });
       } else {
-        setIsSimulatingPayment(true); 
+        setIsSimulatingPayment(true);
 
         setTimeout(() => {
-          setIsSimulatingPayment(false); 
-          clearCart(); 
+          setIsSimulatingPayment(false);
+          clearCart();
           navigation.navigate("OrderConfirmed", {
             ticket: orderData.ticket,
             label: orderData.label,
+            customerName: customerName,
           });
-        }, 3000); 
+        }, 3000);
       }
     } catch (error) {
       console.error("[PaymentScreen] Erro:", error);

@@ -49,7 +49,7 @@ export const BACKEND_TO_LOCAL_STATUS = {
   Cancelado: "cancelled",
 };
 
-const INACTIVE_STATUSES = new Set(["cancelled", "Cancelado", "CANCELADO", "finished", "FINALIZADO"]);
+const INACTIVE_STATUSES = new Set(["cancelled", "Cancelado", "CANCELADO"]);
 
 export function resolveOrderStatus(order, kitchenOrders = []) {
   const kitchenOrder = kitchenOrders.find((ko) => ko.id === order.id);

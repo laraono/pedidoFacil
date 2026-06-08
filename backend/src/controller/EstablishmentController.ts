@@ -44,7 +44,13 @@ export class EstablishmentController {
   getProfile = catchAsync(async (req: Request, res: Response) => {
     const establishmentId = (req as any).usuario.estabelecimento;
     const establishment = await this.establishmentService.getEstablishmentProfile(establishmentId);
-    return res.status(200).json(establishment);
+    const serviceTypes: string[] = establishment.serviceTypes
+      ? (typeof establishment.serviceTypes === 'string' ? JSON.parse(establishment.serviceTypes) : establishment.serviceTypes as unknown as string[])
+      : [];
+    return res.status(200).json({
+      ...establishment,
+      selfServiceEnabled: serviceTypes.includes('Autoatendimento'),
+    });
   });
   
   getPublicProfile = catchAsync(async (req: Request, res: Response) => {
@@ -75,13 +81,15 @@ export class EstablishmentController {
         selfServiceCode: establishment.selfServiceCode,
         configurations: establishment.configurations
       });
-    } catch (error) {
+    } catch (error: any) {
       auditLog('get_by_code.failure', {
         code,
         ip: req.ip,
         timestamp: new Date().toISOString(),
       });
-      return res.status(404).json({ error: 'Estabelecimento não encontrado.' });
+      const status = error?.statusCode ?? 404;
+      const message = error?.message ?? 'Estabelecimento não encontrado.';
+      return res.status(status).json({ error: message });
     }
   });
 

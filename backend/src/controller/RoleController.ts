@@ -10,7 +10,7 @@ export const roleLimiter = rateLimit({
     handler: (req: Request, res: Response) => {
         res.status(429).json({
             error: 'Muitas tentativas. Tente novamente mais tarde.',
-            retryAfter: Math.ceil((req as any).rateLimit.resetTime / 1000)
+            retryAfter: Math.ceil(((req as any).rateLimit.resetTime - Date.now()) / 1000)
         })
     }
 })

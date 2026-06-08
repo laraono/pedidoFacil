@@ -23,11 +23,12 @@ export class OrderRepository extends Repository<Order> {
     async listOrders(establishmentId: number) {
         return await this.createQueryBuilder('order')
             .leftJoinAndSelect('order.comanda', 'comanda')
-            .leftJoinAndSelect('order.user', 'user') 
+            .leftJoinAndSelect('order.user', 'user')
             .leftJoinAndSelect('order.productOrders', 'po')
             .leftJoinAndSelect('po.product', 'product')
             .leftJoinAndSelect('po.productVariation', 'pv')
-            .where('order.establishment.id = :id', { id: establishmentId })
+            .innerJoin('comanda.establishment', 'establishment')
+            .where('establishment.id = :id', { id: establishmentId })
             .getMany();
     }
 

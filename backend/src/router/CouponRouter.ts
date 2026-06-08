@@ -15,33 +15,33 @@ couponRouter.use(subscriptionMiddleware);
 
 couponRouter.get(
   '/',
-  checkPermission('CUPONS', 'ALL'),
+  checkPermission('CUPONS'),
   couponController.list.bind(couponController),
 );
 
 couponRouter.post(
   '/',
-  checkPermission('CUPONS', 'ALL'),
-  validateRequest(createCouponSchema), 
+  checkPermission('CUPONS'),
+  validateRequest(createCouponSchema),
   couponController.create.bind(couponController),
 );
 
 couponRouter.put(
   '/:id',
-  checkPermission('CUPONS', 'ALL'),
-  validateRequest(createCouponSchema), 
+  checkPermission('CUPONS'),
+  validateRequest(createCouponSchema),
   couponController.update.bind(couponController),
 );
 
 couponRouter.delete(
   '/:id',
-  checkPermission('CUPONS', 'ALL'),
+  checkPermission('CUPONS'),
   couponController.delete.bind(couponController),
 );
 
 couponRouter.get(
   '/validate/:code',
-  checkPermission('CUPONS', 'ALL'),
+  checkPermission('CUPONS'),
   couponController.validate.bind(couponController),
 );
 

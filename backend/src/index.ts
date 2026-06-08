@@ -18,6 +18,7 @@ import {
     profileRouter,
     couponRouter,
     menuRouter,
+    totemRouter,
     configRouter,
     planRouter,
     subscriptionRouter,
@@ -72,12 +73,15 @@ const httpServer = http.createServer(app);
 AppDataSource.initialize().then(async () => {
     app.use('/api/v1/admin', authenticatedLimiter, adminRouter)
     app.use('/api/v1', publicLimiter, authRouter);
+    app.use('/api/v1', publicLimiter, planRouter);
+    app.use('/api/v1', publicLimiter, menuRouter);
+    app.use('/api/v1', publicLimiter, totemRouter);
+    app.use('/api/v1/estabelecimento', authenticatedLimiter, establishmentRouter);
+    app.use('/api/v1/contato', contactRouter);
     app.use('/api/v1', authenticatedLimiter, categoryRouter);
     app.use('/api/v1', authenticatedLimiter, comandaRouter);
     app.use('/api/v1', authenticatedLimiter, orderRouter);
     app.use('/api/v1', authenticatedLimiter, productRouter);
-    app.use('/api/v1', authenticatedLimiter, menuRouter);
-    app.use('/api/v1/estabelecimento', authenticatedLimiter, establishmentRouter);
     app.use('/api/v1/metrics', authenticatedLimiter, metricsRouter);
     app.use('/api/v1/receipts', authenticatedLimiter, receiptRouter);
     app.use('/api/v1/roles', authenticatedLimiter, roleRouter);
@@ -85,9 +89,7 @@ AppDataSource.initialize().then(async () => {
     app.use('/api/v1/conta', authenticatedLimiter, profileRouter);
     app.use('/api/v1/cupons', authenticatedLimiter, couponRouter);
     app.use('/api/v1', authenticatedLimiter, configRouter);
-    app.use('/api/v1', publicLimiter, planRouter);
     app.use('/api/v1', authenticatedLimiter, subscriptionRouter);
-    app.use('/api/v1/contato', contactRouter);
     app.use('/api/v1', authenticatedLimiter, paymentRouter);
     app.use('/webhook', publicLimiter, webhookRouter);
     app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));

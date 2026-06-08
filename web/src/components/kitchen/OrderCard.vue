@@ -27,7 +27,7 @@
   );
 
   const { elapsedTime, isDelayed } = useOrderTimer(
-    props.order,
+    () => props.order.createdAt,
     props.alertMinutes,
   );
 

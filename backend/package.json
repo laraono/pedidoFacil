@@ -7,7 +7,7 @@
     "build": "tsc",
     "typeorm": "node ./node_modules/typeorm/cli.js",
     "migration:generate": "npm run build && npm run typeorm -- migration:generate -d ./build/database/data-source.js ",
-    "migration:run": "npm run build && npm run typeorm -- migration:run -d ./build/database/data-source.js",
+    "migration:run": "rm -rf build && npm run build && npm run typeorm -- migration:run -d ./build/database/data-source.js",
     "migration:revert": "npm run build && npm run typeorm -- migration:revert -d ./build/database/data-source.js",
     "start": "node ./build/index.js",
     "dev": "nodemon --exec ts-node ./src/index.ts"

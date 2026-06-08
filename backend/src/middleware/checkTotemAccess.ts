@@ -3,16 +3,18 @@ import { AppDataSource } from '../database';
 import { Establishment } from '../database/entity/Establishment';
 
 export const totemAccess = async (req: Request, res: Response, next: NextFunction) => {
-    const totemCode = req.headers['x-totem-code'] as string;
+    const rawCode = req.headers['x-totem-code'] as string;
 
-    if (!totemCode) {
+    if (!rawCode) {
         return res.status(401).json({ error: "Acesso negado. Código do totem não fornecido." });
     }
 
+    const totemCode = rawCode.trim().toUpperCase();
+
     try {
         const establishmentRepo = AppDataSource.getRepository(Establishment);
-        const establishment = await establishmentRepo.findOne({ 
-            where: { selfServiceCode: totemCode } 
+        const establishment = await establishmentRepo.findOne({
+            where: { selfServiceCode: totemCode }
         });
         
         if (!establishment) {

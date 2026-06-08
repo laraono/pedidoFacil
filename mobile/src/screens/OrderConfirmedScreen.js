@@ -20,8 +20,9 @@ export default function OrderConfirmedScreen() {
 
   const ticket = route.params?.ticket || "";
   const label = route.params?.label || (ticket ? `Totem #${ticket}` : "—");
-  
-  const isPaid = route.params?.isPaid || false; 
+  const customerName = route.params?.customerName || null;
+
+  const isPaid = route.params?.isPaid || false;
 
   const [seconds, setSeconds] = useState(COUNTDOWN);
 
@@ -52,15 +53,15 @@ export default function OrderConfirmedScreen() {
         <Text style={styles.title}>Pedido realizado!</Text>
 
         <View style={styles.ticketBox}>
-          <Text style={styles.ticketCaption}>Seu número</Text>
-          <Text style={styles.ticketNumber}>{label}</Text>
+          <Text style={styles.ticketCaption}>{customerName ? "Olá," : "Seu número"}</Text>
+          <Text style={styles.ticketNumber}>{customerName || label}</Text>
         </View>
 
         <View style={styles.instructionBox}>
           <Feather name="map-pin" size={22} color={theme.corCategorias} />
           <Text style={styles.instructionText}>
-            {isPaid 
-              ? "Aguarde seu número ser\nchamado no painel" 
+            {isPaid || customerName
+              ? "Aguarde ser chamado\npelo seu nome"
               : "Dirija-se ao caixa para\nefetuar o pagamento"}
           </Text>
         </View>

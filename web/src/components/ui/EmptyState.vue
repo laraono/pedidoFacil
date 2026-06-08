@@ -19,7 +19,7 @@
       class="mx-auto mb-4 text-[#757575] opacity-30"
     />
     <p class="text-[#757575] font-bold">{{ message }}</p>
-    <BaseButton v-if="actionLabel" class="mt-4" @click="$emit('action')">
+    <BaseButton v-if="actionLabel" class="mt-4 mx-auto" @click="$emit('action')">
       {{ actionLabel }}
     </BaseButton>
   </div>

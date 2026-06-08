@@ -3,8 +3,8 @@ import { employeeController } from '../controller';
 import { authenticate } from '../middleware/authenticate';
 import { checkPermission } from '../middleware/roleAccessControl';
 import { subscriptionMiddleware } from '../middleware';
-import { validateRequest } from '../middleware/validateRequest'; 
-import { createEmployeeSchema } from '../dto/employee/CreateEmployeeDTO'; 
+import { validateRequest } from '../middleware/validateRequest';
+import { createEmployeeSchema } from '../dto/employee/CreateEmployeeDTO';
 import { updateEmployeeSchema } from '../dto/employee/UpdateEmployeeDTO';
 
 const employeeRouter = Router();
@@ -14,45 +14,45 @@ employeeRouter.use(subscriptionMiddleware);
 
 employeeRouter.get(
   '/',
-  checkPermission('USUARIO_VIEW', 'ALL'),
+  checkPermission('FUNCIONARIOS'),
   employeeController.list,
 );
 
 employeeRouter.get(
   '/inactive',
-  checkPermission('USUARIO_VIEW', 'ALL'),
+  checkPermission('FUNCIONARIOS'),
   employeeController.listInactive,
 );
 
 employeeRouter.post(
   '/',
-  checkPermission('USUARIO_CREATE', 'ALL'),
-  validateRequest(createEmployeeSchema), 
+  checkPermission('FUNCIONARIOS'),
+  validateRequest(createEmployeeSchema),
   employeeController.create,
 );
 
 employeeRouter.put(
   '/:id',
-  checkPermission('USUARIO_EDIT', 'ALL'),
-  validateRequest(updateEmployeeSchema), 
+  checkPermission('FUNCIONARIOS'),
+  validateRequest(updateEmployeeSchema),
   employeeController.update,
 );
 
 employeeRouter.delete(
   '/:id',
-  checkPermission('USUARIO_DELETE', 'ALL'),
+  checkPermission('FUNCIONARIOS'),
   employeeController.delete,
 );
 
 employeeRouter.patch(
   '/:id/reactivate',
-  checkPermission('USUARIO_EDIT', 'ALL'),
+  checkPermission('FUNCIONARIOS'),
   employeeController.reactivate,
 );
 
 employeeRouter.delete(
   '/:id/permanent',
-  checkPermission('USUARIO_DELETE', 'ALL'),
+  checkPermission('FUNCIONARIOS'),
   employeeController.permanentDelete,
 );
 

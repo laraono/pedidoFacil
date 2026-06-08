@@ -132,7 +132,7 @@ echo -e "${BOLD}  Preparando o banco de dados...${RESET}"
 echo ""
 
 info "Iniciando containers Docker..."
-docker compose -f backend/docker-compose.yml up -d
+docker compose -f backend/docker-compose.yml up -d mysql localstack
 
 echo ""
 info "Aguardando o banco de dados ficar pronto..."
@@ -151,7 +151,10 @@ echo ""
 ok "Banco de dados pronto"
 
 info "Criando as tabelas do sistema..."
-cd backend && npm run migration:run 2>&1 | tail -1 && cd ..
+if ! npm run migration:run --prefix backend; then
+  erro "Falha ao criar as tabelas. Verifique os logs acima."
+  exit 1
+fi
 ok "Tabelas criadas"
 
 echo ""

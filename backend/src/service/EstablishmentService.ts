@@ -4,6 +4,7 @@ import { EstablishmentRepository } from '../repository/EstablishmentRepository';
 import { ConfigurationRepository } from '../repository/ConfigurationRepository';
 import { MercadoPagoService } from './MercadoPagoService';
 import { User } from '../database/entity/User';
+import { ServiceType } from '../enum';
 
 export class EstablishmentService {
 
@@ -31,7 +32,7 @@ export class EstablishmentService {
   }
 
   async validateAccessCode(code: string): Promise<Establishment> {
-    const establishment = await this.establishmentRepository.findByAccessCode(code);
+    const establishment = await this.establishmentRepository.findByAccessCode(code.trim().toUpperCase());
 
     if (!establishment) {
       throw new AppError('Código de acesso inválido.', 404);
@@ -53,6 +54,11 @@ export class EstablishmentService {
     return establishment;
   }
 
+  private generateSelfServiceCode(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  }
+
   async updateEstablishment(establishmentId: number, updateData: any) {
     const establishment = await this.getEstablishmentProfile(establishmentId);
 
@@ -60,13 +66,29 @@ export class EstablishmentService {
       ? JSON.stringify(updateData.paymentMethods)
       : updateData.paymentMethods;
 
+    if (updateData.selfServiceEnabled !== undefined) {
+      const currentTypes = this.parseServiceTypes(establishment.serviceTypes);
+      if (updateData.selfServiceEnabled) {
+        if (!currentTypes.includes(ServiceType.AUTOATENDIMENTO)) {
+          currentTypes.push(ServiceType.AUTOATENDIMENTO);
+        }
+        if (!establishment.selfServiceCode) {
+          updateData.selfServiceCode = this.generateSelfServiceCode();
+        }
+      } else {
+        const idx = currentTypes.indexOf(ServiceType.AUTOATENDIMENTO);
+        if (idx > -1) currentTypes.splice(idx, 1);
+      }
+      updateData.serviceTypes = currentTypes;
+    }
+
     this.establishmentRepository.merge(establishment, {
       name: updateData.name,
       cnpj: updateData.cnpj,
       phone: updateData.phone,
       address: updateData.address,
       paymentMethods: paymentMethods,
-      selfServiceCode: updateData.selfServiceCode,
+      selfServiceCode: updateData.selfServiceCode ?? establishment.selfServiceCode,
       serviceTypes: updateData.serviceTypes !== undefined ? JSON.stringify(updateData.serviceTypes) : establishment.serviceTypes,
       pixStaticEnabled: updateData.pixStaticEnabled,
       ...(updateData.pixQrCodeUrl !== undefined && { pixQrCodeUrl: updateData.pixQrCodeUrl }),

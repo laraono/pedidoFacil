@@ -90,8 +90,8 @@ export class OrderService {
       totalAcumulado += finalPrice * iten.quantity;
 
       await manager.save(ProductOrder, {
-        orderId: order.id,
-        productId: validated.product.id,
+        order: { id: order.id },
+        product: { id: validated.product.id },
         productVariationId: validated.productVariation?.id ?? null,
         observation: iten.observation || '',
         quantity: iten.quantity,
@@ -161,11 +161,11 @@ export class OrderService {
 
       if (allCancelled) {
         await this.comandaService.updateComandaStatus(comandaId, ComandaStatus.CANCELADA);
-        return { comandaCancelled: true, comandaId, orderUserId };
+        return { comandaCancelled: true, comandaId, orderUserId, comandaLabel: order.comanda.description };
       }
     }
 
-    return { comandaCancelled: false, comandaId, orderUserId };
+    return { comandaCancelled: false, comandaId, orderUserId, comandaLabel: order.comanda.description };
   }
 
   async getOrderWithDetails(orderId: number) {

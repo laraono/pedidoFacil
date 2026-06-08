@@ -70,7 +70,7 @@ if ! docker info &>/dev/null; then
   exit 1
 fi
 
-docker compose -f backend/docker-compose.yml up -d
+docker compose -f backend/docker-compose.yml up -d mysql localstack
 
 DB_PASS=$(grep "^DB_PASS=" backend/.env | cut -d= -f2)
 info "Aguardando banco de dados..."
@@ -101,12 +101,8 @@ info "Iniciando site..."
 npm run dev --prefix web > logs/web.log 2>&1 &
 WEB_PID=$!
 
-info "Iniciando mobile (Expo)..."
-npm run start --prefix mobile -- --non-interactive 2>&1 | tee logs/mobile.log &
-MOBILE_PID=$!
-
 # Para tudo quando a pessoa pressionar Ctrl+C
-trap 'echo ""; info "Encerrando..."; kill $BACKEND_PID $WEB_PID $MOBILE_PID 2>/dev/null; docker compose -f backend/docker-compose.yml down; echo ""; ok "Tudo encerrado. Até logo!"; echo ""; exit 0' INT TERM
+trap 'echo ""; info "Encerrando..."; kill $BACKEND_PID $WEB_PID 2>/dev/null; docker compose -f backend/docker-compose.yml down; echo ""; ok "Tudo encerrado. Até logo!"; echo ""; exit 0' INT TERM
 
 # Aguarda os serviços iniciarem
 info "Aguardando serviços iniciarem..."
@@ -131,4 +127,5 @@ echo ""
 echo -e "  ${DIM}───────────────────────────────────────────────────────${RESET}"
 echo ""
 
-wait $BACKEND_PID $WEB_PID $MOBILE_PID
+info "Iniciando mobile (Expo)..."
+npm run start --prefix mobile

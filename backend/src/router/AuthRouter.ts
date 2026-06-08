@@ -60,6 +60,7 @@ authRouter.post(
 
 authRouter.post(
   '/refresh',
+  authLimiter,
   catchAsync((req: Request, res: Response) => authController.refresh(req, res)),
 );
 

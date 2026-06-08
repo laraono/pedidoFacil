@@ -5,6 +5,7 @@ import { useKitchenStore } from "@/stores/kitchen";
 import { useAuthStore } from "@/stores/auth";
 import { useToast } from "@/composables/useToast";
 import { useReceipt } from "@/composables/useReceipt";
+import { useCouponStore } from "@/stores/coupons";
 import { request } from "@/services/api";
 import {
   initCashierSocket,
@@ -18,6 +19,7 @@ export function useCashier() {
   const closedComandaStore = useClosedComandaStore();
   const kitchenStore = useKitchenStore();
   const authStore = useAuthStore();
+  const couponStore = useCouponStore();
   const { showToast } = useToast();
 
   const comandaUnitLabel = localStorageService.getComandaUnitLabel() || "Mesa";
@@ -40,7 +42,7 @@ export function useCashier() {
   let pollInterval: any = null;
 
   onMounted(async () => {
-    await comandaStore.loadComandas();
+    await Promise.all([comandaStore.loadComandas(), couponStore.loadData()]);
     pollInterval = setInterval(() => comandaStore.loadComandas(), 30_000);
 
     initCashierSocket((data: any) => {
@@ -65,7 +67,7 @@ export function useCashier() {
     if (socket) {
       socket.on("comanda_cancelled", (data: any) => {
         comandaStore.removeComanda(data.comandaId);
-        if (selectedComanda.value?.id === data.comandaId) {
+        if (!pendingCancelIds.has(data.comandaId) && selectedComanda.value?.id === data.comandaId) {
           closeDetails();
           showToast("Comanda cancelada.", "warning");
         }
@@ -123,7 +125,8 @@ export function useCashier() {
             "CANCELADO",
             "finished",
             "FINALIZADO",
-          ].includes(o.status),
+          ].includes(o.status) &&
+          ((o.items?.length > 0) || (o.productOrders?.length > 0) || Number(o.price) > 0),
       );
   });
 
@@ -144,6 +147,7 @@ export function useCashier() {
     discountValue.value = null;
   }
 
+  const pendingCancelIds = new Set<number>();
   const manualCancelTargetId = ref<number | null>(null);
   const showCancelComandaModal = ref(false);
   const openManualCancel = (id: number) => {
@@ -176,6 +180,7 @@ export function useCashier() {
     const comandaToCancel = { ...selectedComanda.value };
     const comandaId = comandaToCancel.id;
 
+    pendingCancelIds.add(comandaId);
     try {
       showCancelComandaModal.value = false;
       await request(`/commands/${comandaId}/cancel`, {
@@ -198,6 +203,8 @@ export function useCashier() {
       showToast("Comanda cancelada!", "success");
     } catch (error) {
       showToast("Erro ao cancelar a comanda.", "error");
+    } finally {
+      pendingCancelIds.delete(comandaId);
     }
   };
 

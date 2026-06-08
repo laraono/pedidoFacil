@@ -85,6 +85,7 @@ onMounted(async () => {
 });
 
 function handleSendToKitchen() {
+  isCartModalOpen.value = false;
   openComandaModal(cart.value.length);
 }
 

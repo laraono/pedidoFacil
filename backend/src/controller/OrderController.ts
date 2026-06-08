@@ -44,7 +44,7 @@ export class OrderController {
                 comandaId:    Number(comandaId),
                 comandaLabel: req.body.comandaLabel || `Comanda #${comandaId}`,
                 items:        mappedItems,
-                createdAt:    new Date().toISOString(),
+                createdAt:    (fullOrder?.created_at || order.created_at) ? new Date(fullOrder?.created_at || order.created_at).toISOString() : new Date().toISOString(),
                 source:       req.body.source || 'web',
                 userId:       usuario.id || usuario.ID_Usuario,
                 user:         { id: usuario.id || usuario.ID_Usuario }
@@ -66,13 +66,14 @@ export class OrderController {
             }
 
             const randomTicket = Math.floor(100 + Math.random() * 900).toString();
-            const comandaLabel = `Totem #${randomTicket}`;
+            const customerName = (req.body.customerName as string | undefined)?.trim() || null;
+            const comandaLabel = customerName || `Totem #${randomTicket}`;
 
             const order = await this.orderService.createTotemOrder({
                 ...req.body,
                 establishmentId: usuario.estabelecimento,
                 comandaLabel: comandaLabel,
-                customerName: req.body.customerName ?? null
+                customerName,
             }) as any;
 
             const fullOrder = await this.orderService.getOrderWithDetails(order.id);
@@ -90,9 +91,9 @@ export class OrderController {
                 orderId:      order.id,
                 comandaId:    order.comanda.id,
                 comandaLabel: comandaLabel,
-                customerName: req.body.customerName ?? null,
+                customerName: customerName,
                 items:        mappedItems,
-                createdAt:    new Date().toISOString(),
+                createdAt:    (fullOrder?.created_at || order.created_at) ? new Date(fullOrder?.created_at || order.created_at).toISOString() : new Date().toISOString(),
                 source:       'totem',
                 userId:       null,
                 user:         null
@@ -131,7 +132,7 @@ export class OrderController {
         if ((status === 'Pronto' || status === 'ready') && result.orderUserId) {
             getIO().emit(`user_notification_${result.orderUserId}`, {
                 orderId: Number(orderId),
-                comanda: req.params.comandaId ? Number(req.params.comandaId) : result.comandaId
+                comanda: result.comandaLabel
             });
         }
 

@@ -57,10 +57,6 @@ function formatDate(iso) {
   });
 }
 
-function formatCurrency(v) {
-  return Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
 function getComandaTypeLabel(comanda) {
   return comanda.isAutoatendimento ? 'Autoatendimento' : comandaUnitLabel;
 }
@@ -96,16 +92,6 @@ function getValidSubtotal(comanda) {
   if (isCancelled(comanda)) return 0;
   const validOrders = (comanda.orders || []).filter(o => !isOrderCancelled(o));
   return validOrders.reduce((acc, o) => acc + (o.price || 0), 0);
-}
-
-function totalItems(comanda) {
-  return (
-    comanda.orders?.reduce(
-      (acc, o) =>
-        acc + (o.items?.reduce((a, i) => a + (i.amount || 1), 0) || 0),
-      0,
-    ) || 0
-  );
 }
 
 function finalTotal(comanda) {
@@ -351,4 +337,4 @@ function getGroupedOrderItems(order) {
 
 <style scoped>
 .font-inter { font-family: "Inter", sans-serif; }
-</style>y
+</style>
