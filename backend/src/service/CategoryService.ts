@@ -1,5 +1,5 @@
 import { CategoryRepository } from "../repository/CategoryRepository";
-import { CreateCategoryDTO } from "../dto/category/CreateCategoryDTO"; 
+import { CreateCategoryDTO } from "../dto/category/CreateCategoryDTO";
 
 export class CategoryService {
     private categoryRepository: CategoryRepository
@@ -9,12 +9,16 @@ export class CategoryService {
     }
 
     async createCategory(categoryData: CreateCategoryDTO) {
-        const { id } = await this.categoryRepository.createCategory(categoryData); 
+        const { id } = await this.categoryRepository.createCategory(categoryData);
         return id;
     }
 
     async listCategories(establishmentId: number) {
         return await this.categoryRepository.listCategories(establishmentId);
+    }
+
+    async listInactiveCategories(establishmentId: number) {
+        return await this.categoryRepository.listInactiveCategories(establishmentId);
     }
 
     async listDeletedCategories(establishmentId: number) {
@@ -31,11 +35,17 @@ export class CategoryService {
         if (data.name !== undefined) updateData.name = data.name;
         if (data.image !== undefined) updateData.image = data.image;
 
-        if (Object.keys(updateData).length === 0) {
-            return; 
-        }
+        if (Object.keys(updateData).length === 0) return;
 
         await this.categoryRepository.updateCategory(categoryId, updateData);
+    }
+
+    async deactivateCategory(categoryId: number) {
+        await this.categoryRepository.deactivateCategory(categoryId);
+    }
+
+    async reactivateCategory(categoryId: number) {
+        await this.categoryRepository.reactivateCategory(categoryId);
     }
 
     async softDeleteCategory(categoryId: number) {

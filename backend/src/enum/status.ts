@@ -13,13 +13,13 @@ export enum ComandaStatus {
 }
 
 export enum ProductStatus {
-    ATIVO ='Ativo',
-    ARQUIVADO = 'Arquivado'
+    ATIVO = 'Ativo',
+    INATIVO = 'Inativo'
 }
 
 export enum CategoryStatus {
-    ATIVA ='Ativa',
-    ARVUIVADA = 'Arquivada'
+    ATIVA = 'Ativa',
+    INATIVA = 'Inativa'
 }
 
 export enum UserStatus {

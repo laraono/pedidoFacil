@@ -52,8 +52,8 @@ export class EmployeeController {
   permanentDelete = catchAsync(async (req: Request, res: Response) => {
     const establishmentId = (req as any).usuario.estabelecimento;
     const userId = Number(req.params.id);
-    const result = await this.employeeService.permanentDeleteEmployee(establishmentId, userId);
-    auditLog('employee.permanent_deleted', { establishmentId, userId, ip: req.ip, timestamp: new Date().toISOString() });
+    const result = await this.employeeService.deleteEmployee(establishmentId, userId);
+    auditLog('employee.deleted', { establishmentId, userId, ip: req.ip, timestamp: new Date().toISOString() });
     return res.json(result);
   });
 }

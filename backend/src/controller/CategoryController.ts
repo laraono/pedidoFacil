@@ -49,10 +49,10 @@ export class CategoryController {
     }
 
     async listCategories(req: Request, res: Response) {
-        const estabelecimentoId = (req as any).usuario.estabelecimento; 
-        
-        if (req.query.deleted === 'true') {
-            const categories = await this.categoryService.listDeletedCategories(estabelecimentoId);
+        const estabelecimentoId = (req as any).usuario.estabelecimento;
+
+        if (req.query.inactive === 'true') {
+            const categories = await this.categoryService.listInactiveCategories(estabelecimentoId);
             return res.status(200).send(categories);
         }
 
@@ -92,17 +92,21 @@ export class CategoryController {
         res.sendStatus(204);
     }
 
-    async deleteCategory(req: Request, res: Response) {
-        await this.categoryService.softDeleteCategory(Number(req.params.id));
-        
-        getIO().emit('menu_updated'); 
+    async deactivateCategory(req: Request, res: Response) {
+        await this.categoryService.deactivateCategory(Number(req.params.id));
+        getIO().emit('menu_updated');
         res.sendStatus(204);
     }
 
-    async restoreCategory(req: Request, res: Response) {
-        await this.categoryService.restoreCategory(Number(req.params.id));
-        
-        getIO().emit('menu_updated'); 
+    async reactivateCategory(req: Request, res: Response) {
+        await this.categoryService.reactivateCategory(Number(req.params.id));
+        getIO().emit('menu_updated');
+        res.sendStatus(204);
+    }
+
+    async deleteCategory(req: Request, res: Response) {
+        await this.categoryService.softDeleteCategory(Number(req.params.id));
+        getIO().emit('menu_updated');
         res.sendStatus(204);
     }
 }

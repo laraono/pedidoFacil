@@ -78,10 +78,9 @@ export class EmployeeService {
     return { message: 'Funcionário reativado com sucesso.' };
   }
 
-  async permanentDeleteEmployee(establishmentId: number, userId: number) {
+  async deleteEmployee(establishmentId: number, userId: number) {
     const user = await this.userRepository.findEmployeeByIdAndEstablishment(userId, establishmentId);
     if (!user) throw new AppError('Funcionário não encontrado.', 404);
-    if (user.status !== UserStatus.INATIVO) throw new AppError('Apenas funcionários desativados podem ser excluídos.', 400);
 
     await this.userRepository.softDelete(userId);
     return { message: 'Funcionário excluído com sucesso.' };

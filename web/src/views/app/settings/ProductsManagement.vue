@@ -13,17 +13,16 @@ import FormModal from "@/components/ui/FormModal.vue";
 import ConfirmModal from "@/components/ui/ConfirmModal.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import ToastMessage from "@/components/ui/ToastMessage.vue";
-import { 
-  PlusCircle, Edit, Archive, RotateCcw, Trash2, Image as ImageIcon, 
-  Layers, CheckSquare, Square, TrendingUp, TrendingDown, ToggleLeft, 
-  FolderInput, X, Search, ChevronLeft, ChevronRight 
+import {
+  PlusCircle, Edit, EyeOff, Eye, Trash2, Image as ImageIcon,
+  Layers, CheckSquare, Square, TrendingUp, TrendingDown, ToggleLeft,
+  FolderInput, X, Search, ChevronLeft, ChevronRight
 } from "lucide-vue-next";
 
 const menuStore = useMenuStore();
 const { showToast } = useToast();
 const { confirmState, showConfirm } = useConfirm();
 
-const showDeleted = ref(false);
 const showModal = ref(false);
 const isEditing = ref(false);
 const isLoading = ref(false);
@@ -36,7 +35,7 @@ const itemsPerPage = ref(8);
 const fetchData = async (page = 1) => {
   isLoading.value = true;
   try {
-    await menuStore.loadProducts(page, itemsPerPage.value, showDeleted.value, searchQuery.value);
+    await menuStore.loadProducts(page, itemsPerPage.value, false, searchQuery.value);
   } finally {
     isLoading.value = false;
   }
@@ -47,7 +46,7 @@ onMounted(async () => {
   await fetchData();
 });
 
-watch([searchQuery, showDeleted], () => {
+watch([searchQuery], () => {
   fetchData(1);
 });
 
@@ -120,7 +119,7 @@ const applyBulk = () => {
     const cat = categoryOptions.value.find(c => c.value === bulkCategoryId.value);
     message = `Mover ${count} produto(s) para a categoria "${cat?.label}"?`;
   } else if (bulkAction.value === 'delete') {
-    message = `Arquivar ${count} produto(s) selecionado(s)? Eles poderão ser restaurados.`;
+    message = `Inativar ${count} produto(s) selecionado(s)?`;
   }
   showConfirm({ title: 'Confirmar edição em lote', message, onConfirm: executeBulk });
 };
@@ -146,7 +145,7 @@ const executeBulk = async () => {
     } else if (bulkAction.value === 'category') {
       await menuStore.updateProduct({ ...p, categoryId: bulkCategoryId.value });
     } else if (bulkAction.value === 'delete') {
-      await menuStore.softDeleteProduct(p.id);
+      await menuStore.updateProduct({ ...p, available: false });
     }
   }
   
@@ -239,9 +238,9 @@ const save = async () => {
   } finally { isLoading.value = false; }
 };
 
-const handleDelete = (p) => showConfirm({ title: "Arquivar Produto", message: "Arquivar " + p.name + "?", onConfirm: async () => { await menuStore.softDeleteProduct(p.id); showToast(p.name + " arquivado.", "success"); fetchData(menuStore.currentPage); } });
-const handleRestore = (p) => showConfirm({ title: "Restaurar Produto", message: "Restaurar " + p.name + "?", onConfirm: async () => { await menuStore.restoreProduct(p.id); showToast(p.name + " restaurado.", "success"); fetchData(menuStore.currentPage); } });
-const handlePermanentDelete = (p) => showConfirm({ title: "Excluir Permanentemente", message: "Excluir " + p.name + " para sempre?", onConfirm: () => { menuStore.permanentlyDeleteProduct(p.id); showToast(p.name + " removido localmente.", "success"); } });
+const handleDeactivate = (p) => showConfirm({ title: "Inativar Produto", message: "Inativar " + p.name + "?", onConfirm: async () => { await menuStore.updateProduct({ id: p.id, available: false }); showToast(p.name + " inativado.", "success"); fetchData(menuStore.currentPage); } });
+const handleReactivate = (p) => showConfirm({ title: "Ativar Produto", message: "Ativar " + p.name + "?", onConfirm: async () => { await menuStore.updateProduct({ id: p.id, available: true }); showToast(p.name + " ativado.", "success"); fetchData(menuStore.currentPage); } });
+const handleDelete = (p) => showConfirm({ title: "Excluir Produto", message: "Excluir " + p.name + " definitivamente?", onConfirm: async () => { await menuStore.softDeleteProduct(p.id); showToast(p.name + " excluído.", "success"); fetchData(menuStore.currentPage); } });
 
 const tableColumns = computed(() => {
   const base = [ { key: "image", label: "Foto" }, { key: "name", label: "Produto", sortable: true }, { key: "category", label: "Categoria" }, { key: "price", label: "Preço" }, { key: "status", label: "Status" } ];
@@ -250,10 +249,10 @@ const tableColumns = computed(() => {
 });
 
 const tableActions = computed(() => bulkMode.value ? [] : [
-  { icon: Edit, tooltip: "Editar", handler: openEdit, condition: (p) => !p.deletedAt },
-  { icon: Archive, tooltip: "Arquivar", handler: handleDelete, condition: (p) => !p.deletedAt, class: "text-[#757575] hover:text-orange-400 hover:bg-orange-500/10 p-2 rounded transition-all" },
-  { icon: RotateCcw, tooltip: "Restaurar", handler: handleRestore, condition: (p) => p.deletedAt, class: "text-[#757575] hover:text-accent hover:bg-primary-dark/10 p-2 rounded transition-all" },
-  { icon: Trash2, tooltip: "Excluir", handler: handlePermanentDelete, condition: (p) => p.deletedAt, class: "text-[#757575] hover:text-danger hover:bg-danger-light p-2 rounded transition-all" },
+  { icon: Edit, tooltip: "Editar", handler: openEdit, condition: () => true },
+  { icon: EyeOff, tooltip: "Inativar", handler: handleDeactivate, condition: (p) => p.available !== false, class: "text-[#757575] hover:text-orange-400 hover:bg-orange-500/10 p-2 rounded transition-all" },
+  { icon: Eye, tooltip: "Ativar", handler: handleReactivate, condition: (p) => p.available === false, class: "text-[#757575] hover:text-accent hover:bg-primary-dark/10 p-2 rounded transition-all" },
+  { icon: Trash2, tooltip: "Excluir", handler: handleDelete, condition: () => true, class: "text-[#757575] hover:text-red-500 hover:bg-red-500/10 p-2 rounded transition-all" },
 ]);
 </script>
 
@@ -262,25 +261,16 @@ const tableActions = computed(() => bulkMode.value ? [] : [
     <ToastMessage />
     <PageHeader title="Gerenciar Produtos" subtitle="Controle do cardápio">
       <template #actions>
-        <button @click="showDeleted = !showDeleted" class="px-5 py-3 rounded flex items-center gap-2 font-bold text-sm border transition-all" :class="showDeleted ? 'bg-gray-100 text-[#212121] border-[#E0E0E0]' : 'bg-white text-[#757575] border-[#E0E0E0] hover:bg-gray-100 hover:text-[#212121]'">
-          <Archive :size="18" /> {{ showDeleted ? 'Ver Ativos' : 'Ver Arquivados' }}
-        </button>
         <button
-          v-if="!showDeleted"
           @click="toggleBulkMode"
           class="px-5 py-3 rounded flex items-center gap-2 font-bold text-sm border transition-all"
           :class="bulkMode ? 'bg-accent-light text-accent border-accent/40' : 'bg-white text-[#757575] border-[#E0E0E0] hover:bg-gray-100 hover:text-[#212121]'"
         >
           <Layers :size="18" /> {{ bulkMode ? 'Cancelar Lote' : 'Edição em Lote' }}
         </button>
-        <BaseButton v-if="!showDeleted && !bulkMode" @click="openAdd" :icon="PlusCircle">Novo Produto</BaseButton>
+        <BaseButton v-if="!bulkMode" @click="openAdd" :icon="PlusCircle">Novo Produto</BaseButton>
       </template>
     </PageHeader>
-
-    <div v-if="showDeleted" class="mb-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded flex items-center justify-between">
-      <p class="text-orange-400 text-sm font-bold flex items-center gap-2"><Archive :size="16" /> Visualizando produtos arquivados.</p>
-      <button @click="showDeleted = false" class="text-orange-300 hover:text-orange-100 text-sm font-bold underline">Voltar para ativos</button>
-    </div>
 
     <div class="mb-6 relative">
       <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -315,7 +305,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
           { key: 'price_decrease', icon: TrendingDown, label: 'Reduzir Preço' },
           { key: 'availability', icon: ToggleLeft, label: 'Disponibilidade' },
           { key: 'category', icon: FolderInput, label: 'Categoria' },
-          { key: 'delete', icon: Archive, label: 'Arquivar' },
+          { key: 'delete', icon: EyeOff, label: 'Inativar' },
         ]" :key="opt.key"
           @click="bulkAction = opt.key"
           class="flex items-center gap-2 px-4 py-2 rounded text-sm font-bold border transition-all"
@@ -364,8 +354,8 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         <button @click="applyBulk" class="py-2.5 px-6 bg-primary text-white font-black text-sm rounded hover:opacity-90 transition-opacity">Aplicar</button>
       </div>
       <div v-else-if="bulkAction === 'delete'" class="flex items-center gap-3">
-        <p class="text-sm text-[#757575]">Os produtos selecionados serão arquivados.</p>
-        <button @click="applyBulk" class="py-2.5 px-6 bg-orange-500 text-[#212121] font-black text-sm rounded hover:bg-orange-400 transition-colors">Arquivar Selecionados</button>
+        <p class="text-sm text-[#757575]">Os produtos selecionados serão inativados.</p>
+        <button @click="applyBulk" class="py-2.5 px-6 bg-orange-500 text-[#212121] font-black text-sm rounded hover:bg-orange-400 transition-colors">Inativar Selecionados</button>
       </div>
     </div>
 
@@ -394,15 +384,14 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         </div>
       </template>
       <template #cell-name="{ item }">
-        <span class="font-bold text-[#212121]" :class="{ 'opacity-50': item.deletedAt }">{{ item.name }}</span>
+        <span class="font-bold text-[#212121]" :class="{ 'opacity-50': item.available === false }">{{ item.name }}</span>
         <p v-if="item.description" class="text-[#757575] text-xs mt-0.5 truncate max-w-[200px]">{{ item.description }}</p>
       </template>
       <template #cell-price="{ item }">
         <span class="text-accent font-black">R$ {{ Number(item.price ?? item.sizes?.[0]?.price ?? 0).toFixed(2) }}</span>
       </template>
       <template #cell-status="{ item }">
-        <span v-if="item.deletedAt" class="px-3 py-1 bg-gray-100 text-[#757575] border border-[#E0E0E0] rounded text-[10px] font-black uppercase tracking-widest">Arquivado</span>
-        <span v-else-if="item.available === false" class="px-3 py-1 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded text-[10px] font-black uppercase tracking-widest">Pausa</span>
+        <span v-if="item.available === false" class="px-3 py-1 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded text-[10px] font-black uppercase tracking-widest">Inativo</span>
         <span v-else class="px-3 py-1 bg-accent-light text-accent border border-accent/30 rounded text-[10px] font-black uppercase tracking-widest">Ativo</span>
       </template>
     </DataTable>

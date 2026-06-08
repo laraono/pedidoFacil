@@ -16,7 +16,7 @@ import {
   PageHeader,
   DataTable,
 } from "@/components/ui";
-import { PlusCircle, Edit, Image as ImageIcon, Archive, RotateCcw, Trash2 } from "lucide-vue-next";
+import { PlusCircle, Edit, Image as ImageIcon, EyeOff, Eye, Trash2 } from "lucide-vue-next";
 
 const menuStore = useMenuStore();
 const { showToast } = useToast();
@@ -27,10 +27,10 @@ onMounted(() => menuStore.loadData());
 
 const showModal = ref(false);
 const isEditing = ref(false);
-const showDeleted = ref(false);
+const showInactive = ref(false);
 
 const displayedCategories = computed(() =>
-  showDeleted.value ? menuStore.deletedCategories : menuStore.activeCategories
+  showInactive.value ? menuStore.inactiveCategories : menuStore.activeCategories
 );
 
 const form = ref({ id: null, name: "", imageFile: null, imagePreview: null });
@@ -94,50 +94,50 @@ const saveCategory = async () => {
   });
 };
 
-const handleDelete = (cat) => {
+const handleDeactivate = (cat) => {
   const hasProducts = menuStore.activeProducts?.some(
     (p) => String(p.categoryId) === String(cat.id)
   );
   if (hasProducts) {
     showConfirm({
       title: "Ação Bloqueada",
-      message: `Não é possível arquivar "${cat.name}" pois existem produtos vinculados. Remova ou altere a categoria dos produtos primeiro.`,
+      message: `Não é possível inativar "${cat.name}" pois existem produtos vinculados. Remova ou altere a categoria dos produtos primeiro.`,
       isError: true,
     });
     return;
   }
   showConfirm({
-    title: "Arquivar Categoria",
-    message: `Deseja arquivar "${cat.name}"?`,
+    title: "Inativar Categoria",
+    message: `Deseja inativar "${cat.name}"?`,
     onConfirm: async () => {
-      const result = await menuStore.softDeleteCategory(cat.id);
+      const result = await menuStore.deactivateCategory(cat.id);
       if (result && !result.success) {
         showConfirm({ title: "Erro", message: result.message, isError: true });
       } else {
-        showToast("Categoria arquivada.", "success");
+        showToast(`"${cat.name}" inativada.`, "success");
       }
     },
   });
 };
 
-const handleRestore = (cat) => {
+const handleReactivate = (cat) => {
   showConfirm({
-    title: "Restaurar Categoria",
-    message: `Restaurar "${cat.name}"?`,
+    title: "Ativar Categoria",
+    message: `Ativar "${cat.name}"?`,
     onConfirm: async () => {
-      await menuStore.restoreCategory(cat.id);
-      showToast("Categoria restaurada.", "success");
+      await menuStore.reactivateCategory(cat.id);
+      showToast(`"${cat.name}" ativada.`, "success");
     },
   });
 };
 
-const handlePermanentDelete = (cat) => {
+const handleDelete = (cat) => {
   showConfirm({
-    title: "Excluir Permanentemente",
-    message: `Esta ação é irreversível! "${cat.name}" será excluída.`,
-    onConfirm: () => {
-      menuStore.permanentlyDeleteCategory(cat.id);
-      showToast("Categoria removida do painel local.", "success");
+    title: "Excluir Categoria",
+    message: `Excluir "${cat.name}" definitivamente? Esta ação não pode ser desfeita.`,
+    onConfirm: async () => {
+      await menuStore.deleteCategory(cat.id);
+      showToast(`"${cat.name}" excluída.`, "success");
     },
   });
 };
@@ -158,27 +158,27 @@ const tableColumns = [
     >
       <template #actions>
         <BaseButton
-          :variant="showDeleted ? 'secondary' : 'ghost'"
-          @click="showDeleted = !showDeleted"
+          :variant="showInactive ? 'secondary' : 'ghost'"
+          @click="showInactive = !showInactive"
         >
-          <Archive :size="18" />
-          {{ showDeleted ? "Ver Ativas" : "Ver Arquivadas" }}
+          <EyeOff :size="18" />
+          {{ showInactive ? "Ver Ativas" : "Ver Inativas" }}
         </BaseButton>
-        <BaseButton v-if="!showDeleted" @click="openModal()" :icon="PlusCircle">
+        <BaseButton v-if="!showInactive" @click="openModal()" :icon="PlusCircle">
           Nova Categoria
         </BaseButton>
       </template>
     </PageHeader>
 
     <div
-      v-if="showDeleted"
+      v-if="showInactive"
       class="mb-8 p-4 bg-orange-500/10 border border-orange-500/20 rounded flex items-center justify-between"
     >
       <p class="text-orange-400 text-sm font-bold flex items-center gap-2">
-        <Archive :size="18" /> Visualizando categorias arquivadas.
+        <EyeOff :size="18" /> Visualizando categorias inativas.
       </p>
       <button
-        @click="showDeleted = false"
+        @click="showInactive = false"
         class="text-orange-300 hover:text-orange-100 text-sm font-bold underline transition-colors"
       >
         Voltar para ativas
@@ -188,8 +188,8 @@ const tableColumns = [
     <EmptyState
       v-if="displayedCategories.length === 0"
       :icon="PlusCircle"
-      :message="showDeleted ? 'Nenhuma categoria arquivada.' : 'Nenhuma categoria cadastrada.'"
-      :action-label="!showDeleted ? 'Nova Categoria' : undefined"
+      :message="showInactive ? 'Nenhuma categoria inativa.' : 'Nenhuma categoria cadastrada.'"
+      :action-label="!showInactive ? 'Nova Categoria' : undefined"
       @action="openModal()"
     />
 
@@ -210,10 +210,10 @@ const tableColumns = [
 
       <template #cell-status="{ item }">
         <span
-          v-if="item.deletedAt"
-          class="px-3 py-1 bg-gray-100 text-[#757575] border border-[#E0E0E0] rounded text-[10px] font-black uppercase tracking-widest"
+          v-if="item.status === 'Inativa'"
+          class="px-3 py-1 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded text-[10px] font-black uppercase tracking-widest"
         >
-          {{ new Date(item.deletedAt).toLocaleDateString() }}
+          Inativa
         </span>
         <span
           v-else
@@ -224,7 +224,7 @@ const tableColumns = [
       </template>
 
       <template #row-actions="{ item }">
-        <template v-if="!item.deletedAt">
+        <template v-if="item.status === 'Ativa'">
           <button
             @click="openModal(item)"
             class="p-2 text-[#757575] hover:text-[#212121] transition-colors"
@@ -233,25 +233,32 @@ const tableColumns = [
             <Edit :size="18" />
           </button>
           <button
-            @click="handleDelete(item)"
+            @click="handleDeactivate(item)"
             class="p-2 text-[#757575] hover:text-orange-400 transition-colors"
-            title="Arquivar"
+            title="Inativar"
           >
-            <Archive :size="18" />
+            <EyeOff :size="18" />
+          </button>
+          <button
+            @click="handleDelete(item)"
+            class="p-2 text-[#757575] hover:text-red-500 transition-colors"
+            title="Excluir"
+          >
+            <Trash2 :size="18" />
           </button>
         </template>
         <template v-else>
           <button
-            @click="handleRestore(item)"
+            @click="handleReactivate(item)"
             class="p-2 text-[#757575] hover:text-accent transition-colors"
-            title="Restaurar"
+            title="Ativar"
           >
-            <RotateCcw :size="18" />
+            <Eye :size="18" />
           </button>
           <button
-            @click="handlePermanentDelete(item)"
+            @click="handleDelete(item)"
             class="p-2 text-[#757575] hover:text-red-500 transition-colors"
-            title="Deletar permanentemente"
+            title="Excluir"
           >
             <Trash2 :size="18" />
           </button>

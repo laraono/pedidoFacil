@@ -19,20 +19,20 @@ export interface Category {
   id: number;
   name: string;
   image: string | null;
-  deletedAt: string | null;
+  status: 'Ativa' | 'Inativa';
 }
 
 export const useMenuStore = defineStore("menu", () => {
   const categories = ref<Category[]>([]);
+  const inactiveCategories = ref<Category[]>([]);
   const products = ref<Product[]>([]);
-  
+
   const totalProducts = ref(0);
   const totalPages = ref(0);
   const currentPage = ref(1);
 
-  const activeCategories = computed(() => categories.value.filter((c) => !c.deletedAt));
-  const deletedCategories = computed(() => categories.value.filter((c) => c.deletedAt));
-  const activeProducts = computed(() => products.value); 
+  const activeCategories = computed(() => categories.value);
+  const activeProducts = computed(() => products.value);
 
   const mapProduct = (p: any): Product => ({
     id: p.id,
@@ -44,18 +44,19 @@ export const useMenuStore = defineStore("menu", () => {
     categoryId: p.category?.id,
     deletedAt: p.deletedAt,
     sizes: p.productVariations?.map((v: any) => ({
-        name: v.name,
-        price: Number(v.addPrice),
+      name: v.name,
+      price: Number(v.addPrice),
     })) || [],
   });
 
   const loadCategories = async () => {
     try {
-      const [active, deleted] = await Promise.all([
+      const [active, inactive] = await Promise.all([
         categoryApi.list(),
-        categoryApi.listDeleted()
+        categoryApi.listInactive(),
       ]);
-      categories.value = [...active, ...deleted];
+      categories.value = active;
+      inactiveCategories.value = inactive;
     } catch (error) {
       console.error("Erro ao carregar categorias:", error);
     }
@@ -78,9 +79,9 @@ export const useMenuStore = defineStore("menu", () => {
     await Promise.all([loadCategories(), loadProducts(1, 100)]);
   };
 
-  const softDeleteCategory = async (id: number) => {
+  const deactivateCategory = async (id: number) => {
     try {
-      await categoryApi.delete(id);
+      await categoryApi.deactivate(id);
       await loadCategories();
       return { success: true };
     } catch (error: any) {
@@ -88,24 +89,29 @@ export const useMenuStore = defineStore("menu", () => {
     }
   };
 
-  const restoreCategory = async (id: number) => {
+  const reactivateCategory = async (id: number) => {
     try {
-      await categoryApi.restore(id);
+      await categoryApi.reactivate(id);
       await loadCategories();
     } catch (error) {
       console.error(error);
     }
   };
 
-  const permanentlyDeleteCategory = (id: number) => {
-    categories.value = categories.value.filter(c => c.id !== id);
+  const deleteCategory = async (id: number) => {
+    try {
+      await categoryApi.delete(id);
+      await loadCategories();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const addProduct = async (formData: FormData) => {
     await productApi.create(formData);
-    await loadProducts(currentPage.value); 
+    await loadProducts(currentPage.value);
   };
-  
+
   const updateProduct = async (data: FormData | any) => {
     let id: number | null = null;
     if (data instanceof FormData) {
@@ -129,29 +135,31 @@ export const useMenuStore = defineStore("menu", () => {
   };
 
   const getCategoryName = (id: number): string => {
-    const cat = categories.value.find((c) => Number(c.id) === Number(id));
+    const cat = [...categories.value, ...inactiveCategories.value].find(
+      (c) => Number(c.id) === Number(id)
+    );
     return cat ? cat.name : "Sem categoria";
   };
 
   return {
     categories,
+    inactiveCategories,
     products,
     totalProducts,
     totalPages,
     currentPage,
     activeCategories,
-    deletedCategories,
     activeProducts,
     loadCategories,
     loadProducts,
     loadData,
-    softDeleteCategory,
-    restoreCategory,
-    permanentlyDeleteCategory,
+    deactivateCategory,
+    reactivateCategory,
+    deleteCategory,
     addProduct,
     updateProduct,
     softDeleteProduct,
     restoreProduct,
-    getCategoryName
+    getCategoryName,
   };
 });
