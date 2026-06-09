@@ -191,8 +191,8 @@ Logs ficam em `logs/backend.log`, `logs/web.log` e `logs/mobile.log`.
 2. Acesse o painel **Admin** e crie ao menos 2 planos antes de continuar.
 3. Realize o logout e acesse a landing page. Clique em um dos planos para iniciar o cadastro de um gerente e preencha o onboarding com dados do estabelecimento.
    > Para o onboarding, é possível usar dados gerados pelos geradores de [CNPJ](https://www.4devs.com.br/gerador_de_cnpj) e [CPF](https://www.4devs.com.br/gerador_de_cpf) para testes.
-   
-   - Para a etapa 4, de assinatura, use os [cartões de teste oficiais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards) e faça o pagamento **com o e-mail da conta do consumidor de teste** obtida na etapa 2.1, seção do Mercado Pago, ou disponibilizada a seguir: test_user_5092580542816123576@testuser.com
+4. Utilize a opção **Cargos Básicos** para configurar os cargos iniciais.
+5. Para a etapa de assinatura, use os [cartões de teste oficiais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards) e faça o pagamento **com o e-mail da conta do consumidor de teste** obtida na etapa 2.1, seção do Mercado Pago, ou disponibilizada a seguir: test_user_5092580542816123576@testuser.com
       - Use os [cartões de teste oficiais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards) e faça o pagamento com as credenciais de comprador. Sugestão:
 
          ``5031 4332 1540 6351``
@@ -203,8 +203,9 @@ Logs ficam em `logs/backend.log`, `logs/web.log` e `logs/mobile.log`.
          
          ``CPF: 123.456.789-09``
       
-4. Utilize a opção **Cargos Básicos** para configurar os cargos iniciais.
-5. Cadastre produtos e inicie a operação pelo **Cardápio**.
+6. Cadastre produtos e inicie a operação pelo **Cardápio**.
+7. Depois, mova-se para a área da **Cozinha** para preparar o pedido.
+8. E logo ápos, para o **Caixa**, finalizando o processo básico de um restaurante.
 
 ---
 
