@@ -116,7 +116,7 @@ Para receber webhooks localmente, é necessário expor o backend com uma URL pú
 
 ```bash
 # Após instalar e autenticar o ngrok:
-ngrok http 3000
+ngrok http 3000 # Adicione a porta do backend
 ```
 
 O ngrok gerará uma URL pública (ex: `https://xxxx.ngrok.io`). Configure-a em `backend/.env`:
@@ -177,9 +177,7 @@ O script irá:
 ./up.sh
 ```
 
-Acesse no navegador: **http://localhost:5173**
-
-O QR code do Expo (mobile) aparecerá no terminal — escaneie com o app **Expo Go**.
+Acesse a plataforma pelo link exibido. O QR code do Expo (mobile) também aparecerá no terminal — escaneie com o app [**Expo Go**](https://play.google.com/store/apps/details?id=host.exp.exponent&hl=pt_BR&pli=1).
 
 Logs ficam em `logs/backend.log`, `logs/web.log` e `logs/mobile.log`.
 
@@ -187,7 +185,7 @@ Logs ficam em `logs/backend.log`, `logs/web.log` e `logs/mobile.log`.
 
 ## Primeiro Acesso
 
-1. Acesse `http://localhost:5173/login` e autentique-se com o e-mail e senha definidos no `./install.sh`.
+1. Acesse plataforma e autentique-se com o e-mail e senha definidos no `./install.sh`.
 2. Acesse o painel **Admin** e crie ao menos 2 planos antes de continuar.
 3. Realize o logout e acesse a landing page. Clique em um dos planos para iniciar o cadastro de um gerente e preencha o onboarding com dados do estabelecimento.
    > Para o onboarding, é possível usar dados gerados pelos geradores de [CNPJ](https://www.4devs.com.br/gerador_de_cnpj) e [CPF](https://www.4devs.com.br/gerador_de_cpf) para testes.
