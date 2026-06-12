@@ -162,7 +162,7 @@ export class MercadoPagoService {
             return answer.data
         } catch(err: any) {
             const mpError = err?.response?.data
-            auditLog('mp.create_subscription_error', { error: mpError });
+            auditLog('mp.create_subscription_error', { error: mpError, params });
             throw new AppError('Ocorreu um erro no Mercado Pago. Verifique os dados do cartão e tente novamente.', 500)
         }
     }
@@ -186,7 +186,8 @@ export class MercadoPagoService {
 
             return {
                 status: answer.data.status as string,
-                next_payment_date: answer.data.next_payment_date as string | null
+                next_payment_date: answer.data.next_payment_date as string | null,
+                payer_email: answer.data.payer_email as string | null
             }
         } catch(error: any) {
             auditLog('mp.get_subscription_error', { error: error?.response?.data ?? error?.message });

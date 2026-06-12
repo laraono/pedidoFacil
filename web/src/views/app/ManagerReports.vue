@@ -17,7 +17,7 @@ const { formatCurrency } = useUtils();
 const { run } = useAsyncAction();
 
 const activeTab = ref('geral');
-const dateFilter = ref('7d');
+const dateFilter = ref('30d');
 const isLoaded = ref(false);
 
 const kpis = ref({});
@@ -30,12 +30,15 @@ const paymentMethods = ref([]);
 const topProducts = ref([]);
 const couponUsage = ref([]);
 
+const handlePrint = () => window.print();
+
 const getDateRange = (filter) => {
   const end = new Date();
   const start = new Date();
-  if (filter === '24h') start.setHours(0, 0, 0, 0);
-  else if (filter === '7d') start.setDate(end.getDate() - 7);
+  if (filter === '7d') start.setDate(end.getDate() - 7);
   else if (filter === '30d') start.setDate(end.getDate() - 30);
+  else if (filter === '3m') start.setDate(end.getDate() - 90);
+  else if (filter === '6m') start.setDate(end.getDate() - 180);
   else start.setFullYear(2020);
   return { startDate: start.toISOString(), endDate: end.toISOString() };
 };
@@ -81,9 +84,10 @@ const financialImpact = computed(() =>
 );
 
 const performanceTitle = computed(() => ({
-  '24h': 'Performance Horária',
   '7d': 'Performance Diária',
   '30d': 'Performance Mensal',
+  '3m': 'Performance Trimestral',
+  '6m': 'Performance Semestral',
 }[dateFilter.value] ?? 'Performance Geral'));
 
 const getMaxRevenue = () => {
@@ -111,9 +115,9 @@ const tabs = [
 
       <PageHeader title="Relatórios" subtitle="Acompanhe o desempenho do seu negócio" back-to="back">
         <template #actions>
-          <BaseButton variant="secondary" :icon="Download" @click="() => window.print()">PDF</BaseButton>
+          <BaseButton variant="secondary" :icon="Download" @click="handlePrint">PDF</BaseButton>
           <div class="flex items-center bg-white border border-[#E0E0E0] rounded p-1 shadow-sm">
-            <button v-for="opt in [{k:'24h', l:'Hoje'}, {k:'7d', l:'7D'}, {k:'30d', l:'30D'}, {k:'all', l:'Tudo'}]"
+            <button v-for="opt in [{k:'7d', l:'7D'}, {k:'30d', l:'30D'}, {k:'3m', l:'3M'}, {k:'6m', l:'6M'}, {k:'all', l:'Tudo'}]"
               :key="opt.k" @click="dateFilter = opt.k"
               class="px-4 py-2 rounded text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap"
               :class="dateFilter === opt.k ? 'bg-primary text-white shadow-lg' : 'text-[#757575] hover:text-[#212121]'">

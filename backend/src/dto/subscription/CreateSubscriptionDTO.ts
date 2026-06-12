@@ -4,7 +4,6 @@ import { Establishment, Plan } from "../../database";
 const createSubscriptionBaseSchema = z.object({
   params: z.object({
     planId: z.coerce.number().int().positive(),
-    establishmentId: z.coerce.number().int().positive()
   }),
   body: z.object({
     type: z.string().min(1),
@@ -37,10 +36,9 @@ const createSubscriptionBaseSchema = z.object({
 export const createSubscriptionSchema = z.preprocess((reqObj: any) => {
   if (reqObj) {
     const planId = reqObj.body?.planId;
-    const establishmentId = reqObj.usuario?.estabelecimento;
     const data = reqObj.body?.data;
 
-    reqObj.params = { ...reqObj.params, planId, establishmentId };
+    reqObj.params = { ...reqObj.params, planId };
     reqObj.body = data;
   }
   return reqObj;

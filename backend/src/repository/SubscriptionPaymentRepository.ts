@@ -19,23 +19,36 @@ export class SubscriptionPaymentRepository extends Repository<SubscriptionPaymen
         })
     }
 
-    async getMetricsForPeriod(start: Date, end: Date): Promise<{
+    async getMetricsForPeriod(start: Date | null, end: Date): Promise<{
         totalAtivos: number
         receitaColetada: number
         mrr: number
     }> {
+        if (start !== null) {
+            const result = await this.createQueryBuilder('p')
+                .select('COUNT(DISTINCT p.subscription)', 'totalAtivos')
+                .addSelect('SUM(p.amount)', 'receitaColetada')
+                .where('p.status = :status', { status: SubscriptionPaymentStatus.APROVADO })
+                .andWhere('p.paidAt BETWEEN :start AND :end', { start, end })
+                .getRawOne()
+
+            const totalAtivos = Number(result?.totalAtivos ?? 0)
+            const receitaColetada = Number(result?.receitaColetada ?? 0)
+            const months = Math.max(1, Math.round((end.getTime() - start.getTime()) / (30 * 24 * 60 * 60 * 1000)))
+            return { totalAtivos, receitaColetada, mrr: receitaColetada / months }
+        }
+
         const result = await this.createQueryBuilder('p')
             .select('COUNT(DISTINCT p.subscription)', 'totalAtivos')
             .addSelect('SUM(p.amount)', 'receitaColetada')
+            .addSelect('MIN(p.paidAt)', 'earliest')
             .where('p.status = :status', { status: SubscriptionPaymentStatus.APROVADO })
-            .andWhere('p.paidAt BETWEEN :start AND :end', { start, end })
             .getRawOne()
 
         const totalAtivos = Number(result?.totalAtivos ?? 0)
         const receitaColetada = Number(result?.receitaColetada ?? 0)
-        const months = Math.max(1, Math.round((end.getTime() - start.getTime()) / (30 * 24 * 60 * 60 * 1000)))
-        const mrr = receitaColetada / months
-
-        return { totalAtivos, receitaColetada, mrr }
+        const earliest = result?.earliest ? new Date(result.earliest) : end
+        const months = Math.max(1, Math.round((end.getTime() - earliest.getTime()) / (30 * 24 * 60 * 60 * 1000)))
+        return { totalAtivos, receitaColetada, mrr: receitaColetada / months }
     }
 }

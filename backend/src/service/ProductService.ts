@@ -94,6 +94,10 @@ export class ProductService {
     }
 
     async softDeleteProduct(productId: number) {
+        const product = await this.productRepository.getProduct(productId);
+        if (!product || product.status !== ProductStatus.INATIVO) {
+            throw new AppError('Apenas produtos inativos podem ser excluídos.', 400);
+        }
         await this.productRepository.softDeleteProduct(productId);
     }
 

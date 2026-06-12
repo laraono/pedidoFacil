@@ -41,19 +41,11 @@ export class EstablishmentService {
     return establishment;
   }
 
-  private generateSelfServiceCode(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  }
-
   async updateEstablishment(establishmentId: number, updateData: any) {
     const establishment = await this.getEstablishmentProfile(establishmentId);
 
     if (updateData.selfServiceEnabled !== undefined) {
       updateData.temAutoatendimento = !!updateData.selfServiceEnabled;
-      if (updateData.selfServiceEnabled && !establishment.selfServiceCode) {
-        updateData.selfServiceCode = this.generateSelfServiceCode();
-      }
     }
 
     if (updateData.paymentMethods !== undefined && Array.isArray(updateData.paymentMethods)) {

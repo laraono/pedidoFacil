@@ -31,6 +31,11 @@ const DUMMY_HASH = '$2b$12$eImiTXuWVxfM37uY4JANjQev3nHN.SBuNFa5UPSmKUVgwjBiCXhHu
 import { validarSenhaForte } from '../utils/passwordSchema';
 
 export class AuthService {
+  private generateSelfServiceCode(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  }
+
   constructor(
     private dataSource: DataSource,
     private userRepository: UserRepository,
@@ -94,6 +99,7 @@ export class AuthService {
           name: data.establishment.name,
           cnpj: data.establishment.cnpj,
           manager: savedUser,
+          selfServiceCode: this.generateSelfServiceCode(),
         });
 
         const todasPermissoes = await manager.find(Permissao);

@@ -16,15 +16,8 @@ export function initSocket(httpServer: HttpServer): SocketIOServer {
     });
 
     io.on('connection', (socket: Socket) => {
-        console.log(`[Socket.IO] Cliente conectado: ${socket.id}`);
-
         socket.on('join_room', (room: string) => {
             socket.join(room);
-            console.log(`[Socket.IO] ${socket.id} entrou na sala: ${room}`);
-        });
-
-        socket.on('disconnect', () => {
-            console.log(`[Socket.IO] Cliente desconectado: ${socket.id}`);
         });
     });
 

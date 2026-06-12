@@ -1,4 +1,4 @@
-import { In } from 'typeorm';
+import { In, Not } from 'typeorm';
 import { RoleRepository } from '../repository/RoleRepository';
 import { UserRepository } from '../repository/UserRepository';
 import { AppError } from '../middleware/error/AppError';

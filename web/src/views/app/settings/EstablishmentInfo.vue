@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { getImageUrl, validateImageFile } from "@/utils/imageUrl";
 import { maskCNPJ, maskPhone } from "@/utils/validator";
 import { establishmentApi } from "@/services/establishmentApi";

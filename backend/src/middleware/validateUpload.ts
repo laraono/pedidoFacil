@@ -1,15 +1,16 @@
 import multer from 'multer';
 import { Request } from 'express';
+import { AppError } from './error/AppError';
 
 const storage = multer.memoryStorage();
 
 const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif'];
-  
+
   if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('TIPO_INVALIDO'));
+    cb(new AppError('Formato de imagem não suportado. Use JPEG, PNG, WebP ou GIF.', 400) as any);
   }
 };
 

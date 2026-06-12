@@ -1,5 +1,8 @@
 <script setup>
-  import { computed, useSlots } from "vue";
+  import { computed, useSlots, useAttrs } from "vue";
+
+  defineOptions({ inheritAttrs: false });
+  const attrs = useAttrs();
 
   const props = defineProps({
     columns: { type: Array, required: true },
@@ -38,6 +41,7 @@
 
 <template>
   <div
+    v-bind="attrs"
     class="bg-white border border-[#E0E0E0] rounded overflow-x-auto shadow-2xl font-inter"
     :class="hasMobileSlot ? 'hidden md:block' : ''"
   >

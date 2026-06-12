@@ -252,7 +252,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
   { icon: Edit, tooltip: "Editar", handler: openEdit, condition: () => true },
   { icon: EyeOff, tooltip: "Inativar", handler: handleDeactivate, condition: (p) => p.available !== false, class: "text-[#757575] hover:text-orange-400 hover:bg-orange-500/10 p-2 rounded transition-all" },
   { icon: Eye, tooltip: "Ativar", handler: handleReactivate, condition: (p) => p.available === false, class: "text-[#757575] hover:text-accent hover:bg-primary-dark/10 p-2 rounded transition-all" },
-  { icon: Trash2, tooltip: "Excluir", handler: handleDelete, condition: () => true, class: "text-[#757575] hover:text-red-500 hover:bg-red-500/10 p-2 rounded transition-all" },
+  { icon: Trash2, tooltip: "Excluir", handler: handleDelete, condition: (p) => p.available === false, class: "text-[#757575] hover:text-red-500 hover:bg-red-500/10 p-2 rounded transition-all" },
 ]);
 </script>
 

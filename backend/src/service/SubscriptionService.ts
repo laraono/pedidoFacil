@@ -97,16 +97,38 @@ export class SubscriptionService {
         { subscriptionId, establishmentId }: { subscriptionId: number, establishmentId: number }
     ) {
         return await this.dataSource.transaction(async (transactionManager) => {
-            const subscription = await transactionManager.findOne(Subscription, { where: { id: subscriptionId } })
+            const subscription = await transactionManager.findOne(Subscription, {
+                where: { id: subscriptionId },
+                relations: ['plan']
+            })
             if(!subscription || !subscription.mercadoPagoId) throw new AppError('Assinatura não encontrada', 404)
+            if(!subscription.plan?.mercadoPagoId) throw new AppError('Plano não configurado no Mercado Pago', 500)
 
-            const establishment = await transactionManager.findOne(Establishment, { where: { id: establishmentId } })
+            const establishment = await transactionManager.findOne(Establishment, {
+                where: { id: establishmentId }
+            })
             if(!establishment) throw new AppError('Estabelecimento não encontrado', 404)
 
             const cardToken = mercadoPagoParams.cardToken
-            await this.mercadoPagoService.updateSubscriptionCard(subscription.mercadoPagoId, cardToken)
 
-            await transactionManager.update(Subscription, { id: subscriptionId }, { status: SubscriptionStatus.PENDENTE })
+            const mpSubscription = await this.mercadoPagoService.getSubscription(subscription.mercadoPagoId)
+
+            if (mpSubscription.status === 'cancelled') {
+                const created = await this.mercadoPagoService.createSubscription({
+                    preapproval_plan_id: subscription.plan.mercadoPagoId,
+                    payer_email: mercadoPagoParams.payerEmail,
+                    card_token_id: cardToken,
+                    reason: subscription.plan.name,
+                    status: 'authorized'
+                })
+                await transactionManager.update(Subscription, { id: subscriptionId }, {
+                    mercadoPagoId: created.id,
+                    status: SubscriptionStatus.PENDENTE
+                })
+            } else {
+                await this.mercadoPagoService.updateSubscriptionCard(subscription.mercadoPagoId, cardToken)
+                await transactionManager.update(Subscription, { id: subscriptionId }, { status: SubscriptionStatus.PENDENTE })
+            }
 
             return subscription
         })
