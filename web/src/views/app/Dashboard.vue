@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { allMenuItems, adminMenuItems } from '@/utils/navigation';
 import { useRouter } from 'vue-router';
@@ -7,6 +7,10 @@ import { ChevronRight, ShieldAlert } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
 const router = useRouter();
+
+onMounted(() => {
+  if (authStore.isAdmin) router.replace({ name: 'admin-reports' });
+});
 
 const isAdmin = computed(() => authStore.isAdmin);
 

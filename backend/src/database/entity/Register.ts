@@ -31,15 +31,15 @@ export class Register {
     terminalId?: string
 
     @CreateDateColumn({ 
-        name:  'Data_Hora_Criacao',
+        name: 'Data_Criacao',
         type: "timestamp", 
         default: () => "CURRENT_TIMESTAMP(6)"
         })
     created_at!: Date;
 
     @DeleteDateColumn({
-        name: 'Data_Hora_Delecao',
-        type: 'datetime',
+        name: 'Data_Exclusao',
+        type: 'timestamp',
         nullable: true
     })
     deletedAt?: Date

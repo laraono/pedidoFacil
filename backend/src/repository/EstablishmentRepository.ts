@@ -1,6 +1,5 @@
 import { DataSource, Repository } from "typeorm";
 import { Establishment } from "../database/entity/Establishment";
-import { User } from "../database";
 
 export class EstablishmentRepository extends Repository<Establishment> {
 
@@ -26,7 +25,7 @@ export class EstablishmentRepository extends Repository<Establishment> {
     async getByIdWithRelations(id: number): Promise<Establishment | null> {
         return await this.findOne({
             where: { id },
-            relations: ['manager', 'configurations']
+            relations: ['manager', 'configurations', 'paymentMethods']
         });
     }
 
@@ -45,7 +44,7 @@ export class EstablishmentRepository extends Repository<Establishment> {
     async findAllForAdmin(): Promise<Establishment[]> {
         return await this.find({
             withDeleted: true,
-            relations: ['manager', 'subscriptions', 'subscriptions.plan'],
+            relations: ['manager', 'subscription', 'subscription.plan'],
             order: { id: 'ASC' }
         });
     }
@@ -54,7 +53,7 @@ export class EstablishmentRepository extends Repository<Establishment> {
         return await this.findOne({
             where: { id },
             withDeleted: true,
-            relations: ['manager', 'subscriptions', 'subscriptions.plan']
+            relations: ['manager', 'manager.perfilGerente', 'subscription', 'subscription.plan']
         });
     }
 

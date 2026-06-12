@@ -51,13 +51,6 @@ export class Order {
         })
     created_at!: Date;
 
-    @DeleteDateColumn({
-        name: 'deleted_at',
-        type: 'datetime',
-        nullable: true
-    })
-    deletedAt?: Date
-
     @ManyToOne(() => Comanda, (comanda) => comanda.pedidos)
     @JoinColumn({
         name: 'ID_Comanda'

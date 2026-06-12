@@ -34,7 +34,7 @@ const validationRules = {
 
 const { errors, validateAll, validateField } = useFormValidation(validationRules);
 
-const PROTECTED_ROLE_NAMES = ["Gerente"];
+const HIDDEN_ROLE_NAMES = ["Gerente"];
 
 const normalizePermissions = (perms) => {
   if (typeof perms === "string") {
@@ -50,10 +50,12 @@ const normalizePermissions = (perms) => {
 const fetchRoles = () =>
   runFetch(async () => {
     const data = await roleApi.list();
-    roles.value = data.map((role) => ({
-      ...role,
-      permissions: normalizePermissions(role.permissions),
-    }));
+    roles.value = data
+      .filter((role) => !HIDDEN_ROLE_NAMES.includes(role.name))
+      .map((role) => ({
+        ...role,
+        permissions: normalizePermissions(role.permissions),
+      }));
   }, "Erro ao carregar os cargos.");
 
 onMounted(fetchRoles);
@@ -112,7 +114,7 @@ const openModal = (role = null) => {
 };
 
 const deleteRole = (role) => {
-  if (PROTECTED_ROLE_NAMES.includes(role.name)) {
+  if (HIDDEN_ROLE_NAMES.includes(role.name)) {
     showToast(`O cargo "${role.name}" não pode ser excluído.`, "error");
     return;
   }
@@ -184,7 +186,7 @@ const togglePermission = (id) => {
         <div class="flex justify-between items-start mb-6">
           <ShieldCheck class="text-accent" :size="24" />
           <button
-            v-if="!PROTECTED_ROLE_NAMES.includes(role.name)"
+            v-if="!HIDDEN_ROLE_NAMES.includes(role.name)"
             @click.stop="deleteRole(role)"
             class="p-1.5 text-[#757575] hover:text-red-500 hover:bg-danger-light rounded transition-all"
             title="Excluir cargo"

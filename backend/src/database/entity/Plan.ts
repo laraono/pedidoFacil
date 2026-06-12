@@ -1,5 +1,4 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm"
-import { UserStatus } from "../../enum"
 import { Subscription } from "./Subscription"
 
 @Entity({name: 'PLANO'})
@@ -50,6 +49,6 @@ export class Plan {
     })
     mercadoPagoId?: string
 
-    @OneToMany(() => Subscription, (subscription) => subscription.establishment)
+    @OneToMany(() => Subscription, (subscription) => subscription.plan)
     subscriptions!: Subscription[]
 }

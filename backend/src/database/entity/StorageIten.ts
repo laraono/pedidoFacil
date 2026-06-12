@@ -1,6 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, DeleteDateColumn, CreateDateColumn, JoinColumn, OneToOne } from "typeorm"
-import { ProductOrder } from "./ProductOrder"
-import { MovimentationType, ProductStatus } from "../../enum"
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, DeleteDateColumn, JoinColumn, OneToOne } from "typeorm"
 import { Product } from "./Product"
 import { StorageMovimentation } from "./StorageMovimentation"
 
@@ -36,8 +34,8 @@ export class StorageIten {
 
     @DeleteDateColumn({
         name: 'Data_Exclusao',
-        type: 'datetime',
-        nullable: false
+        type: 'timestamp',
+        nullable: true
     })
     deletedAt?: Date
 

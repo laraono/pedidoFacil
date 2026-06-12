@@ -192,7 +192,10 @@ Logs ficam em `logs/backend.log`, `logs/web.log` e `logs/mobile.log`.
 3. Realize o logout e acesse a landing page. Clique em um dos planos para iniciar o cadastro de um gerente e preencha o onboarding com dados do estabelecimento.
    > Para o onboarding, é possível usar dados gerados pelos geradores de [CNPJ](https://www.4devs.com.br/gerador_de_cnpj), [CPF](https://www.4devs.com.br/gerador_de_cpf) e [CEP](https://www.4devs.com.br/gerador_de_cep) para testes.
    
-   - Para a etapa 4, de assinatura, use os [cartões de teste oficiais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards) e faça o pagamento **com o e-mail da conta do consumidor de teste** obtida na etapa 2.1, seção do Mercado Pago, ou disponibilizada a seguir: test_user_5092580542816123576@testuser.com
+   - Para a etapa 4, de assinatura, use os [cartões de teste oficiais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards) e faça o pagamento **com o e-mail da conta do consumidor de teste** obtida na etapa 2.1, seção do Mercado Pago, ou disponibilizada a seguir: 
+   
+      ``test_user_5092580542816123576@testuser.com``
+     
       - Use os [cartões de teste oficiais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards) e faça o pagamento com as credenciais de comprador. Sugestão:
 
          ``5031 4332 1540 6351``

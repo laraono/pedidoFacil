@@ -19,7 +19,7 @@ export class SubscriptionService {
     async cancelSubscription(subscriptionId: number) {
         const subscription = await this.subscriptionRepository.getSubscription(subscriptionId)
         if(!subscription) throw new AppError('Assinatura não encontrada', 404)
-        if(subscription.mercadoPagoId) {
+        if(subscription.mercadoPagoId && subscription.status !== SubscriptionStatus.CANCELADA) {
             await this.mercadoPagoService.cancelSubscription(subscription.mercadoPagoId)
         }
         await this.subscriptionRepository.updateSubscriptionStatus(subscriptionId, SubscriptionStatus.CANCELADA)

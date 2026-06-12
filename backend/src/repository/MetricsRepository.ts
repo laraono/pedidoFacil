@@ -73,16 +73,17 @@ export class MetricsRepository {
 
     async getPaymentMethods(establishmentId: number, start: Date, end: Date) {
         return this.dataSource.query(`
-            SELECT p.Forma_Pagamento as method, SUM(pagped.Valor_Pago_Deste_Pedido) as total
+            SELECT mp.Nome as method, SUM(pagped.Valor_Pago_Deste_Pedido) as total
             FROM COMANDA c
             INNER JOIN PEDIDO pe ON pe.ID_Comanda = c.ID_Comanda
             INNER JOIN PAGAMENTO_PEDIDO pagped ON pagped.ID_Pedido = pe.ID_Pedido
             INNER JOIN PAGAMENTO p ON p.ID_Pagamento = pagped.ID_Pagamento
+            INNER JOIN METODO_PAGAMENTO mp ON mp.ID_MetodoPagamento = p.ID_MetodoPagamento
             WHERE c.ID_Estabelecimento = ?
               AND c.Status = 'Fechada'
               AND c.Data_Abertura BETWEEN ? AND ?
               AND p.Status = 'Aprovado'
-            GROUP BY p.Forma_Pagamento
+            GROUP BY mp.Nome
             ORDER BY total DESC
         `, [establishmentId, start, end]).catch((e: any) => {
             auditLog('metrics.query_error', { aba: 'financeira', error: e.message });

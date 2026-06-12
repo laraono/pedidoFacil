@@ -53,7 +53,7 @@ export class SubscriptionPayment {
     })
     paidAt?: Date
 
-    @CreateDateColumn({ name: 'Data_Criacao', type: 'datetime' })
+    @CreateDateColumn({ name: 'Data_Criacao', type: 'timestamp' })
     createdAt!: Date
 
     @ManyToOne(() => Subscription)

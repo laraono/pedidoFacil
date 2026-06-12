@@ -1,6 +1,7 @@
 import { DataSource, EntityManager } from 'typeorm';
 import { Payment, PaymentOrder, Order } from '../database/entity';
 import { PaymentStatus } from '../database/entity/Payment';
+import { PaymentMethod } from '../database/entity/PaymentMethod';
 import { AppError } from '../middleware/error/AppError';
 import { MercadoPagoService } from './MercadoPagoService';
 import { OrderRepository, PaymentRepository } from '../repository';
@@ -14,7 +15,6 @@ export class PaymentService {
     ) {}
 
     async processCheckoutPayments(
-        comandaId: number,
         orders: Order[],
         paymentsData: Array<{ type: string, amount: number, terminal?: string }>,
         change: number,
@@ -31,40 +31,43 @@ export class PaymentService {
 
         for (const paymentInput of paymentsData) {
 
-            const terminal = paymentInput.type !== 'Dinheiro'
-                ? (paymentInput.terminal ?? process.env.MERCADOPAGO_TERMINAL_ID ?? null)
-                : null;
-            const hasRealTerminal = terminal && terminal !== 'seu_terminal_id_aqui';
+            // const terminal = paymentInput.type !== 'Dinheiro'
+            //     ? (paymentInput.terminal ?? process.env.MERCADOPAGO_TERMINAL_ID ?? null)
+            //     : null;
+            // const hasRealTerminal = terminal && terminal !== 'seu_terminal_id_aqui';
+
+            const paymentMethod = await manager.findOne(PaymentMethod, { where: { name: paymentInput.type } });
+            if (!paymentMethod) throw new AppError(`Método de pagamento '${paymentInput.type}' não cadastrado.`, 400);
 
             const payment = manager.create(Payment, {
-                paymentType: paymentInput.type,
+                paymentMethod,
                 totalValue: paymentInput.amount,
                 serviceTax: 0,
-                change: paymentInput.type === 'Dinheiro' ? remainingChange : 0,
-                status: hasRealTerminal ? PaymentStatus.PENDING : PaymentStatus.PAID,
+                change: paymentMethod.name === 'Dinheiro' ? remainingChange : 0,
+                status: PaymentStatus.PAID,
                 establishment: { id: establishmentId },
                 user: { id: userId }
             });
 
             const savedPayment = await manager.save(Payment, payment);
 
-            if(hasRealTerminal) {
-                const answer = await this.processTerminalPayment({
-                    terminal: terminal!,
-                    amount: paymentInput.amount,
-                    orderId: savedPayment.id
-                });
+            // if(hasRealTerminal) {
+            //     const answer = await this.processTerminalPayment({
+            //         terminal: terminal!,
+            //         amount: paymentInput.amount,
+            //         orderId: savedPayment.id
+            //     });
 
-                await this.paymentRepository.saveMercadoPagoInfo(
-                    savedPayment.id,
-                    answer.id,
-                    answer.transactions.payments[0].id
-                );
-            }
+            //     await this.paymentRepository.saveMercadoPagoInfo(
+            //         savedPayment.id,
+            //         answer.id,
+            //         answer.transactions.payments[0].id
+            //     );
+            // }
 
             registeredPayments.push(savedPayment);
 
-            if (paymentInput.type === 'Dinheiro') remainingChange = 0; 
+            if (paymentMethod.name === 'Dinheiro') remainingChange = 0;
 
             let amountToDistribute = paymentInput.amount;
 
@@ -90,6 +93,7 @@ export class PaymentService {
         
         const query = paymentRepo.createQueryBuilder('payment')
             .leftJoinAndSelect('payment.user', 'user')
+            .leftJoinAndSelect('payment.paymentMethod', 'paymentMethod')
             .leftJoinAndSelect('payment.paymentOrders', 'paymentOrders')
             .where('payment.establishment.id = :establishmentId', { establishmentId });
 
@@ -111,7 +115,7 @@ export class PaymentService {
         const paymentRepo = this.dataSource.getRepository(Payment);
         const payment = await paymentRepo.findOne({
             where: { id: paymentId, establishment: { id: establishmentId } },
-            relations: ['user', 'paymentOrders', 'paymentOrders.order']
+            relations: ['user', 'paymentMethod', 'paymentOrders', 'paymentOrders.order']
         });
 
         if (!payment) {
@@ -129,7 +133,7 @@ export class PaymentService {
 
             if (!payment) throw new AppError('Pagamento não encontrado.', 404);
 
-            if(payment.mercadoPagoOrderId) await this.mercadoPagoService.refundOrder(payment.mercadoPagoOrderId);
+            // if(payment.mercadoPagoOrderId) await this.mercadoPagoService.refundOrder(payment.mercadoPagoOrderId);
 
             if (payment.status === PaymentStatus.REFUNDED) throw new AppError('Pagamento já está estornado.', 400);
 
@@ -139,11 +143,10 @@ export class PaymentService {
         });
     }
 
-    async processTerminalPayment({amount, orderId, terminal}: {amount: number, orderId: number, terminal: string}) {
-        const answer = await this.mercadoPagoService.createOrder({
-            amount, orderId, terminal 
-        });
-
-        return answer;
-    }
+    // async processTerminalPayment({amount, orderId, terminal}: {amount: number, orderId: number, terminal: string}) {
+    //     const answer = await this.mercadoPagoService.createOrder({
+    //         amount, orderId, terminal
+    //     });
+    //     return answer;
+    // }
 }

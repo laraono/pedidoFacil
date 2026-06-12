@@ -6,10 +6,10 @@ export const registerCompleteSchema = z.object({
   body: z.object({
     nome_usuario: safeString(2, 100),
     email: z.email('E-mail inválido').trim().toLowerCase(),
-    cpf: safeString(11, 14).optional().nullable(),
+    cpf: safeString(11, 14),
     senha: strongPasswordSchema,
     establishment: z.object({
-      name: safeString(2, 100),
+      name: safeString(3, 100),
       cnpj: safeString(14, 18),
     }),
     roles: z.array(

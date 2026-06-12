@@ -162,7 +162,7 @@ export class ComandaService {
         throw new AppError('Nenhum pedido válido selecionado para pagamento.', 400);
 
       const registeredPayment = await this.paymentService.processCheckoutPayments(
-          comandaId, ordersToPay, [paymentInput], 0, establishmentId, userId, manager
+          ordersToPay, [paymentInput], 0, establishmentId, userId, manager
       );
 
       paymentId = registeredPayment[0].id;

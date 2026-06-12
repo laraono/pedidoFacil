@@ -2,12 +2,12 @@ import express, { Request, Response } from 'express';
 import { orderController } from '../controller';
 import { catchAsync } from '../middleware';
 import { totemAccess } from '../middleware/checkTotemAccess';
-import { MercadoPagoService } from '../service/MercadoPagoService';
+// import { MercadoPagoService } from '../service/MercadoPagoService';
 import rateLimit from 'express-rate-limit';
 import { validateRequest } from '../middleware/validateRequest';
 import { createTotemOrderSchema } from '../dto/order/CreateOrderDTO';
 
-const mpService = new MercadoPagoService();
+// const mpService = new MercadoPagoService();
 export const totemRouter = express.Router();
 
 const totemLimiter = rateLimit({
@@ -16,6 +16,7 @@ const totemLimiter = rateLimit({
   message: { error: 'Muitos pedidos enviados. Aguarde um momento.' }
 });
 
+/*
 totemRouter.post(
   '/totem/payment',
   totemLimiter,
@@ -31,6 +32,7 @@ totemRouter.post(
     return res.json(result);
   })
 );
+*/
 
 totemRouter.post(
   '/totem/orders',

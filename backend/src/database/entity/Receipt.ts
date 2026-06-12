@@ -28,10 +28,10 @@ export class Receipt {
     @Column({ type: 'decimal', precision: 10, scale: 2, name: 'Valor_Total' })
     totalValue!: number;
 
-    @CreateDateColumn({ name: 'Data_Emissao' })
+    @CreateDateColumn({ name: 'Data_Emissao', type: 'timestamp' })
     createdAt!: Date;
 
-    @DeleteDateColumn({ name: 'Data_Exclusao', nullable: true })
+    @DeleteDateColumn({ name: 'Data_Exclusao', type: 'timestamp', nullable: true })
     deletedAt?: Date | null; 
 
     @OneToOne(() => Payment)

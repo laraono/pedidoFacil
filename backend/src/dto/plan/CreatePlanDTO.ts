@@ -40,7 +40,7 @@ export type UpdatePlanParams = {
     billingDay: number,
     billingDayProportional: boolean,
     price: number,
-    features?: string,
+    features?: string | null,
 }
 
 export type UpdatePlanMercadoPago = {
@@ -62,5 +62,5 @@ export type UpdatePlan = {
     name: string,
     price: number,
     frequency: string,
-    features?: string,
+    features?: string | null,
 }

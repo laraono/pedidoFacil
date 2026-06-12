@@ -74,9 +74,9 @@ const establishmentService = new EstablishmentService(
   mercadoPagoService,
 );
 
-const profileService = new ProfileService(userRepository, establishmentService, refreshTokenRepository);
+const profileService = new ProfileService(userRepository, refreshTokenRepository);
 
-const employeeService = new EmployeeService(userRepository, roleRepository);
+const employeeService = new EmployeeService(userRepository, roleRepository, refreshTokenRepository);
 
 const menuService = new MenuService(categoryRepository, productRepository);
 

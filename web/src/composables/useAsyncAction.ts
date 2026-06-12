@@ -13,7 +13,7 @@ export function useAsyncAction() {
     try {
       return await fn();
     } catch (e: any) {
-      showToast(errorMsg ?? e?.message ?? "Erro inesperado.", "error");
+      showToast(e?.message ?? errorMsg ?? "Erro inesperado.", "error");
     } finally {
       loading.value = false;
     }

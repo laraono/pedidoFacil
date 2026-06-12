@@ -1,11 +1,13 @@
-import { 
-    Entity, 
-    PrimaryGeneratedColumn, 
-    Column, 
-    OneToOne, 
-    JoinColumn, 
-    OneToMany, 
-    DeleteDateColumn 
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    OneToOne,
+    JoinColumn,
+    OneToMany,
+    ManyToMany,
+    JoinTable,
+    DeleteDateColumn
 } from "typeorm"
 import { User } from "./User"
 import { Role } from "./Role"
@@ -15,7 +17,8 @@ import { Coupon } from "./Coupon"
 import { Comanda } from "./Comanda"
 import { Payment } from "./Payment"
 import { Configuration } from "./Configuration"
-import { Register } from "./Register" 
+import { Register } from "./Register"
+import { PaymentMethod } from "./PaymentMethod"
 
 @Entity({ name: 'ESTABELECIMENTO' })
 export class Establishment {
@@ -58,12 +61,13 @@ export class Establishment {
     })
     address?: string
 
-    @Column({
-        type: 'json',
-        name: 'Metodos_Pagamento',
-        nullable: true
+    @ManyToMany(() => PaymentMethod)
+    @JoinTable({
+        name: 'ESTABELECIMENTO_METODO_PAGAMENTO',
+        joinColumn: { name: 'ID_Estabelecimento', referencedColumnName: 'id' },
+        inverseJoinColumn: { name: 'ID_MetodoPagamento', referencedColumnName: 'id' }
     })
-    paymentMethods?: string
+    paymentMethods!: PaymentMethod[]
 
     @Column({
         type: 'varchar',
@@ -75,11 +79,12 @@ export class Establishment {
     selfServiceCode?: string
 
     @Column({
-        type: 'json',
-        name: 'Formas_Atendimento_Habilitadas',
-        nullable: true
+        type: 'boolean',
+        name: 'Tem_Autoatendimento',
+        nullable: false,
+        default: false
     })
-    serviceTypes?: string
+    temAutoatendimento!: boolean
 
     @Column({
         type: 'varchar',
@@ -88,22 +93,9 @@ export class Establishment {
     })
     mercadoPagoId?: string
 
-    @Column({
-        type: 'boolean',
-        name: 'Pix_Estatico_Ativo',
-        default: false
-    })
-    pixStaticEnabled?: boolean
-
-    @Column({
-        type: 'text',
-        name: 'Pix_QR_Code_URL',
-        nullable: true,
-    })
-    pixQrCodeUrl?: string
-
     @DeleteDateColumn({
         name: 'Data_Exclusao',
+        type: 'timestamp',
         nullable: true
     })
     deletedAt?: Date

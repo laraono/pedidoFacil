@@ -1,6 +1,4 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, PrimaryColumn, JoinColumn, CreateDateColumn, DeleteDateColumn, ManyToOne } from "typeorm"
-import { ProductVariation } from "./ProductVariation"
-import { Product } from "./Product"
 import { Order } from "./Order"
 import { Payment } from "./Payment"
 

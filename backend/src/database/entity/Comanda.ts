@@ -56,18 +56,11 @@ export class Comanda {
     discountType?: DiscountType
 
     @CreateDateColumn({ 
-        type: "datetime",
+        type: "timestamp",
         name: 'Data_Abertura' ,
         default: () => "CURRENT_TIMESTAMP(6)"
     })
     created_at!: Date;
-
-    @DeleteDateColumn({
-        name: 'deleted_at',
-        type: 'datetime',
-        nullable: true
-    })
-    deletedAt?: Date
 
     @OneToMany(() => Order, (pedido) => pedido.comanda)
     pedidos!: Order[]

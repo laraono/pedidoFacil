@@ -21,14 +21,7 @@ export const totemAccess = async (req: Request, res: Response, next: NextFunctio
             return res.status(401).json({ error: "Código do totem inválido." });
         }
 
-        let serviceTypes: string[] = [];
-        try {
-            serviceTypes = establishment.serviceTypes
-                ? (typeof establishment.serviceTypes === 'string' ? JSON.parse(establishment.serviceTypes) : establishment.serviceTypes)
-                : [];
-        } catch { serviceTypes = []; }
-
-        if (!serviceTypes.includes('Autoatendimento')) {
+        if (!establishment.temAutoatendimento || !establishment.selfServiceCode) {
             return res.status(403).json({ error: "Autoatendimento desativado neste estabelecimento." });
         }
 

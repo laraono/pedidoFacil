@@ -32,6 +32,10 @@ watch(nome, () => {
 const errors = computed(() => {
   const e: Record<string, string> = { ...apiErrors.value }
 
+  if (nome.value && nome.value.length > 100)
+    e.nome ??= 'Nome muito longo (máx. 100 caracteres).'
+  if (nome.value && !/^[a-zA-ZÀ-ÿ0-9\s\-&'.,]+$/.test(nome.value))
+    e.nome ??= 'O nome contém caracteres não permitidos.'
   if (nome.value && nome.value.trim().length < 3)
     e.nome ??= 'Informe o nome do estabelecimento (mín. 3 caracteres).'
   if (cnpj.value && !isValidCNPJ(cnpj.value))
@@ -81,7 +85,7 @@ async function handleNext() {
       />
 
       <BaseInput
-        v-model="cnpj"
+        :model-value="cnpj"
         label="CNPJ"
         :icon="Building2"
         placeholder="00.000.000/0000-00"
@@ -89,6 +93,7 @@ async function handleNext() {
         :disabled="isLoading"
         :error="errors.cnpj"
         :dark="false"
+        @input="(e: Event) => { const masked = maskCNPJ((e.target as HTMLInputElement).value); cnpj = masked; (e.target as HTMLInputElement).value = masked; if (apiErrors.cnpj) delete apiErrors.cnpj; }"
       />
 
       <BaseButton

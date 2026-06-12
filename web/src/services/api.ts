@@ -81,7 +81,9 @@ export async function request(path: string, options: CustomRequestInit = {}) {
   }
 
   if (!res.ok) {
-    throw new Error(data.message || data.error || `Erro ${res.status}`);
+    const err: any = new Error(data.message || data.error || `Erro ${res.status}`);
+    err.data = data;
+    throw err;
   }
 
   return data;

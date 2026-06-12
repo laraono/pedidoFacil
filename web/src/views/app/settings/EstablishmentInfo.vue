@@ -55,7 +55,10 @@ const isDirty = computed(() =>
 );
 
 const validationRules = {
-  name: [{ validator: (v) => !!v?.trim(), message: "O nome fantasia é obrigatório." }],
+  name: [
+    { validator: (v) => !!v?.trim(), message: "O nome fantasia é obrigatório." },
+    { validator: (v) => !v?.trim() || v.trim().length >= 3, message: "O nome deve ter pelo menos 3 caracteres." },
+  ],
   cnpj: [{ validator: (v) => !v?.trim() || v.replace(/\D/g, "").length === 14, message: "CNPJ incompleto." }],
   phone: [{ validator: (v) => !v?.trim() || v.replace(/\D/g, "").length >= 10, message: "Telefone incompleto." }],
 };
@@ -70,7 +73,7 @@ onMounted(async () => {
     logoPreview.value = getImageUrl(data.configurations?.logo);
 
     if (data.paymentMethods?.length > 0) {
-      paymentMethods.value = [...data.paymentMethods];
+      paymentMethods.value = data.paymentMethods.map((pm) => typeof pm === "string" ? pm : pm.name);
       if (!paymentMethods.value.includes("Dinheiro")) paymentMethods.value.push("Dinheiro");
     } else {
       paymentMethods.value = [...ALL_PAYMENT_METHODS];
@@ -117,22 +120,28 @@ const saveSettings = async () => {
       formData.append("selfServiceEnabled", selfService.value);
       if (logoFile.value) formData.append("logo", logoFile.value);
 
-      await establishmentApi.updateProfile(formData);
+      const updated = await establishmentApi.updateProfile(formData);
 
       originalForm.value = { ...form.value };
       originalLogo.value = logoPreview.value;
       logoFile.value = null;
       originalPaymentMethods.value = [...paymentMethods.value];
       originalSelfService.value = selfService.value;
+      if (updated?.selfServiceCode) selfServiceCode.value = updated.selfServiceCode;
 
       showToast("Dados atualizados com sucesso!", "success");
     } catch (error) {
       const data = error.response?.data || error.data;
       const zodErrors = data?.errors;
-      const msg = zodErrors?.length > 0
-        ? zodErrors[0].mensagem
-        : data?.message || error.message || "Erro ao salvar os dados.";
-      showToast(msg, "error");
+      if (zodErrors?.length > 0) {
+        zodErrors.forEach((err) => {
+          const field = err.campo?.replace("body.", "");
+          if (field && field in errors.value) errors.value[field] = err.mensagem;
+        });
+        showToast(zodErrors[0].mensagem, "error");
+      } else {
+        showToast(data?.message || error.message || "Erro ao salvar os dados.", "error");
+      }
     }
   });
 };
@@ -176,7 +185,7 @@ const saveSettings = async () => {
                 <UploadCloud :size="40" class="mb-2" />
                 <span class="text-xs font-bold uppercase tracking-widest">Subir Logo</span>
               </div>
-              <input type="file" @change="handleLogoUpload" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" />
+              <input type="file" @change="handleLogoUpload" accept=".jpg,.jpeg,.png,.webp,.gif" class="absolute inset-0 opacity-0 cursor-pointer" />
             </div>
           </div>
           <p class="text-[10px] text-[#757575] uppercase font-black tracking-widest">Clique para alterar</p>

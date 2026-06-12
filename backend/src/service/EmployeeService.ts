@@ -1,5 +1,6 @@
 import { UserRepository } from '../repository/UserRepository';
 import { RoleRepository } from '../repository/RoleRepository';
+import { RefreshTokenRepository } from '../repository/RefreshTokenRepository';
 import { AppError } from '../middleware/error/AppError';
 import { UserStatus } from '../enum';
 import * as bcrypt from 'bcrypt';
@@ -10,6 +11,7 @@ export class EmployeeService {
   constructor(
     private userRepository: UserRepository,
     private roleRepository: RoleRepository,
+    private refreshTokenRepository: RefreshTokenRepository,
   ) {}
 
   async listEmployees(establishmentId: number, status: UserStatus) {
@@ -82,6 +84,7 @@ export class EmployeeService {
     const user = await this.userRepository.findEmployeeByIdAndEstablishment(userId, establishmentId);
     if (!user) throw new AppError('Funcionário não encontrado.', 404);
 
+    await this.refreshTokenRepository.revokeAllByUserId(userId);
     await this.userRepository.softDelete(userId);
     return { message: 'Funcionário excluído com sucesso.' };
   }

@@ -23,9 +23,10 @@ export async function uploadToS3({ bucket, key, body, contentType }: UploadFileP
 
     try {
         const result = await s3Client.send(command);
+        const endpoint = process.env.S3_ENDPOINT ?? 'http://localhost:4566';
         return {
             ...result,
-            Location: `http://localhost:4566/${bucket}/${key}`, 
+            Location: `${endpoint}/${bucket}/${key}`,
         };
     } catch (error) {
         console.error('S3 upload error:', error);

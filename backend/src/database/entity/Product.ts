@@ -60,7 +60,7 @@ export class Product {
 
     @DeleteDateColumn({
         name: 'Data_Exclusao',
-        type: 'datetime',
+        type: 'timestamp',
         nullable: true
     })
     deletedAt?: Date
