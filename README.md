@@ -73,7 +73,7 @@ Preencha as credenciais do banco de dados em `backend/.env`.
 
 O `JWT_SECRET` é gerado automaticamente pelo script de instalação - não é necessário preencher manualmente.
 
-As demais variáveis (`MERCADOPAGO_*`, `LOCALSTACK_TOKEN`, `MAIL_*`) podem ser obtidas pelas instruções da 2.1, ou, opcionalmente, devido a complexidade das configurações, o `.env.example` traz credenciais de teste criadas para este projeto, que podem ser usadas como alternativa para os tutoriais de configuração abaixo.
+As demais variáveis (`MERCADOPAGO_*`, `LOCALSTACK_TOKEN`, `MAIL_*`) podem ser obtidas pelas instruções da 2.1, ou, opcionalmente, devido a complexidade das configurações, o `.env.example`, no repositório /web, /mobile e /backend traz credenciais de teste criadas para este projeto, que podem ser usadas como alternativa para os tutoriais de configuração abaixo.
 
 Para utilizá-los, execute:
 
