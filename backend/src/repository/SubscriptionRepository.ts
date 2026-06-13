@@ -30,9 +30,6 @@ export class SubscriptionRepository extends Repository<Subscription>{
             relations: {
                 establishment: {
                     manager: true,
-                    roles: {
-                        users: true
-                    }
                 },
                 plan: true,
             },
@@ -52,11 +49,6 @@ export class SubscriptionRepository extends Repository<Subscription>{
                         id: true,
                         name: true,
                     },
-                    roles: {
-                        users: {
-                            id: true,
-                        }
-                    }
                 }
             },
             where: {
@@ -104,7 +96,7 @@ export class SubscriptionRepository extends Repository<Subscription>{
             } else {
                 expirationDate.setMonth(expirationDate.getMonth() + 1);
             }
-            await this.update(subscriptionId, { status, lastPayment: new Date(), expirationDate });
+            await this.update(subscriptionId, { status, expirationDate });
         } else {
             await this.update(subscriptionId, { status });
         }

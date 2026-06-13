@@ -40,8 +40,10 @@
           v-if="paymentMode === 'parcial'"
           type="checkbox"
           :checked="isSelected"
+          :disabled="order.status === 'pending'"
           @change="emit('toggle-select', order.id)"
-          class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+          class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          :class="order.status === 'pending' ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'"
         />
         <span
           class="font-black text-[#212121] text-sm uppercase tracking-widest"

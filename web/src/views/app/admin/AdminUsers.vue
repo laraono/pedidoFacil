@@ -1,10 +1,10 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useToast } from '@/composables/useToast';
 import { useAsyncAction } from '@/composables/useAsyncAction';
 import { useConfirm } from '@/composables/useConfirm';
 import { ShieldAlert, Plus, Trash2, Pencil, Eye, EyeOff, KeyRound, Mail } from 'lucide-vue-next';
-import { adminUserApi } from '@/services/adminApi';
+import { adminUserApi, adminMetricsApi } from '@/services/adminApi';
 import { validatePasswordStrength } from '@/utils/password';
 import { PageHeader, BaseButton, BaseInput, FormModal, ConfirmModal, DataTable, EmptyState } from '@/components/ui';
 
@@ -14,6 +14,7 @@ const { loading: saving, run } = useAsyncAction();
 const { confirmState, showConfirm, closeConfirm } = useConfirm();
 
 const users = ref([]);
+const masterId = ref(null);
 const isModalOpen = ref(false);
 const isEditing = ref(false);
 const showPassword = ref(false);
@@ -26,14 +27,18 @@ const columns = [
   { key: 'email', label: 'E-mail' },
 ];
 
-const tableActions = [
+const tableActions = computed(() => [
   { icon: Pencil, tooltip: 'Editar', handler: (u) => openEdit(u), class: 'text-[#757575] hover:text-[#212121] hover:bg-gray-100' },
-  { icon: Trash2, tooltip: 'Remover', handler: (u) => askDelete(u), class: 'text-[#757575] hover:text-red-500 hover:bg-red-50' },
-];
+  { icon: Trash2, tooltip: 'Remover', handler: (u) => askDelete(u), class: 'text-[#757575] hover:text-red-500 hover:bg-red-50', condition: (u) => !!masterId.value && u.id !== masterId.value },
+]);
 
 async function load() {
-  const data = await runLoad(() => adminUserApi.list(), 'Erro ao carregar usuários admin.');
+  const [data, masterData] = await Promise.all([
+    runLoad(() => adminUserApi.list(), 'Erro ao carregar usuários admin.'),
+    adminMetricsApi.getMasterId().catch(() => null),
+  ]);
   if (data) users.value = data;
+  if (masterData) masterId.value = masterData.masterId;
 }
 
 onMounted(load);

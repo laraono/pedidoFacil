@@ -151,7 +151,9 @@ echo ""
 ok "Banco de dados pronto"
 
 info "Criando as tabelas do sistema..."
-if ! npm run migration:run --prefix backend; then
+DB_USER_INIT=$(grep "^DB_USER=" backend/.env | cut -d= -f2)
+DB_NAME_INIT=$(grep "^DB_NAME=" backend/.env | cut -d= -f2)
+if ! docker exec -i pedido_facil_mysql mysql -u"$DB_USER_INIT" -p"$DB_PASS" "$DB_NAME_INIT" < backend/init_db.sql; then
   erro "Falha ao criar as tabelas. Verifique os logs acima."
   exit 1
 fi

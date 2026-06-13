@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -o pipefail
 
 # ── Cores ──────────────────────────────────────────────────────────────────
 GREEN='\033[0;32m'
@@ -93,18 +93,30 @@ BACKEND_PORT="${BACKEND_PORT:-3000}"
 
 mkdir -p logs
 
+BACKEND_PID=""
+WEB_PID=""
+
+cleanup() {
+  echo ""
+  info "Encerrando..."
+  [ -n "$BACKEND_PID" ] && kill -- -"$BACKEND_PID" 2>/dev/null || true
+  [ -n "$WEB_PID" ]     && kill -- -"$WEB_PID"     2>/dev/null || true
+  wait 2>/dev/null || true
+  docker compose -f backend/docker-compose.yml down
+  echo ""
+  ok "Tudo encerrado. Até logo!"
+  echo ""
+}
+trap cleanup EXIT
+
 info "Iniciando servidor backend..."
-npm run dev --prefix backend > logs/backend.log 2>&1 &
+setsid npm run dev --prefix backend > logs/backend.log 2>&1 &
 BACKEND_PID=$!
 
 info "Iniciando site..."
-npm run dev --prefix web > logs/web.log 2>&1 &
+setsid npm run dev --prefix web > logs/web.log 2>&1 &
 WEB_PID=$!
 
-# Para tudo quando a pessoa pressionar Ctrl+C
-trap 'echo ""; info "Encerrando..."; kill $BACKEND_PID $WEB_PID 2>/dev/null; docker compose -f backend/docker-compose.yml down; echo ""; ok "Tudo encerrado. Até logo!"; echo ""; exit 0' INT TERM
-
-# Aguarda os serviços iniciarem
 info "Aguardando serviços iniciarem..."
 sleep 4
 
@@ -115,17 +127,17 @@ echo -e "  ${GREEN}${BOLD}Sistema no ar! ✓${RESET}"
 echo ""
 echo -e "  Acesse no navegador:"
 echo ""
-echo -e "    ${BOLD}${YELLOW}http://localhost:5173${RESET}  ${DIM}← site principal${RESET}"
+echo -e "    ${BOLD}${YELLOW}http://localhost:5173${RESET}       ${DIM}← site principal${RESET}"
+echo -e "    ${BOLD}${BLUE}http://localhost:${BACKEND_PORT}${RESET}         ${DIM}← backend (API)${RESET}"
 echo ""
-echo -e "  ${DIM}O QR code do Expo aparecerá abaixo em alguns segundos.${RESET}"
-echo -e "  ${DIM}Escaneie com o Expo Go para abrir no celular.${RESET}"
-echo ""
-echo -e "  ${DIM}Logs: logs/backend.log · logs/web.log · logs/mobile.log${RESET}"
+echo -e "  ${DIM}Logs: logs/backend.log · logs/web.log${RESET}"
 echo ""
 echo -e "  ${DIM}Pressione Ctrl+C para encerrar tudo.${RESET}"
 echo ""
 echo -e "  ${DIM}───────────────────────────────────────────────────────${RESET}"
 echo ""
-
 info "Iniciando mobile (Expo)..."
+echo ""
+
+# Expo roda em foreground para exibir o QR code no terminal
 npm run start --prefix mobile

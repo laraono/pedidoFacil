@@ -50,12 +50,41 @@ export class AdminSubscriptionMetricsRepository {
         `);
     }
 
-    async getNewPerMonth(intervalMonths: number) {
+    async getNewPerMonth(intervalMonths: number | null) {
+        if (intervalMonths === null) {
+            return this.dataSource.query(
+                `SELECT DATE_FORMAT(Data_Inicio, '%Y-%m') as mes, COUNT(*) as novos
+                 FROM ASSINATURA
+                 GROUP BY DATE_FORMAT(Data_Inicio, '%Y-%m')
+                 ORDER BY mes ASC`,
+            );
+        }
         return this.dataSource.query(
             `SELECT DATE_FORMAT(Data_Inicio, '%Y-%m') as mes, COUNT(*) as novos
              FROM ASSINATURA
              WHERE Data_Inicio >= DATE_SUB(CURDATE(), INTERVAL ? MONTH)
              GROUP BY DATE_FORMAT(Data_Inicio, '%Y-%m')
+             ORDER BY mes ASC`,
+            [intervalMonths],
+        );
+    }
+
+    async getRevenuePerMonth(intervalMonths: number | null) {
+        if (intervalMonths === null) {
+            return this.dataSource.query(
+                `SELECT DATE_FORMAT(p.Data_Pagamento, '%Y-%m') as mes, SUM(p.Valor) as receita
+                 FROM HISTORICO_PAGAMENTO_ASSINATURA p
+                 WHERE p.Status = 'Aprovado'
+                 GROUP BY DATE_FORMAT(p.Data_Pagamento, '%Y-%m')
+                 ORDER BY mes ASC`,
+            );
+        }
+        return this.dataSource.query(
+            `SELECT DATE_FORMAT(p.Data_Pagamento, '%Y-%m') as mes, SUM(p.Valor) as receita
+             FROM HISTORICO_PAGAMENTO_ASSINATURA p
+             WHERE p.Status = 'Aprovado'
+               AND p.Data_Pagamento >= DATE_SUB(CURDATE(), INTERVAL ? MONTH)
+             GROUP BY DATE_FORMAT(p.Data_Pagamento, '%Y-%m')
              ORDER BY mes ASC`,
             [intervalMonths],
         );

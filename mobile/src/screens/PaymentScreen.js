@@ -50,7 +50,7 @@ export default function PaymentScreen() {
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const [isSimulatingPayment, setIsSimulatingPayment] = useState(false);
+  const [simulationPhase, setSimulationPhase] = useState(null); // null | 'processing' | 'approved' | 'cash'
 
   const loadEstablishmentData = useCallback(async () => {
     try {
@@ -105,24 +105,32 @@ export default function PaymentScreen() {
       const orderData = await submitOrder({ cartItems, customerName });
 
       if (selectedMethod === "Dinheiro" || selectedMethod === "MISTO") {
-        clearCart();
-        navigation.navigate("OrderConfirmed", {
-          ticket: orderData.ticket,
-          label: orderData.label,
-          customerName: customerName,
-        });
-      } else {
-        setIsSimulatingPayment(true);
-
+        setSimulationPhase("cash");
         setTimeout(() => {
-          setIsSimulatingPayment(false);
+          setSimulationPhase(null);
           clearCart();
           navigation.navigate("OrderConfirmed", {
             ticket: orderData.ticket,
             label: orderData.label,
             customerName: customerName,
+            isPaid: false,
           });
-        }, 3000);
+        }, 2000);
+      } else {
+        setSimulationPhase("processing");
+        setTimeout(() => {
+          setSimulationPhase("approved");
+          setTimeout(() => {
+            setSimulationPhase(null);
+            clearCart();
+            navigation.navigate("OrderConfirmed", {
+              ticket: orderData.ticket,
+              label: orderData.label,
+              customerName: customerName,
+              isPaid: true,
+            });
+          }, 1500);
+        }, 2000);
       }
     } catch (error) {
       console.error("[PaymentScreen] Erro:", error);
@@ -212,7 +220,7 @@ export default function PaymentScreen() {
           disabled={!selectedMethod || isSubmitting}
           onPress={handleConfirm}
         >
-          {isSubmitting && !isSimulatingPayment ? (
+          {isSubmitting && !simulationPhase ? (
             <ActivityIndicator size="small" color={theme.textoBotoes} />
           ) : (
             <>
@@ -229,12 +237,27 @@ export default function PaymentScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* 🌟 OVERLAY DE SIMULAÇÃO DE PAGAMENTO */}
-      {isSimulatingPayment && (
+      {simulationPhase && (
         <View style={styles.simulationOverlay}>
-          <ActivityIndicator size="large" color={theme.corBotoes} />
-          <Text style={styles.simulationTitle}>Processando pagamento...</Text>
-          <Text style={styles.simulationSubtitle}>Aguardando confirmação da máquina</Text>
+          {simulationPhase === "processing" ? (
+            <ActivityIndicator size="large" color={theme.corBotoes} />
+          ) : (
+            <Feather name="check-circle" size={64} color="#4CAF50" />
+          )}
+          <Text style={styles.simulationTitle}>
+            {simulationPhase === "approved"
+              ? "Pagamento aprovado!"
+              : simulationPhase === "cash"
+              ? "Ficha gerada com sucesso!"
+              : "Processando pagamento..."}
+          </Text>
+          <Text style={styles.simulationSubtitle}>
+            {simulationPhase === "approved"
+              ? "Aguarde ser chamado"
+              : simulationPhase === "cash"
+              ? "Dirija-se ao caixa para efetuar o pagamento"
+              : "Aguardando confirmação da máquina"}
+          </Text>
         </View>
       )}
 

@@ -17,7 +17,8 @@ import WelcomeScreen from "./src/screens/WelcomeScreen";
 import ConfigScreen from "./src/screens/ConfigScreen";
 import OrderConfirmedScreen from "./src/screens/OrderConfirmedScreen";
 
-import { loadAppConfig } from "./src/services/apiConfig"; 
+import { loadAppConfig } from "./src/services/apiConfig";
+import { connectMobileSocket } from "./src/services/socketService";
 
 const Stack = createNativeStackNavigator();
 
@@ -28,16 +29,26 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
-        
         const configured = await loadAppConfig();
         setIsConfigured(configured);
       } catch (error) {
         console.error("Erro na inicialização:", error);
       } finally {
-        setIsLoading(false); 
+        setIsLoading(false);
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (!isConfigured) return;
+    const socket = connectMobileSocket();
+    socket.on("self_service_disabled", () => {
+      setIsConfigured(false);
+    });
+    return () => {
+      socket.off("self_service_disabled");
+    };
+  }, [isConfigured]);
 
   if (isLoading) {
     return (

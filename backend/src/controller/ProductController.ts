@@ -64,7 +64,8 @@ export class ProductController {
       return res.status(200).json(result);
     }
 
-    const result = await this.productService.listProducts(estabelecimentoId, page, limit);
+    const status = req.query.status as string | undefined;
+    const result = await this.productService.listProducts(estabelecimentoId, page, limit, status);
     return res.status(200).json(result);
   }
 

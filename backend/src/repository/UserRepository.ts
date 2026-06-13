@@ -1,4 +1,4 @@
-import { DataSource, Repository } from "typeorm";
+import { DataSource, Not, Repository } from "typeorm";
 import { User } from "../database";
 import { UserStatus } from "../enum";
 
@@ -8,21 +8,9 @@ export class UserRepository extends Repository<User> {
         super(User, dataSource.createEntityManager());
     }
 
-    async getUser(userId: number) {
-        return await this.findOne({ where: { id: userId } });
-    }
-
-    async findByIdWithRelations(id: number) {
-        return await this.findOne({ where: { id }, relations: { role: { establishment: true } } });
-    }
-
-    async updateRoleId(userId: number, roleId: number) {
-        await this.update(userId, { role: { id: roleId } as any });
-    }
-
     async findEmployeesByEstablishment(establishmentId: number, status: UserStatus) {
         return await this.find({
-            where: { role: { establishment: { id: establishmentId } } as any, status },
+            where: { role: { establishment: { id: establishmentId }, name: Not('Gerente') } as any, status },
             relations: ['role'],
             select: ['id', 'name', 'email', 'status'],
             order: status === UserStatus.ATIVO ? { name: 'ASC' } : { id: 'DESC' },

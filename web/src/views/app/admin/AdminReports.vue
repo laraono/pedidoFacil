@@ -80,17 +80,36 @@ const avgUsers = computed(() => {
   return Math.round(active.reduce((a, s) => a + s.users, 0) / active.length);
 });
 
+const mesLabel = (mesKey) => {
+  const [year, month] = mesKey.split('-');
+  const s = new Date(Number(year), Number(month) - 1).toLocaleDateString('pt-BR', { month: 'short' });
+  return s.charAt(0).toUpperCase() + s.slice(1, 3);
+};
+
 const monthlyRevenue = computed(() => {
-  if (metrics.value?.novosPorMes?.length) {
-    return metrics.value.novosPorMes.map(row => {
-      const [year, month] = row.mes.split('-');
-      const label = new Date(Number(year), Number(month) - 1).toLocaleDateString('pt-BR', { month: 'short' });
-      return { month: label.charAt(0).toUpperCase() + label.slice(1, 3), value: row.novos };
+  const rows = metrics.value?.receitaPorMes ?? [];
+  const revenueMap = Object.fromEntries(rows.map(r => [r.mes, r.receita]));
+
+  if (dateFilter.value === 'all') {
+    if (!rows.length) return [];
+    const [firstYear, firstMonth] = rows[0].mes.split('-').map(Number);
+    const now = new Date();
+    const totalMonths =
+      (now.getFullYear() - firstYear) * 12 + (now.getMonth() + 1 - firstMonth) + 1;
+    return Array.from({ length: totalMonths }, (_, i) => {
+      const d = new Date(firstYear, firstMonth - 1 + i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      return { month: mesLabel(key), value: revenueMap[key] ?? 0 };
     });
   }
-  const months = ['Out', 'Nov', 'Dez', 'Jan', 'Fev', 'Mar'];
-  const base = [0, 0, 0, 0, 0, totalMRR.value];
-  return months.map((m, i) => ({ month: m, value: base[i] }));
+
+  const intervalMonths = dateFilter.value === '3m' ? 3 : dateFilter.value === '6m' ? 6 : 12;
+  const now = new Date();
+  return Array.from({ length: intervalMonths }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (intervalMonths - 1 - i), 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    return { month: mesLabel(key), value: revenueMap[key] ?? 0 };
+  });
 });
 
 const maxRevenue = computed(() => Math.max(...monthlyRevenue.value.map(d => d.value), 1));
@@ -118,6 +137,20 @@ const establishmentData = computed(() =>
 
 const maxUsers = computed(() => Math.max(...establishmentData.value.map(e => e.users), 1));
 
+const dateRangeLabel = computed(() => {
+  const fmt = (d) => d.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+  const end = new Date();
+  if (dateFilter.value === 'all') {
+    const rows = metrics.value?.receitaPorMes ?? [];
+    if (!rows.length) return 'Todo o histórico';
+    const [year, month] = rows[0].mes.split('-');
+    return `${fmt(new Date(Number(year), Number(month) - 1))} – ${fmt(end)}`;
+  }
+  const months = dateFilter.value === '3m' ? 3 : dateFilter.value === '6m' ? 6 : 12;
+  const start = new Date(end.getFullYear(), end.getMonth() - months + 1, 1);
+  return `${fmt(start)} – ${fmt(end)}`;
+});
+
 const planLabel = (sub) => {
   const freq = String(sub.planFrequency ?? sub.plan ?? '').toLowerCase();
   if (freq.includes('anual')) return 'anual';
@@ -141,13 +174,13 @@ const handleExport = () => window.print();
         <Loader2 v-if="isLoading" :size="18" class="text-accent animate-spin" />
         <div class="flex bg-white border border-[#E0E0E0] rounded overflow-hidden">
           <button
-            v-for="opt in [{ v: '3m', l: '3M' }, { v: '6m', l: '6M' }, { v: '12m', l: '12M' }]"
-            :key="opt.v"
-            @click="dateFilter = opt.v"
-            :class="dateFilter === opt.v ? 'bg-primary text-white' : 'text-[#757575] hover:text-[#212121]'"
+            v-for="opt in ['3m', '6m', '12m', 'all']"
+            :key="opt"
+            @click="dateFilter = opt"
+            :class="dateFilter === opt ? 'bg-primary text-white' : 'text-[#757575] hover:text-[#212121]'"
             class="px-4 py-2 text-xs font-black uppercase transition-all"
           >
-            {{ opt.l }}
+            {{ opt === 'all' ? 'Tudo' : opt.toUpperCase() }}
           </button>
         </div>
         <button
@@ -285,6 +318,7 @@ const handleExport = () => window.print();
     <div style="border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
       <div>
         <p style="font-size: 18px; font-weight: 900; margin: 0;">Relatório Admin — Assinaturas</p>
+        <p style="font-size: 10px; color: #6b7280; font-weight: 700; margin: 2px 0 0;">Período: {{ dateRangeLabel }}</p>
         <p style="font-size: 10px; color: #6b7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin: 3px 0 0;">PedidoFácil Platform</p>
       </div>
       <p style="font-size: 9px; color: #9ca3af; font-weight: 600;">

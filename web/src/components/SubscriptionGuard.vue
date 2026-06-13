@@ -14,7 +14,7 @@
 </script>
 
 <template>
-  <div class="relative">
+  <div class="relative flex-1 flex flex-col min-h-[calc(100vh-5rem)]">
     <slot />
 
     <Transition name="guard-fade">

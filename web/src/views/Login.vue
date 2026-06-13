@@ -35,7 +35,7 @@ const handleLogin = async () => {
     router.push('/app/dashboard');
 
   } catch (err) {
-    serverError.value = 'Falha no login';
+    serverError.value = (err instanceof Error ? err.message : null) || 'Falha no login';
   } finally {
     isLoading.value = false;
   }

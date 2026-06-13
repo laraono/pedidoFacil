@@ -151,7 +151,9 @@
             <div class="flex items-center gap-5">
               <button
                 @click="emit('update:quantity', Math.max(1, quantity - 1))"
-                class="w-12 h-12 rounded flex items-center justify-center transition-all active:scale-95 shadow-sm"
+                :disabled="quantity <= 1"
+                class="w-12 h-12 rounded flex items-center justify-center transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                :class="quantity > 1 ? 'active:scale-95' : ''"
                 :style="{
                   backgroundColor: theme.adaptiveButtonBg,
                   color: theme.textColor,

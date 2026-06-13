@@ -87,7 +87,7 @@ async function save() {
     price: parseFloat(String(form.value.price).replace(',', '.')),
     frequency: form.value.frequency,
     billingDay: 1,
-    features: form.value.features.split('\n').map(f => f.trim()).filter(Boolean).join('\n') || undefined,
+    features: form.value.features.split('\n').map(f => f.trim()).filter(Boolean).join('\n') || null,
   };
   await run(async () => {
     if (isEditing.value) {
@@ -134,7 +134,7 @@ function onPriceInput(e: Event) {
       category-label="Painel Admin"
     >
       <template #actions>
-        <BaseButton variant="primary" :icon="Plus" @click="openCreate" :disabled="plans.length >= 2">
+        <BaseButton variant="primary" :icon="Plus" @click="openCreate">
           Novo Plano
         </BaseButton>
       </template>
@@ -181,7 +181,7 @@ function onPriceInput(e: Event) {
             <li v-for="(feature, i) in plan.features.split('\n').filter(Boolean)" :key="i"
               class="flex items-start gap-2 text-sm text-[#757575]">
               <CheckCircle2 :size="14" class="text-primary mt-0.5 shrink-0" />
-              <span>{{ feature }}</span>
+              <span class="break-words min-w-0">{{ feature }}</span>
             </li>
           </ul>
         </div>
@@ -225,7 +225,7 @@ function onPriceInput(e: Event) {
       <div>
         <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-1 mb-2 block">Frequência</label>
         <div class="flex gap-3">
-          <button v-for="opt in [{ v: 'mensal', l: 'Mensal' }, { v: 'anual', l: 'Anual' }, { v: 'diario', l: 'Diário (teste)' }]" :key="opt.v"
+          <button v-for="opt in [{ v: 'mensal', l: 'Mensal' }, { v: 'anual', l: 'Anual' }]" :key="opt.v"
             @click="form.frequency = opt.v"
             :class="form.frequency === opt.v ? 'border-primary bg-primary/10 text-primary font-black' : 'border-[#E0E0E0] bg-gray-50 text-[#757575]'"
             class="flex-1 py-2.5 rounded-lg border text-sm font-bold transition-all">{{ opt.l }}</button>

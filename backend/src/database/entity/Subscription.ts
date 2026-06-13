@@ -33,13 +33,6 @@ export class Subscription {
     status!: SubscriptionStatus
 
     @Column({
-        type: 'date',
-        name: 'Ultima_Data_Pagamento',
-        nullable: true,
-    })
-    lastPayment?: Date
-
-    @Column({
         name: 'ID_MercadoPago',
         type: 'varchar',
         nullable: true

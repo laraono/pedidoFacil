@@ -10,7 +10,7 @@ import { useConfirm } from "@/composables/useConfirm";
 import { useAsyncAction } from "@/composables/useAsyncAction";
 import { BaseInput, BaseSelect, BaseButton, ConfirmModal, DataTable, EmptyState } from "@/components/ui";
 import {
-  ArrowLeft, PlusCircle, Trash, Pencil, X, RotateCcw,
+  ArrowLeft, PlusCircle, Trash, Pencil, X, RotateCcw, Eye, EyeOff,
 } from "lucide-vue-next";
 
 const router = useRouter();
@@ -30,6 +30,7 @@ const activeTab = ref("active");
 const currentUser = computed(() => authStore.user);
 
 const form = ref({ id: null, name: "", email: "", password: "", roleId: "" });
+const showPassword = ref(false);
 
 const PROTECTED_ROLE_NAMES = ["Gerente"];
 
@@ -55,7 +56,7 @@ function isActive(status) {
 }
 
 const fetchRoles = async () => {
-  try { roles.value = await roleApi.list(); }
+  try { roles.value = (await roleApi.list()) ?? []; }
   catch { showToast("Erro ao buscar os cargos.", "error"); }
 };
 
@@ -84,6 +85,7 @@ function closeForm() {
   showForm.value = false;
   editingUser.value = null;
   errors.value = {};
+  showPassword.value = false;
 }
 
 function validateForm() {
@@ -222,7 +224,13 @@ const inactiveColumns = [
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           <BaseInput v-model="form.name" label="Nome Completo" placeholder="Ex: João Silva" :error="errors.name" />
           <BaseInput v-model="form.email" label="E-mail de Login" placeholder="ex: joao@email.com" :error="errors.email" />
-          <BaseInput v-model="form.password" label="Senha" type="password" :placeholder="editingUser ? 'Deixe em branco para manter' : '••••••••'" :error="errors.password" />
+          <BaseInput v-model="form.password" label="Senha" :type="showPassword ? 'text' : 'password'" :placeholder="editingUser ? 'Deixe em branco para manter' : '••••••••'" :error="errors.password">
+            <template #suffix>
+              <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#757575] hover:text-[#212121] transition-colors">
+                <component :is="showPassword ? EyeOff : Eye" :size="18" />
+              </button>
+            </template>
+          </BaseInput>
           <BaseSelect v-model="form.roleId" label="Cargo" :options="roleOptions" placeholder="Selecione o cargo" :error="errors.roleId" :disabled="editingUser === currentUser?.id" />
           <div class="md:col-span-2 flex justify-end gap-4 mt-4 pt-8 border-t border-[#E0E0E0]">
             <button type="button" @click="closeForm" class="px-8 py-4 rounded text-[#757575] font-bold hover:bg-gray-50 hover:text-[#212121] transition-colors">Cancelar</button>

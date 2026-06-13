@@ -196,7 +196,7 @@ export const adminMenuItems: AdminMenuItem[] = [
     adminOnly: true
   },
   {
-    label: 'Usuários Admin',
+    label: 'Administradores',
     route: '/app/admin/users',
     icon: UserCog,
     description: 'Gerenciar contas com acesso ao painel admin.',
@@ -204,7 +204,7 @@ export const adminMenuItems: AdminMenuItem[] = [
     adminOnly: true
   },
   {
-    label: 'Relatórios Admin',
+    label: 'Relatórios',
     route: '/app/admin/reports',
     icon: BarChart2,
     description: 'Faturamento da plataforma.',

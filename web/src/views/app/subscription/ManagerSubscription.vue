@@ -123,6 +123,7 @@ let mp = null;
 let cardFormInstance = null;
 
 const paymentModal = ref(false);
+const payerEmail = ref('');
 const isTokenizing = ref(false);
 
 const destroyCardForm = () => {
@@ -163,7 +164,7 @@ const initCardForm = async () => {
         try {
           const { token } = cardFormInstance.getCardFormData();
           if (!token) throw new Error('Não foi possível gerar o token. Verifique os dados do cartão.');
-          await subscriptionApi.restoreSubscription(sub.value.id, { cardToken: token });
+          await subscriptionApi.restoreSubscription(sub.value.id, { cardToken: token, payerEmail: payerEmail.value });
           closePaymentModal();
           sub.value = await subscriptionApi.getEstablishmentSubscription();
           currentPlan.value = sub.value?.plan ?? {};
@@ -173,7 +174,7 @@ const initCardForm = async () => {
           isTokenizing.value = false;
         }
       },
-      onError: (err) => { console.error('MP Card Form error:', err); },
+      onError: () => { serverError.value = 'Verifique os dados do cartão e tente novamente.'; },
     },
   });
 };
@@ -186,6 +187,7 @@ const openCardModal = () => {
 const closePaymentModal = () => {
   destroyCardForm();
   paymentModal.value = false;
+  payerEmail.value = '';
 };
 </script>
 
@@ -433,6 +435,16 @@ const closePaymentModal = () => {
             </div>
 
             <div v-show="!isTokenizing">
+              <div class="mb-4">
+                <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">E-mail cadastrado no Mercado Pago</label>
+                <input
+                  v-model="payerEmail"
+                  type="email"
+                  placeholder="seu@email.com"
+                  class="w-full border border-[#E0E0E0] rounded bg-white px-3 text-sm text-[#212121] placeholder-[#BDBDBD] focus:outline-none focus:border-primary transition-colors"
+                  style="height: 42px;"
+                />
+              </div>
               <form id="mp-manager-card-form" class="space-y-4" @submit.prevent>
                 <div>
                   <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Número do cartão</label>

@@ -1,13 +1,14 @@
-import { CreateOrderPaymentMP, CreateOrderSubscriptionMP, CreatePlanMercadoPago, CreateRegisterParamsMP, CreateStoreParamsMP, UpdatePlanMercadoPago, UpdateSubscriptionMP } from '../dto';
+import { /*CreateOrderPaymentMP, CreateOrderSubscriptionMP,*/ CreatePlanMercadoPago, /*CreateRegisterParamsMP, CreateStoreParamsMP,*/ UpdatePlanMercadoPago, UpdateSubscriptionMP } from '../dto';
 import { AppError } from '../middleware';
 import { auditLog } from '../utils/logger';
-import axios, { AxiosError } from 'axios'
-import opencage from 'opencage-api-client';
-import crypto from 'crypto';
-import { MercadoPagoConfig, OAuth } from 'mercadopago'
+import axios from 'axios'
+// import opencage from 'opencage-api-client';
+// import crypto from 'crypto';
+// import { MercadoPagoConfig, OAuth } from 'mercadopago'
 
-const v4 = () => crypto.randomUUID();
+// const v4 = () => crypto.randomUUID();
 
+/*
 type CreateOrderType = {
     id: string,
     type: 'online',
@@ -56,6 +57,7 @@ type PaymentMethod = {
     token: string;
     installments: number
 }
+*/
 
 export class MercadoPagoService {
 
@@ -160,7 +162,7 @@ export class MercadoPagoService {
             return answer.data
         } catch(err: any) {
             const mpError = err?.response?.data
-            auditLog('mp.create_subscription_error', { error: mpError });
+            auditLog('mp.create_subscription_error', { error: mpError, params });
             throw new AppError('Ocorreu um erro no Mercado Pago. Verifique os dados do cartão e tente novamente.', 500)
         }
     }
@@ -184,7 +186,13 @@ export class MercadoPagoService {
 
             return {
                 status: answer.data.status as string,
-                next_payment_date: answer.data.next_payment_date as string | null
+                next_payment_date: answer.data.next_payment_date as string | null,
+                payer_email: answer.data.payer_email as string | null,
+                summarized: {
+                    charged_quantity: (answer.data.summarized?.charged_quantity ?? null) as number | null,
+                    last_charged_amount: (answer.data.summarized?.last_charged_amount ?? null) as number | null,
+                    last_charged_date: (answer.data.summarized?.last_charged_date ?? null) as string | null,
+                },
             }
         } catch(error: any) {
             auditLog('mp.get_subscription_error', { error: error?.response?.data ?? error?.message });
@@ -287,30 +295,6 @@ export class MercadoPagoService {
         }
     }
 
-    async getPaymentsByPreapproval(preapprovalId: string): Promise<any[]> {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
-            throw new AppError('Erro de conexão com o Mercado Pago', 500)
-        }
-
-        const headers = {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA
-        }
-
-        try {
-            const answer = await axios({
-                method: 'get',
-                url: 'https://api.mercadopago.com/v1/payments/search',
-                headers,
-                params: { preapproval_id: preapprovalId }
-            })
-            return answer.data.results ?? []
-        } catch(error: any) {
-            auditLog('mp.get_payments_by_preapproval_error', { error: error?.response?.data ?? error?.message });
-            throw new AppError('Erro ao buscar pagamentos da assinatura', 500)
-        }
-    }
-
     async updateSubscriptionCard(preapprovalId: string, cardToken: string): Promise<void> {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
             throw new AppError('Erro de conexão com o Mercado Pago', 500)
@@ -334,6 +318,7 @@ export class MercadoPagoService {
         }
     }
 
+    /*
     async createStore(params: CreateStoreParamsMP) {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT || !process.env.MERCADOPAGO_USER_ID) {
             throw new AppError('Erro de conexão com o Mercado Pago',  500)
@@ -349,7 +334,7 @@ export class MercadoPagoService {
 
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT 
+            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT
         }
 
         const store = {
@@ -369,7 +354,7 @@ export class MercadoPagoService {
         try {
             const answer = await axios({
                 method: "post",
-                url: `https://api.mercadopago.com/users/${process.env.MERCADOPAGO_USER_ID}/stores`, 
+                url: `https://api.mercadopago.com/users/${process.env.MERCADOPAGO_USER_ID}/stores`,
                 data: store,
                 headers
             })
@@ -401,7 +386,7 @@ export class MercadoPagoService {
         try {
             const answer = await axios({
                 method: "post",
-                url: "https://api.mercadopago.com/pos", // TODO ver lógica do caixa usar o nome para escolher maquininha e enviar dados do pagamento
+                url: "https://api.mercadopago.com/pos",
                 data: register,
                 headers
             })
@@ -501,7 +486,7 @@ export class MercadoPagoService {
         try {
             const answer = await axios({
                 method: "post",
-                url: "https://api.mercadopago.com/v1/orders", 
+                url: "https://api.mercadopago.com/v1/orders",
                 headers,
                 data: order
             })
@@ -528,7 +513,7 @@ export class MercadoPagoService {
         try {
             const answer = await axios({
                 method: "put",
-                url: `https://api.mercadopago.com/v1/orders/${orderId}/transactions/${transactionId}`, 
+                url: `https://api.mercadopago.com/v1/orders/${orderId}/transactions/${transactionId}`,
                 headers,
                 data: payment_method
             })
@@ -556,7 +541,7 @@ export class MercadoPagoService {
         try {
             const answer = await axios({
                 method: "post",
-                url: `https://api.mercadopago.com/v1/orders/${orderId}/cancel`, 
+                url: `https://api.mercadopago.com/v1/orders/${orderId}/cancel`,
                 headers,
             })
 
@@ -583,7 +568,7 @@ export class MercadoPagoService {
         try {
             const answer = await axios({
                 method: "post",
-                url: `https://api.mercadopago.com/v1/orders/${orderId}/cancel`, 
+                url: `https://api.mercadopago.com/v1/orders/${orderId}/cancel`,
                 headers,
             })
 
@@ -609,7 +594,7 @@ export class MercadoPagoService {
         try {
             const answer = await axios({
                 method: "get",
-                url: `https://api.mercadopago.com/v1/orders/${orderId}`, 
+                url: `https://api.mercadopago.com/v1/orders/${orderId}`,
                 headers,
             })
 
@@ -627,7 +612,7 @@ export class MercadoPagoService {
         .then((data) => {
             if (data.status.code === 200 && data.results.length > 0) {
                 const place = data.results[0];
-                
+
                 return place.geometry
             } else {
                 auditLog('mp.geocode_no_results', { status: data.status.message, total: data.total_results });
@@ -650,7 +635,7 @@ export class MercadoPagoService {
         const hash = crypto.createHash('sha256')
             .update(verifier)
             .digest();
-        
+
         return hash.toString('base64url');
     }
 
@@ -692,7 +677,7 @@ export class MercadoPagoService {
 
     async getOAuthtoken(codeVerifier: string, authCode: string) {
 
-        const client = new MercadoPagoConfig({ accessToken: 'access_token', options: { timeout: 5000 } }); 
+        const client = new MercadoPagoConfig({ accessToken: 'access_token', options: { timeout: 5000 } });
 
         const oauth = new OAuth(client);
 
@@ -758,13 +743,13 @@ export class MercadoPagoService {
         const headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA ,
-            'X-Idempotency-Key': v4()
+            'X-Idempotency-Key': crypto.randomUUID()
         }
 
         try {
             const answer = await axios({
                 method: "post",
-                url: `https://api.mercadopago.com/v1/customers/${userId}/cards`, 
+                url: `https://api.mercadopago.com/v1/customers/${userId}/cards`,
                 headers,
                 data: {
                     token
@@ -779,7 +764,9 @@ export class MercadoPagoService {
             throw new AppError(err.response.data.message, 500)
         }
     }
+    */
 
+    /*
     async processOrder(orderId: string) {
         if(!process.env.MERCADOPAGO_ACCESS_TOKEN_CHECKOUT) {
             throw new AppError('Erro de conexão com o Mercado Pago',  500)
@@ -794,7 +781,7 @@ export class MercadoPagoService {
         try {
             const answer = await axios({
                 method: "post",
-                url: `https://api.mercadopago.com/v1/orders/${orderId}/process`, 
+                url: `https://api.mercadopago.com/v1/orders/${orderId}/process`,
                 headers
             })
 
@@ -820,7 +807,7 @@ export class MercadoPagoService {
         try {
             const answer = await axios({
                 method: "post",
-                url: "https://api.mercadopago.com/v1/orders", 
+                url: "https://api.mercadopago.com/v1/orders",
                 headers,
                 data: params
             })
@@ -837,6 +824,7 @@ export class MercadoPagoService {
             throw new AppError('Erro de conexão com o Mercado Pago',  500)
         }
     }
+    */
 
 }
 

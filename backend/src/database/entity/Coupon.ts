@@ -45,6 +45,7 @@ export class Coupon {
 
     @DeleteDateColumn({
         name: 'Data_Exclusao',
+        type: 'timestamp',
         nullable: true,
     })
     deletedAt!: Date

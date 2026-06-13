@@ -1,4 +1,4 @@
-import { Entity, Column, OneToMany, PrimaryGeneratedColumn, JoinColumn, CreateDateColumn, DeleteDateColumn, ManyToOne } from "typeorm"
+import { Entity, Column, PrimaryGeneratedColumn, JoinColumn, CreateDateColumn, DeleteDateColumn, ManyToOne } from "typeorm"
 import { Product } from "./Product"
 import { Order } from "./Order"
 import { ProductVariation } from "./ProductVariation"
@@ -43,17 +43,11 @@ export class ProductOrder {
     price!: number
 
     @CreateDateColumn({
+        name: 'Data_Criacao',
         type: "timestamp",
         default: () => "CURRENT_TIMESTAMP(6)"
     })
     created_at!: Date;
-
-    @DeleteDateColumn({
-        name: 'deleted_at',
-        type: 'datetime',
-        nullable: true
-    })
-    deletedAt?: Date
 
     @ManyToOne(() => Product, (product) => product.productOrders)
     @JoinColumn({name: 'ID_Produto'})

@@ -19,17 +19,26 @@ export interface AdminSubscription {
 
 export const useSubscriptionStore = defineStore('subscription', () => {
   const subscriptionStatus = ref<SubscriptionStatus | null>(null);
+  const subscriptionExpirationDate = ref<string | null>(null);
 
   async function fetchSubscriptionStatus(): Promise<void> {
     try {
       const sub = await subscriptionApi.getEstablishmentSubscription();
       subscriptionStatus.value = (sub as any)?.status ?? null;
+      subscriptionExpirationDate.value = (sub as any)?.expirationDate ?? null;
     } catch {
       subscriptionStatus.value = null;
+      subscriptionExpirationDate.value = null;
     }
   }
 
-  const isActive = computed(() => subscriptionStatus.value === 'Paga');
+  const isActive = computed(() => {
+    if (subscriptionStatus.value === 'Paga') return true;
+    if (subscriptionStatus.value === 'Cancelada' && subscriptionExpirationDate.value) {
+      return new Date(subscriptionExpirationDate.value) > new Date();
+    }
+    return false;
+  });
 
   const adminSubscriptions = ref<AdminSubscription[]>([]);
   const adminSubscriptionsLoading = ref(false);
@@ -59,7 +68,7 @@ export const useSubscriptionStore = defineStore('subscription', () => {
   const adminMetrics = ref<any>(null);
   const adminMetricsLoading = ref(false);
 
-  async function loadAdminMetrics(period: '3m' | '6m' | '12m' = '12m'): Promise<void> {
+  async function loadAdminMetrics(period: '3m' | '6m' | '12m' | 'all' = '12m'): Promise<void> {
     adminMetricsLoading.value = true;
     try {
       const raw = await adminMetricsApi.getSubscriptionMetrics(period) as any;
@@ -71,6 +80,7 @@ export const useSubscriptionStore = defineStore('subscription', () => {
         totalGeral: raw.totalGeral,
         porPlano: raw.porPlano,
         novosPorMes: raw.novosPorMes,
+        receitaPorMes: raw.receitaPorMes,
       };
     } finally {
       adminMetricsLoading.value = false;

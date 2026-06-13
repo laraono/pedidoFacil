@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import { DataSource } from 'typeorm';
 import { Admin } from '../database/entity/Admin';
-import { RefreshToken } from '../database/entity/RefreshToken';
+import { RefreshTokenAdmin } from '../database/entity/RefreshTokenAdmin';
 import { AppError } from '../middleware/error/AppError';
 
 export type CreateAdminDTO = {
@@ -72,7 +72,7 @@ export class AdminService {
     }
 
     async getMasterId(): Promise<number> {
-        const master = await this.repo.findOne({ order: { id: 'ASC' } });
+        const [master] = await this.repo.find({ order: { id: 'ASC' }, take: 1 });
         return master?.id ?? 1;
     }
 
@@ -89,7 +89,7 @@ export class AdminService {
         const admin = await this.repo.findOne({ where: { id: adminId } });
         if (!admin) throw new AppError('Admin não encontrado.', 404);
 
-        await this.dataSource.getRepository(RefreshToken).delete({ admin: { id: adminId } });
+        await this.dataSource.getRepository(RefreshTokenAdmin).delete({ admin: { id: adminId } });
         await this.repo.remove(admin);
     }
 }

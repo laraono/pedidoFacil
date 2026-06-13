@@ -138,8 +138,9 @@ export class ComandaController {
                 comandaId: Number(comandaId),
                 ip: req.ip,
                 timestamp: new Date().toISOString(),
+                error: error.message,
             });
-            
+
             return res.status(500).json({ error: error.message || "Erro interno ao processar o pagamento." });
         }
     }

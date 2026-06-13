@@ -38,7 +38,7 @@ export class ProductVariation {
 
     @DeleteDateColumn({
         name: 'Data_Exclusao',
-        type: 'datetime',
+        type: 'timestamp',
         nullable: true
     })
     deletedAt?: Date

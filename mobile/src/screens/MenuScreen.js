@@ -15,7 +15,6 @@ import { Feather } from "@expo/vector-icons";
 
 import { useCart } from "../contexts/CartContext";
 import { useTheme } from "../contexts/ThemeContext";
-import { useError } from "../contexts/ErrorContext";
 import { useIdleTimer } from "../hooks/useIdleTimer";
 import CartBottomBar from "../components/CartBottomBar";
 import BrandHeader from "../components/ui/BrandHeader";
@@ -23,7 +22,6 @@ import ProductModal from "../components/ProductModal";
 
 import { fetchFullMenu } from "../stores/menuStore";
 import { connectMobileSocket } from "../services/socketService";
-import { getFullImageUrl } from "../utils/imageUtils";
 
 export default function MenuScreen() {
   const [categories, setCategories] = useState([]);
@@ -32,7 +30,6 @@ export default function MenuScreen() {
 
   const { addToCart } = useCart();
   const { theme, loadTheme } = useTheme();
-  const { errorMessage, setErrorMessage } = useTheme();
   const { width } = useWindowDimensions();
   const panHandlers = useIdleTimer(45);
 
@@ -45,13 +42,13 @@ export default function MenuScreen() {
   const cardWidth = availableWidth / numColumns - 12;
 
   const styles = useMemo(
-    () => getStyles(theme, width, cardWidth),
-    [theme, width, cardWidth],
+    () => getStyles(theme, cardWidth),
+    [theme, cardWidth],
   );
 
   const loadMenuData = async () => {
     try {
-      const data = await fetchFullMenu(setErrorMessage);
+      const data = await fetchFullMenu();
       if (data) {
         setCategories(data.categories || []);
         setProducts(data.products || []);
@@ -125,16 +122,11 @@ export default function MenuScreen() {
           <Text style={styles.sidebarTitle}>Cardápio</Text>
           {categories.map((item) => {
             const isSelected = selectedCategory === item.id;
-            
-            const imageSource = getFullImageUrl(item.image);
 
             return (
               <TouchableOpacity
                 key={item.id}
-                style={[
-                  styles.sidebarItem,
-                  isSelected && styles.sidebarItemSelected,
-                ]}
+                style={styles.sidebarItem}
                 onPress={() => setSelectedCategory(item.id)}
                 activeOpacity={0.8}
               >
@@ -145,7 +137,7 @@ export default function MenuScreen() {
                   ]}
                 >
                   <Image
-                    source={imageSource}
+                    source={item.image ? { uri: item.image } : null}
                     style={styles.sidebarImage}
                     resizeMode="cover"
                   />
@@ -179,11 +171,7 @@ export default function MenuScreen() {
               keyExtractor={(item) => item.id.toString()}
               contentContainerStyle={styles.listContainer}
               showsVerticalScrollIndicator={false}
-              renderItem={({ item }) => {
-                
-                const imageSource = getFullImageUrl(item.image);
-
-                return (
+              renderItem={({ item }) => (
                   <TouchableOpacity
                     style={styles.productCard}
                     onPress={() => {
@@ -193,7 +181,7 @@ export default function MenuScreen() {
                     activeOpacity={0.9}
                   >
                     <Image
-                      source={imageSource}
+                      source={item.image ? { uri: item.image } : null}
                       style={styles.productImage}
                       resizeMode="cover"
                     />
@@ -247,8 +235,7 @@ export default function MenuScreen() {
                       </View>
                     </View>
                   </TouchableOpacity>
-                );
-              }}
+              )}
             />
           </View>
         </View>
@@ -266,7 +253,7 @@ export default function MenuScreen() {
   );
 }
 
-const getStyles = (theme, width, cardWidth) =>
+const getStyles = (theme, cardWidth) =>
   StyleSheet.create({
     container: {
       flex: 1,

@@ -81,7 +81,6 @@
         @close="closeDetails"
         @cancel-comanda="showCancelComandaModal = true"
         @cancel-order="openManualCancel"
-        @print-receipt="handlePrintReceipt"
         @finalize="handleFinalizePayload"
       />
 
@@ -119,21 +118,6 @@
         @finish="finishPaymentFlow"
       />
 
-      <ReceiptModal
-        :isOpen="showReceiptModal"
-        @close="showReceiptModal = false"
-        @print="
-          () => {
-            emitReceipt(
-              pendingReceiptData.comanda,
-              pendingReceiptData.paymentInfo,
-              activeCheckout?.selectedOrderIds,
-              kitchenStore.orders,
-            );
-            showReceiptModal = false;
-          }
-        "
-      />
     </div>
   </SubscriptionGuard>
 </template>
@@ -145,7 +129,6 @@ import CheckoutModal from "@/components/cashier/CheckoutModal.vue";
 import ComandaCard from "@/components/cashier/ComandaCard.vue";
 import PaymentFlowModal from "@/components/cashier/PaymentFlowModal.vue";
 import CheckoutRulesModal from "@/components/cashier/CheckoutRulesModal.vue";
-import ReceiptModal from "@/components/cashier/ReceiptModal.vue";
 import { Monitor, FileText } from "lucide-vue-next";
 import { useCashier } from "@/composables/useCashier";
 
@@ -175,11 +158,6 @@ const {
   cancelPaymentFlow,
   finishPaymentFlow,
   handleFinalizePayload,
-  showReceiptModal,
-  pendingReceiptData,
-  emitReceipt,
-  handlePrintReceipt,
-  activeCheckout,
 } = useCashier();
 </script>
 

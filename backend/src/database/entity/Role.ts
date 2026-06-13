@@ -1,14 +1,17 @@
-import { 
-    Entity, 
-    PrimaryGeneratedColumn, 
-    Column, 
-    ManyToOne, 
-    JoinColumn, 
-    OneToMany, 
-    DeleteDateColumn 
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    ManyToOne,
+    JoinColumn,
+    OneToMany,
+    ManyToMany,
+    JoinTable,
+    DeleteDateColumn
 } from "typeorm"
 import { Establishment } from "./Establishment"
 import { User } from "./User"
+import { Permissao } from "./Permissao"
 
 @Entity({ name: 'CARGO' })
 export class Role {
@@ -26,15 +29,17 @@ export class Role {
     })
     name!: string
 
-    @Column({
-        type: 'json',
-        name: 'Permissoes_JSON',
-        nullable: true,
+    @ManyToMany(() => Permissao, { eager: true })
+    @JoinTable({
+        name: 'CARGO_PERMISSAO',
+        joinColumn: { name: 'ID_Cargo', referencedColumnName: 'id' },
+        inverseJoinColumn: { name: 'Nome_Permissao', referencedColumnName: 'name' }
     })
-    permissions?: string
+    permissions!: Permissao[]
 
     @DeleteDateColumn({
         name: 'Data_Exclusao',
+        type: 'timestamp',
         nullable: true
     })
     deletedAt?: Date

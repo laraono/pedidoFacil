@@ -5,12 +5,15 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  OneToOne,
   DeleteDateColumn,
+  CreateDateColumn,
 } from 'typeorm';
 import { UserStatus } from '../../enum';
 import { Role } from './Role';
 import { StorageMovimentation } from './StorageMovimentation';
 import { Payment } from './Payment';
+import { PerfilGerente } from './PerfilGerente';
 
 @Entity({ name: 'USUARIO' })
 export class User {
@@ -53,15 +56,6 @@ export class User {
 
   @Column({
     type: 'varchar',
-    name: 'CPF',
-    nullable: true,
-    length: 14,
-    unique: false,
-  })
-  cpf!: string | null;
-
-  @Column({
-    type: 'varchar',
     name: 'Password_Reset_Token',
     nullable: true,
   })
@@ -77,21 +71,12 @@ export class User {
   @Column({ type: 'varchar', name: 'Telefone', nullable: true, length: 20 })
   phone!: string | null;
 
-  @Column({ type: 'varchar', name: 'Endereco', nullable: true, length: 255 })
-  address!: string | null;
-
-  @Column({ type: 'varchar', name: 'Cidade', nullable: true, length: 100 })
-  city!: string | null;
-
-  @Column({ type: 'varchar', name: 'Estado', nullable: true, length: 2 })
-  state!: string | null;
-
-  @Column({ type: 'varchar', name: 'CEP', nullable: true, length: 10 })
-  zip!: string | null;
+  @CreateDateColumn({ name: 'Data_Criacao', type: 'timestamp' })
+  createdAt!: Date;
 
   @DeleteDateColumn({
     name: 'Data_Exclusao',
-    type: 'datetime',
+    type: 'timestamp',
     nullable: true,
   })
   deletedAt?: Date;
@@ -101,6 +86,9 @@ export class User {
     name: 'ID_Cargo',
   })
   role!: Role;
+
+  @OneToOne(() => PerfilGerente, (pg) => pg.user, { eager: true })
+  perfilGerente?: PerfilGerente;
 
   @OneToMany(
     () => StorageMovimentation,

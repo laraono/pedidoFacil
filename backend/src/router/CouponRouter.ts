@@ -10,6 +10,11 @@ import { createCouponSchema } from '../dto/coupon/CreateCouponDTO';
 const couponRouter = Router();
 const couponController = new CouponController(couponService);
 
+couponRouter.get(
+  '/validate/:code',
+  couponController.validate.bind(couponController),
+);
+
 couponRouter.use(authenticate);
 couponRouter.use(subscriptionMiddleware);
 
@@ -37,12 +42,6 @@ couponRouter.delete(
   '/:id',
   checkPermission('CUPONS'),
   couponController.delete.bind(couponController),
-);
-
-couponRouter.get(
-  '/validate/:code',
-  checkPermission('CUPONS'),
-  couponController.validate.bind(couponController),
 );
 
 export { couponRouter };

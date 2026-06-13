@@ -62,9 +62,9 @@ export const useMenuStore = defineStore("menu", () => {
     }
   };
 
-  const loadProducts = async (page = 1, limit = 100, showDeleted = false, search = "") => {
+  const loadProducts = async (page = 1, limit = 100, showDeleted = false, search = "", status?: string) => {
     try {
-      const response = await productApi.list({ page, limit, deleted: showDeleted, search });
+      const response = await productApi.list({ page, limit, deleted: showDeleted, search, status });
       products.value = response.products.map(mapProduct);
       totalProducts.value = response.total;
       totalPages.value = response.totalPages;
@@ -109,7 +109,6 @@ export const useMenuStore = defineStore("menu", () => {
 
   const addProduct = async (formData: FormData) => {
     await productApi.create(formData);
-    await loadProducts(currentPage.value);
   };
 
   const updateProduct = async (data: FormData | any) => {
@@ -121,17 +120,14 @@ export const useMenuStore = defineStore("menu", () => {
     }
     if (!id) throw new Error("ID do produto não encontrado.");
     await productApi.update(id, data);
-    await loadProducts(currentPage.value);
   };
 
   const softDeleteProduct = async (id: number) => {
     await productApi.delete(id);
-    await loadProducts(currentPage.value);
   };
 
   const restoreProduct = async (id: number) => {
     await productApi.restore(id);
-    await loadProducts(currentPage.value);
   };
 
   const getCategoryName = (id: number): string => {

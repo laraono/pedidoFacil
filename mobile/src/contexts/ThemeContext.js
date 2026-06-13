@@ -45,8 +45,9 @@ export function ThemeProvider({ children }) {
         const config = data.configurations || {};
         
         const logoPath = config.logo;
-        const logoSource = getFullImageUrl(logoPath);
-        const logoUrl = logoSource ? logoSource.uri : null;
+        const logoUrl = logoPath
+          ? (logoPath.startsWith('http') ? logoPath : `${appConfig.BASE_IP}/uploads/${logoPath}`)
+          : null;
 
         const bgColor = config.backgroundColor || defaultTheme.fundoGeral;
         const cardColor = config.cardsColor || defaultTheme.fundoProdutos;

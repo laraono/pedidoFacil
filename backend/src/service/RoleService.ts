@@ -1,8 +1,10 @@
+import { In } from 'typeorm';
 import { RoleRepository } from '../repository/RoleRepository';
 import { UserRepository } from '../repository/UserRepository';
 import { AppError } from '../middleware/error/AppError';
 import { CreateRoleDTO } from '../dto/role/CreateRoleDTO';
 import { UpdateRoleDTO } from '../dto/role/UpdateRoleDTO';
+import { Permissao } from '../database/entity/Permissao';
 
 export class RoleService {
     constructor(
@@ -13,13 +15,15 @@ export class RoleService {
     async listRoles(establishmentId: number) {
         const roles = await this.roleRepository.find({
             where: { establishment: { id: establishmentId } as any },
-            relations: ['users'],
+            relations: ['users', 'permissions'],
             order: { name: 'ASC' },
         });
 
-        return roles.map(({ users, ...rest }) => ({
-            ...rest,
-            usersCount: users?.length ?? 0,
+        return roles.map(role => ({
+            id: role.id,
+            name: role.name,
+            permissions: (role.permissions ?? []).map(p => p.name),
+            usersCount: role.users?.length ?? 0,
         }));
     }
 
@@ -35,9 +39,14 @@ export class RoleService {
             throw new AppError('Já existe um cargo com este nome neste estabelecimento.', 409);
         }
 
+        if (!data.permissions || data.permissions.length === 0)
+            throw new AppError('Um cargo deve ter ao menos uma permissão.', 400);
+
+        const perms = await this.roleRepository.manager.findBy(Permissao, { name: In(data.permissions) });
+
         const role = this.roleRepository.create({
             name: data.name,
-            permissions: JSON.stringify(data.permissions),
+            permissions: perms,
             establishment: { id: establishmentId } as any
         });
 
@@ -55,9 +64,16 @@ export class RoleService {
             throw new AppError('O nome do cargo mestre "Gerente" não pode ser alterado.', 400);
         }
 
+        if (data.permissions !== undefined && data.permissions.length === 0)
+            throw new AppError('Um cargo deve ter ao menos uma permissão.', 400);
+
+        const perms = data.permissions !== undefined
+            ? await this.roleRepository.manager.findBy(Permissao, { name: In(data.permissions) })
+            : role.permissions;
+
         this.roleRepository.merge(role, {
             name: data.name || role.name,
-            permissions: data.permissions ? JSON.stringify(data.permissions) : role.permissions
+            permissions: perms,
         });
 
         return await this.roleRepository.save(role);

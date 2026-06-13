@@ -44,12 +44,10 @@ export class EstablishmentController {
   getProfile = catchAsync(async (req: Request, res: Response) => {
     const establishmentId = (req as any).usuario.estabelecimento;
     const establishment = await this.establishmentService.getEstablishmentProfile(establishmentId);
-    const serviceTypes: string[] = establishment.serviceTypes
-      ? (typeof establishment.serviceTypes === 'string' ? JSON.parse(establishment.serviceTypes) : establishment.serviceTypes as unknown as string[])
-      : [];
     return res.status(200).json({
       ...establishment,
-      selfServiceEnabled: serviceTypes.includes('Autoatendimento'),
+      selfServiceEnabled: establishment.temAutoatendimento,
+      paymentMethods: establishment.paymentMethods?.map((pm: any) => pm.name ?? pm) ?? [],
     });
   });
   
@@ -59,7 +57,7 @@ export class EstablishmentController {
     
     return res.status(200).json({
       name: establishment.name,
-      paymentMethods: establishment.paymentMethods,
+      paymentMethods: establishment.paymentMethods?.map(pm => pm.name) ?? [],
       configurations: establishment.configurations
     });
   });
@@ -97,10 +95,6 @@ export class EstablishmentController {
     const establishmentId = (req as any).usuario.estabelecimento;
     let updateData = { ...req.body };
 
-    if (typeof updateData.paymentMethods === 'string') {
-      updateData.paymentMethods = JSON.parse(updateData.paymentMethods);
-    }
-    
     if (typeof updateData.configurations === 'string') {
       updateData.configurations = JSON.parse(updateData.configurations);
     }
@@ -138,31 +132,16 @@ export class EstablishmentController {
       };
     }
 
-    if (files?.pixQrCode?.[0]) {
-      await verifyBucket();
-      const pixFile = files.pixQrCode[0];
-
-      const key = generateUniqueImageKey(pixFile.buffer);
-      const extension = path.extname(pixFile.originalname) || '.jpg';
-      const fullKey = `pix-${key}${extension}`;
-      const contentType = getImageContentType(pixFile);
-
-      const uploadResult = await uploadToS3({
-        bucket: bucketName,
-        key: fullKey,
-        body: pixFile.buffer,
-        contentType: contentType
-      });
-
-      updateData.pixQrCodeUrl = uploadResult.Location;
-    }
-
     try {
       const updated = await this.establishmentService.updateEstablishment(establishmentId, updateData);
-      
+
       getIO().emit('profile_updated');
 
-      return res.status(200).json(updated);
+      return res.status(200).json({
+        ...updated,
+        selfServiceEnabled: updated.temAutoatendimento,
+        paymentMethods: updated.paymentMethods?.map((pm: any) => pm.name ?? pm) ?? [],
+      });
     } catch (error) {
       auditLog('update_establishment.failure', {
         establishmentId,

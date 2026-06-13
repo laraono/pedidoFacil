@@ -42,7 +42,7 @@ adminRouter.post('/subscriptions/:subscriptionId/cancel', subscriptionController
 adminRouter.get(
     '/metrics/subscriptions',
     catchAsync(async (req: Request, res: Response) => {
-        const period = (req.query.period as '3m' | '6m' | '12m') || '12m';
+        const period = (req.query.period as '3m' | '6m' | '12m' | 'all') || '12m';
         const metrics = await adminMetricsService.getMetrics(period);
         return res.status(200).json(metrics);
     })

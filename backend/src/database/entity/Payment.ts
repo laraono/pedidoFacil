@@ -14,6 +14,7 @@ import { Establishment } from "./Establishment"
 import { User } from "./User"
 import { PaymentOrder } from "./PaymentOrder"
 import { Coupon } from "./Coupon"
+import { PaymentMethod } from "./PaymentMethod"
 
 export enum PaymentStatus {
     PENDING = 'Pendente',
@@ -29,12 +30,9 @@ export class Payment {
     @PrimaryGeneratedColumn({ name: 'ID_Pagamento' })
     id!: number
 
-    @Column({
-        type: 'varchar',
-        name: 'Forma_Pagamento',
-        length: 50
-    })
-    paymentType!: string
+    @ManyToOne(() => PaymentMethod)
+    @JoinColumn({ name: 'ID_MetodoPagamento' })
+    paymentMethod!: PaymentMethod
 
     @Column({
         name: 'Valor_Total',
@@ -63,7 +61,7 @@ export class Payment {
     status!: PaymentStatus
 
     @CreateDateColumn({ 
-        type: "datetime", 
+        type: "timestamp",
         name: 'Data_Hora_Pagamento'
     })
     createdAt!: Date
@@ -84,7 +82,7 @@ export class Payment {
 
     @DeleteDateColumn({
         name: 'Data_Exclusao',
-        type: 'datetime',
+        type: 'timestamp',
         nullable: true
     })
     deletedAt?: Date

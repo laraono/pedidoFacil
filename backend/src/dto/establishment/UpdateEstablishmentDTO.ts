@@ -3,7 +3,7 @@ import { safeString } from '../../utils/safeZod';
 
 export const UpdateEstablishmentDTO = z.object({
   body: z.object({
-    name: safeString(2, 100).optional(),
+    name: safeString(3, 100).optional(),
     cnpj: z.preprocess((v) => v === '' ? undefined : v, safeString(14, 18).optional()),
     phone: z.preprocess((v) => v === '' ? undefined : v, safeString(10, 15).optional()),
     address: z.preprocess((v) => v === '' ? undefined : v, safeString(5, 255).optional()),
@@ -15,8 +15,6 @@ export const UpdateEstablishmentDTO = z.object({
       return val;
     }, z.array(z.string()).optional()),
     
-    selfServiceCode: safeString(0, 20).optional(),
-
     selfServiceEnabled: z.preprocess((val) => {
       if (typeof val === 'string') return val === 'true';
       return val;

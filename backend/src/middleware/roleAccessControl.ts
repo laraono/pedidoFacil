@@ -13,13 +13,7 @@ export function checkPermission(...permissoes: string[]) {
             return res.status(404).json({ error: 'Recurso não encontrado.' })
         }
 
-        let lista: string[] = [];
-        try {
-            const rawPerms = role.permissions || (role as any).Permissoes_JSON;
-            lista = Array.isArray(rawPerms) ? rawPerms : JSON.parse(rawPerms as string ?? '[]');
-        } catch (e) {
-            lista = [];
-        }
+        const lista = role.permissions?.map(p => p.name) ?? [];
 
         const commonItems = lista.filter(item => permissoes.includes(item) || item === 'ALL');
 

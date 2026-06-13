@@ -197,7 +197,6 @@ const tableColumns = [
       v-else
       :columns="tableColumns"
       :data="displayedCategories"
-      :class="{ 'opacity-60 grayscale': showDeleted }"
     >
       <template #cell-image="{ item }">
         <div
@@ -238,13 +237,6 @@ const tableColumns = [
             title="Inativar"
           >
             <EyeOff :size="18" />
-          </button>
-          <button
-            @click="handleDelete(item)"
-            class="p-2 text-[#757575] hover:text-red-500 transition-colors"
-            title="Excluir"
-          >
-            <Trash2 :size="18" />
           </button>
         </template>
         <template v-else>

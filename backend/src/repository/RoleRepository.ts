@@ -3,13 +3,14 @@ import { Role } from "../database";
 
 export class RoleRepository extends Repository<Role> {
 
-    constructor(private dataSource: DataSource) {
+    constructor(dataSource: DataSource) {
         super(Role, dataSource.createEntityManager());
     }
 
     async getRoleById(id: number) {
         return await this.findOne({
-            where: { id }
+            where: { id },
+            relations: { permissions: true }
         });
     }
 

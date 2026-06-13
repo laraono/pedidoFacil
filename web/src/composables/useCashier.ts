@@ -4,14 +4,10 @@ import { useClosedComandaStore } from "@/stores/closedComandas";
 import { useKitchenStore } from "@/stores/kitchen";
 import { useAuthStore } from "@/stores/auth";
 import { useToast } from "@/composables/useToast";
-import { useReceipt } from "@/composables/useReceipt";
 import { useCouponStore } from "@/stores/coupons";
 import { request } from "@/services/api";
-import {
-  initCashierSocket,
-  destroyCashierSocket,
-} from "@/stores/cashierSocket";
-import { getSocket } from "@/services/socket";
+import { establishmentApi } from "@/services/establishmentApi";
+import { connectSocket, getSocket } from "@/services/socket";
 import localStorageService from "@/services/localStorageService";
 
 export function useCashier() {
@@ -23,6 +19,8 @@ export function useCashier() {
   const { showToast } = useToast();
 
   const comandaUnitLabel = localStorageService.getComandaUnitLabel() || "Mesa";
+
+  const enabledPaymentMethods = ref<string[]>(["Dinheiro", "Cartão Débito", "Cartão Crédito", "PIX"]);
 
   const selectedComanda = ref<any>(null);
   const showDetails = ref(false);
@@ -42,10 +40,20 @@ export function useCashier() {
   let pollInterval: any = null;
 
   onMounted(async () => {
-    await Promise.all([comandaStore.loadComandas(), couponStore.loadData()]);
+    await Promise.all([
+      comandaStore.loadComandas(),
+      couponStore.loadData(),
+      establishmentApi.getProfile().then((data) => {
+        if (data.paymentMethods?.length > 0)
+          enabledPaymentMethods.value = data.paymentMethods;
+      }).catch(() => {}),
+    ]);
     pollInterval = setInterval(() => comandaStore.loadComandas(), 30_000);
 
-    initCashierSocket((data: any) => {
+    connectSocket('cashier');
+    const socket = getSocket();
+
+    socket?.on('order_status_updated', (data: any) => {
       const localStatus = BACKEND_TO_LOCAL_STATUS[data.status] || data.status;
       const order = kitchenStore.orders.find((o: any) => o.id === data.orderId);
 
@@ -59,11 +67,12 @@ export function useCashier() {
         } as any);
       }
 
-      if (data.status === "Pronto")
-        showToast(`Pedido #${data.orderId} está PRONTO!`, "success");
+      if (data.status === "Pronto") {
+        const comanda = comandaStore.comandas.find((c: any) => c.id === data.comandaId);
+        const label = comanda?.label ? `${comandaUnitLabel} ${comanda.label}` : comandaUnitLabel;
+        showToast(`Pedido de ${label} está PRONTO!`, "success");
+      }
     });
-
-    const socket = getSocket();
     if (socket) {
       socket.on("comanda_cancelled", (data: any) => {
         comandaStore.removeComanda(data.comandaId);
@@ -82,24 +91,16 @@ export function useCashier() {
   });
 
   onUnmounted(() => {
-    destroyCashierSocket();
+    const socket = getSocket();
+    if (socket) {
+      socket.off('order_status_updated');
+      socket.off('comanda_cancelled');
+      socket.off('order_cancelled');
+    }
+    disconnectSocket();
     clearInterval(pollInterval);
   });
 
-  const enabledPaymentMethods = computed(() => {
-    try {
-      return (
-        JSON.parse(localStorage.getItem("paymentMethods") || "null") || [
-          "Dinheiro",
-          "Cartão Débito",
-          "Cartão Crédito",
-          "PIX",
-        ]
-      );
-    } catch {
-      return ["Dinheiro", "Cartão Débito", "Cartão Crédito", "PIX"];
-    }
-  });
 
   const ordersWithStatus = computed(() => {
     if (!selectedComanda.value) return [];
@@ -258,6 +259,18 @@ export function useCashier() {
         showToast("Erro ao cancelar pedidos pendentes.", "error");
         return;
       }
+
+      const cancelledIds = new Set(pendingOrders.map((o: any) => o.id));
+      const remainingIds = (activeCheckout.value.selectedOrderIds as number[]).filter(
+        (id) => !cancelledIds.has(id),
+      );
+      if (remainingIds.length === 0) {
+        showRulesModal.value = false;
+        closeDetails();
+        showToast("Todos os pedidos foram cancelados.", "info");
+        return;
+      }
+      activeCheckout.value = { ...activeCheckout.value, selectedOrderIds: remainingIds };
     }
     showRulesModal.value = false;
     startPaymentFlow();

@@ -2,12 +2,12 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { Admin } from '../database/entity/Admin';
-import { Configuration, Establishment, Plan, Role, Subscription, User } from '../database/entity';
+import { Configuration, Establishment, PerfilGerente, Permissao, Plan, Role, Subscription, User } from '../database/entity';
 import { LoginDTO } from '../dto/auth/';
 import { RegisterCompleteDTO } from '../dto/auth/RegisterCompleteDTO';
-import { UserStatus, SubscriptionStatus, ServiceType, allPermissions } from '../enum';
+import { UserStatus, SubscriptionStatus } from '../enum';
 import { AppError } from '../middleware/error/AppError';
 import { UserRepository, RefreshTokenRepository } from '../repository';
 import { EstablishmentRepository } from '../repository/EstablishmentRepository';
@@ -31,6 +31,11 @@ const DUMMY_HASH = '$2b$12$eImiTXuWVxfM37uY4JANjQev3nHN.SBuNFa5UPSmKUVgwjBiCXhHu
 import { validarSenhaForte } from '../utils/passwordSchema';
 
 export class AuthService {
+  private generateSelfServiceCode(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  }
+
   constructor(
     private dataSource: DataSource,
     private userRepository: UserRepository,
@@ -48,7 +53,7 @@ export class AuthService {
 
   /** Validação por step — só leitura, sem criação. */
   async checkCpfAvailable(cpf: string) {
-    const exists = await this.userRepository.findOne({ where: { cpf } });
+    const exists = await this.dataSource.getRepository(PerfilGerente).findOne({ where: { cpf } });
     if (exists) throw new AppError('Este CPF já está em uso.', 409);
     return { available: true };
   }
@@ -63,7 +68,7 @@ export class AuthService {
     if (emailExiste) throw new AppError('Este e-mail está inválido ou já está em uso.', 409);
 
     if (data.cpf) {
-      const cpfExiste = await this.userRepository.findOne({ where: { cpf: data.cpf } });
+      const cpfExiste = await this.dataSource.getRepository(PerfilGerente).findOne({ where: { cpf: data.cpf } });
       if (cpfExiste) throw new AppError('Este CPF já está em uso.', 409);
     }
 
@@ -80,39 +85,52 @@ export class AuthService {
           email: data.email,
           password: passwordHash,
           status: UserStatus.ATIVO,
-          cpf: data.cpf ?? null,
         });
+
+        if (data.cpf) {
+          await manager.save(PerfilGerente, {
+            id: savedUser.id,
+            cpf: data.cpf,
+            user: { id: savedUser.id },
+          });
+        }
 
         const savedEstablishment = await manager.save(Establishment, {
           name: data.establishment.name,
           cnpj: data.establishment.cnpj,
           manager: savedUser,
+          selfServiceCode: this.generateSelfServiceCode(),
         });
+
+        const todasPermissoes = await manager.find(Permissao);
 
         // Cargo Gerente com todas as permissões reais
         const savedManagerRole = await manager.save(Role, {
           name: 'Gerente',
-          permissions: JSON.stringify(allPermissions),
+          permissions: todasPermissoes,
           establishment: { id: savedEstablishment.id },
         });
 
-        // Vínculo usuário → cargo Gerente
-        await manager.update(User, savedUser.id, { role: { id: savedManagerRole.id } });
+        // Vínculo usuário → cargo Gerente (manager.update não resolve ManyToOne — atribuir no objeto e salvar)
+        savedUser.role = savedManagerRole;
+        await manager.save(User, savedUser);
 
         if (data.roles && data.roles.length > 0) {
-          await manager.save(
-            Role,
-            data.roles.map((r) => ({
+          for (const r of data.roles) {
+            const perms = r.permissions?.length
+              ? await manager.findBy(Permissao, { name: In(r.permissions) })
+              : [];
+            await manager.save(Role, {
               name: r.label,
-              permissions: JSON.stringify(r.permissions),
+              permissions: perms,
               establishment: { id: savedEstablishment.id },
-            }))
-          );
+            });
+          }
         }
 
         if (data.hasTotem) {
           await manager.update(Establishment, savedEstablishment.id, {
-            serviceTypes: JSON.stringify([ServiceType.AUTOATENDIMENTO]),
+            temAutoatendimento: true,
           });
         }
 
@@ -157,7 +175,6 @@ export class AuthService {
             initialDate: new Date(),
             establishment: savedEstablishment,
             expirationDate,
-            lastPayment: new Date(),
             status: SubscriptionStatus.PENDENTE,
             price: plan.price,
             plan,
@@ -173,7 +190,7 @@ export class AuthService {
           userId: savedUser.id,
           establishmentId: savedEstablishment.id,
           roleId: savedManagerRole.id,
-          cargoPermissoes: allPermissions,
+          cargoPermissoes: todasPermissoes.map(p => p.name),
         };
       });
 
@@ -215,7 +232,7 @@ export class AuthService {
         accessToken,
         refreshToken,
         usuario: { id: user.id, nome: user.name, email: user.email, status: user.status },
-        cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions } : null,
+        cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions?.map(p => p.name) ?? [] } : null,
         estabelecimentoId: user.role?.establishment?.id ?? null,
       };
     }
@@ -289,7 +306,7 @@ export class AuthService {
       accessToken,
       refreshToken,
       usuario: { id: user.id, nome: user.name, email: user.email, status: user.status },
-      cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions } : null,
+      cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions?.map(p => p.name) ?? [] } : null,
       estabelecimentoId: user.role?.establishment?.id ?? null,
     };
   }
@@ -327,7 +344,7 @@ export class AuthService {
 
     return {
       usuario: { ...user, isAdmin: false },
-      cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions } : null,
+      cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions?.map(p => p.name) ?? [] } : null,
       estabelecimentoId: user.role?.establishment?.id ?? null,
     };
   }

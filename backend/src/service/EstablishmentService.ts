@@ -1,10 +1,12 @@
+import { In } from 'typeorm';
 import { Establishment } from '../database/entity/Establishment';
+import { PaymentMethod } from '../database/entity/PaymentMethod';
 import { AppError } from '../middleware/error/AppError';
 import { EstablishmentRepository } from '../repository/EstablishmentRepository';
 import { ConfigurationRepository } from '../repository/ConfigurationRepository';
 import { MercadoPagoService } from './MercadoPagoService';
 import { User } from '../database/entity/User';
-import { ServiceType } from '../enum';
+import { getIO } from '../socket';
 
 export class EstablishmentService {
 
@@ -14,17 +16,6 @@ export class EstablishmentService {
     private mercadoPagoService?: MercadoPagoService
   ) { }
 
-  private parseServiceTypes(types: any): string[] {
-    if (Array.isArray(types)) return types;
-    if (typeof types !== 'string' || !types) return [];
-    try {
-      return JSON.parse(types);
-    } catch {
-      return [types];
-    }
-  }
-
-  
   async checkCnpjAvailable(cnpj: string) {
     const exists = await this.establishmentRepository.findByCnpj(cnpj);
     if (exists) throw new AppError('Este CNPJ já está cadastrado.', 409);
@@ -38,10 +29,7 @@ export class EstablishmentService {
       throw new AppError('Código de acesso inválido.', 404);
     }
 
-    const serviceTypes = this.parseServiceTypes(establishment.serviceTypes);
-    const hasAutoatendimento = serviceTypes.includes('Autoatendimento');
-
-    if (!hasAutoatendimento) {
+    if (!establishment.temAutoatendimento) {
       throw new AppError('O autoatendimento está desativado para este estabelecimento.', 403);
     }
 
@@ -54,32 +42,16 @@ export class EstablishmentService {
     return establishment;
   }
 
-  private generateSelfServiceCode(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  }
-
   async updateEstablishment(establishmentId: number, updateData: any) {
     const establishment = await this.getEstablishmentProfile(establishmentId);
 
-    const paymentMethods = typeof updateData.paymentMethods !== 'string'
-      ? JSON.stringify(updateData.paymentMethods)
-      : updateData.paymentMethods;
-
     if (updateData.selfServiceEnabled !== undefined) {
-      const currentTypes = this.parseServiceTypes(establishment.serviceTypes);
-      if (updateData.selfServiceEnabled) {
-        if (!currentTypes.includes(ServiceType.AUTOATENDIMENTO)) {
-          currentTypes.push(ServiceType.AUTOATENDIMENTO);
-        }
-        if (!establishment.selfServiceCode) {
-          updateData.selfServiceCode = this.generateSelfServiceCode();
-        }
-      } else {
-        const idx = currentTypes.indexOf(ServiceType.AUTOATENDIMENTO);
-        if (idx > -1) currentTypes.splice(idx, 1);
-      }
-      updateData.serviceTypes = currentTypes;
+      updateData.temAutoatendimento = !!updateData.selfServiceEnabled;
+    }
+
+    if (updateData.paymentMethods !== undefined && Array.isArray(updateData.paymentMethods)) {
+      const pmRepo = this.establishmentRepository.manager.getRepository(PaymentMethod);
+      establishment.paymentMethods = await pmRepo.findBy({ name: In(updateData.paymentMethods) });
     }
 
     this.establishmentRepository.merge(establishment, {
@@ -87,30 +59,25 @@ export class EstablishmentService {
       cnpj: updateData.cnpj,
       phone: updateData.phone,
       address: updateData.address,
-      paymentMethods: paymentMethods,
-      selfServiceCode: updateData.selfServiceCode ?? establishment.selfServiceCode,
-      serviceTypes: updateData.serviceTypes !== undefined ? JSON.stringify(updateData.serviceTypes) : establishment.serviceTypes,
-      pixStaticEnabled: updateData.pixStaticEnabled,
-      ...(updateData.pixQrCodeUrl !== undefined && { pixQrCodeUrl: updateData.pixQrCodeUrl }),
+      selfServiceCode: establishment.selfServiceCode,
+      temAutoatendimento: updateData.temAutoatendimento ?? establishment.temAutoatendimento,
     });
 
     await this.establishmentRepository.save(establishment);
 
+    if (updateData.temAutoatendimento === false && establishment.selfServiceCode) {
+      try {
+        getIO().to(`totem_${establishment.selfServiceCode}`).emit('self_service_disabled');
+      } catch {  }
+    }
+
     if (updateData.configurations) {
       const config = await this.configRepository.findByEstablishmentId(establishmentId);
       if (config) {
-        this.configRepository.merge(config, {
-          logo: updateData.configurations.logo !== undefined ? updateData.configurations.logo : config.logo,
-          backgroundColor: updateData.configurations.backgroundColor ?? config.backgroundColor,
-          cardsColor: updateData.configurations.cardsColor ?? config.cardsColor,
-          buttonsColor: updateData.configurations.buttonsColor ?? config.buttonsColor,
-          comandaLabel: updateData.configurations.comandaLabel ?? config.comandaLabel,
-          textsColor: updateData.configurations.textsColor ?? config.textsColor,
-          buttonsTextColor: updateData.configurations.buttonsTextColor ?? config.buttonsTextColor,
-          activeCateogryColor: updateData.configurations.activeCateogryColor ?? config.activeCateogryColor,
-          fontFamily: updateData.configurations.fontFamily ?? config.fontFamily,
-          allowObservations: updateData.configurations.allowObservations ?? config.allowObservations
-        });
+        const cfgUpdates = Object.fromEntries(
+          Object.entries(updateData.configurations).filter(([, v]) => v !== undefined)
+        );
+        this.configRepository.merge(config, cfgUpdates);
         await this.configRepository.save(config);
       }
     }
@@ -153,11 +120,22 @@ export class EstablishmentService {
       phone: establishment.phone ?? null,
       address: establishment.address ?? null,
       selfServiceCode: establishment.selfServiceCode ?? null,
-      manager: establishment.manager ?? null,
+      manager: establishment.manager ? {
+        id: establishment.manager.id,
+        name: establishment.manager.name,
+        email: establishment.manager.email,
+        phone: establishment.manager.phone ?? null,
+        cpf: establishment.manager.perfilGerente?.cpf ?? null,
+        address: establishment.manager.perfilGerente?.address ?? null,
+        city: establishment.manager.perfilGerente?.city ?? null,
+        state: establishment.manager.perfilGerente?.state ?? null,
+      } : null,
       subscription: latestSub ?? null,
+      selfServiceEnabled: establishment.temAutoatendimento,
     };
   }
 
+  /*
   async createStore(params: { address: string; city: string; state: string; user: User }) {
     const establishment = await this.establishmentRepository.findByManagerId(params.user.id);
     if (!establishment || !this.mercadoPagoService) return;
@@ -174,5 +152,6 @@ export class EstablishmentService {
       await this.establishmentRepository.addMercadoPagoId(establishment.id, storeId);
     }
   }
+  */
 
 }

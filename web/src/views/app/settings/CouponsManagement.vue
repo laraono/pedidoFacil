@@ -256,7 +256,7 @@ const statusOf = (c) => {
           />
           <div class="flex-1">
             <BaseInput
-              :value="form.value"
+              :modelValue="form.value"
               :label="form.type === 'percent' ? 'Desconto (%)' : 'Desconto (R$)'"
               :placeholder="form.type === 'percent' ? '0' : '0,00'"
               :error="errors.value"

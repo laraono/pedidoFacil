@@ -13,10 +13,10 @@ export const authLimiter = rateLimit({
             timestamp: new Date().toISOString(),
         });
         
-        // res.status(429).json({
-        //     error: 'Muitas tentativas. Tente novamente mais tarde.',
-        //     retryAfter: Math.ceil((req as any).rateLimit.resetTime / 1000)
-        // })
+        res.status(429).json({
+            error: 'Muitas tentativas. Tente novamente mais tarde.',
+            retryAfter: Math.ceil((req as any).rateLimit.resetTime / 1000)
+        })
     }
 })
 
