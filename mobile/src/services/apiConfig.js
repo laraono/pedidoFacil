@@ -2,6 +2,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_IP = process.env.EXPO_PUBLIC_API_URL;
 
+const getLocalStackUrl = (ipUrl) => {
+  if (!ipUrl) return 'http://127.0.0.1:4566';
+  const baseUrl = ipUrl.split(':').slice(0, 2).join(':'); 
+  return `${baseUrl}:4566`;
+};
+
 export const appConfig = {
   BASE_IP,
   API_URL: BASE_IP ? `${BASE_IP}/api/v1` : null,
@@ -28,7 +34,7 @@ export const loadAppConfig = async () => {
       appConfig.selfServiceCode = savedCode;
     }
 
-    console.log(`[PedidoFácil] IP=${appConfig.API_URL} | EstID=${appConfig.ESTABLISHMENT_ID} | Configurado=${appConfig.isConfigured}`);
+subscription    console.log(`[PedidoFácil] IP=${appConfig.API_URL} | EstID=${appConfig.ESTABLISHMENT_ID} | Configurado=${appConfig.isConfigured}`);
     return appConfig.isConfigured;
   } catch (error) {
     console.error('Erro ao carregar configurações:', error);
