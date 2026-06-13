@@ -22,7 +22,7 @@ Este projeto foi desenvolvido como requisito para a obtenção do título de Tec
 | Mobile | React Native · Expo |
 | Backend | Node.js · Express · TypeORM · Zod |
 | Banco de Dados | MySQL |
-| Infraestrutura | Docker · Docker Compose · LocalStack (AWS local — upload de imagens) |
+| Infraestrutura | Docker · Docker Compose · LocalStack (AWS local para upload de imagens) |
 | Integrações | MercadoPago (pagamentos e assinaturas) |
 
 ---
@@ -116,7 +116,7 @@ Para receber webhooks localmente, é necessário expor o backend com uma URL pú
 
 ```bash
 # Após instalar e autenticar o ngrok:
-ngrok http 3000
+ngrok http 3000 # Adicione a porta do backend
 ```
 
 O ngrok gerará uma URL pública (ex: `https://xxxx.ngrok.io`). Configure-a em `backend/.env`:
@@ -177,9 +177,7 @@ O script irá:
 ./up.sh
 ```
 
-Acesse no navegador: **http://localhost:5173**
-
-O QR code do Expo (mobile) aparecerá no terminal — escaneie com o app **Expo Go**.
+Acesse a plataforma pelo link exibido. O QR code do Expo (mobile) também aparecerá no terminal — escaneie com o app [**Expo Go**](https://play.google.com/store/apps/details?id=host.exp.exponent&hl=pt_BR&pli=1).
 
 Logs ficam em `logs/backend.log`, `logs/web.log` e `logs/mobile.log`.
 
@@ -187,15 +185,12 @@ Logs ficam em `logs/backend.log`, `logs/web.log` e `logs/mobile.log`.
 
 ## Primeiro Acesso
 
-1. Acesse `http://localhost:5173/login` e autentique-se com o e-mail e senha definidos no `./install.sh`.
+1. Acesse plataforma e autentique-se com o e-mail e senha definidos no `./install.sh`.
 2. Acesse o painel **Admin** e crie ao menos 2 planos antes de continuar.
 3. Realize o logout e acesse a landing page. Clique em um dos planos para iniciar o cadastro de um gerente e preencha o onboarding com dados do estabelecimento.
-   > Para o onboarding, é possível usar dados gerados pelos geradores de [CNPJ](https://www.4devs.com.br/gerador_de_cnpj), [CPF](https://www.4devs.com.br/gerador_de_cpf) e [CEP](https://www.4devs.com.br/gerador_de_cep) para testes.
-   
-   - Para a etapa 4, de assinatura, use os [cartões de teste oficiais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards) e faça o pagamento **com o e-mail da conta do consumidor de teste** obtida na etapa 2.1, seção do Mercado Pago, ou disponibilizada a seguir: 
-   
-      ``test_user_5092580542816123576@testuser.com``
-     
+   > Para o onboarding, é possível usar dados gerados pelos geradores de [CNPJ](https://www.4devs.com.br/gerador_de_cnpj) e [CPF](https://www.4devs.com.br/gerador_de_cpf) para testes.
+4. Utilize a opção **Cargos Básicos** para configurar os cargos iniciais.
+5. Para a etapa de assinatura, use os [cartões de teste oficiais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards) e faça o pagamento **com o e-mail da conta do consumidor de teste** obtida na etapa 2.1, seção do Mercado Pago, ou disponibilizada a seguir: test_user_5092580542816123576@testuser.com
       - Use os [cartões de teste oficiais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards) e faça o pagamento com as credenciais de comprador. Sugestão:
 
          ``5031 4332 1540 6351``
@@ -206,8 +201,9 @@ Logs ficam em `logs/backend.log`, `logs/web.log` e `logs/mobile.log`.
          
          ``CPF: 123.456.789-09``
       
-4. Utilize a opção **Cargos Básicos** para configurar os cargos iniciais.
-5. Cadastre produtos e inicie a operação pelo **Cardápio**.
+6. Cadastre produtos e inicie a operação pelo **Cardápio**.
+7. Depois, mova-se para a área da **Cozinha** para preparar o pedido.
+8. E logo ápos, para o **Caixa**, finalizando o processo básico de um restaurante.
 
 ---
 

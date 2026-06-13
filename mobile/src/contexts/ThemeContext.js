@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { appConfig } from "../services/apiConfig";
+import { getFullImageUrl } from "../utils/imageUtils";
 
 function isLightColor(hex) {
   if (!hex || !hex.startsWith("#") || hex.length < 7) return true;
@@ -42,6 +43,7 @@ export function ThemeProvider({ children }) {
       if (response.ok) {
         const data = await response.json();
         const config = data.configurations || {};
+        
         const logoPath = config.logo;
         const logoUrl = logoPath
           ? (logoPath.startsWith('http') ? logoPath : `${appConfig.BASE_IP}/uploads/${logoPath}`)
