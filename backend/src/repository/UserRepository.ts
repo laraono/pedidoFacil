@@ -10,7 +10,7 @@ export class UserRepository extends Repository<User> {
 
     async findEmployeesByEstablishment(establishmentId: number, status: UserStatus) {
         return await this.find({
-            where: { role: { establishment: { id: establishmentId } } as any, status },
+            where: { role: { establishment: { id: establishmentId }, name: Not('Gerente') } as any, status },
             relations: ['role'],
             select: ['id', 'name', 'email', 'status'],
             order: status === UserStatus.ATIVO ? { name: 'ASC' } : { id: 'DESC' },

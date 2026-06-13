@@ -168,9 +168,12 @@ export class ComandaService {
       paymentId = registeredPayment[0].id;
       if (discountValue !== undefined || discountType !== undefined || couponId !== undefined) {
           const partialUpdate: any = {};
-          
-          if (discountType !== undefined) partialUpdate.discountType = discountType;
-          if (discountValue !== undefined) partialUpdate.discountValue = discountValue;
+
+          if (discountValue !== undefined || discountType !== undefined) {
+              const hasDiscount = discountValue !== null && discountValue !== undefined && Number(discountValue) > 0;
+              partialUpdate.discountValue = hasDiscount ? discountValue : null;
+              partialUpdate.discountType = hasDiscount ? (discountType || null) : null;
+          }
           if (couponId !== undefined) partialUpdate.coupon = couponId ? { id: couponId } : null;
 
           if (Object.keys(partialUpdate).length > 0) {
@@ -211,7 +214,7 @@ export class ComandaService {
           const comandaUpdateData: any = {
             status: ComandaStatus.FECHADA,
             total: novoTotal,
-            discountType: finalDiscountType || null,
+            discountType: finalDiscount > 0 ? (finalDiscountType || null) : null,
             discountValue: finalDiscount > 0 ? finalDiscount : null,
           };
           

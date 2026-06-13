@@ -15,8 +15,6 @@ export const UpdateEstablishmentDTO = z.object({
       return val;
     }, z.array(z.string()).optional()),
     
-    selfServiceCode: safeString(0, 20).optional(),
-
     selfServiceEnabled: z.preprocess((val) => {
       if (typeof val === 'string') return val === 'true';
       return val;

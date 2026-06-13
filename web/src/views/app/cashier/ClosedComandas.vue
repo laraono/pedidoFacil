@@ -39,10 +39,7 @@ const filtered = computed(() => {
     .filter(
       (c) =>
         !q ||
-        String(c.id).includes(q) ||
-        c.orders?.some((o) =>
-          o.items?.some((i) => i.name?.toLowerCase().includes(q)),
-        ),
+        (c.label || "").toLowerCase().includes(q),
     );
 });
 
@@ -252,10 +249,10 @@ function getGroupedOrderItems(order) {
                   </div>
 
                   <div v-else class="space-y-3">
-                    <div v-for="order in comanda.orders" :key="order.id" class="bg-white border border-[#E0E0E0] rounded overflow-hidden transition-all" :class="{'opacity-60': isOrderCancelled(order)}">
+                    <div v-for="(order, orderIdx) in comanda.orders" :key="order.id" class="bg-white border border-[#E0E0E0] rounded overflow-hidden transition-all" :class="{'opacity-60': isOrderCancelled(order)}">
                       <div class="flex items-center justify-between px-5 py-3 bg-gray-100">
                         <div class="flex items-center gap-3">
-                          <span class="text-[#212121] font-black text-sm uppercase tracking-widest">Pedido #{{ order.id }}</span>
+                          <span class="text-[#212121] font-black text-sm uppercase tracking-widest">Pedido {{ orderIdx + 1 }}</span>
                           <span v-if="isOrderCancelled(order)" class="text-[9px] font-black uppercase tracking-widest bg-red-100 text-red-600 border border-red-200 px-2 py-0.5 rounded">Cancelado</span>
                         </div>
                         <span class="font-black" :class="isOrderCancelled(order) ? 'text-red-400 line-through' : 'text-accent'">

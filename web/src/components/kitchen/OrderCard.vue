@@ -104,9 +104,6 @@
         class="p-4 flex justify-between items-center border-b border-[#E0E0E0] bg-gray-50"
       >
         <div class="flex items-center gap-3">
-          <span class="font-black text-2xl text-[#212121] tracking-tighter">{{
-            order.id
-          }}</span>
           <div class="flex flex-col">
             <span
               class="text-[9px] font-black uppercase tracking-[0.2em] leading-none"

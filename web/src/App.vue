@@ -24,7 +24,7 @@ const setupNotificationListener = () => {
 
     const handler = (data) => {
 
-      showToast(`O seu pedido #${data.orderId} (Comanda: ${data.comanda}) está PRONTO!`, 'success');
+      showToast(`Comanda ${data.comanda} está PRONTA!`, 'success');
     };
 
     socket.on(eventName, handler);

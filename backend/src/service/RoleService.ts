@@ -1,4 +1,4 @@
-import { In, Not } from 'typeorm';
+import { In } from 'typeorm';
 import { RoleRepository } from '../repository/RoleRepository';
 import { UserRepository } from '../repository/UserRepository';
 import { AppError } from '../middleware/error/AppError';
@@ -15,14 +15,14 @@ export class RoleService {
     async listRoles(establishmentId: number) {
         const roles = await this.roleRepository.find({
             where: { establishment: { id: establishmentId } as any },
-            relations: ['users'],
+            relations: ['users', 'permissions'],
             order: { name: 'ASC' },
         });
 
         return roles.map(role => ({
             id: role.id,
             name: role.name,
-            permissions: role.permissions.map(p => p.name),
+            permissions: (role.permissions ?? []).map(p => p.name),
             usersCount: role.users?.length ?? 0,
         }));
     }

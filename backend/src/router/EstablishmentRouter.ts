@@ -34,7 +34,7 @@ establishmentRouter.put(
   '/profile',
   authenticate,
   checkPermission('CONFIGURACAO'),
-  validateUpload.fields([{ name: 'logo', maxCount: 1 }, { name: 'pixQrCode', maxCount: 1 }]),
+  validateUpload.fields([{ name: 'logo', maxCount: 1 }]),
   validateRequest(UpdateEstablishmentDTO),
   establishmentController.update
 );

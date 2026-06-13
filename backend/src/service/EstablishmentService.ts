@@ -6,6 +6,7 @@ import { EstablishmentRepository } from '../repository/EstablishmentRepository';
 import { ConfigurationRepository } from '../repository/ConfigurationRepository';
 import { MercadoPagoService } from './MercadoPagoService';
 import { User } from '../database/entity/User';
+import { getIO } from '../socket';
 
 export class EstablishmentService {
 
@@ -58,11 +59,17 @@ export class EstablishmentService {
       cnpj: updateData.cnpj,
       phone: updateData.phone,
       address: updateData.address,
-      selfServiceCode: updateData.selfServiceCode ?? establishment.selfServiceCode,
+      selfServiceCode: establishment.selfServiceCode,
       temAutoatendimento: updateData.temAutoatendimento ?? establishment.temAutoatendimento,
     });
 
     await this.establishmentRepository.save(establishment);
+
+    if (updateData.temAutoatendimento === false && establishment.selfServiceCode) {
+      try {
+        getIO().to(`totem_${establishment.selfServiceCode}`).emit('self_service_disabled');
+      } catch {  }
+    }
 
     if (updateData.configurations) {
       const config = await this.configRepository.findByEstablishmentId(establishmentId);

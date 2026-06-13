@@ -48,8 +48,8 @@ export class ProductService {
         return createdProduct.id
     }
 
-    async listProducts(establishmentId: number, page: number = 1, limit: number = 10) {
-        return await this.productRepository.listProducts(establishmentId, page, limit);
+    async listProducts(establishmentId: number, page: number = 1, limit: number = 10, status?: string) {
+        return await this.productRepository.listProducts(establishmentId, page, limit, status);
     }
 
     async listProductsByCategory(categoryId: number, establishmentId: number, page: number = 1, limit: number = 10) {

@@ -72,27 +72,24 @@ export class WebhookService {
                 await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.PAGA);
                 auditLog('subscription.reactivated_by_mp', { subscriptionId: subscription.id });
 
-                let payments: any[] = [];
-                try {
-                    payments = await this.mercadoPagoService.getPaymentsByPreapproval(eventId);
-                } catch {}
-
-                for (const p of payments) {
-                    if (p.status !== 'approved') continue;
+                const { charged_quantity, last_charged_amount, last_charged_date } = mp.summarized;
+                if (subscription.plan && charged_quantity !== null && last_charged_amount !== null) {
+                    const paymentId = `preapproval_${eventId}_q${charged_quantity}`;
                     const alreadyRecorded = await this.subscriptionPaymentRepository.findOne({
-                        where: { mercadoPagoPaymentId: String(p.id) }
+                        where: { mercadoPagoPaymentId: paymentId }
                     });
-                    if (alreadyRecorded) continue;
-                    await this.subscriptionPaymentRepository.createPayment({
-                        mercadoPagoPaymentId: String(p.id),
-                        amount: p.transaction_amount ?? 0,
-                        status: SubscriptionPaymentStatus.APROVADO,
-                        paymentType: resolvePaymentType(p.payment_type_id ?? ''),
-                        planName: subscription.plan?.name ?? '',
-                        paidAt: p.date_approved ? new Date(p.date_approved) : new Date(),
-                        subscription: { id: subscription.id } as any,
-                    });
-                    auditLog('subscription.payment_recorded', { subscriptionId: subscription.id, paymentId: p.id });
+                    if (!alreadyRecorded) {
+                        await this.subscriptionPaymentRepository.createPayment({
+                            mercadoPagoPaymentId: paymentId,
+                            amount: last_charged_amount,
+                            status: SubscriptionPaymentStatus.APROVADO,
+                            paymentType: 'Cartão',
+                            planName: subscription.plan.name,
+                            paidAt: last_charged_date ? new Date(last_charged_date) : new Date(),
+                            subscription: { id: subscription.id } as any,
+                        });
+                        auditLog('subscription.payment_recorded', { subscriptionId: subscription.id, chargedQuantity: charged_quantity });
+                    }
                 }
             } else if (mp.status === 'cancelled') {
                 await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.CANCELADA);

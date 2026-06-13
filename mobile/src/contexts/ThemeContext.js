@@ -44,7 +44,7 @@ export function ThemeProvider({ children }) {
         const config = data.configurations || {};
         const logoPath = config.logo;
         const logoUrl = logoPath
-          ? `${appConfig.BASE_IP}/uploads/${logoPath}`
+          ? (logoPath.startsWith('http') ? logoPath : `${appConfig.BASE_IP}/uploads/${logoPath}`)
           : null;
 
         const bgColor = config.backgroundColor || defaultTheme.fundoGeral;

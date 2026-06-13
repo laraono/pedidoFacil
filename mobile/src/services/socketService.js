@@ -16,6 +16,9 @@ export function connectMobileSocket() {
   socket.on("connect", () => {
     console.log("[Mobile Socket] Conectado:", socket.id);
     socket.emit("join_room", "waiter");
+    if (appConfig.selfServiceCode) {
+      socket.emit("join_room", `totem_${appConfig.selfServiceCode}`);
+    }
   });
 
   socket.on("disconnect", (reason) => {

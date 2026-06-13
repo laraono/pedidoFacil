@@ -60,7 +60,7 @@ export default function OrderConfirmedScreen() {
         <View style={styles.instructionBox}>
           <Feather name="map-pin" size={22} color={theme.corCategorias} />
           <Text style={styles.instructionText}>
-            {isPaid || customerName
+            {isPaid
               ? "Aguarde ser chamado\npelo seu nome"
               : "Dirija-se ao caixa para\nefetuar o pagamento"}
           </Text>

@@ -1,4 +1,4 @@
-import { PutObjectCommand, GetObjectCommand, CreateBucketCommand, HeadBucketCommand, NotFound, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand, GetObjectCommand, CreateBucketCommand, HeadBucketCommand, HeadObjectCommand, PutBucketPolicyCommand } from "@aws-sdk/client-s3";
 import { Readable } from 'stream';
 import { s3Client } from "../config";
 import { AppError } from "../middleware";
@@ -90,21 +90,36 @@ export function generateUniqueImageKey(image: Buffer) {
     return hash.digest('hex');
 }
 
+async function setBucketPublicPolicy(bucketName: string): Promise<void> {
+    const policy = JSON.stringify({
+        Version: '2012-10-17',
+        Statement: [{
+            Sid: 'PublicReadGetObject',
+            Effect: 'Allow',
+            Principal: '*',
+            Action: 's3:GetObject',
+            Resource: `arn:aws:s3:::${bucketName}/*`,
+        }],
+    });
+
+    await s3Client.send(new PutBucketPolicyCommand({ Bucket: bucketName, Policy: policy }));
+}
+
 export async function ensureBucketExists(bucketName: string): Promise<void> {
     try {
-        console.log('inside enusre bucket exists', bucketName)
         const bucketExists = await doesBucketExist(bucketName);
-        
+
         if (!bucketExists) {
             await createBucket(bucketName);
         }
 
+        await setBucketPublicPolicy(bucketName);
         return;
     } catch (error) {
         console.error('Error ensuring bucket existense', error)
         throw new AppError('Erro fazendo upload da imagem', 500);
     }
-    
+
 }
 
 export function getImageContentType(image: any): string {

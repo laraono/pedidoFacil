@@ -13,7 +13,6 @@ import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
 
-import imgLogo from "../../assets/logo.png";
 import patternOndas from "../../assets/ondas.png";
 import Colors from "../constants/Colors";
 
@@ -66,17 +65,19 @@ export default function WelcomeScreen() {
 
       <SafeAreaView style={styles.container}>
         <View style={styles.centerContent}>
-          <Animated.View
-            style={[styles.logoWrapper, { transform: [{ scale: pulseAnim }] }]}
-          >
-            <View style={styles.logoCircle}>
-              <Image
-                source={imgLogo}
-                style={styles.logoImage}
-                resizeMode="contain"
-              />
-            </View>
-          </Animated.View>
+          {theme.logoUrl && (
+            <Animated.View
+              style={[styles.logoWrapper, { transform: [{ scale: pulseAnim }] }]}
+            >
+              <View style={styles.logoCircle}>
+                <Image
+                  source={{ uri: theme.logoUrl }}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
+              </View>
+            </Animated.View>
+          )}
 
           <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit>
             Peça aqui e{"\n"}evite filas

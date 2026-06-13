@@ -72,7 +72,7 @@ export const adminEstablishmentApi = {
 };
 
 export const adminMetricsApi = {
-  getSubscriptionMetrics: (period: '3m' | '6m' | '12m' = '12m') =>
+  getSubscriptionMetrics: (period: '3m' | '6m' | '12m' | 'all' = '12m') =>
     request(`/admin/metrics/subscriptions?period=${period}`, { method: 'GET' }),
   getMasterId: () => request('/admin/admins/master-id', { method: 'GET' }),
 };

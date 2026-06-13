@@ -80,6 +80,7 @@ export const useSubscriptionStore = defineStore('subscription', () => {
         totalGeral: raw.totalGeral,
         porPlano: raw.porPlano,
         novosPorMes: raw.novosPorMes,
+        receitaPorMes: raw.receitaPorMes,
       };
     } finally {
       adminMetricsLoading.value = false;

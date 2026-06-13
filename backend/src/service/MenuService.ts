@@ -24,8 +24,13 @@ export class MenuService {
             order: { name: 'ASC' }
         });
 
+        const categoryIdsWithProducts = new Set(products.map(p => p.category?.id));
+        const filteredCategories = editMode
+            ? categories
+            : categories.filter(c => categoryIdsWithProducts.has(c.id));
+
         return {
-            categories,
+            categories: filteredCategories,
             products: products.map(p => ({
                 ...p,
                 basePrice: Number(p.basePrice), 

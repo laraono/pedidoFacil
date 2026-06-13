@@ -91,7 +91,16 @@ const monthlyRevenue = computed(() => {
   const revenueMap = Object.fromEntries(rows.map(r => [r.mes, r.receita]));
 
   if (dateFilter.value === 'all') {
-    return rows.map(row => ({ month: mesLabel(row.mes), value: row.receita }));
+    if (!rows.length) return [];
+    const [firstYear, firstMonth] = rows[0].mes.split('-').map(Number);
+    const now = new Date();
+    const totalMonths =
+      (now.getFullYear() - firstYear) * 12 + (now.getMonth() + 1 - firstMonth) + 1;
+    return Array.from({ length: totalMonths }, (_, i) => {
+      const d = new Date(firstYear, firstMonth - 1 + i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      return { month: mesLabel(key), value: revenueMap[key] ?? 0 };
+    });
   }
 
   const intervalMonths = dateFilter.value === '3m' ? 3 : dateFilter.value === '6m' ? 6 : 12;
@@ -165,7 +174,7 @@ const handleExport = () => window.print();
         <Loader2 v-if="isLoading" :size="18" class="text-accent animate-spin" />
         <div class="flex bg-white border border-[#E0E0E0] rounded overflow-hidden">
           <button
-            v-for="opt in (['3m', '6m', '12m', 'all'] as const)"
+            v-for="opt in ['3m', '6m', '12m', 'all']"
             :key="opt"
             @click="dateFilter = opt"
             :class="dateFilter === opt ? 'bg-primary text-white' : 'text-[#757575] hover:text-[#212121]'"

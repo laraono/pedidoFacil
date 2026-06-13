@@ -163,9 +163,6 @@
               </BaseButton>
             </div>
             <div class="flex gap-3">
-              <BaseButton variant="ghost" @click="handlePrint">
-                <Printer :size="16" /> Cupom Fiscal
-              </BaseButton>
               <BaseButton
                 variant="primary"
                 :disabled="isFinalizeDisabled"
@@ -195,7 +192,6 @@
     X,
     XCircle,
     CheckCircle,
-    Printer,
   } from "lucide-vue-next";
   import { useCheckoutPayment } from "@/composables/useCheckoutPayment";
   import { getComandaMainLabel } from "@/utils/checkoutUtils";
@@ -216,7 +212,6 @@
     "close",
     "cancel-comanda",
     "cancel-order",
-    "print-receipt",
     "finalize",
   ]);
 
@@ -247,7 +242,6 @@
     removePaymentSplit,
     applyMask,
     buildFinalizePayload,
-    buildPrintPayload,
   } = useCheckoutPayment(
     () => props.ordersWithStatus ?? [],
     () => props.enabledPaymentMethods ?? [],
@@ -261,6 +255,8 @@
   );
 
   function toggleOrder(id) {
+    const order = props.ordersWithStatus?.find((o) => o.id === id);
+    if (order?.status === "pending") return;
     const idx = selectedOrderIds.value.indexOf(id);
     if (idx === -1) selectedOrderIds.value.push(id);
     else selectedOrderIds.value.splice(idx, 1);
@@ -269,10 +265,6 @@
   function handleFinalize() {
     if (isFinalizeDisabled.value) return;
     emit("finalize", buildFinalizePayload());
-  }
-
-  function handlePrint() {
-    emit("print-receipt", buildPrintPayload());
   }
 </script>
 

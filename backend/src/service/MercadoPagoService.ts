@@ -187,7 +187,12 @@ export class MercadoPagoService {
             return {
                 status: answer.data.status as string,
                 next_payment_date: answer.data.next_payment_date as string | null,
-                payer_email: answer.data.payer_email as string | null
+                payer_email: answer.data.payer_email as string | null,
+                summarized: {
+                    charged_quantity: (answer.data.summarized?.charged_quantity ?? null) as number | null,
+                    last_charged_amount: (answer.data.summarized?.last_charged_amount ?? null) as number | null,
+                    last_charged_date: (answer.data.summarized?.last_charged_date ?? null) as string | null,
+                },
             }
         } catch(error: any) {
             auditLog('mp.get_subscription_error', { error: error?.response?.data ?? error?.message });
@@ -287,30 +292,6 @@ export class MercadoPagoService {
         } catch(error: any) {
             auditLog('mp.get_payment_error', { error: error?.response?.data ?? error?.message });
             throw new AppError('Erro ao consultar pagamento no Mercado Pago', 500)
-        }
-    }
-
-    async getPaymentsByPreapproval(preapprovalId: string): Promise<any[]> {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
-            throw new AppError('Erro de conexão com o Mercado Pago', 500)
-        }
-
-        const headers = {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA
-        }
-
-        try {
-            const answer = await axios({
-                method: 'get',
-                url: 'https://api.mercadopago.com/v1/payments/search',
-                headers,
-                params: { preapproval_id: preapprovalId }
-            })
-            return answer.data.results ?? []
-        } catch(error: any) {
-            auditLog('mp.get_payments_by_preapproval_error', { error: error?.response?.data ?? error?.message });
-            throw new AppError('Erro ao buscar pagamentos da assinatura', 500)
         }
     }
 

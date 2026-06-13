@@ -12,19 +12,30 @@ export class ProductRepository extends Repository<Product> {
         return await this.save(product as any);
     }
 
-    async listProducts(establishmentId: number, page: number, limit: number) {
+    async listProducts(establishmentId: number, page: number, limit: number, status?: string) {
         const skip = (page - 1) * limit;
 
-        const [products, total] = await this.findAndCount({
-            where: { category: { establishment: { id: establishmentId } } }, 
-            relations: ['category', 'productVariations'],
-            take: limit,
-            skip: skip
-        });
+        const qb = this.createQueryBuilder('product')
+            .innerJoinAndSelect('product.category', 'category')
+            .innerJoin('category.establishment', 'establishment')
+            .leftJoinAndSelect(
+                'product.productVariations',
+                'variation',
+                'variation.deletedAt IS NULL'
+            )
+            .where('establishment.id = :establishmentId', { establishmentId })
+            .take(limit)
+            .skip(skip);
 
-        return { 
-            products, 
-            total, 
+        if (status) {
+            qb.andWhere('product.status = :status', { status });
+        }
+
+        const [products, total] = await qb.getManyAndCount();
+
+        return {
+            products,
+            total,
             totalPages: Math.ceil(total / limit),
             currentPage: page
         };

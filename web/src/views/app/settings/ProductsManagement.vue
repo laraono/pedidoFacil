@@ -31,11 +31,13 @@ const form = ref({ id: null, name: "", description: "", price: "", categoryId: "
 
 const searchQuery = ref("");
 const itemsPerPage = ref(8);
+const showInactive = ref(false);
 
 const fetchData = async (page = 1) => {
   isLoading.value = true;
   try {
-    await menuStore.loadProducts(page, itemsPerPage.value, false, searchQuery.value);
+    const status = showInactive.value ? "Inativo" : "Ativo";
+    await menuStore.loadProducts(page, itemsPerPage.value, false, searchQuery.value, status);
   } finally {
     isLoading.value = false;
   }
@@ -46,7 +48,7 @@ onMounted(async () => {
   await fetchData();
 });
 
-watch([searchQuery], () => {
+watch([searchQuery, showInactive], () => {
   fetchData(1);
 });
 
@@ -261,16 +263,39 @@ const tableActions = computed(() => bulkMode.value ? [] : [
     <ToastMessage />
     <PageHeader title="Gerenciar Produtos" subtitle="Controle do cardápio">
       <template #actions>
+        <BaseButton
+          :variant="showInactive ? 'secondary' : 'ghost'"
+          @click="showInactive = !showInactive; bulkMode = false; selectedIds = []"
+        >
+          <EyeOff :size="18" />
+          {{ showInactive ? 'Ver Ativos' : 'Ver Inativos' }}
+        </BaseButton>
         <button
+          v-if="!showInactive"
           @click="toggleBulkMode"
           class="px-5 py-3 rounded flex items-center gap-2 font-bold text-sm border transition-all"
           :class="bulkMode ? 'bg-accent-light text-accent border-accent/40' : 'bg-white text-[#757575] border-[#E0E0E0] hover:bg-gray-100 hover:text-[#212121]'"
         >
           <Layers :size="18" /> {{ bulkMode ? 'Cancelar Lote' : 'Edição em Lote' }}
         </button>
-        <BaseButton v-if="!bulkMode" @click="openAdd" :icon="PlusCircle">Novo Produto</BaseButton>
+        <BaseButton v-if="!bulkMode && !showInactive" @click="openAdd" :icon="PlusCircle">Novo Produto</BaseButton>
       </template>
     </PageHeader>
+
+    <div
+      v-if="showInactive"
+      class="mb-8 p-4 bg-orange-500/10 border border-orange-500/20 rounded flex items-center justify-between"
+    >
+      <p class="text-orange-400 text-sm font-bold flex items-center gap-2">
+        <EyeOff :size="18" /> Visualizando produtos inativos.
+      </p>
+      <button
+        @click="showInactive = false"
+        class="text-orange-300 hover:text-orange-100 text-sm font-bold underline transition-colors"
+      >
+        Voltar para ativos
+      </button>
+    </div>
 
     <div class="mb-6 relative">
       <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -423,8 +448,22 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         <BaseInput v-model="form.name" label="Nome do Produto" placeholder="Ex: X-Burguer Especial" :maxlength="60" :error="errors.name" />
         <BaseInput v-model="form.description" label="Descrição (opcional)" placeholder="Ingredientes, detalhes..." :maxlength="120" :error="errors.description" />
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-black text-[#757575] uppercase tracking-widest ml-2">Preço base (R$)</label>
-          <input :value="form.price" @input="onPriceInput" inputmode="numeric" placeholder="0,00" class="w-full py-3.5 px-4 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] focus:outline-none focus:border-primary/50 transition-all" :class="errors.price ? '!border-red-500' : ''" />
+          <label class="text-xs font-black uppercase tracking-widest ml-2 transition-colors" :class="form.sizes.length > 0 ? 'text-[#BDBDBD]' : 'text-[#757575]'">
+            Preço base (R$)
+            <span v-if="form.sizes.length > 0" class="normal-case font-bold tracking-normal ml-1">(substituído pelas variações)</span>
+          </label>
+          <input
+            :value="form.price"
+            @input="onPriceInput"
+            inputmode="numeric"
+            placeholder="0,00"
+            :disabled="form.sizes.length > 0"
+            class="w-full py-3.5 px-4 rounded border transition-all"
+            :class="[
+              form.sizes.length > 0 ? 'bg-gray-100 border-[#E0E0E0] text-[#BDBDBD] cursor-not-allowed opacity-60' : 'bg-gray-50 border-[#E0E0E0] text-[#212121] focus:outline-none focus:border-primary/50',
+              errors.price ? '!border-red-500' : ''
+            ]"
+          />
           <p v-if="errors.price" class="text-danger text-[11px] font-bold mt-0.5 ml-2">{{ errors.price }}</p>
         </div>
         <BaseSelect

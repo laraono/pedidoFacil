@@ -62,7 +62,7 @@ const validationRules = {
   cnpj: [{ validator: (v) => !v?.trim() || v.replace(/\D/g, "").length === 14, message: "CNPJ incompleto." }],
   phone: [{ validator: (v) => !v?.trim() || v.replace(/\D/g, "").length >= 10, message: "Telefone incompleto." }],
 };
-const { errors, validateAll } = useFormValidation(validationRules);
+const { errors, validateAll, touchField } = useFormValidation(validationRules);
 
 onMounted(async () => {
   isFetching.value = true;
@@ -127,8 +127,6 @@ const saveSettings = async () => {
       logoFile.value = null;
       originalPaymentMethods.value = [...paymentMethods.value];
       originalSelfService.value = selfService.value;
-      if (updated?.selfServiceCode) selfServiceCode.value = updated.selfServiceCode;
-
       showToast("Dados atualizados com sucesso!", "success");
     } catch (error) {
       const data = error.response?.data || error.data;
@@ -202,6 +200,7 @@ const saveSettings = async () => {
                 placeholder="Ex: Hamburgueria 2000"
                 :error="errors.name"
                 maxlength="80"
+                @blur="touchField('name', form.name)"
               />
             </div>
 
@@ -212,6 +211,7 @@ const saveSettings = async () => {
               :error="errors.cnpj"
               maxlength="18"
               @input="(e) => { form.cnpj = maskCNPJ(e.target.value); e.target.value = form.cnpj; }"
+              @blur="touchField('cnpj', form.cnpj)"
             />
 
             <BaseInput
@@ -221,6 +221,7 @@ const saveSettings = async () => {
               :error="errors.phone"
               maxlength="15"
               @input="(e) => { const d = e.target.value.replace(/\D/g, ''); form.phone = maskPhone(d); e.target.value = form.phone; }"
+              @blur="touchField('phone', form.phone)"
             />
           </div>
         </div>

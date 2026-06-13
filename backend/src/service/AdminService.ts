@@ -72,7 +72,7 @@ export class AdminService {
     }
 
     async getMasterId(): Promise<number> {
-        const master = await this.repo.findOne({ order: { id: 'ASC' } });
+        const [master] = await this.repo.find({ order: { id: 'ASC' }, take: 1 });
         return master?.id ?? 1;
     }
 

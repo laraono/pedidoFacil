@@ -2,13 +2,14 @@ import { request } from './api';
 
 export const productApi = {
 
-  list: (params: { page?: number; limit?: number; deleted?: boolean; search?: string } = {}) => {
+  list: (params: { page?: number; limit?: number; deleted?: boolean; search?: string; status?: string } = {}) => {
     const query = new URLSearchParams();
-    
+
     if (params.page) query.append('page', params.page.toString());
     if (params.limit) query.append('limit', params.limit.toString());
     if (params.deleted) query.append('deleted', 'true');
     if (params.search) query.append('search', params.search);
+    if (params.status) query.append('status', params.status);
     
     return request(`/products?${query.toString()}`, { method: 'GET' });
   },

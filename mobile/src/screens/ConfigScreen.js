@@ -5,26 +5,23 @@ import { useTheme } from '../contexts/ThemeContext';
 
 export default function ConfigScreen({ onFinishConfig }) {
   const { loadTheme } = useTheme();
-  const [ipAddress, setIpAddress] = useState(appConfig.BASE_IP);
   const [selfServiceCode, setSelfServiceCode] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!ipAddress || !selfServiceCode) {
-      Alert.alert('Atenção', 'Preencha todos os campos.');
+    if (!selfServiceCode) {
+      Alert.alert('Atenção', 'Preencha o código de autoatendimento.');
       return;
     }
 
-    if (!ipAddress.startsWith('http://') && !ipAddress.startsWith('https://')) {
-      Alert.alert('Erro', 'O IP/URL deve começar com http:// ou https://');
+    if (!appConfig.API_URL) {
+      Alert.alert('Erro de configuração', 'URL do servidor não configurada. Verifique a instalação do app.');
       return;
     }
 
     setIsSaving(true);
     try {
-      const cleanIp = ipAddress.replace(/\/$/, '');
-      
-      const response = await fetch(`${cleanIp}/api/v1/estabelecimento/code/${selfServiceCode}`);
+      const response = await fetch(`${appConfig.API_URL}/estabelecimento/code/${selfServiceCode}`);
       
       if (!response.ok) {
         throw new Error('Código do estabelecimento inválido ou não encontrado.');
@@ -38,17 +35,18 @@ export default function ConfigScreen({ onFinishConfig }) {
         throw new Error('O servidor não retornou um ID válido.');
       }
 
-      await saveAppConfig(cleanIp, fetchedEstablishmentId, selfServiceCode);
+      await saveAppConfig(fetchedEstablishmentId, selfServiceCode);
       await loadTheme();
 
       Alert.alert('Sucesso!', `Conectado ao estabelecimento: ${data.name || 'ID ' + fetchedEstablishmentId}`);
       onFinishConfig();
 
     } catch (error) {
-      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+      const msg = error?.message || 'Erro ao conectar ao servidor.';
+      if (msg.includes('Network request failed') || msg.includes('Failed to fetch')) {
         Alert.alert('Erro de Conexão', 'Não foi possível conectar ao servidor. Verifique o IP e a porta.');
       } else {
-        Alert.alert('Erro', error.message);
+        Alert.alert('Erro', msg);
       }
     } finally {
       setIsSaving(false);
@@ -63,16 +61,6 @@ export default function ConfigScreen({ onFinishConfig }) {
       <View style={styles.card}>
         <Text style={styles.title}>PedidoFácil</Text>
         <Text style={styles.subtitle}>Configuração do Totem</Text>
-
-        <Text style={styles.label}>URL do Servidor (com porta)</Text>
-        <TextInput
-          style={styles.input}
-          value={ipAddress}
-          onChangeText={setIpAddress}
-          placeholder="ex: http://192.168.1.100:3000"
-          autoCapitalize="none"
-          keyboardType="url"
-        />
 
         <Text style={styles.label}>Código do Autoatendimento</Text>
         <TextInput

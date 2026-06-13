@@ -117,8 +117,14 @@ export function useCheckoutPayment(getOrders, getEnabledMethods) {
       const parts = val.split(",");
       parts[0] = parts[0].replace(/^0+(\d)/, "$1");
       const masked = parts.join(",");
-      discountRaw.value = masked;
-      discountValue.value = parseFloat(masked.replace(",", ".")) || 0;
+      const parsed = parseFloat(masked.replace(",", ".")) || 0;
+      const clamped = Math.min(parsed, subtotal.value);
+      discountValue.value = clamped;
+      if (clamped < parsed) {
+        discountRaw.value = clamped.toFixed(2).replace(".", ",");
+      } else {
+        discountRaw.value = masked;
+      }
     }
   }
 
@@ -183,20 +189,6 @@ export function useCheckoutPayment(getOrders, getEnabledMethods) {
     };
   }
 
-  function buildPrintPayload() {
-    const hasDiscount = discountValue.value > 0 || couponDiscount.value > 0;
-    if (!hasDiscount) return null;
-    return {
-      totalFinal: totalWithDiscount.value,
-      coupon: appliedCoupon.value?.code ?? null,
-      couponDiscount: couponDiscount.value,
-      manualDiscount: discountType.value === "percent"
-        ? subtotal.value * (discountValue.value / 100)
-        : discountValue.value,
-      payments: [],
-    };
-  }
-
   return {
     paymentMode, selectedOrderIds,
     discountType, discountValue, discountRaw,
@@ -207,6 +199,6 @@ export function useCheckoutPayment(getOrders, getEnabledMethods) {
     isFinalizeDisabled,
     reset, onDiscountInput, applyCoupon, removeCoupon,
     distributeEqually, addPaymentSplit, removePaymentSplit, applyMask,
-    buildFinalizePayload, buildPrintPayload,
+    buildFinalizePayload,
   };
 }
