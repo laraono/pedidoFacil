@@ -2,6 +2,8 @@
   import { ref, computed, onMounted } from "vue";
   import { useRouter } from "vue-router";
   import { request } from "@/services/api.js";
+  import { useFeaturesStore } from "@/stores/features";
+  import { storeToRefs } from "pinia";
   import { planApi } from "@/services/planApi";
   import { User, Menu, X, Check } from "lucide-vue-next";
   import { monthlyEquivalent } from "@/utils/frequency";
@@ -16,6 +18,7 @@
 
   const router = useRouter();
   const { formatCurrency, parsedFeatures } = useUtils();
+  const { emailEnabled } = storeToRefs(useFeaturesStore());
 
   const plans = ref([]);
 
@@ -143,6 +146,7 @@
               >Planos</a
             >
             <a
+              v-if="emailEnabled"
               @click.prevent="scrollToSection('contato')"
               href="#contato"
               class="hover:text-accent transition-colors cursor-pointer"
@@ -443,6 +447,7 @@
         </section>
 
         <section
+          v-if="emailEnabled"
           id="contato"
           class="w-full max-w-[700px] px-5 lg:px-0 mt-20 mb-32 text-center"
         >

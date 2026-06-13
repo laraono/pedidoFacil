@@ -350,6 +350,10 @@ export class AuthService {
   }
 
   async forgotPassword(email: string) {
+    if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
+      throw new AppError('Recuperação de senha não está disponível neste servidor.', 503);
+    }
+
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) return { message: 'Se o e-mail existir, um link de recuperação será enviado.' };
 

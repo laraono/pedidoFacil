@@ -34,7 +34,7 @@ export const loadAppConfig = async () => {
       appConfig.selfServiceCode = savedCode;
     }
 
-subscription    console.log(`[PedidoFácil] IP=${appConfig.API_URL} | EstID=${appConfig.ESTABLISHMENT_ID} | Configurado=${appConfig.isConfigured}`);
+    console.log(`[PedidoFácil] IP=${appConfig.API_URL} | EstID=${appConfig.ESTABLISHMENT_ID} | Configurado=${appConfig.isConfigured}`);
     return appConfig.isConfigured;
   } catch (error) {
     console.error('Erro ao carregar configurações:', error);

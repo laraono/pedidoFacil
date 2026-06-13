@@ -26,8 +26,14 @@ const authController = new AuthController(authService);
 
 const authRouter = Router();
 
+authRouter.get('/features', (_req: Request, res: Response) => {
+  res.json({
+    emailEnabled: !!(process.env.MAIL_USER && process.env.MAIL_PASS),
+  });
+});
+
 authRouter.post(
-  '/check-email', 
+  '/check-email',
   authLimiter, 
   catchAsync((req: Request, res: Response) => authController.checkEmail(req, res))
 );

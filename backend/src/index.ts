@@ -31,6 +31,8 @@ import { AppDataSource } from './database';
 import { errorHandler, publicLimiter, authenticatedLimiter } from './middleware';
 import { initSocket } from './socket';
 import { logger } from './utils/logger';
+import { ensureBucketExists } from './service/S3Service';
+import { S3_BUCKET } from './config/aws';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
@@ -71,6 +73,10 @@ app.use(cookieParser());
 const httpServer = http.createServer(app);
 
 AppDataSource.initialize().then(async () => {
+    await ensureBucketExists(S3_BUCKET).catch(err =>
+        logger.error('Falha ao inicializar bucket S3', { error: err?.message })
+    );
+
     app.use('/api/v1/admin', authenticatedLimiter, adminRouter)
     app.use('/api/v1', publicLimiter, authRouter);
     app.use('/api/v1', publicLimiter, planRouter);

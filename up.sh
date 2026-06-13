@@ -35,7 +35,7 @@ if [ ! -f backend/.env ]; then
   exit 1
 fi
 
-REQUIRED_VARS=("DB_HOST" "DB_PORT" "DB_USER" "DB_PASS" "DB_NAME" "JWT_SECRET")
+REQUIRED_VARS=("DB_HOST" "DB_PORT" "DB_USER" "DB_PASS" "DB_NAME" "JWT_SECRET" "MERCADOPAGO_ACCESS_TOKEN_ASSINATURA")
 MISSING=()
 
 for var in "${REQUIRED_VARS[@]}"; do
@@ -57,7 +57,43 @@ if [ ${#MISSING[@]} -gt 0 ]; then
   exit 1
 fi
 
-ok "Configurações ok"
+ok "Backend configurado"
+
+MAIL_USER_VAL=$(grep "^MAIL_USER=" backend/.env | cut -d= -f2)
+MAIL_PASS_VAL=$(grep "^MAIL_PASS=" backend/.env | cut -d= -f2)
+if [ -z "$MAIL_USER_VAL" ] || [ -z "$MAIL_PASS_VAL" ]; then
+  warn "E-mail não configurado — 'Esqueci minha senha' e contato ficarão desabilitados."
+fi
+
+if [ ! -f web/.env ]; then
+  erro "Arquivo web/.env não encontrado."
+  echo -e "     Execute ${BOLD}./install.sh${RESET} primeiro para configurar o sistema."
+  exit 1
+fi
+
+WEB_REQUIRED_VARS=("VITE_MP_PUBLIC_KEY")
+WEB_MISSING=()
+
+for var in "${WEB_REQUIRED_VARS[@]}"; do
+  value=$(grep "^${var}=" web/.env | cut -d= -f2)
+  if [ -z "$value" ]; then
+    WEB_MISSING+=("$var")
+  fi
+done
+
+if [ ${#WEB_MISSING[@]} -gt 0 ]; then
+  erro "Algumas configurações obrigatórias estão faltando no web/.env:"
+  echo ""
+  for var in "${WEB_MISSING[@]}"; do
+    echo -e "     ${YELLOW}•${RESET} $var"
+  done
+  echo ""
+  echo -e "  Abra o arquivo ${BOLD}web/.env${RESET} e preencha os valores em falta."
+  echo -e "  Depois rode ${BOLD}./up.sh${RESET} novamente."
+  exit 1
+fi
+
+ok "Web configurada"
 
 # ── Docker ─────────────────────────────────────────────────────────────────
 echo ""
@@ -70,7 +106,7 @@ if ! docker info &>/dev/null; then
   exit 1
 fi
 
-docker compose -f backend/docker-compose.yml up -d mysql localstack
+docker compose -f backend/docker-compose.yml up -d mysql minio
 
 DB_PASS=$(grep "^DB_PASS=" backend/.env | cut -d= -f2)
 info "Aguardando banco de dados..."
@@ -136,6 +172,14 @@ echo -e "  ${DIM}Pressione Ctrl+C para encerrar tudo.${RESET}"
 echo ""
 echo -e "  ${DIM}───────────────────────────────────────────────────────${RESET}"
 echo ""
+LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+if [ -z "$LOCAL_IP" ]; then
+  LOCAL_IP=$(ipconfig getifaddr en0 2>/dev/null || echo "localhost")
+fi
+MOBILE_URL="http://${LOCAL_IP}:${BACKEND_PORT}"
+echo "EXPO_PUBLIC_API_URL=${MOBILE_URL}" > mobile/.env
+ok "Mobile configurado → ${MOBILE_URL}"
+
 info "Iniciando mobile (Expo)..."
 echo ""
 

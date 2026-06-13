@@ -178,9 +178,9 @@ const savePassword = async () => {
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <BaseInput v-model="form.fullName" label="Nome Completo" placeholder="Ex: João da Silva" :error="errors.fullName" />
+          <BaseInput v-model="form.fullName" label="Nome Completo" placeholder="Ex: João da Silva" maxlength="100" :error="errors.fullName" />
 
-          <BaseInput v-model="form.email" type="email" label="E-mail de Login" placeholder="seu@email.com" :error="errors.email" />
+          <BaseInput v-model="form.email" type="email" label="E-mail de Login" placeholder="seu@email.com" maxlength="254" :error="errors.email" />
 
           <BaseInput
             :modelValue="form.phone"
@@ -201,10 +201,10 @@ const savePassword = async () => {
           />
 
           <div class="md:col-span-2">
-            <BaseInput v-model="form.address" label="Endereço" placeholder="Rua, número, complemento" />
+            <BaseInput v-model="form.address" label="Endereço" placeholder="Rua, número, complemento" maxlength="255" />
           </div>
 
-          <BaseInput v-model="form.city" label="Cidade" placeholder="Ex: São Paulo" />
+          <BaseInput v-model="form.city" label="Cidade" placeholder="Ex: São Paulo" maxlength="100" />
 
           <div class="grid grid-cols-2 gap-4">
             <BaseInput v-model="form.state" label="Estado" placeholder="SP" maxlength="2" />

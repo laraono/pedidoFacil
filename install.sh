@@ -100,10 +100,63 @@ if [ -z "$JWT_CURRENT" ]; then
   ok "Chave de segurança JWT gerada automaticamente"
 fi
 
+# Pede token MercadoPago (assinatura)
+MP_TOKEN_CURRENT=$(grep "^MERCADOPAGO_ACCESS_TOKEN_ASSINATURA=" backend/.env | cut -d= -f2)
+if [ -z "$MP_TOKEN_CURRENT" ]; then
+  echo ""
+  echo -e "  ${BOLD}Token de acesso MercadoPago${RESET} ${DIM}(para cobranças de assinatura)${RESET}"
+  echo -e "  ${DIM}Encontre em: mercadopago.com.br → Sua conta → Credenciais → Produção${RESET}"
+  read -p "  → MERCADOPAGO_ACCESS_TOKEN_ASSINATURA: " MP_TOKEN_INPUT
+  if [ -z "$MP_TOKEN_INPUT" ]; then
+    erro "Token MercadoPago obrigatório."
+    exit 1
+  fi
+  update_env backend/.env "MERCADOPAGO_ACCESS_TOKEN_ASSINATURA" "$MP_TOKEN_INPUT"
+  ok "Token MercadoPago configurado"
+fi
+
+# Pede credenciais de e-mail (opcional — esqueci senha e contato não funcionarão sem isso)
+MAIL_USER_CURRENT=$(grep "^MAIL_USER=" backend/.env | cut -d= -f2)
+MAIL_PASS_CURRENT=$(grep "^MAIL_PASS=" backend/.env | cut -d= -f2)
+if [ -z "$MAIL_USER_CURRENT" ] || [ -z "$MAIL_PASS_CURRENT" ]; then
+  echo ""
+  echo -e "  ${BOLD}E-mail${RESET} ${DIM}(opcional — necessário para 'Esqueci minha senha' e formulário de contato)${RESET}"
+  read -p "  → MAIL_USER [Enter para pular]: " MAIL_USER_INPUT
+  if [ -n "$MAIL_USER_INPUT" ]; then
+    echo -e "  ${DIM}Use uma senha de app para Gmail${RESET}"
+    read -s -p "  → MAIL_PASS: " MAIL_PASS_INPUT
+    echo ""
+    if [ -n "$MAIL_PASS_INPUT" ]; then
+      update_env backend/.env "MAIL_USER" "$MAIL_USER_INPUT"
+      update_env backend/.env "MAIL_PASS" "$MAIL_PASS_INPUT"
+      ok "E-mail configurado"
+    else
+      warn "Senha não informada — e-mail não configurado. Configure MAIL_USER e MAIL_PASS em backend/.env quando quiser."
+    fi
+  else
+    warn "E-mail não configurado. Configure MAIL_USER e MAIL_PASS em backend/.env quando quiser."
+  fi
+fi
+
 # Web .env
 if [ ! -f web/.env ]; then
   cp web/.env.example web/.env
   ok "Arquivo web/.env criado"
+fi
+
+MP_KEY_CURRENT=$(grep "^VITE_MP_PUBLIC_KEY=" web/.env | cut -d= -f2)
+if [ -z "$MP_KEY_CURRENT" ]; then
+  echo ""
+  echo -e "  ${BOLD}Chave pública do MercadoPago${RESET} ${DIM}(necessária para pagamentos no site)${RESET}"
+  echo -e "  ${DIM}Encontre em: mercadopago.com.br → Sua conta → Credenciais${RESET}"
+  read -p "  → VITE_MP_PUBLIC_KEY: " MP_KEY_INPUT
+  if [ -n "$MP_KEY_INPUT" ]; then
+    update_env web/.env "VITE_MP_PUBLIC_KEY" "$MP_KEY_INPUT"
+    ok "Chave MercadoPago configurada"
+  else
+    erro "Chave MercadoPago não informada. Configure VITE_MP_PUBLIC_KEY em web/.env e rode ./up.sh."
+    exit 1
+  fi
 fi
 
 echo ""
@@ -132,7 +185,7 @@ echo -e "${BOLD}  Preparando o banco de dados...${RESET}"
 echo ""
 
 info "Iniciando containers Docker..."
-docker compose -f backend/docker-compose.yml up -d mysql localstack
+docker compose -f backend/docker-compose.yml up -d mysql minio
 
 echo ""
 info "Aguardando o banco de dados ficar pronto..."

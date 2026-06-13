@@ -2,12 +2,15 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { useFeaturesStore } from '@/stores/features';
+import { storeToRefs } from 'pinia';
 import { LogIn, Lock, User, AlertCircle, Eye, EyeOff } from 'lucide-vue-next';
 import { BaseInput, BaseButton } from '@/components/ui';
 import AuthLayout from '@/components/AuthLayout.vue';
 import { PERMISSIONS } from '@/utils/permissions';
 
 const authStore = useAuthStore();
+const { emailEnabled } = storeToRefs(useFeaturesStore());
 const router = useRouter();
 
 const email = ref('');
@@ -86,7 +89,7 @@ const goToPlans = () => router.push({ path: '/', hash: '#planos' });
             </template>
           </BaseInput>
 
-          <div class="flex justify-end">
+          <div v-if="emailEnabled" class="flex justify-end">
             <a @click.prevent="router.push('/forgot-password')" href="/forgot-password"
               class="text-xs text-[#757575] hover:text-accent transition-colors cursor-pointer">
               Esqueci minha senha

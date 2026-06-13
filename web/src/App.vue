@@ -3,11 +3,15 @@ import { onMounted, onUnmounted, watch } from 'vue';
 import { RouterView } from 'vue-router';
 import ToastMessage from './components/ui/ToastMessage.vue';
 import { useAuthStore } from '@/stores/auth';
-import { getSocket, connectSocket } from '@/services/socket'; 
+import { useFeaturesStore } from '@/stores/features';
+import { getSocket, connectSocket } from '@/services/socket';
 import { useToast } from '@/composables/useToast';
 
 const authStore = useAuthStore();
+const featuresStore = useFeaturesStore();
 const { showToast } = useToast();
+
+featuresStore.fetchFeatures();
 
 let currentSocketListener = null;
 

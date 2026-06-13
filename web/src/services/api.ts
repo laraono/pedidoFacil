@@ -1,5 +1,7 @@
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
 
+let refreshPromise: Promise<any> | null = null;
+
 export function getToken(): string | null {
   return localStorage.getItem('accessToken');
 }
@@ -49,8 +51,18 @@ export async function request(path: string, options: CustomRequestInit = {}) {
   const data = await res.json().catch(() => ({}));
 
   if (res.status === 401 && path !== '/refresh' && path !== '/login') {
+    if (!getToken()) {
+      const err: any = new Error(data.message || data.error || `Erro ${res.status}`);
+      err.data = data;
+      throw err;
+    }
     try {
-      const refreshed = await request('/refresh', { method: 'POST' });
+      if (!refreshPromise) {
+        refreshPromise = request('/refresh', { method: 'POST' }).finally(() => {
+          refreshPromise = null;
+        });
+      }
+      const refreshed = await refreshPromise;
       localStorage.setItem('accessToken', refreshed.accessToken);
       headers['Authorization'] = `Bearer ${refreshed.accessToken}`;
 

@@ -4,6 +4,10 @@ import { auditLog } from '../utils/logger';
 
 export class ContactController {
   static async sendContactEmail(req: Request, res: Response) {
+    if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
+      return res.status(503).json({ error: 'Envio de e-mail não está configurado neste servidor.' });
+    }
+
     const { nome, email, mensagem } = req.body;
     const safeName = String(nome).replace(/[\r\n]/g, '');
     const safeEmail = String(email).replace(/[\r\n]/g, '');
