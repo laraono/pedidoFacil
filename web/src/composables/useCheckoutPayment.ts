@@ -3,21 +3,41 @@ import { useCouponStore } from "@/stores/coupons";
 import { useUtils } from "@/composables/useUtils";
 import { getOrderTotal } from "@/utils/checkoutUtils";
 
-export function useCheckoutPayment(getOrders, getEnabledMethods) {
+interface Order {
+  id: number
+  status: string
+  [key: string]: any
+}
+
+interface PaymentSplit {
+  type: string
+  amount: number
+}
+
+interface Coupon {
+  type: 'percent' | 'fixed'
+  value: number
+  expiresAt?: string | null
+}
+
+export function useCheckoutPayment(
+  getOrders: () => Order[],
+  getEnabledMethods: () => string[],
+) {
   const couponStore = useCouponStore();
   const utils = useUtils();
 
   const paymentMode = ref("total");
-  const selectedOrderIds = ref([]);
+  const selectedOrderIds = ref<number[]>([]);
   const discountType = ref("percent");
   const discountValue = ref(0);
   const discountRaw = ref("");
   const couponCodeInput = ref("");
-  const appliedCoupon = ref(null);
+  const appliedCoupon = ref<Coupon | null>(null);
   const couponError = ref("");
   const splitPayment = ref(false);
   const numberOfPeople = ref(2);
-  const paymentSplits = ref([{ type: "Dinheiro", amount: 0 }]);
+  const paymentSplits = ref<PaymentSplit[]>([{ type: "Dinheiro", amount: 0 }]);
 
   function reset() {
     paymentMode.value = "total";
@@ -102,13 +122,14 @@ export function useCheckoutPayment(getOrders, getEnabledMethods) {
     return totalWithDiscount.value < 0;
   });
 
-  function onDiscountInput(e) {
+  function onDiscountInput(e: Event) {
+    const target = e.target as HTMLInputElement;
     if (discountType.value === "percent") {
-      const num = Math.min(100, parseInt(e.target.value.replace(/\D/g, ""), 10) || 0);
+      const num = Math.min(100, parseInt(target.value.replace(/\D/g, ""), 10) || 0);
       discountValue.value = num;
       discountRaw.value = num === 0 ? "" : String(num);
     } else {
-      let val = String(e.target.value).replace(/[^\d,]/g, "");
+      let val = target.value.replace(/[^\d,]/g, "");
       const commaIdx = val.indexOf(",");
       if (commaIdx !== -1) {
         val = val.slice(0, commaIdx + 1) + val.slice(commaIdx + 1).replace(/,/g, "");
@@ -120,18 +141,14 @@ export function useCheckoutPayment(getOrders, getEnabledMethods) {
       const parsed = parseFloat(masked.replace(",", ".")) || 0;
       const clamped = Math.min(parsed, subtotal.value);
       discountValue.value = clamped;
-      if (clamped < parsed) {
-        discountRaw.value = clamped.toFixed(2).replace(".", ",");
-      } else {
-        discountRaw.value = masked;
-      }
+      discountRaw.value = clamped < parsed ? clamped.toFixed(2).replace(".", ",") : masked;
     }
   }
 
   function applyCoupon() {
     couponError.value = "";
     if (!couponCodeInput.value.trim()) return;
-    const coupon = couponStore.findByCode(couponCodeInput.value);
+    const coupon = couponStore.findByCode(couponCodeInput.value) as Coupon | null | undefined;
     if (!coupon) { couponError.value = "Cupom não encontrado ou inativo."; return; }
     if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) { couponError.value = "Este cupom está vencido."; return; }
     if (coupon.type === "fixed" && subtotal.value - coupon.value < 1.0) {
@@ -161,15 +178,16 @@ export function useCheckoutPayment(getOrders, getEnabledMethods) {
     paymentSplits.value.push({ type: getEnabledMethods()[0] ?? "Dinheiro", amount: 0 });
   }
 
-  function removePaymentSplit(index) {
+  function removePaymentSplit(index: number) {
     paymentSplits.value.splice(index, 1);
   }
 
-  function applyMask(event, split) {
-    let value = event.target.value.replace(/\D/g, "");
+  function applyMask(event: Event, split: PaymentSplit) {
+    const target = event.target as HTMLInputElement;
+    let value = target.value.replace(/\D/g, "");
     if (value === "") value = "0";
     split.amount = parseInt(value, 10) / 100;
-    event.target.value = utils.formatCurrency(split.amount);
+    target.value = utils.formatCurrency(split.amount);
   }
 
   function buildFinalizePayload() {

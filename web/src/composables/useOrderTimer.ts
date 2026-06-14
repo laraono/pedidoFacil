@@ -1,22 +1,23 @@
-import { ref, onMounted, onUnmounted, watch, toRef } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 
-export function useOrderTimer(orderOrGetter, alertMinutes) {
+type OrderLike = { createdAt: Date | string | null }
+type OrderOrGetter = OrderLike | (() => OrderLike | null | undefined)
+
+export function useOrderTimer(orderOrGetter: OrderOrGetter, alertMinutes: number | (() => number)) {
   const elapsedTime = ref("00:00");
   const isDelayed = ref(false);
-  let timerInterval = null;
+  let timerInterval: ReturnType<typeof setInterval> | null = null;
 
-  function getCreatedAt() {
+  function getCreatedAt(): Date | null {
     const val = typeof orderOrGetter === "function"
-      ? orderOrGetter()
+      ? orderOrGetter()?.createdAt
       : orderOrGetter?.createdAt;
     return val instanceof Date ? val : (val ? new Date(val) : null);
   }
 
   function update() {
     const createdAt = getCreatedAt();
-    if (!createdAt || isNaN(createdAt.getTime())) {
-      return;
-    }
+    if (!createdAt || isNaN(createdAt.getTime())) return;
     const raw = Date.now() - createdAt.getTime();
     const diff = Math.max(0, Math.floor(raw / 1000));
     const h = Math.floor(diff / 3600);
@@ -32,7 +33,9 @@ export function useOrderTimer(orderOrGetter, alertMinutes) {
     timerInterval = setInterval(update, 1000);
   });
 
-  onUnmounted(() => clearInterval(timerInterval));
+  onUnmounted(() => {
+    if (timerInterval !== null) clearInterval(timerInterval);
+  });
 
   return { elapsedTime, isDelayed };
 }

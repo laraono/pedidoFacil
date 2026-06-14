@@ -275,7 +275,7 @@ const saveSettings = async () => {
         <BaseToggle
           v-model="selfService"
           label="Autoatendimento"
-          description="Permite que clientes façam pedidos pelo aplicativo móvel."
+          description="Permite que clientes façam pedidos via aplicativo, tablet ou totem no estabelecimento."
           class="mb-2"
         />
 
@@ -288,19 +288,19 @@ const saveSettings = async () => {
                     <Smartphone :size="22" class="text-accent" />
                   </div>
                   <div>
-                    <p class="font-black text-[#212121] text-sm">Aplicativo Mobile</p>
-                    <p class="text-xs text-[#757575]">Para iOS e Android</p>
+                    <p class="font-black text-[#212121] text-sm">Como configurar</p>
+                    <p class="text-xs text-[#757575]">Mobile, tablet ou totem</p>
                   </div>
                 </div>
                 <p class="text-xs text-[#757575] leading-relaxed">
-                  Os clientes baixam o app PedidoFácil e inserem o código do seu estabelecimento para acessar o cardápio.
+                  Instale o app PedidoFácil no dispositivo do estabelecimento (smartphone, tablet ou totem), abra o app e insira o código ao lado para iniciar o serviço de autoatendimento.
                 </p>
               </div>
 
               <div class="bg-gray-50 border border-[#E0E0E0] rounded p-6 flex flex-col gap-4">
                 <div>
-                  <p class="font-black text-[#212121] text-sm mb-1">Código de Acesso</p>
-                  <p class="text-xs text-[#757575]">Compartilhe este código com seus clientes</p>
+                  <p class="font-black text-[#212121] text-sm mb-1">Código do Estabelecimento</p>
+                  <p class="text-xs text-[#757575]">Insira este código no app para vincular o dispositivo</p>
                 </div>
                 <div class="flex-1 bg-gray-100 border border-accent/30 rounded px-6 py-4 text-center">
                   <span class="text-4xl font-black text-accent tracking-[0.3em]">{{ selfServiceCode }}</span>

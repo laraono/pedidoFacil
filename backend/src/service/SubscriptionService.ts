@@ -159,9 +159,22 @@ export class SubscriptionService {
         if(subscription.mercadoPagoId) {
             try {
                 const mp = await this.mercadoPagoService.getSubscription(subscription.mercadoPagoId)
-                if(mp.status === 'authorized' && subscription.status?.nome !== SubscriptionStatus.PAGA) {
-                    await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.PAGA)
-                    subscription.status = { id: STATUS_ASSINATURA_IDS.PAGA, nome: SubscriptionStatus.PAGA } as any
+                if(mp.status === 'authorized') {
+                    if(subscription.status?.nome !== SubscriptionStatus.PAGA) {
+                        await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.PAGA)
+                        subscription.status = { id: STATUS_ASSINATURA_IDS.PAGA, nome: SubscriptionStatus.PAGA } as any
+                    }
+                    const { charged_quantity, last_charged_amount, last_charged_date } = mp.summarized
+                    if(subscription.plan && charged_quantity !== null && last_charged_amount !== null) {
+                        await this.subscriptionPaymentRepository.recordPreapprovalPayment({
+                            mercadoPagoId: subscription.mercadoPagoId!,
+                            charged_quantity,
+                            last_charged_amount,
+                            last_charged_date,
+                            planName: subscription.plan.name,
+                            subscriptionId: subscription.id,
+                        })
+                    }
                 } else if(mp.status === 'cancelled') {
                     await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.CANCELADA)
                     subscription.status = { id: STATUS_ASSINATURA_IDS.CANCELADA, nome: SubscriptionStatus.CANCELADA } as any

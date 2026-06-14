@@ -55,7 +55,7 @@ const validateProfile = () => {
   errors.value = {};
   if (!form.value.fullName.trim())
     errors.value.fullName = "Nome completo é obrigatório.";
-  if (!form.value.email.trim() || !form.value.email.includes("@"))
+  if (!form.value.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email.trim()))
     errors.value.email = "E-mail inválido.";
   if (form.value.cpf && !isValidCPF(form.value.cpf))
     errors.value.cpf = "CPF inválido.";

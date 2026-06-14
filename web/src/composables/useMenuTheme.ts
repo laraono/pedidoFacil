@@ -4,6 +4,19 @@ import { getImageUrl } from "@/utils/imageUrl";
 import localStorageService from "@/services/localStorageService";
 import { useToast } from "@/composables/useToast";
 
+interface EstablishmentConfig {
+  backgroundColor?: string
+  buttonsColor?: string
+  buttonsTextColor?: string
+  activeCateogryColor?: string
+  textsColor?: string
+  cardsColor?: string
+  fontFamily?: string
+  comandaLabel?: string
+  allowObservations?: boolean
+  logo?: string
+}
+
 export function useMenuTheme() {
   const { showToast } = useToast();
 
@@ -47,9 +60,9 @@ export function useMenuTheme() {
     adaptivePlaceholder: isCardDark.value ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.32)",
   }));
 
-  async function loadConfig(estId) {
+  async function loadConfig(estId: string | number) {
     try {
-      const config = await request(`/estabelecimento/${estId}/config`, { method: "GET" });
+      const config: EstablishmentConfig = await request(`/estabelecimento/${estId}/config`, { method: "GET" });
       bgColor.value = config.backgroundColor || "#F5F6FA";
       buttonColor.value = config.buttonsColor || "#1E7BC4";
       buttonTextColor.value = config.buttonsTextColor || "#FFFFFF";
@@ -102,7 +115,7 @@ export function useMenuTheme() {
       localStorageService.saveComandaUnitLabel(comandaUnitLabel.value);
 
       showToast("Aparência salva com sucesso!", "success");
-    } catch (error) {
+    } catch (error: any) {
       const data = error.response?.data || error.data || error;
       if (data?.errors && Array.isArray(data.errors)) {
         showToast(data.errors[0].mensagem, "error");

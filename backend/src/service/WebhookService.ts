@@ -73,22 +73,15 @@ export class WebhookService {
 
                 const { charged_quantity, last_charged_amount, last_charged_date } = mp.summarized;
                 if (subscription.plan && charged_quantity !== null && last_charged_amount !== null) {
-                    const paymentId = `preapproval_${eventId}_q${charged_quantity}`;
-                    const alreadyRecorded = await this.subscriptionPaymentRepository.findOne({
-                        where: { mercadoPagoPaymentId: paymentId }
+                    await this.subscriptionPaymentRepository.recordPreapprovalPayment({
+                        mercadoPagoId: eventId,
+                        charged_quantity,
+                        last_charged_amount,
+                        last_charged_date,
+                        planName: subscription.plan.name,
+                        subscriptionId: subscription.id,
                     });
-                    if (!alreadyRecorded) {
-                        await this.subscriptionPaymentRepository.createPayment({
-                            mercadoPagoPaymentId: paymentId,
-                            amount: last_charged_amount,
-                            status: { id: STATUS_HISTORICO_IDS.APROVADO } as any,
-                            paymentType: 'Cartão',
-                            planName: subscription.plan.name,
-                            paidAt: last_charged_date ? new Date(last_charged_date) : new Date(),
-                            subscription: { id: subscription.id } as any,
-                        });
-                        auditLog('subscription.payment_recorded', { subscriptionId: subscription.id, chargedQuantity: charged_quantity });
-                    }
+                    auditLog('subscription.payment_recorded', { subscriptionId: subscription.id, chargedQuantity: charged_quantity });
                 }
             } else if (mp.status === 'cancelled') {
                 await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.CANCELADA);

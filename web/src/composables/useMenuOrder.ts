@@ -2,6 +2,7 @@ import { ref } from "vue";
 import { useComandaStore } from "@/stores/comandaManagement";
 import { comandaApi } from "@/services/comandaApi";
 import { useToast } from "@/composables/useToast";
+import type { CartItem } from "@/composables/useMenuCart";
 
 export function useMenuOrder() {
   const { showToast } = useToast();
@@ -10,17 +11,23 @@ export function useMenuOrder() {
   const isComandaModalOpen = ref(false);
   const isSubmitting = ref(false);
 
-  function openComandaModal(cartLength) {
+  function openComandaModal(cartLength: number) {
     if (cartLength === 0) return;
     isComandaModalOpen.value = true;
   }
 
-  async function confirmAndSendToKitchen(cart, comandaUnitLabel, selectedComandaId, newComandaNumber, onSuccess) {
+  async function confirmAndSendToKitchen(
+    cart: CartItem[],
+    comandaUnitLabel: string,
+    selectedComandaId: string | number,
+    newComandaNumber: string | number,
+    onSuccess?: () => void,
+  ) {
     if (isSubmitting.value) return;
 
     isSubmitting.value = true;
     try {
-      let comandaIdParaEnviar = selectedComandaId;
+      let comandaIdParaEnviar: string | number = selectedComandaId;
 
       if (comandaIdParaEnviar === "new") {
         const label = `${comandaUnitLabel} ${newComandaNumber}`;
@@ -43,7 +50,7 @@ export function useMenuOrder() {
       isComandaModalOpen.value = false;
       onSuccess?.();
       showToast("Pedido enviado para a cozinha!", "success");
-    } catch (error) {
+    } catch (error: any) {
       const data = error.response?.data || error.data || error;
       if (data?.errors && Array.isArray(data.errors)) {
         showToast(data.errors[0].mensagem, "error");

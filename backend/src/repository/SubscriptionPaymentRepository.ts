@@ -12,6 +12,28 @@ export class SubscriptionPaymentRepository extends Repository<SubscriptionPaymen
         return await this.save(data as SubscriptionPayment)
     }
 
+    async recordPreapprovalPayment(params: {
+        mercadoPagoId: string
+        charged_quantity: number
+        last_charged_amount: number
+        last_charged_date: string | null
+        planName: string
+        subscriptionId: number
+    }): Promise<void> {
+        const paymentId = `preapproval_${params.mercadoPagoId}_q${params.charged_quantity}`
+        const exists = await this.findOne({ where: { mercadoPagoPaymentId: paymentId } })
+        if (exists) return
+        await this.createPayment({
+            mercadoPagoPaymentId: paymentId,
+            amount: params.last_charged_amount,
+            status: { id: STATUS_HISTORICO_IDS.APROVADO } as any,
+            paymentType: 'Cartão',
+            planName: params.planName,
+            paidAt: params.last_charged_date ? new Date(params.last_charged_date) : new Date(),
+            subscription: { id: params.subscriptionId } as any,
+        })
+    }
+
     async getBySubscription(subscriptionId: number): Promise<SubscriptionPayment[]> {
         return await this.find({
             where: { subscription: { id: subscriptionId } },

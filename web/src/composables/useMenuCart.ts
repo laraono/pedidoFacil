@@ -1,16 +1,40 @@
 import { ref, computed } from "vue";
 import { useToast } from "@/composables/useToast";
 
+interface ProductSize {
+  id?: number
+  name: string
+  price: number
+}
+
+interface Product {
+  id: number
+  name: string
+  price?: number
+  sizes?: ProductSize[]
+}
+
+export interface CartItem {
+  id: number
+  productId: number
+  name: string
+  sizeName: string
+  sizeId: number | undefined
+  price: number
+  quantity: number
+  obs: string
+}
+
 export function useMenuCart() {
   const { showToast } = useToast();
 
-  const cart = ref([]);
+  const cart = ref<CartItem[]>([]);
   const isProductModalOpen = ref(false);
   const isCartModalOpen = ref(false);
-  const currentProduct = ref(null);
+  const currentProduct = ref<Product | null>(null);
   const currentQuantity = ref(1);
   const currentObservation = ref("");
-  const selectedSize = ref(null);
+  const selectedSize = ref<ProductSize | null>(null);
 
   const cartQuantity = computed(() => cart.value.length);
   const cartTotal = computed(() => cart.value.reduce((acc, item) => acc + item.price, 0));
@@ -19,11 +43,11 @@ export function useMenuCart() {
     return (selectedSize.value?.price ?? 0) * currentQuantity.value;
   });
 
-  function openProductModal(product) {
+  function openProductModal(product: Product) {
     currentProduct.value = product;
     currentQuantity.value = 1;
     currentObservation.value = "";
-    selectedSize.value = product.sizes?.length > 0
+    selectedSize.value = product.sizes?.length
       ? product.sizes[0]
       : { name: "Padrão", price: product.price ?? 0 };
     isProductModalOpen.value = true;
@@ -53,7 +77,7 @@ export function useMenuCart() {
     closeProductModal();
   }
 
-  function removeFromCart(index) {
+  function removeFromCart(index: number) {
     cart.value.splice(index, 1);
     if (cart.value.length === 0) isCartModalOpen.value = false;
   }
