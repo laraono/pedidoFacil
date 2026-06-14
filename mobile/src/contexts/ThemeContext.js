@@ -35,6 +35,7 @@ export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(defaultTheme);
 
   const loadTheme = async () => {
+    if (!appConfig.ESTABLISHMENT_ID || !appConfig.API_URL) return;
     try {
       const response = await fetch(
         `${appConfig.API_URL}/estabelecimento/${appConfig.ESTABLISHMENT_ID}/public`

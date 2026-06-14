@@ -1,5 +1,4 @@
 import { CategoryRepository, ProductRepository } from "../repository";
-import { ProductStatus } from "../enum";
 
 export class MenuService {
     constructor(
@@ -15,9 +14,9 @@ export class MenuService {
         });
 
         const products = await this.productRepository.find({
-            where: { 
+            where: {
                 category: { establishment: { id: establishmentId } },
-                ...(editMode ? {} : { status: ProductStatus.ATIVO })
+                ...(editMode ? {} : { ativo: true })
             },
             relations: ['category', 'productVariations'],
             withDeleted: editMode,

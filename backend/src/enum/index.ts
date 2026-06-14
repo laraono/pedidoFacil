@@ -1,6 +1,6 @@
 export {
-    CategoryStatus, ComandaStatus, OrderStatus, ProductStatus,
-    UserStatus, SubscriptionStatus, SubscriptionPaymentStatus, ReceiptStatus
+    ComandaStatus, OrderStatus, PaymentStatus,
+    SubscriptionStatus, SubscriptionPaymentStatus, ReceiptStatus
 } from './status'
 
-export {DiscountType, MovimentationType, ServiceType, ProductVariationType, Permission, allPermissions} from './type'
+export { DiscountType, MovimentationType, ProductVariationType, Permission, allPermissions } from './type'

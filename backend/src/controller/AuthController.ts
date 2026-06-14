@@ -12,10 +12,20 @@ export const authLimiter = rateLimit({
             email: req.body.email,
             timestamp: new Date().toISOString(),
         });
-        
+
         res.status(429).json({
             error: 'Muitas tentativas. Tente novamente mais tarde.',
             retryAfter: Math.ceil((req as any).rateLimit.resetTime / 1000)
+        })
+    }
+})
+
+export const registrationLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 30,
+    handler: (_req: Request, res: Response) => {
+        res.status(429).json({
+            error: 'Muitas tentativas de cadastro. Tente novamente mais tarde.',
         })
     }
 })
@@ -104,6 +114,7 @@ async login(req: Request, res: Response) {
 
     async refresh(req: Request, res: Response) {
         const token = req.cookies.refreshToken
+        auditLog('refresh.attempt', { ip: req.ip, hasToken: !!token, timestamp: new Date().toISOString() })
         if (!token) {
             return res.status(401).json({ error: 'Token não fornecido.' })
         }

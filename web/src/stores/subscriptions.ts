@@ -24,7 +24,7 @@ export const useSubscriptionStore = defineStore('subscription', () => {
   async function fetchSubscriptionStatus(): Promise<void> {
     try {
       const sub = await subscriptionApi.getEstablishmentSubscription();
-      subscriptionStatus.value = (sub as any)?.status ?? null;
+      subscriptionStatus.value = (sub as any)?.status?.nome ?? (sub as any)?.status ?? null;
       subscriptionExpirationDate.value = (sub as any)?.expirationDate ?? null;
     } catch {
       subscriptionStatus.value = null;

@@ -1,8 +1,8 @@
+import { Not } from 'typeorm';
 import { UserRepository } from '../repository/UserRepository';
 import { RoleRepository } from '../repository/RoleRepository';
 import { RefreshTokenRepository } from '../repository/RefreshTokenRepository';
 import { AppError } from '../middleware/error/AppError';
-import { UserStatus } from '../enum';
 import * as bcrypt from 'bcrypt';
 import { CreateEmployeeDTO } from '../dto/employee/CreateEmployeeDTO';
 import { UpdateEmployeeDTO } from '../dto/employee/UpdateEmployeeDTO';
@@ -14,8 +14,8 @@ export class EmployeeService {
     private refreshTokenRepository: RefreshTokenRepository,
   ) {}
 
-  async listEmployees(establishmentId: number, status: UserStatus) {
-    return await this.userRepository.findEmployeesByEstablishment(establishmentId, status);
+  async listEmployees(establishmentId: number, ativo: boolean) {
+    return await this.userRepository.findEmployeesByEstablishment(establishmentId, ativo);
   }
 
   async createEmployee(establishmentId: number, data: CreateEmployeeDTO) {
@@ -23,7 +23,7 @@ export class EmployeeService {
     if (emailExists) throw new AppError('Este e-mail já está em uso.', 400);
 
     const role = await this.roleRepository.findOne({
-      where: { id: data.roleId, establishment: { id: establishmentId } as any },
+      where: { id: data.roleId, establishment: { id: establishmentId } as any, name: Not('Gerente') },
     });
     if (!role) throw new AppError('Cargo não encontrado ou inválido.', 404);
 
@@ -31,7 +31,7 @@ export class EmployeeService {
       name: data.name,
       email: data.email,
       password: await bcrypt.hash(data.password, 10),
-      status: UserStatus.ATIVO,
+      ativo: true,
       role,
     });
 
@@ -46,7 +46,7 @@ export class EmployeeService {
 
     if (data.roleId && (!user.role || data.roleId !== user.role.id)) {
       const role = await this.roleRepository.findOne({
-        where: { id: data.roleId, establishment: { id: establishmentId } as any },
+        where: { id: data.roleId, establishment: { id: establishmentId } as any, name: Not('Gerente') },
       });
       if (!role) throw new AppError('Cargo não encontrado.', 404);
       user.role = role;
@@ -66,7 +66,7 @@ export class EmployeeService {
     if (!user) throw new AppError('Funcionário não encontrado.', 404);
     if (user.role?.name === 'Gerente') throw new AppError('Não é possível desativar o Gerente principal.', 403);
 
-    user.status = UserStatus.INATIVO;
+    user.ativo = false;
     await this.userRepository.save(user);
     return { message: 'Funcionário desativado com sucesso.' };
   }
@@ -75,7 +75,7 @@ export class EmployeeService {
     const user = await this.userRepository.findEmployeeByIdAndEstablishment(userId, establishmentId);
     if (!user) throw new AppError('Funcionário não encontrado.', 404);
 
-    user.status = UserStatus.ATIVO;
+    user.ativo = true;
     await this.userRepository.save(user);
     return { message: 'Funcionário reativado com sucesso.' };
   }

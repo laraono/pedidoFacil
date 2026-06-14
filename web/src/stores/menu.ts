@@ -57,7 +57,7 @@ export const useMenuOrderingStore = defineStore('menuOrdering', () => {
         description: p.description || '',
         image: p.image || null,
         price: Number(p.basePrice),
-        available: p.status === 'Ativo',
+        available: p.ativo === true,
         categoryId: p.category?.id,
         deletedAt: p.deletedAt,
         sizes: p.productVariations?.map((v: any) => ({

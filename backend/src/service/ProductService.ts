@@ -2,7 +2,6 @@ import { CreateProductDTO } from "../dto/product/CreateProductDTO";
 import { AppError } from "../middleware/error/AppError";
 import { ProductRepository, ProductVariationRepository } from "../repository";
 import { CategoryService } from "./CategoryService";
-import { ProductStatus } from "../enum";
 
 export class ProductService {
     private categoryService: CategoryService
@@ -40,7 +39,7 @@ export class ProductService {
                 await this.productVariationRepository.createProductVariation({
                     ...variation,
                     product: { id: createdProduct.id },
-                    status: 'Ativo'
+                    ativo: true
                 } as any)
             }
         }
@@ -74,7 +73,7 @@ export class ProductService {
         if (data.categoryId !== undefined) updateData.category = { id: data.categoryId };
         
         if (data.available !== undefined) {
-            updateData.status = data.available ? ProductStatus.ATIVO : ProductStatus.INATIVO;
+            updateData.ativo = data.available;
         }
 
         await this.productRepository.updateProduct(productId, updateData);
@@ -86,7 +85,7 @@ export class ProductService {
                 await this.productVariationRepository.createProductVariation({
                     name: size.name,
                     addPrice: size.price,
-                    status: 'Ativo',
+                    ativo: true,
                     product: { id: productId }
                 } as any);
             }
@@ -95,7 +94,7 @@ export class ProductService {
 
     async softDeleteProduct(productId: number) {
         const product = await this.productRepository.getProduct(productId);
-        if (!product || product.status !== ProductStatus.INATIVO) {
+        if (!product || product.ativo) {
             throw new AppError('Apenas produtos inativos podem ser excluídos.', 400);
         }
         await this.productRepository.softDeleteProduct(productId);

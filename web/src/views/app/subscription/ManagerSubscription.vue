@@ -19,7 +19,7 @@ const error = ref('')
 const serverError = ref(null)
 const plans = ref([])
 const sub = ref(null)
-const currentPlan = ref({})
+const currentPlan = computed(() => sub.value?.plan ?? {})
 const isLoading = ref(true)
 const history = ref([])
 
@@ -28,7 +28,6 @@ onMounted(async () => {
     plans.value = await planApi.list()
     sub.value = await subscriptionApi.getEstablishmentSubscription()
     history.value = await subscriptionApi.getSubscriptionHistory()
-    currentPlan.value = sub.value?.plan ?? {}
     error.value = localStorage.getItem('subscriptionError') || ''
     await loadMercadoPago();
     mp = new window.MercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY);
@@ -46,10 +45,15 @@ const effectivePrice = computed(() =>
   sub.value?.price ?? sub.value?.plan?.price ?? 0
 );
 
-const isActive = computed(() => sub.value?.status === 'Paga');
+const statusNome = computed(() => {
+  const s = sub.value?.status;
+  return typeof s === 'string' ? s : s?.nome ?? null;
+});
+
+const isActive = computed(() => statusNome.value === 'Paga');
 
 const statusConfig = computed(() => {
-  const s = sub.value?.status;
+  const s = statusNome.value;
   if (s === 'Paga')      return { label: 'Ativa',     color: 'text-accent',        bg: 'bg-accent-light border-accent/30' };
   if (s === 'Pendente')  return { label: 'Pendente',  color: 'text-amber-600',     bg: 'bg-amber-50 border-amber-400/30' };
   if (s === 'Expirada')  return { label: 'Expirada',  color: 'text-danger',        bg: 'bg-danger-light border-danger' };
@@ -89,7 +93,6 @@ const confirmPlanChange = async () => {
   try {
     isChanging.value = true;
     sub.value = await subscriptionApi.changePlan(tempSelectedPlan.value.id);
-    currentPlan.value = sub.value?.plan ?? {};
     showConfirmPlanModal.value = false;
     isPlanModalOpen.value = false;
   } catch (err) {
@@ -227,7 +230,7 @@ const closePaymentModal = () => {
 
         <div class="flex flex-col sm:flex-row gap-3 shrink-0">
           <button
-            v-if="sub?.status !== 'Pendente'"
+            v-if="statusNome.value !== 'Pendente'"
             @click="openCardModal()"
             class="flex items-center gap-2 px-6 py-3.5 rounded font-black text-sm uppercase tracking-wider transition-all active:scale-95"
             :class="isActive ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-danger text-white hover:bg-red-700'"

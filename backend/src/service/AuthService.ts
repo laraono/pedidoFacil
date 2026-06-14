@@ -4,10 +4,10 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { DataSource, In } from 'typeorm';
 import { Admin } from '../database/entity/Admin';
-import { Configuration, Establishment, PerfilGerente, Permissao, Plan, Role, Subscription, User } from '../database/entity';
+import { Configuration, Establishment, PerfilGerente, Permissao, Plan, Role, StatusAssinatura, Subscription, User } from '../database/entity';
 import { LoginDTO } from '../dto/auth/';
 import { RegisterCompleteDTO } from '../dto/auth/RegisterCompleteDTO';
-import { UserStatus, SubscriptionStatus } from '../enum';
+import { STATUS_ASSINATURA_IDS } from '../database/entity/lookup-ids';
 import { AppError } from '../middleware/error/AppError';
 import { UserRepository, RefreshTokenRepository } from '../repository';
 import { EstablishmentRepository } from '../repository/EstablishmentRepository';
@@ -44,25 +44,18 @@ export class AuthService {
     private mercadoPagoService: MercadoPagoService,
   ) {}
 
-  /** Validação por step — só leitura, sem criação. */
   async checkEmailAvailable(email: string) {
     const exists = await this.userRepository.findOne({ where: { email } });
     if (exists) throw new AppError('Este e-mail está inválido ou já está em uso.', 409);
     return { available: true };
   }
 
-  /** Validação por step — só leitura, sem criação. */
   async checkCpfAvailable(cpf: string) {
     const exists = await this.dataSource.getRepository(PerfilGerente).findOne({ where: { cpf } });
     if (exists) throw new AppError('Este CPF já está em uso.', 409);
     return { available: true };
   }
 
-  /**
-   * Cadastro completo.
-   * Toda a escrita no DB ocorre em uma única transação — rollback automático se qualquer etapa falhar.
-   * Tokens são gerados fora da transação, após o commit.
-   */
   async registerComplete(data: RegisterCompleteDTO) {
     const emailExiste = await this.userRepository.findOne({ where: { email: data.email } });
     if (emailExiste) throw new AppError('Este e-mail está inválido ou já está em uso.', 409);
@@ -84,7 +77,7 @@ export class AuthService {
           name: data.nome_usuario,
           email: data.email,
           password: passwordHash,
-          status: UserStatus.ATIVO,
+          ativo: true,
         });
 
         if (data.cpf) {
@@ -104,14 +97,12 @@ export class AuthService {
 
         const todasPermissoes = await manager.find(Permissao);
 
-        // Cargo Gerente com todas as permissões reais
         const savedManagerRole = await manager.save(Role, {
           name: 'Gerente',
           permissions: todasPermissoes,
           establishment: { id: savedEstablishment.id },
         });
 
-        // Vínculo usuário → cargo Gerente (manager.update não resolve ManyToOne — atribuir no objeto e salvar)
         savedUser.role = savedManagerRole;
         await manager.save(User, savedUser);
 
@@ -154,7 +145,6 @@ export class AuthService {
         const cardToken = data.payment.cardToken;
         const payerEmail = data.payment.payerEmail;
 
-        // Se o MP falhar, o throw causa rollback de tudo acima
         const mpSubscription = await this.mercadoPagoService.createSubscription({
           preapproval_plan_id: plan.mercadoPagoId,
           payer_email: payerEmail,
@@ -175,13 +165,12 @@ export class AuthService {
             initialDate: new Date(),
             establishment: savedEstablishment,
             expirationDate,
-            status: SubscriptionStatus.PENDENTE,
+            status: { id: STATUS_ASSINATURA_IDS.PENDENTE } as StatusAssinatura,
             price: plan.price,
             plan,
             mercadoPagoId: mpSubscription.id,
           });
         } catch (err) {
-          // MP criou o preapproval mas o save falhou — cancela para não deixar cobrança órfã
           await this.mercadoPagoService.cancelSubscription(mpSubscription.id);
           throw err;
         }
@@ -194,7 +183,6 @@ export class AuthService {
         };
       });
 
-    // Tokens gerados após o commit da transação
     const user = await this.userRepository.findOne({
       where: { id: userId },
       relations: { role: { establishment: true } },
@@ -220,7 +208,7 @@ export class AuthService {
     });
 
     if (user) {
-      if (user.status !== UserStatus.ATIVO) throw new AppError('Esta conta foi desativada.', 403);
+      if (!user.ativo) throw new AppError('Esta conta foi desativada.', 403);
 
       const senhaValida = await bcrypt.compare(data.senha, user.password);
       if (!senhaValida) throw new AppError('Credenciais inválidas.', 401);
@@ -231,7 +219,7 @@ export class AuthService {
       return {
         accessToken,
         refreshToken,
-        usuario: { id: user.id, nome: user.name, email: user.email, status: user.status },
+        usuario: { id: user.id, nome: user.name, email: user.email, ativo: user.ativo },
         cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions?.map(p => p.name) ?? [] } : null,
         estabelecimentoId: user.role?.establishment?.id ?? null,
       };
@@ -293,7 +281,7 @@ export class AuthService {
     }
 
     const user = await this.userRepository.findOne({
-      where: { id: decoded.id, status: UserStatus.ATIVO },
+      where: { id: decoded.id, ativo: true },
       relations: { role: { establishment: true } },
     });
 
@@ -305,7 +293,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      usuario: { id: user.id, nome: user.name, email: user.email, status: user.status },
+      usuario: { id: user.id, nome: user.name, email: user.email, ativo: user.ativo },
       cargo: user.role ? { id: user.role.id, nome: user.role.name, permissoes: user.role.permissions?.map(p => p.name) ?? [] } : null,
       estabelecimentoId: user.role?.establishment?.id ?? null,
     };
@@ -336,7 +324,7 @@ export class AuthService {
     }
 
     const user = await this.userRepository.findOne({
-      where: { id: userId, status: UserStatus.ATIVO },
+      where: { id: userId, ativo: true },
       relations: { role: { establishment: true } },
     });
 

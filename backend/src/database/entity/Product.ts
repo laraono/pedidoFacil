@@ -23,14 +23,15 @@ export class Product {
         type: 'varchar',
         name: 'Descricao',
         nullable: true,
-        default: true
+        default: null
     })
     description?: string
 
     @Column({
-        type: 'longtext',
+        type: 'varchar',
         name: 'Imagem',
         nullable: true,
+        length: 500
     })
     image?: string
 
@@ -42,12 +43,12 @@ export class Product {
     estocavel!: boolean
 
     @Column({
-        type: 'varchar',
-        name: 'Status',
+        type: 'boolean',
+        name: 'Ativo',
         nullable: false,
-        default: 'Ativo'
+        default: true
     })
-    status!: string
+    ativo!: boolean
 
     @Column({
         name: 'Preco_Base',

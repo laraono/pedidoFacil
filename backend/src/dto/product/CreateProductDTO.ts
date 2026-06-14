@@ -1,8 +1,5 @@
 import { z } from 'zod';
-import { safeString } from '../../utils/safeZod'; 
-import { ProductStatus } from '../../enum';
-
-const productStatusValues = Object.values(ProductStatus) as [string, ...string[]];
+import { safeString } from '../../utils/safeZod';
 
 export const createProductSchema = z.object({
   body: z.preprocess((val: any) => {
@@ -23,17 +20,17 @@ export const createProductSchema = z.object({
           isAvailable: isAvailable,
           categoryId: Number(val.categoryId),
           basePrice: Number(val.price),
-          status: isAvailable ? 'Ativo' : 'Inativo'
+          ativo: isAvailable,
         },
         productVariations: parsedSizes.map((s: any) => ({
           name: s.name,
           addPrice: Number(s.price),
-          status: 'Ativo'
+          ativo: true,
         }))
       };
     }
     return val;
-  }, 
+  },
   z.object({
     product: z.object({
       name: safeString(2, 100),
@@ -41,14 +38,14 @@ export const createProductSchema = z.object({
       isAvailable: z.boolean(),
       categoryId: z.number().int().positive(),
       basePrice: z.coerce.number().nonnegative(),
-      status: z.enum(productStatusValues)
+      ativo: z.boolean(),
     }),
-    
+
     productVariations: z.array(
       z.object({
         name: safeString(1, 100),
         addPrice: z.coerce.number().nonnegative(),
-        status: z.enum(productStatusValues)
+        ativo: z.boolean(),
       })
     ).optional()
   }))
@@ -65,7 +62,7 @@ export type ProductParams = {
     description?: string | null;
     isAvailable?: boolean;
     basePrice: number;
-    status: ProductStatus | string;
+    ativo: boolean;
     category: { id: number };
     establishment?: { id: number };
     image?: string;
@@ -75,12 +72,12 @@ export type ProductParams = {
 export type CreateProductVariation = {
     name: string;
     addPrice: number;
-    status: ProductStatus | string;
+    ativo: boolean;
     product?: { id: number };
 };
 
 export type ProductVariationParams = {
     name: string;
     addPrice: number;
-    status: ProductStatus | string;
+    ativo: boolean;
 };

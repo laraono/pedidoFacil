@@ -167,7 +167,7 @@ function getGroupedOrderItems(order) {
 
         <div class="relative w-full sm:w-72">
           <Receipt :size="15" class="absolute left-4 top-1/2 -translate-y-1/2 text-[#757575]" />
-          <input v-model="search" :placeholder="`Buscar ${comandaUnitLabel.toLowerCase()} ou produto...`" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#212121] text-sm placeholder-gray-600 focus:outline-none focus:border-primary/30 transition-all" />
+          <input v-model="search" :placeholder="`Buscar ${comandaUnitLabel.toLowerCase()}...`" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#212121] text-sm placeholder-gray-600 focus:outline-none focus:border-primary/30 transition-all" />
         </div>
       </header>
 

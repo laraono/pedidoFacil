@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { AuthController, authLimiter } from '../controller/AuthController';
+import { AuthController, authLimiter, registrationLimiter } from '../controller/AuthController';
 import { AuthService } from '../service/AuthService';
 import { MercadoPagoService } from '../service/MercadoPagoService';
 import { AppDataSource } from '../database/data-source';
@@ -34,20 +34,20 @@ authRouter.get('/features', (_req: Request, res: Response) => {
 
 authRouter.post(
   '/check-email',
-  authLimiter, 
+  registrationLimiter,
   catchAsync((req: Request, res: Response) => authController.checkEmail(req, res))
 );
 
 authRouter.post(
-  '/check-cpf', 
-  authLimiter, 
+  '/check-cpf',
+  registrationLimiter,
   catchAsync((req: Request, res: Response) => authController.checkCpf(req, res))
 );
 
 authRouter.post(
-  '/register-complete', 
-  authLimiter, 
-  validateRequest(registerCompleteSchema), 
+  '/register-complete',
+  registrationLimiter,
+  validateRequest(registerCompleteSchema),
   catchAsync((req: Request, res: Response) => authController.registerComplete(req, res))
 );
 

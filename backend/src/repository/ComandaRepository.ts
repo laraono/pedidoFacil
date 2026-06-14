@@ -1,7 +1,8 @@
 import { DataSource, Repository } from "typeorm";
-import { Comanda } from "../database/entity/Comanda"; 
-import { CancelComandaParams, CreateComanda } from "../dto";
+import { Comanda } from "../database/entity/Comanda";
+import { CreateComanda } from "../dto";
 import { ComandaStatus } from "../enum";
+import { STATUS_COMANDA_IDS } from "../database/entity/lookup-ids";
 
 export class ComandaRepository extends Repository<Comanda>{
 
@@ -20,19 +21,19 @@ export class ComandaRepository extends Repository<Comanda>{
     }
 
     async listComandasByStatus(status: ComandaStatus, establishmentId: number) {
-        return await this.find({ 
-            where: { 
-                status, 
-                establishment: { id: establishmentId } 
+        return await this.find({
+            where: {
+                status: { nome: status },
+                establishment: { id: establishmentId }
             },
-            relations: ['pedidos', 'pedidos.productOrders', 'pedidos.productOrders.product'] 
+            relations: ['pedidos', 'pedidos.productOrders', 'pedidos.productOrders.product']
         });
     }
 
     async getComandaByDesc(description: string, establishmentId: number) {
         return await this.find({
             where: {
-                status: ComandaStatus.ABERTA,
+                status: { nome: ComandaStatus.ABERTA },
                 description,
                 establishment: { id: establishmentId }
             }
@@ -53,10 +54,15 @@ export class ComandaRepository extends Repository<Comanda>{
     }
 
     async updateComandaStatus(comandaId: number, status: ComandaStatus) {
-        await this.update(comandaId, { status })
+        const statusIdMap: Record<ComandaStatus, number> = {
+            [ComandaStatus.ABERTA]: STATUS_COMANDA_IDS.ABERTA,
+            [ComandaStatus.FECHADA]: STATUS_COMANDA_IDS.FECHADA,
+            [ComandaStatus.CANCELADA]: STATUS_COMANDA_IDS.CANCELADA,
+        };
+        await this.update(comandaId, { status: { id: statusIdMap[status] } as any })
     }
 
-    async cancelComanda(comandaId: number, params: CancelComandaParams) {
-        await this.update(comandaId, params)
+    async cancelComanda(comandaId: number) {
+        await this.update(comandaId, { status: { id: STATUS_COMANDA_IDS.CANCELADA } as any })
     }
 }

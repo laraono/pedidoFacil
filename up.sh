@@ -1,5 +1,6 @@
 #!/bin/bash
 set -o pipefail
+set -m
 
 # ── Cores ──────────────────────────────────────────────────────────────────
 GREEN='\033[0;32m'
@@ -145,12 +146,14 @@ cleanup() {
 }
 trap cleanup EXIT
 
+pkill -f "nodemon --exec ts-node" 2>/dev/null || true
+
 info "Iniciando servidor backend..."
-setsid npm run dev --prefix backend > logs/backend.log 2>&1 &
+npm run dev --prefix backend > logs/backend.log 2>&1 &
 BACKEND_PID=$!
 
 info "Iniciando site..."
-setsid npm run dev --prefix web > logs/web.log 2>&1 &
+npm run dev --prefix web > logs/web.log 2>&1 &
 WEB_PID=$!
 
 info "Aguardando serviços iniciarem..."
@@ -165,6 +168,11 @@ echo -e "  Acesse no navegador:"
 echo ""
 echo -e "    ${BOLD}${YELLOW}http://localhost:5173${RESET}       ${DIM}← site principal${RESET}"
 echo -e "    ${BOLD}${BLUE}http://localhost:${BACKEND_PORT}${RESET}         ${DIM}← backend (API)${RESET}"
+echo ""
+echo -e "  ${BOLD}Painel administrativo:${RESET}"
+echo ""
+echo -e "    ${DIM}E-mail:${RESET}  ${BOLD}admin@admin.com${RESET}"
+echo -e "    ${DIM}Senha:${RESET}   ${BOLD}Admin@123${RESET}"
 echo ""
 echo -e "  ${DIM}Logs: logs/backend.log · logs/web.log${RESET}"
 echo ""
@@ -183,5 +191,4 @@ ok "Mobile configurado → ${MOBILE_URL}"
 info "Iniciando mobile (Expo)..."
 echo ""
 
-# Expo roda em foreground para exibir o QR code no terminal
 npm run start --prefix mobile

@@ -1,6 +1,6 @@
 import { DataSource, Repository } from "typeorm"
 import { SubscriptionPayment } from "../database"
-import { SubscriptionPaymentStatus } from "../enum"
+import { STATUS_HISTORICO_IDS } from "../database/entity/lookup-ids"
 
 export class SubscriptionPaymentRepository extends Repository<SubscriptionPayment> {
 
@@ -15,6 +15,7 @@ export class SubscriptionPaymentRepository extends Repository<SubscriptionPaymen
     async getBySubscription(subscriptionId: number): Promise<SubscriptionPayment[]> {
         return await this.find({
             where: { subscription: { id: subscriptionId } },
+            relations: ['status'],
             order: { paidAt: 'DESC' },
         })
     }
@@ -24,11 +25,13 @@ export class SubscriptionPaymentRepository extends Repository<SubscriptionPaymen
         receitaColetada: number
         mrr: number
     }> {
+        const approvedId = STATUS_HISTORICO_IDS.APROVADO
+
         if (start !== null) {
             const result = await this.createQueryBuilder('p')
                 .select('COUNT(DISTINCT p.subscription)', 'totalAtivos')
                 .addSelect('SUM(p.amount)', 'receitaColetada')
-                .where('p.status = :status', { status: SubscriptionPaymentStatus.APROVADO })
+                .where('p.ID_Status = :id', { id: approvedId })
                 .andWhere('p.paidAt BETWEEN :start AND :end', { start, end })
                 .getRawOne()
 
@@ -42,7 +45,7 @@ export class SubscriptionPaymentRepository extends Repository<SubscriptionPaymen
             .select('COUNT(DISTINCT p.subscription)', 'totalAtivos')
             .addSelect('SUM(p.amount)', 'receitaColetada')
             .addSelect('MIN(p.paidAt)', 'earliest')
-            .where('p.status = :status', { status: SubscriptionPaymentStatus.APROVADO })
+            .where('p.ID_Status = :id', { id: approvedId })
             .getRawOne()
 
         const totalAtivos = Number(result?.totalAtivos ?? 0)

@@ -6,10 +6,19 @@ import {
   ProductVariation,
   Comanda,
 } from '../database';
-import { OrderStatus, ComandaStatus, ServiceType } from '../enum';
+import { OrderStatus, ComandaStatus } from '../enum';
 import { AppError } from '../middleware';
 import { OrderRepository } from '../repository';
 import { ComandaService } from './ComandaService';
+import { STATUS_COMANDA_IDS, STATUS_PEDIDO_IDS } from '../database/entity/lookup-ids';
+
+const ORDER_STATUS_ID: Record<OrderStatus, number> = {
+  [OrderStatus.AGUARDANDO_PREPARO]: STATUS_PEDIDO_IDS.AGUARDANDO_PREPARO,
+  [OrderStatus.EM_PREPARO]:         STATUS_PEDIDO_IDS.EM_PREPARO,
+  [OrderStatus.PRONTO]:             STATUS_PEDIDO_IDS.PRONTO,
+  [OrderStatus.FINALIZADO]:         STATUS_PEDIDO_IDS.FINALIZADO,
+  [OrderStatus.CANCELADO]:          STATUS_PEDIDO_IDS.CANCELADO,
+};
 
 export class OrderService {
   private dataSource: DataSource;
@@ -35,9 +44,12 @@ export class OrderService {
 
   async createOrderWithTransaction(createOrder: any, comanda: any) {
     return await this.dataSource.transaction(async (manager) => {
+      const statusId = (createOrder.status && ORDER_STATUS_ID[createOrder.status as OrderStatus])
+        ?? STATUS_PEDIDO_IDS.AGUARDANDO_PREPARO;
+
       const order = await manager.save(Order, {
-        status: createOrder.status,
-        serviceType: createOrder.serviceType,
+        status: { id: statusId },
+        autoatendimento: createOrder.autoatendimento ?? false,
         comanda: comanda,
         establishment: { id: createOrder.establishmentId },
         user: createOrder.userId ? { id: createOrder.userId } : undefined,
@@ -54,14 +66,14 @@ export class OrderService {
     return await this.dataSource.transaction(async (manager) => {
       const comanda = await manager.save(Comanda, {
         description: data.comandaLabel,
-        status: ComandaStatus.ABERTA,
+        status: { id: STATUS_COMANDA_IDS.ABERTA },
         total: 0,
         establishment: { id: data.establishmentId },
       }) as Comanda;
 
       const order = await manager.save(Order, {
-        status: 'Aguardando_Preparo' as OrderStatus,
-        serviceType: ServiceType.AUTOATENDIMENTO,
+        status: { id: STATUS_PEDIDO_IDS.AGUARDANDO_PREPARO },
+        autoatendimento: true,
         comanda: comanda,
         establishment: { id: data.establishmentId },
         isDelivered: false,
@@ -104,17 +116,17 @@ export class OrderService {
       manager,
     );
   }
-  
+
   async validateItens(iten: any, manager: EntityManager) {
     const product = await manager.findOne(Product, {
       where: { id: iten.productId },
-      lock: { mode: 'pessimistic_write' } 
+      lock: { mode: 'pessimistic_write' },
     });
 
     if (!product) throw new AppError(`Produto ${iten.productId} não existe`, 400);
 
     let productVariation: ProductVariation | null = null;
-    
+
     if (iten.productVariationId) {
       productVariation = await manager.findOne(ProductVariation, {
         where: { id: iten.productVariationId },
@@ -132,18 +144,26 @@ export class OrderService {
     return await this.orderRepository.listOrdersByComanda(comandaId);
   }
 
-  async updateOrderStatus(orderId: number, status: OrderStatus, userId?: number, reason?: string, expectedComandaId?: number) {
+  async updateOrderStatus(
+    orderId: number,
+    status: OrderStatus,
+    userId?: number,
+    reason?: string,
+    expectedComandaId?: number,
+  ) {
     const order = await this.dataSource.getRepository(Order).findOne({
-      where: { id: orderId }, relations: ['comanda', 'user'] 
+      where: { id: orderId },
+      relations: ['comanda', 'user', 'status'],
     });
-    
+
     if (!order) throw new AppError('Pedido não encontrado', 404);
     if (!order.comanda) throw new AppError('Pedido sem comanda associada', 500);
-    if (expectedComandaId && order.comanda.id !== expectedComandaId) throw new AppError('Pedido não pertence a esta comanda', 403);
+    if (expectedComandaId && order.comanda.id !== expectedComandaId)
+      throw new AppError('Pedido não pertence a esta comanda', 403);
 
-    const orderUserId = order?.user?.id; 
+    const orderUserId = order?.user?.id;
 
-    const updateData: any = { status };
+    const updateData: any = { status: { id: ORDER_STATUS_ID[status] } };
 
     if (status === OrderStatus.CANCELADO) {
       if (userId) updateData.user = { id: userId };
@@ -155,8 +175,13 @@ export class OrderService {
     const comandaId = order.comanda.id;
 
     if (status === OrderStatus.CANCELADO) {
-      const allOrders = await this.dataSource.getRepository(Order).find({ where: { comanda: { id: comandaId } } });
-      const allCancelled = allOrders.length > 0 && allOrders.every(o => o.status === OrderStatus.CANCELADO);
+      const allOrders = await this.dataSource.getRepository(Order).find({
+        where: { comanda: { id: comandaId } },
+        relations: ['status'],
+      });
+      const allCancelled =
+        allOrders.length > 0 &&
+        allOrders.every(o => o.status?.nome === OrderStatus.CANCELADO);
 
       if (allCancelled) {
         await this.comandaService.updateComandaStatus(comandaId, ComandaStatus.CANCELADA);
@@ -170,6 +195,7 @@ export class OrderService {
   async getOrderWithDetails(orderId: number) {
     return await this.dataSource.getRepository(Order)
       .createQueryBuilder('order')
+      .leftJoinAndSelect('order.status', 'os')
       .leftJoinAndSelect('order.productOrders', 'po')
       .leftJoinAndSelect('po.product', 'product')
       .leftJoinAndSelect('po.productVariation', 'pv')

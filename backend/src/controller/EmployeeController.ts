@@ -2,20 +2,18 @@ import { Request, Response } from 'express';
 import { EmployeeService } from '../service/EmployeeService';
 import { catchAsync } from '../middleware/error/catchAsync';
 import { auditLog } from '../utils/logger';
-import { UserStatus } from '../enum';
-
 export class EmployeeController {
 
   constructor(private employeeService: EmployeeService) {}
 
   list = catchAsync(async (req: Request, res: Response) => {
     const establishmentId = (req as any).usuario.estabelecimento;
-    return res.json(await this.employeeService.listEmployees(establishmentId, UserStatus.ATIVO));
+    return res.json(await this.employeeService.listEmployees(establishmentId, true));
   });
 
   listInactive = catchAsync(async (req: Request, res: Response) => {
     const establishmentId = (req as any).usuario.estabelecimento;
-    return res.json(await this.employeeService.listEmployees(establishmentId, UserStatus.INATIVO));
+    return res.json(await this.employeeService.listEmployees(establishmentId, false));
   });
 
   create = catchAsync(async (req: Request, res: Response) => {

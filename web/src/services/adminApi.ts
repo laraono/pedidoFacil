@@ -5,7 +5,7 @@ export interface Plan {
   name: string;
   price: number;
   frequency?: string;
-  features?: string;
+  features?: { id?: number; description: string }[];
   mercadoPagoId?: string;
 }
 

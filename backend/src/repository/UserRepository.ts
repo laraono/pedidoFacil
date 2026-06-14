@@ -1,6 +1,5 @@
 import { DataSource, Not, Repository } from "typeorm";
 import { User } from "../database";
-import { UserStatus } from "../enum";
 
 export class UserRepository extends Repository<User> {
 
@@ -8,12 +7,12 @@ export class UserRepository extends Repository<User> {
         super(User, dataSource.createEntityManager());
     }
 
-    async findEmployeesByEstablishment(establishmentId: number, status: UserStatus) {
+    async findEmployeesByEstablishment(establishmentId: number, ativo: boolean) {
         return await this.find({
-            where: { role: { establishment: { id: establishmentId }, name: Not('Gerente') } as any, status },
+            where: { role: { establishment: { id: establishmentId }, name: Not('Gerente') } as any, ativo },
             relations: ['role'],
-            select: ['id', 'name', 'email', 'status'],
-            order: status === UserStatus.ATIVO ? { name: 'ASC' } : { id: 'DESC' },
+            select: ['id', 'name', 'email', 'ativo'],
+            order: ativo ? { name: 'ASC' } : { id: 'DESC' },
         });
     }
 

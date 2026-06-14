@@ -124,6 +124,17 @@ planApi.list().then(async data => {
   }
 })
 
+async function resetCardForm() {
+  try { WIN.__mpState.cardForm?.unmount() } catch {}
+  WIN.__mpState.cardForm = null
+  WIN.__mpState.lastUnmountAt = Date.now()
+  await nextTick()
+  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+  await initCardForm()
+}
+
+defineExpose({ resetCardForm })
+
 onBeforeUnmount(() => {
   try { WIN.__mpState.cardForm?.unmount() } catch {}
   WIN.__mpState.cardForm = null

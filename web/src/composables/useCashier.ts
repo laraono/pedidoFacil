@@ -7,7 +7,7 @@ import { useToast } from "@/composables/useToast";
 import { useCouponStore } from "@/stores/coupons";
 import { request } from "@/services/api";
 import { establishmentApi } from "@/services/establishmentApi";
-import { connectSocket, getSocket } from "@/services/socket";
+import { connectSocket, getSocket, disconnectSocket } from "@/services/socket";
 import localStorageService from "@/services/localStorageService";
 
 export function useCashier() {

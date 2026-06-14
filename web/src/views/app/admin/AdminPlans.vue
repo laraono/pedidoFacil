@@ -64,7 +64,7 @@ function openEdit(plan: Plan) {
     name: plan.name,
     price: String(plan.price).replace('.', ','),
     frequency: normalizeFrequency(plan.frequency),
-    features: plan.features || '',
+    features: plan.features?.map(f => f.description).join('\n') || '',
   };
   errors.value = {};
   isEditing.value = true;
@@ -114,6 +114,11 @@ function askDelete(plan: Plan) {
       }, 'Erro ao remover plano.');
     }
   });
+}
+
+function featureLines(plan: Plan): string[] {
+  if (!plan.features?.length) return [];
+  return plan.features.flatMap(f => f.description.split('\n')).filter(Boolean);
 }
 
 function onPriceInput(e: Event) {
@@ -175,10 +180,10 @@ function onPriceInput(e: Event) {
           <span class="text-3xl font-black text-[#212121]">{{ formatCurrency(plan.price) }}</span>
           <span class="text-[#757575] text-sm mb-1">{{ plan.frequency === 'anual' ? '/ano' : '/mês' }}</span>
         </div>
-        <div v-if="plan.features" class="border-t border-[#E0E0E0] pt-4">
+        <div v-if="plan.features?.length" class="border-t border-[#E0E0E0] pt-4">
           <p class="text-xs font-black text-[#757575] uppercase tracking-widest mb-2">Funcionalidades</p>
           <ul class="space-y-1.5">
-            <li v-for="(feature, i) in plan.features.split('\n').filter(Boolean)" :key="i"
+            <li v-for="(feature, i) in featureLines(plan)" :key="i"
               class="flex items-start gap-2 text-sm text-[#757575]">
               <CheckCircle2 :size="14" class="text-primary mt-0.5 shrink-0" />
               <span class="break-words min-w-0">{{ feature }}</span>

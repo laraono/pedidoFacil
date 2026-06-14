@@ -86,12 +86,12 @@ const saveProfile = async () => {
     const payload = {
       name: form.value.fullName,
       email: form.value.email,
-      cpf: form.value.cpf ? form.value.cpf.replace(/\D/g, "") : "",
-      phone: form.value.phone ? form.value.phone.replace(/\D/g, "") : "",
-      address: form.value.address,
-      city: form.value.city,
-      state: form.value.state,
-      zip: form.value.zip ? form.value.zip.replace(/\D/g, "") : "",
+      cpf: form.value.cpf ? form.value.cpf.replace(/\D/g, "") : null,
+      phone: form.value.phone ? form.value.phone.replace(/\D/g, "") : null,
+      address: form.value.address || null,
+      city: form.value.city || null,
+      state: form.value.state || null,
+      zip: form.value.zip ? form.value.zip.replace(/\D/g, "") : null,
     };
 
     const updatedUser = await profileApi.update(payload);
@@ -201,18 +201,19 @@ const savePassword = async () => {
           />
 
           <div class="md:col-span-2">
-            <BaseInput v-model="form.address" label="Endereço" placeholder="Rua, número, complemento" maxlength="255" />
+            <BaseInput v-model="form.address" label="Endereço" placeholder="Rua, número, complemento" maxlength="255" :error="errors.address" />
           </div>
 
-          <BaseInput v-model="form.city" label="Cidade" placeholder="Ex: São Paulo" maxlength="100" />
+          <BaseInput v-model="form.city" label="Cidade" placeholder="Ex: São Paulo" maxlength="100" :error="errors.city" />
 
           <div class="grid grid-cols-2 gap-4">
-            <BaseInput v-model="form.state" label="Estado" placeholder="SP" maxlength="2" />
+            <BaseInput v-model="form.state" label="Estado" placeholder="SP" maxlength="2" :error="errors.state" />
             <BaseInput
               :modelValue="form.zip"
               label="CEP"
               placeholder="00000-000"
               maxlength="9"
+              :error="errors.zip"
               @input="(e) => { form.zip = maskZip(e.target.value); e.target.value = form.zip; }"
             />
           </div>

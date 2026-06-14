@@ -2,10 +2,11 @@ import { DataSource, Repository } from "typeorm";
 import { Plan, Subscription } from "../database";
 import { CreateSubscription } from "../dto";
 import { SubscriptionStatus } from "../enum";
+import { STATUS_ASSINATURA_IDS } from "../database/entity/lookup-ids";
 
 export class SubscriptionRepository extends Repository<Subscription>{
 
-    constructor(private dataSource: DataSource) {
+    constructor(dataSource: DataSource) {
         super(Subscription, dataSource.createEntityManager());
     }
 
@@ -15,71 +16,46 @@ export class SubscriptionRepository extends Repository<Subscription>{
 
     async getSubscription(subscriptionId: number) {
         return await this.findOne({
-            where: {
-                id: subscriptionId
-            },
-            relations: {
-                plan: true
-            }
+            where: { id: subscriptionId },
+            relations: { plan: true }
         })
     }
 
     async listSubscriptions(status?: SubscriptionStatus, name?: string) {
-
         return await this.find({
             relations: {
-                establishment: {
-                    manager: true,
-                },
+                establishment: { manager: true },
                 plan: true,
             },
             select: {
                 expirationDate: true,
                 id: true,
-                status: true,
-                plan: {
-                    id: true,
-                    name: true,
-                    price: true
-                },
+                status: { id: true, nome: true },
+                plan: { id: true, name: true, price: true },
                 establishment: {
                     id: true,
                     name: true,
-                    manager: {
-                        id: true,
-                        name: true,
-                    },
+                    manager: { id: true, name: true },
                 }
             },
-            where: {
-                ...(status && { status }),
-                ...(name && { plan: { name } }),
-            }
+            where: (() => {
+                const w: any = {};
+                if (status) w.status = { nome: status };
+                if (name) w.plan = { name };
+                return w;
+            })()
         })
     }
 
     async listSubscriptionsByPlan(plan: Plan) {
-        return await this.find({
-            where: {
-                plan
-            }
-        })
+        return await this.find({ where: { plan } })
     }
 
     async getSubscriptionByEstablishment(establishmentId: number) {
         return await this.find({
-            where: {
-                establishment: {
-                    id: establishmentId
-                }
-            },
-            order: {
-                id: 'DESC'
-            },
-            relations: {
-                establishment: true,
-                plan: true,
-            }
+            where: { establishment: { id: establishmentId } },
+            order: { id: 'DESC' },
+            relations: { establishment: true, plan: true }
         })
     }
 
@@ -88,6 +64,14 @@ export class SubscriptionRepository extends Repository<Subscription>{
     }
 
     async updateSubscriptionStatus(subscriptionId: number, status: SubscriptionStatus) {
+        const statusIdMap: Record<SubscriptionStatus, number> = {
+            [SubscriptionStatus.PENDENTE]:  STATUS_ASSINATURA_IDS.PENDENTE,
+            [SubscriptionStatus.PAGA]:      STATUS_ASSINATURA_IDS.PAGA,
+            [SubscriptionStatus.EXPIRADA]:  STATUS_ASSINATURA_IDS.EXPIRADA,
+            [SubscriptionStatus.CANCELADA]: STATUS_ASSINATURA_IDS.CANCELADA,
+        };
+        const statusFK = { id: statusIdMap[status] } as any;
+
         if (status === SubscriptionStatus.PAGA) {
             const subscription = await this.findOne({ where: { id: subscriptionId }, relations: { plan: true } });
             const expirationDate = new Date();
@@ -96,14 +80,13 @@ export class SubscriptionRepository extends Repository<Subscription>{
             } else {
                 expirationDate.setMonth(expirationDate.getMonth() + 1);
             }
-            await this.update(subscriptionId, { status, expirationDate });
+            await this.update(subscriptionId, { status: statusFK, expirationDate } as any);
         } else {
-            await this.update(subscriptionId, { status });
+            await this.update(subscriptionId, { status: statusFK } as any);
         }
     }
 
     async updateSubscriptionPrice(subscriptionId: number, price: number) {
-        await this.update(subscriptionId, {price})
+        await this.update(subscriptionId, { price })
     }
-
 }

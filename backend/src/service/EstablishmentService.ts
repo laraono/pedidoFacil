@@ -1,5 +1,6 @@
 import { In } from 'typeorm';
 import { Establishment } from '../database/entity/Establishment';
+import { Endereco } from '../database/entity/Endereco';
 import { PaymentMethod } from '../database/entity/PaymentMethod';
 import { AppError } from '../middleware/error/AppError';
 import { EstablishmentRepository } from '../repository/EstablishmentRepository';
@@ -58,12 +59,21 @@ export class EstablishmentService {
       name: updateData.name,
       cnpj: updateData.cnpj,
       phone: updateData.phone,
-      address: updateData.address,
       selfServiceCode: establishment.selfServiceCode,
       temAutoatendimento: updateData.temAutoatendimento ?? establishment.temAutoatendimento,
     });
 
     await this.establishmentRepository.save(establishment);
+
+    if (updateData.address !== undefined) {
+      const em = this.establishmentRepository.manager;
+      if (establishment.endereco?.id) {
+        await em.update(Endereco, establishment.endereco.id, { logradouro: updateData.address });
+      } else {
+        const res = await em.insert(Endereco, { logradouro: updateData.address });
+        await em.update(Establishment, establishment.id, { endereco: { id: res.identifiers[0].id } });
+      }
+    }
 
     if (updateData.temAutoatendimento === false && establishment.selfServiceCode) {
       try {
@@ -113,22 +123,25 @@ export class EstablishmentService {
 
     const latestSub = establishment.subscription ?? null;
 
+    const mgr = establishment.manager;
+    const pgEnd = mgr?.perfilGerente?.endereco;
+
     return {
       id: establishment.id,
       name: establishment.name,
       cnpj: establishment.cnpj,
       phone: establishment.phone ?? null,
-      address: establishment.address ?? null,
+      address: establishment.endereco?.logradouro ?? null,
       selfServiceCode: establishment.selfServiceCode ?? null,
-      manager: establishment.manager ? {
-        id: establishment.manager.id,
-        name: establishment.manager.name,
-        email: establishment.manager.email,
-        phone: establishment.manager.phone ?? null,
-        cpf: establishment.manager.perfilGerente?.cpf ?? null,
-        address: establishment.manager.perfilGerente?.address ?? null,
-        city: establishment.manager.perfilGerente?.city ?? null,
-        state: establishment.manager.perfilGerente?.state ?? null,
+      manager: mgr ? {
+        id: mgr.id,
+        name: mgr.name,
+        email: mgr.email,
+        phone: mgr.phone ?? null,
+        cpf: mgr.perfilGerente?.cpf ?? null,
+        address: pgEnd?.logradouro ?? null,
+        city: pgEnd?.cidade ?? null,
+        state: pgEnd?.estado ?? null,
       } : null,
       subscription: latestSub ?? null,
       selfServiceEnabled: establishment.temAutoatendimento,

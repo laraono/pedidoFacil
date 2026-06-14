@@ -35,7 +35,9 @@ const showPassword = ref(false);
 const PROTECTED_ROLE_NAMES = ["Gerente"];
 
 const roleOptions = computed(() =>
-  roles.value.map((r) => ({ label: r.name, value: r.id }))
+  roles.value
+    .filter((r) => !PROTECTED_ROLE_NAMES.includes(r.name))
+    .map((r) => ({ label: r.name, value: r.id }))
 );
 
 function getRoleName(user) {

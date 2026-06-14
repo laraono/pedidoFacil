@@ -1,7 +1,8 @@
 import { SubscriptionPaymentRepository, SubscriptionRepository } from '../repository';
 import { MercadoPagoService } from './MercadoPagoService';
-import { SubscriptionPaymentStatus, SubscriptionStatus } from '../enum';
+import { SubscriptionStatus } from '../enum';
 import { auditLog } from '../utils/logger';
+import { STATUS_HISTORICO_IDS } from '../database/entity/lookup-ids';
 
 function resolvePaymentType(id: string): string {
     if (id === 'credit_card') return 'Cartão de Crédito'
@@ -34,7 +35,6 @@ export class WebhookService {
             });
             if (!subscription) return;
 
-            // Idempotência: MP garante at-least-once delivery
             const alreadyProcessed = await this.subscriptionPaymentRepository.findOne({
                 where: { mercadoPagoPaymentId: eventId }
             });
@@ -44,12 +44,11 @@ export class WebhookService {
                 await this.subscriptionPaymentRepository.createPayment({
                     mercadoPagoPaymentId: eventId,
                     amount: payment.transaction_amount,
-                    status: SubscriptionPaymentStatus.REJEITADO,
+                    status: { id: STATUS_HISTORICO_IDS.REJEITADO } as any,
                     paymentType: resolvePaymentType(payment.payment_type_id),
                     planName: subscription.plan.name,
                     subscription: { id: subscription.id } as any,
                 });
-                // MP vai retentar automaticamente — apenas logar
                 auditLog('subscription.payment_rejected', { subscriptionId: subscription.id, paymentId: eventId });
             }
 
@@ -82,7 +81,7 @@ export class WebhookService {
                         await this.subscriptionPaymentRepository.createPayment({
                             mercadoPagoPaymentId: paymentId,
                             amount: last_charged_amount,
-                            status: SubscriptionPaymentStatus.APROVADO,
+                            status: { id: STATUS_HISTORICO_IDS.APROVADO } as any,
                             paymentType: 'Cartão',
                             planName: subscription.plan.name,
                             paidAt: last_charged_date ? new Date(last_charged_date) : new Date(),

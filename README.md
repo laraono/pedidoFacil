@@ -22,7 +22,7 @@ Este projeto foi desenvolvido como requisito para a obtenção do título de Tec
 | Mobile | React Native · Expo |
 | Backend | Node.js · Express · TypeORM · Zod |
 | Banco de Dados | MySQL |
-| Infraestrutura | Docker · Docker Compose · LocalStack (AWS local para upload de imagens) |
+| Infraestrutura | Docker · Docker Compose · MinIO (armazenamento local de imagens) |
 | Integrações | MercadoPago (pagamentos e assinaturas) |
 
 ---
@@ -73,7 +73,7 @@ Preencha as credenciais do banco de dados em `backend/.env`.
 
 O `JWT_SECRET` é gerado automaticamente pelo script de instalação - não é necessário preencher manualmente.
 
-As demais variáveis (`MERCADOPAGO_*`, `LOCALSTACK_TOKEN`, `MAIL_*`) podem ser obtidas pelas instruções da 2.1, ou, opcionalmente, devido a complexidade das configurações, o `.env.example` traz credenciais de teste criadas para este projeto, que podem ser usadas como alternativa para os tutoriais de configuração abaixo.
+As demais variáveis (`MERCADOPAGO_*`, `MAIL_*`) podem ser obtidas pelas instruções da 2.1, ou, opcionalmente, devido a complexidade das configurações, o `.env.example` traz credenciais de teste criadas para este projeto, que podem ser usadas como alternativa para os tutoriais de configuração abaixo.
 
 Para utilizá-los, execute:
 
@@ -131,17 +131,11 @@ Para simular notificações sem aguardar eventos reais, é possível usar a opç
 
 ---
 
-#### LocalStack (upload de imagens)
+#### MinIO (upload de imagens)
 
-Simula a AWS localmente para armazenamento de imagens de produtos.
+O armazenamento local de imagens de produtos é feito via **MinIO**, que sobe automaticamente junto com o MySQL ao executar o `./install.sh` — nenhuma conta ou token externo é necessário.
 
-1. Crie uma conta gratuita em [localstack.cloud](https://localstack.cloud/pricing).
-2. Obtenha seu token pessoal no [dashboard](https://app.localstack.cloud/getting-started).
-3. Configure em `backend/.env`:
-
-```
-LOCALSTACK_TOKEN=seu_token_aqui
-```
+O bucket é criado automaticamente na primeira execução. As credenciais padrão (`minioadmin` / `minioadmin`) já estão configuradas no `docker-compose.yml` e no backend.
 
 ---
 
@@ -190,7 +184,8 @@ Logs ficam em `logs/backend.log`, `logs/web.log` e `logs/mobile.log`.
 3. Realize o logout e acesse a landing page. Clique em um dos planos para iniciar o cadastro de um gerente e preencha o onboarding com dados do estabelecimento.
    > Para o onboarding, é possível usar dados gerados pelos geradores de [CNPJ](https://www.4devs.com.br/gerador_de_cnpj) e [CPF](https://www.4devs.com.br/gerador_de_cpf) para testes.
 4. Utilize a opção **Cargos Básicos** para configurar os cargos iniciais.
-5. Para a etapa de assinatura, use os [cartões de teste oficiais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards) e faça o pagamento **com o e-mail da conta do consumidor de teste** obtida na etapa 2.1, seção do Mercado Pago, ou disponibilizada a seguir: test_user_5092580542816123576@testuser.com
+5. Para a etapa de assinatura, use os [cartões de teste oficiais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards) e faça o pagamento **com o e-mail da conta do consumidor de teste** obtida na etapa 2.1, seção do Mercado Pago, ou disponibilizada a seguir: 
+``test_user_5092580542816123576@testuser.com``
       - Use os [cartões de teste oficiais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards) e faça o pagamento com as credenciais de comprador. Sugestão:
 
          ``5031 4332 1540 6351``

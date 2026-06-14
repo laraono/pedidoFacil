@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { UpdateProfileDTO } from '../dto/profile/UpdateProfileDTO';
 import { ChangePasswordDTO } from '../dto/profile/ChangePasswordDTO';
 import { PerfilGerente } from '../database/entity/PerfilGerente';
+import { Endereco } from '../database/entity/Endereco';
 import { User } from '../database/entity/User';
 
 export class ProfileService {
@@ -33,10 +34,10 @@ export class ProfileService {
       email: user.email,
       phone: user.phone,
       cpf: pg?.cpf ?? null,
-      address: pg?.address ?? null,
-      city: pg?.city ?? null,
-      state: pg?.state ?? null,
-      zip: pg?.zip ?? null,
+      address: pg?.endereco?.logradouro ?? null,
+      city: pg?.endereco?.cidade ?? null,
+      state: pg?.endereco?.estado ?? null,
+      zip: pg?.endereco?.cep ?? null,
     };
   }
 
@@ -54,13 +55,7 @@ export class ProfileService {
         throw new AppError('Este CPF já está cadastrado no sistema.', 400);
     }
 
-    const perfilPatch = {
-      cpf:     data.cpf     !== undefined ? data.cpf     : (user.perfilGerente?.cpf     ?? null),
-      address: data.address !== undefined ? data.address : (user.perfilGerente?.address ?? null),
-      city:    data.city    !== undefined ? data.city    : (user.perfilGerente?.city    ?? null),
-      state:   data.state   !== undefined ? data.state   : (user.perfilGerente?.state   ?? null),
-      zip:     data.zip     !== undefined ? data.zip     : (user.perfilGerente?.zip     ?? null),
-    };
+    const pg = user.perfilGerente;
 
     await this.userRepository.manager.transaction(async (em) => {
       await em.update(User, userId, {
@@ -69,10 +64,25 @@ export class ProfileService {
         phone: data.phone !== undefined ? data.phone : user.phone,
       });
 
-      if (user.perfilGerente) {
-        await em.update(PerfilGerente, { id: userId }, perfilPatch);
+      let enderecoId = pg?.endereco?.id;
+      const enderecoData = {
+        logradouro: data.address !== undefined ? data.address : (pg?.endereco?.logradouro ?? null),
+        cidade:     data.city    !== undefined ? data.city    : (pg?.endereco?.cidade     ?? null),
+        estado:     data.state   !== undefined ? data.state   : (pg?.endereco?.estado     ?? null),
+        cep:        data.zip     !== undefined ? data.zip     : (pg?.endereco?.cep        ?? null),
+      };
+      if (enderecoId) {
+        await em.update(Endereco, enderecoId, enderecoData);
       } else {
-        await em.insert(PerfilGerente, { id: userId, user: { id: userId }, ...perfilPatch });
+        const res = await em.insert(Endereco, enderecoData);
+        enderecoId = res.identifiers[0].id;
+      }
+
+      const cpf = data.cpf !== undefined ? data.cpf : (pg?.cpf ?? null);
+      if (pg) {
+        await em.update(PerfilGerente, { id: userId }, { cpf, endereco: { id: enderecoId } });
+      } else {
+        await em.insert(PerfilGerente, { id: userId, user: { id: userId }, cpf, endereco: { id: enderecoId } });
       }
     });
 

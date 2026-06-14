@@ -1,10 +1,11 @@
 import { DataSource } from "typeorm";
-import { CreatePlan, CreatePlanMercadoPago, CreatePlanParams, UpdatePlan, UpdatePlanParams } from "../dto";
+import { CreatePlanParams, UpdatePlanParams } from "../dto";
 import { AppError } from "../middleware";
 import { PlanRepository } from "../repository";
 import { MercadoPagoService } from "./MercadoPagoService";
 import { SubscriptionService } from "./SubscriptionService";
 import { Plan, Subscription } from "../database";
+import { PlanFeature } from "../database/entity/PlanFeature";
 import { SubscriptionStatus } from "../enum";
 
 export class PlanService {
@@ -27,16 +28,17 @@ export class PlanService {
         }
 
         return await this.dataSource.transaction(async (transactionalEntityManager) => {
-            const localRepositoryParams: CreatePlan = {
+            const features = params.features
+                ? [Object.assign(new PlanFeature(), { description: params.features })]
+                : []
+
+            const plan = await transactionalEntityManager.save(Plan, {
                 name: params.name,
                 frequency: params.frequency,
                 price: params.price,
-                features: params.features,
-            }
+                features,
+            })
 
-            const plan = await transactionalEntityManager.save(Plan, localRepositoryParams)
-
-            const isDiario = params.frequency === 'diario'
             const isAnual = params.frequency === 'anual'
             const billingDay = Number(process.env.MP_BILLING_DAY ?? 10)
             const mpPlan = await this.mercadoPagoService.createPlan({
@@ -44,8 +46,8 @@ export class PlanService {
                 back_url: process.env.MP_BACK_URL || process.env.FRONTEND_URL || '',
                 auto_recurring: {
                     frequency: isAnual ? 12 : 1,
-                    frequency_type: isDiario ? 'days' : 'months',
-                    ...(!isAnual && !isDiario && { billing_day: billingDay, billing_day_proportional: true }),
+                    frequency_type: 'months',
+                    ...(!isAnual && { billing_day: billingDay, billing_day_proportional: true }),
                     transaction_amount: params.price,
                     currency_id: 'BRL'
                 },
@@ -53,7 +55,7 @@ export class PlanService {
                     payment_types: [{ id: 'credit_card' }]
                 }
             })
-            await transactionalEntityManager.update(Plan, plan.id, { mercadoPagoId: mpPlan.id })
+            await transactionalEntityManager.update(Plan, plan.id, { mercadoPagoId: (mpPlan as any).id })
 
             return { ...plan, mercadoPagoId: mpPlan.id }
         })
@@ -93,14 +95,11 @@ export class PlanService {
                 throw new AppError('Plano não encontrado', 404)
             }
 
-            const localRepositoryParams: UpdatePlan = {
+            await transactionalEntityManager.update(Plan, planId, {
                 name: params.name,
                 frequency: params.frequency,
                 price: params.price,
-                features: params.features,
-            }
-
-            await transactionalEntityManager.update(Plan, planId, localRepositoryParams)
+            })
 
             if(plan.mercadoPagoId) {
                 const isAnual = params.frequency === 'anual'
@@ -119,7 +118,7 @@ export class PlanService {
 
                 const activeSubscriptions = await this.subscriptionService.listSubscriptionsByPlan(planId)
                 for(const sub of activeSubscriptions) {
-                    if(sub.mercadoPagoId && sub.status !== SubscriptionStatus.CANCELADA) {
+                    if(sub.mercadoPagoId && sub.status.nome !== SubscriptionStatus.CANCELADA) {
                         await this.mercadoPagoService.updateSubscriptionValue({
                             subscriptionId: sub.mercadoPagoId,
                             amount: params.price

@@ -27,8 +27,8 @@ export class ProductRepository extends Repository<Product> {
             .take(limit)
             .skip(skip);
 
-        if (status) {
-            qb.andWhere('product.status = :status', { status });
+        if (status !== undefined && status !== null) {
+            qb.andWhere('product.ativo = :ativo', { ativo: status !== 'Inativo' && status !== 'false' });
         }
 
         const [products, total] = await qb.getManyAndCount();

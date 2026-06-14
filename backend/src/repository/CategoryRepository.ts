@@ -1,7 +1,6 @@
 import { DataSource, Repository, Not, IsNull } from "typeorm";
 import { CreateCategory } from "../dto";
 import { Category } from "../database";
-import { CategoryStatus } from "../enum";
 
 export class CategoryRepository extends Repository<Category>{
 
@@ -15,13 +14,13 @@ export class CategoryRepository extends Repository<Category>{
 
     async listCategories(establishmentId: number) {
         return await this.find({
-            where: { establishment: { id: establishmentId }, status: CategoryStatus.ATIVA }
+            where: { establishment: { id: establishmentId }, ativo: true }
         });
     }
 
     async listInactiveCategories(establishmentId: number) {
         return await this.find({
-            where: { establishment: { id: establishmentId }, status: CategoryStatus.INATIVA }
+            where: { establishment: { id: establishmentId }, ativo: false }
         });
     }
 
@@ -46,11 +45,11 @@ export class CategoryRepository extends Repository<Category>{
     }
 
     async deactivateCategory(categoryId: number) {
-        await this.update(categoryId, { status: CategoryStatus.INATIVA });
+        await this.update(categoryId, { ativo: false });
     }
 
     async reactivateCategory(categoryId: number) {
-        await this.update(categoryId, { status: CategoryStatus.ATIVA });
+        await this.update(categoryId, { ativo: true });
     }
 
     async softDeleteCategory(categoryId: number) {

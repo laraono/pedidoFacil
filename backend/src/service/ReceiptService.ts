@@ -2,7 +2,7 @@ import { ReceiptRepository } from '../repository/ReceiptRepository';
 import { EstablishmentRepository } from '../repository/EstablishmentRepository';
 import { PaymentRepository } from '../repository/PaymentRepository';
 import { AppError } from '../middleware/error/AppError';
-import { ReceiptStatus } from '../enum';
+import { STATUS_NOTA_FISCAL_IDS } from '../database/entity/lookup-ids';
 
 export class ReceiptService {
     constructor(
@@ -12,18 +12,18 @@ export class ReceiptService {
     ) {}
 
     async generateReceipt(paymentId: number, establishmentId: number, cpfCnpj?: string) {
-        const establishment = await this.establishmentRepository.findOne({ 
-            where: { id: establishmentId } 
+        const establishment = await this.establishmentRepository.findOne({
+            where: { id: establishmentId }
         });
-        
+
         if (!establishment?.cnpj) {
             throw new AppError('CNPJ do estabelecimento não configurado para emissão de NF.', 400);
         }
 
         const payment = await this.paymentRepository.findOne({
-            where: { 
-                id: paymentId, 
-                establishment: { id: establishmentId } 
+            where: {
+                id: paymentId,
+                establishment: { id: establishmentId }
             },
             relations: ['paymentOrders']
         });
@@ -35,9 +35,8 @@ export class ReceiptService {
             receiptNumber: `001.${String(timestamp).slice(-3)}`,
             cpfcnpj: cpfCnpj || null,
             totalValue: payment.totalValue,
-            status: ReceiptStatus.AUTORIZADA,
+            status: { id: STATUS_NOTA_FISCAL_IDS.AUTORIZADA } as any,
             payment: payment,
-            establishment: establishment
         });
 
         return await this.receiptRepository.save(receipt);
@@ -49,37 +48,22 @@ export class ReceiptService {
 
     async cancelReceipt(receiptId: number, establishmentId: number) {
         const receipt = await this.receiptRepository.findOne({
-            where: { 
-                id: receiptId, 
-                establishment: { id: establishmentId } 
+            where: {
+                payment: { establishment: { id: establishmentId } } as any,
+                id: receiptId,
             }
         });
 
         if (!receipt) throw new AppError('Nota Fiscal não encontrada.', 404);
 
-        receipt.status = ReceiptStatus.CANCELADA;
+        receipt.status = { id: STATUS_NOTA_FISCAL_IDS.CANCELADA } as any;
         await this.receiptRepository.save(receipt);
         return await this.receiptRepository.softRemove(receipt);
     }
 
-
     async getMetrics(establishmentId: number, startDate: string, endDate: string) {
-        const start = startDate.includes('T') ? startDate : `${startDate}T00:00:00.000Z`;
-        const end = endDate.includes('T') ? endDate : `${endDate}T23:59:59.999Z`;
-
-        const query = this.receiptRepository.createQueryBuilder('receipt')
-            .where('receipt.ID_Estabelecimento = :establishmentId', { establishmentId })
-            .andWhere('receipt.Data_Emissao BETWEEN :startDate AND :endDate', { startDate: new Date(start), endDate: new Date(end) });
-
-        const receipts = await query.getMany();
-
-        return {
-            emitidas: receipts.length,
-            faturado: receipts
-                .filter(r => r.status === ReceiptStatus.AUTORIZADA)
-                .reduce((sum, r) => sum + Number(r.totalValue), 0),
-            comCpf: receipts.filter(r => !!r.cpfcnpj).length,
-            comErro: receipts.filter(r => r.status === ReceiptStatus.ERRO).length
-        };
+        const start = new Date(startDate.includes('T') ? startDate : `${startDate}T00:00:00.000Z`);
+        const end = new Date(endDate.includes('T') ? endDate : `${endDate}T23:59:59.999Z`);
+        return await this.receiptRepository.getMetrics(establishmentId, start, end);
     }
 }

@@ -1,7 +1,6 @@
 import { CategoryRepository } from "../repository/CategoryRepository";
 import { CreateCategoryDTO } from "../dto/category/CreateCategoryDTO";
 import { AppError } from "../middleware/error/AppError";
-import { CategoryStatus } from "../enum";
 
 export class CategoryService {
     private categoryRepository: CategoryRepository
@@ -52,7 +51,7 @@ export class CategoryService {
 
     async softDeleteCategory(categoryId: number) {
         const category = await this.categoryRepository.getCategory(categoryId);
-        if (!category || category.status !== CategoryStatus.INATIVA) {
+        if (!category || category.ativo) {
             throw new AppError('Apenas categorias inativas podem ser excluídas.', 400);
         }
         await this.categoryRepository.softDeleteCategory(categoryId);
