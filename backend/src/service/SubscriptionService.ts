@@ -139,7 +139,7 @@ export class SubscriptionService {
         const newPlan = await this.planRepository.getPlan(planId)
         if(!newPlan) throw new AppError('Plano não encontrado', 404)
 
-        await this.subscriptionRepository.update(subscription.id, { plan: { id: planId } } as any)
+        await this.subscriptionRepository.update(subscription.id, { plan: { id: planId }, price: newPlan.price } as any)
 
         if(subscription.mercadoPagoId) {
             await this.mercadoPagoService.updateSubscriptionValue({
