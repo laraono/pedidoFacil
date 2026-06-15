@@ -1,23 +1,32 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_IP = process.env.EXPO_PUBLIC_API_URL;
+const BASE_IP = process.env.EXPO_PUBLIC_API_URL ?? null;
 
-const getLocalStackUrl = (ipUrl) => {
+const getLocalStackUrl = (ipUrl: string | null): string => {
   if (!ipUrl) return 'http://127.0.0.1:4566';
-  const baseUrl = ipUrl.split(':').slice(0, 2).join(':'); 
+  const baseUrl = ipUrl.split(':').slice(0, 2).join(':');
   return `${baseUrl}:4566`;
 };
 
-export const appConfig = {
+export const appConfig: {
+  BASE_IP: string | null
+  API_URL: string | null
+  SOCKET_URL: string | null
+  LOCALSTACK_URL: string
+  ESTABLISHMENT_ID: number | null
+  selfServiceCode: string | null
+  isConfigured: boolean
+} = {
   BASE_IP,
   API_URL: BASE_IP ? `${BASE_IP}/api/v1` : null,
   SOCKET_URL: BASE_IP,
+  LOCALSTACK_URL: getLocalStackUrl(BASE_IP),
   ESTABLISHMENT_ID: null,
   selfServiceCode: null,
   isConfigured: false,
 };
 
-export const loadAppConfig = async () => {
+export const loadAppConfig = async (): Promise<boolean> => {
   try {
     const savedId = await AsyncStorage.getItem('@PedidoFacil:EstID');
     const savedCode = await AsyncStorage.getItem('@PedidoFacil:TotemCode');
@@ -42,7 +51,7 @@ export const loadAppConfig = async () => {
   }
 };
 
-export const saveAppConfig = async (establishmentId, selfServiceCode = '') => {
+export const saveAppConfig = async (establishmentId: number | string, selfServiceCode = ''): Promise<void> => {
   try {
     await AsyncStorage.setItem('@PedidoFacil:EstID', establishmentId.toString());
 
@@ -50,7 +59,7 @@ export const saveAppConfig = async (establishmentId, selfServiceCode = '') => {
       await AsyncStorage.setItem('@PedidoFacil:TotemCode', selfServiceCode.toString());
     }
 
-    appConfig.ESTABLISHMENT_ID = parseInt(establishmentId, 10);
+    appConfig.ESTABLISHMENT_ID = parseInt(establishmentId.toString(), 10);
     appConfig.selfServiceCode = selfServiceCode;
     appConfig.isConfigured = true;
 

@@ -2,7 +2,32 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { appConfig } from "../services/apiConfig";
 import { getFullImageUrl } from "../utils/imageUtils";
 
-function isLightColor(hex) {
+export interface Theme {
+  fundoGeral: string
+  fundoProdutos: string
+  corTextoPrincipal: string
+  categoriaAtiva: string
+  corCategorias: string
+  corBotoes: string
+  textoBotoes: string
+  textoSecundario: string
+  borda: string
+  bordaCard: string
+  headerGeral: string
+  nomeUnidade: string
+  permitirObservacoes: boolean
+  fonte: string
+  logoUrl: string | null
+  nomeEstabelecimento: string | null
+}
+
+interface ThemeContextType {
+  theme: Theme
+  setTheme: React.Dispatch<React.SetStateAction<Theme>>
+  loadTheme: () => Promise<void>
+}
+
+function isLightColor(hex: string): boolean {
   if (!hex || !hex.startsWith("#") || hex.length < 7) return true;
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
@@ -10,7 +35,7 @@ function isLightColor(hex) {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
 }
 
-const defaultTheme = {
+const defaultTheme: Theme = {
   fundoGeral: "#F5F6FA",
   fundoProdutos: "#FFFFFF",
   corTextoPrincipal: "#212121",
@@ -29,10 +54,10 @@ const defaultTheme = {
   nomeEstabelecimento: null,
 };
 
-export const ThemeContext = createContext({});
+export const ThemeContext = createContext<ThemeContextType>({} as ThemeContextType);
 
-export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(defaultTheme);
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setTheme] = useState<Theme>(defaultTheme);
 
   const loadTheme = async () => {
     if (!appConfig.ESTABLISHMENT_ID || !appConfig.API_URL) return;
@@ -44,8 +69,8 @@ export function ThemeProvider({ children }) {
       if (response.ok) {
         const data = await response.json();
         const config = data.configurations || {};
-        
-        const logoPath = config.logo;
+
+        const logoPath: string | null = config.logo ?? null;
         const logoUrl = logoPath
           ? (logoPath.startsWith('http') ? logoPath : `${appConfig.BASE_IP}/uploads/${logoPath}`)
           : null;
@@ -63,11 +88,9 @@ export function ThemeProvider({ children }) {
           corCategorias: config.activeCateogryColor || defaultTheme.corCategorias,
           corBotoes: config.buttonsColor || defaultTheme.corBotoes,
           textoBotoes: config.buttonsTextColor || defaultTheme.textoBotoes,
-
           nomeUnidade: config.comandaLabel || defaultTheme.nomeUnidade,
           permitirObservacoes: config.allowObservations !== false,
           fonte: config.fontFamily || defaultTheme.fonte,
-
           textoSecundario: bgIsLight ? "#757575" : "rgba(255,255,255,0.5)",
           borda: bgIsLight ? "#E0E0E0" : "rgba(255,255,255,0.12)",
           bordaCard: cardIsLight ? "#E0E0E0" : "rgba(255,255,255,0.12)",
@@ -77,7 +100,7 @@ export function ThemeProvider({ children }) {
         });
         console.log("[ThemeContext] Tema sincronizado via API.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.warn("[ThemeContext] Erro na sincronização, usando padrão.", error.message);
     }
   };

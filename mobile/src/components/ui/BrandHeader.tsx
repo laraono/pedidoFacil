@@ -5,38 +5,30 @@ import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useTheme } from "../../contexts/ThemeContext";
 
-export default function BrandHeader({ showBack = false }) {
+interface BrandHeaderProps {
+  showBack?: boolean
+}
+
+export default function BrandHeader({ showBack = false }: BrandHeaderProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { theme } = useTheme();
 
-  const styles = useMemo(() => getStyles(theme, insets), [theme, insets]);
+  const styles = useMemo(() => getStyles(theme, insets.top), [theme, insets.top]);
 
   return (
     <View style={styles.header}>
       <View style={styles.container}>
         {showBack ? (
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            activeOpacity={0.7}
-          >
-            <Feather
-              name="arrow-left"
-              size={28}
-              color={theme.corTextoPrincipal}
-            />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
+            <Feather name="arrow-left" size={28} color={theme.corTextoPrincipal} />
           </TouchableOpacity>
         ) : (
           <View style={{ width: 40 }} />
         )}
 
         {theme.logoUrl ? (
-          <Image
-            source={{ uri: theme.logoUrl }}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
+          <Image source={{ uri: theme.logoUrl }} style={styles.logoImage} resizeMode="contain" />
         ) : (
           <Text style={styles.headerTitle} numberOfLines={1}>
             {theme.nomeEstabelecimento || "PedidoFácil"}
@@ -49,11 +41,11 @@ export default function BrandHeader({ showBack = false }) {
   );
 }
 
-const getStyles = (theme, insets) =>
+const getStyles = (theme: any, paddingTop: number) =>
   StyleSheet.create({
     header: {
       backgroundColor: theme.headerGeral,
-      paddingTop: insets.top,
+      paddingTop,
       borderBottomWidth: 1,
       borderBottomColor: theme.bordaCard,
       zIndex: 10,
@@ -73,14 +65,6 @@ const getStyles = (theme, insets) =>
       flex: 1,
       textAlign: "center",
     },
-    logoImage: {
-      flex: 1,
-      height: 46,
-    },
-    backButton: {
-      padding: 6,
-      width: 40,
-      alignItems: "center",
-      justifyContent: "center",
-    },
+    logoImage: { flex: 1, height: 46 },
+    backButton: { padding: 6, width: 40, alignItems: "center", justifyContent: "center" },
   });

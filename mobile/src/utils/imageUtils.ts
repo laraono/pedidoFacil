@@ -1,11 +1,11 @@
 import { appConfig } from "../services/apiConfig";
 
-export const getFullImageUrl = (imagePath) => {
+export const getFullImageUrl = (imagePath: string | null | undefined): { uri: string } | null => {
   if (!imagePath) return null;
-  if (typeof imagePath !== "string") return imagePath;
+  if (typeof imagePath !== "string") return null;
 
   if (imagePath.includes("127.0.0.1:4566") || imagePath.includes("localhost:4566")) {
-    const networkIpPort = appConfig.LOCALSTACK_URL.replace(/^https?:\/\//, ''); 
+    const networkIpPort = appConfig.LOCALSTACK_URL.replace(/^https?:\/\//, '');
     const fixedUrl = imagePath
       .replace("127.0.0.1:4566", networkIpPort)
       .replace("localhost:4566", networkIpPort);

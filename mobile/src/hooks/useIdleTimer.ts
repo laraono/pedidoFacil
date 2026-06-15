@@ -4,10 +4,10 @@ import { useNavigation } from "@react-navigation/native";
 import { useCart } from "../contexts/CartContext";
 
 export function useIdleTimer(timeoutSeconds = 60) {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const { clearCart } = useCart();
-  const timerId = useRef(null);
-  const resetTimerRef = useRef(null);
+  const timerId = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resetTimerRef = useRef<(() => void) | null>(null);
 
   const resetTimer = useCallback(() => {
     if (timerId.current) clearTimeout(timerId.current);

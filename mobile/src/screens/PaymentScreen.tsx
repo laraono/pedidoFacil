@@ -1,13 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-  ScrollView,
-  Dimensions,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -19,61 +11,52 @@ import BrandHeader from "../components/ui/BrandHeader";
 
 import { submitOrder } from "../services/orderService";
 import { connectMobileSocket } from "../services/socketService";
-
 import { appConfig } from "../services/apiConfig";
 
 const { width } = Dimensions.get("window");
 
-const PAYMENT_ICONS = {
-  "PIX": { icon: "qrcode-scan", label: "Pix", color: "#32BCAD" },
-  "Dinheiro": { icon: "cash-multiple", label: "Dinheiro", color: "#4CAF50" },
+type SimulationPhase = null | "processing" | "approved" | "cash";
+
+const PAYMENT_ICONS: Record<string, { icon: string; label: string; color: string }> = {
+  PIX: { icon: "qrcode-scan", label: "Pix", color: "#32BCAD" },
+  Dinheiro: { icon: "cash-multiple", label: "Dinheiro", color: "#4CAF50" },
   "Cartão Crédito": { icon: "credit-card", label: "Crédito", color: "#1976D2" },
   "Cartão Débito": { icon: "credit-card-outline", label: "Débito", color: "#FF9800" },
-  "MISTO": { icon: "wallet", label: "Pagar no Caixa", color: "#9C27B0" }
+  MISTO: { icon: "wallet", label: "Pagar no Caixa", color: "#9C27B0" },
 };
 
 export default function PaymentScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const route = useRoute();
   const { cartItems, cartTotal, clearCart } = useCart();
   const { theme } = useTheme();
-
   const panHandlers = useIdleTimer(120);
 
-  const desconto = route.params?.descontoAplicado || 0;
-  const customerName = route.params?.customerName || null;
+  const params = route.params as { descontoAplicado?: number; customerName?: string } | undefined;
+  const desconto = params?.descontoAplicado || 0;
+  const customerName = params?.customerName || null;
   const totalComDesconto = Math.max(0, cartTotal - desconto);
 
-  const [availableMethods, setAvailableMethods] = useState([]);
+  const [availableMethods, setAvailableMethods] = useState<string[]>([]);
   const [isLoadingMethods, setIsLoadingMethods] = useState(true);
-
-  const [selectedMethod, setSelectedMethod] = useState(null);
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const [simulationPhase, setSimulationPhase] = useState(null); // null | 'processing' | 'approved' | 'cash'
+  const [simulationPhase, setSimulationPhase] = useState<SimulationPhase>(null);
 
   const loadEstablishmentData = useCallback(async () => {
     try {
       const url = `${appConfig.API_URL}/estabelecimento/${appConfig.ESTABLISHMENT_ID}/public`;
-      const response = await fetch(url, {
-        headers: {
-          'x-totem-code': appConfig.selfServiceCode
-        }
-      });
-      
+      const response = await fetch(url, { headers: { "x-totem-code": appConfig.selfServiceCode ?? "" } });
+
       if (response.ok) {
-        const data = await response.json();        
-        let methods = typeof data.paymentMethods === "string"
-          ? JSON.parse(data.paymentMethods)
-          : data.paymentMethods || [];
-        
+        const data = await response.json();
+        let methods: string[] = typeof data.paymentMethods === "string" ? JSON.parse(data.paymentMethods) : data.paymentMethods || [];
         if (methods.length === 0) methods = ["MISTO"];
-        
         setAvailableMethods(methods);
       } else {
         setAvailableMethods(["MISTO"]);
       }
-    } catch (error) {
+    } catch {
       setAvailableMethods(["MISTO"]);
     } finally {
       setIsLoadingMethods(false);
@@ -83,22 +66,20 @@ export default function PaymentScreen() {
   useEffect(() => {
     loadEstablishmentData();
     const socket = connectMobileSocket();
+    if (!socket) return;
 
     socket.on("profile_updated", () => {
       setSelectedMethod(null);
-      loadEstablishmentData(); 
+      loadEstablishmentData();
     });
 
-    return () => {
-      socket.off("profile_updated");
-    };
+    return () => { socket.off("profile_updated"); };
   }, [loadEstablishmentData]);
 
-  const styles = useMemo(() => getStyles(theme, width), [theme, width]);
+  const styles = useMemo(() => getStyles(theme, width), [theme]);
 
   const handleConfirm = async () => {
     if (!selectedMethod || isSubmitting) return;
-
     setIsSubmitting(true);
 
     try {
@@ -109,12 +90,7 @@ export default function PaymentScreen() {
         setTimeout(() => {
           setSimulationPhase(null);
           clearCart();
-          navigation.navigate("OrderConfirmed", {
-            ticket: orderData.ticket,
-            label: orderData.label,
-            customerName: customerName,
-            isPaid: false,
-          });
+          navigation.navigate("OrderConfirmed", { ticket: orderData.ticket, label: orderData.label, customerName, isPaid: false });
         }, 2000);
       } else {
         setSimulationPhase("processing");
@@ -123,12 +99,7 @@ export default function PaymentScreen() {
           setTimeout(() => {
             setSimulationPhase(null);
             clearCart();
-            navigation.navigate("OrderConfirmed", {
-              ticket: orderData.ticket,
-              label: orderData.label,
-              customerName: customerName,
-              isPaid: true,
-            });
+            navigation.navigate("OrderConfirmed", { ticket: orderData.ticket, label: orderData.label, customerName, isPaid: true });
           }, 1500);
         }, 2000);
       }
@@ -138,22 +109,17 @@ export default function PaymentScreen() {
     }
   };
 
-  const handleCancelOrder = () => {
-    clearCart();
-    navigation.navigate("Welcome");
-  };
-
   if (isLoadingMethods) {
     return (
-      <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
-         <ActivityIndicator size="large" color={theme.corBotoes} />
+      <SafeAreaView style={[styles.safeArea, { justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color={theme.corBotoes} />
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.safeArea} {...panHandlers}>
-      <BrandHeader title="Pagamento" showBack={true} />
+      <BrandHeader showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.centerWrapper}>
@@ -163,24 +129,12 @@ export default function PaymentScreen() {
             {availableMethods.map((methodKey) => {
               const methodInfo = PAYMENT_ICONS[methodKey] || { icon: "credit-card", label: methodKey, color: "#888" };
               const isSelected = selectedMethod === methodKey;
-              
               return (
-                <TouchableOpacity
-                  key={methodKey}
-                  style={[styles.methodCard, isSelected && styles.methodCardSelected]}
-                  onPress={() => setSelectedMethod(methodKey)}
-                  activeOpacity={0.8}
-                >
+                <TouchableOpacity key={methodKey} style={[styles.methodCard, isSelected && styles.methodCardSelected]} onPress={() => setSelectedMethod(methodKey)} activeOpacity={0.8}>
                   <View style={[styles.iconWrapper, isSelected && styles.iconWrapperSelected]}>
-                    <MaterialCommunityIcons
-                      name={methodInfo.icon}
-                      size={42}
-                      color={isSelected ? theme.textoBotoes : methodInfo.color}
-                    />
+                    <MaterialCommunityIcons name={methodInfo.icon as any} size={42} color={isSelected ? theme.textoBotoes : methodInfo.color} />
                   </View>
-                  <Text style={[styles.methodLabel, isSelected && styles.methodLabelSelected]}>
-                    {methodInfo.label}
-                  </Text>
+                  <Text style={[styles.methodLabel, isSelected && styles.methodLabelSelected]}>{methodInfo.label}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -189,9 +143,7 @@ export default function PaymentScreen() {
           {(selectedMethod === "Dinheiro" || selectedMethod === "MISTO") && (
             <View style={styles.cashWarning}>
               <Feather name="info" size={20} color={theme.corCategorias} />
-              <Text style={styles.cashWarningText}>
-                Este pagamento deve ser finalizado no balcão. Gere sua ficha e apresente ao atendente.
-              </Text>
+              <Text style={styles.cashWarningText}>Este pagamento deve ser finalizado no balcão. Gere sua ficha e apresente ao atendente.</Text>
             </View>
           )}
 
@@ -210,16 +162,10 @@ export default function PaymentScreen() {
       <View style={styles.footer}>
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>Total a Pagar</Text>
-          <Text style={styles.totalValue}>
-            R$ {totalComDesconto.toFixed(2).replace(".", ",")}
-          </Text>
+          <Text style={styles.totalValue}>R$ {totalComDesconto.toFixed(2).replace(".", ",")}</Text>
         </View>
 
-        <TouchableOpacity
-          style={[styles.btnConfirm, (!selectedMethod || isSubmitting) && styles.btnDisabled]}
-          disabled={!selectedMethod || isSubmitting}
-          onPress={handleConfirm}
-        >
+        <TouchableOpacity style={[styles.btnConfirm, (!selectedMethod || isSubmitting) && styles.btnDisabled]} disabled={!selectedMethod || isSubmitting} onPress={handleConfirm}>
           {isSubmitting && !simulationPhase ? (
             <ActivityIndicator size="small" color={theme.textoBotoes} />
           ) : (
@@ -232,7 +178,7 @@ export default function PaymentScreen() {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.btnCancel} onPress={handleCancelOrder}>
+        <TouchableOpacity style={styles.btnCancel} onPress={() => { clearCart(); navigation.navigate("Welcome"); }}>
           <Text style={styles.btnCancelText}>Cancelar e Sair</Text>
         </TouchableOpacity>
       </View>
@@ -245,60 +191,27 @@ export default function PaymentScreen() {
             <Feather name="check-circle" size={64} color="#4CAF50" />
           )}
           <Text style={styles.simulationTitle}>
-            {simulationPhase === "approved"
-              ? "Pagamento aprovado!"
-              : simulationPhase === "cash"
-              ? "Ficha gerada com sucesso!"
-              : "Processando pagamento..."}
+            {simulationPhase === "approved" ? "Pagamento aprovado!" : simulationPhase === "cash" ? "Ficha gerada com sucesso!" : "Processando pagamento..."}
           </Text>
           <Text style={styles.simulationSubtitle}>
-            {simulationPhase === "approved"
-              ? "Aguarde ser chamado"
-              : simulationPhase === "cash"
-              ? "Dirija-se ao caixa para efetuar o pagamento"
-              : "Aguardando confirmação da máquina"}
+            {simulationPhase === "approved" ? "Aguarde ser chamado" : simulationPhase === "cash" ? "Dirija-se ao caixa para efetuar o pagamento" : "Aguardando confirmação da máquina"}
           </Text>
         </View>
       )}
-
     </SafeAreaView>
   );
 }
 
-const getStyles = (theme, width) =>
+const getStyles = (theme: any, w: number) =>
   StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: theme.fundoGeral },
     scrollContent: { flexGrow: 1, paddingBottom: 220 },
     centerWrapper: { alignSelf: "center", width: "100%", maxWidth: 800, paddingHorizontal: 24, paddingTop: 40 },
     mainTitle: { fontSize: 26, fontWeight: "900", color: theme.corTextoPrincipal, textAlign: "center", marginBottom: 32 },
     gridContainer: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 16 },
-    methodCard: {
-      width: (width - 48 - 16) / 2,
-      maxWidth: 220,
-      backgroundColor: theme.fundoProdutos,
-      borderRadius: 24,
-      justifyContent: "center",
-      alignItems: "center",
-      borderWidth: 0.5,
-      borderColor: 'rgba(255, 255, 255, 0.1)',
-      elevation: 5,
-      paddingVertical: 24,
-      paddingHorizontal: 12,
-      minHeight: 140,
-    },
-    methodCardSelected: {
-      borderColor: theme.corBotoes,
-      backgroundColor: theme.corBotoes,
-    },
-    iconWrapper: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
-      backgroundColor: theme.fundoGeral, 
-      justifyContent: "center",
-      alignItems: "center",
-      marginBottom: 16,
-    },
+    methodCard: { width: (w - 48 - 16) / 2, maxWidth: 220, backgroundColor: theme.fundoProdutos, borderRadius: 24, justifyContent: "center", alignItems: "center", borderWidth: 0.5, borderColor: "rgba(255,255,255,0.1)", elevation: 5, paddingVertical: 24, paddingHorizontal: 12, minHeight: 140 },
+    methodCardSelected: { borderColor: theme.corBotoes, backgroundColor: theme.corBotoes },
+    iconWrapper: { width: 64, height: 64, borderRadius: 32, backgroundColor: theme.fundoGeral, justifyContent: "center", alignItems: "center", marginBottom: 16 },
     iconWrapperSelected: { backgroundColor: "rgba(255,255,255,0.2)" },
     methodLabel: { fontSize: 18, fontWeight: "900", color: theme.corTextoPrincipal, textAlign: "center" },
     methodLabelSelected: { color: theme.textoBotoes },
@@ -307,15 +220,7 @@ const getStyles = (theme, width) =>
     brandsContainer: { alignItems: "center", marginTop: 48 },
     brandsTitle: { fontSize: 11, fontWeight: "900", color: theme.textoSecundario, textTransform: "uppercase", letterSpacing: 1, marginBottom: 16 },
     brandsWrapper: { flexDirection: "row", gap: 20, opacity: 0.6 },
-    footer: {
-      position: "absolute",
-      bottom: 0, left: 0, right: 0,
-      backgroundColor: theme.fundoProdutos,
-      paddingHorizontal: 30, paddingTop: 20, paddingBottom: 30,
-      borderTopWidth: 0.5,
-      borderTopColor: 'rgba(255, 255, 255, 0.1)',
-      elevation: 20,
-    },
+    footer: { position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: theme.fundoProdutos, paddingHorizontal: 30, paddingTop: 20, paddingBottom: 30, borderTopWidth: 0.5, borderTopColor: "rgba(255,255,255,0.1)", elevation: 20 },
     totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
     totalLabel: { fontSize: 14, fontWeight: "900", color: theme.textoSecundario, textTransform: "uppercase" },
     totalValue: { fontSize: 32, fontWeight: "900", color: theme.corTextoPrincipal },
@@ -324,27 +229,7 @@ const getStyles = (theme, width) =>
     btnConfirmText: { color: theme.textoBotoes, fontSize: 18, fontWeight: "900", textTransform: "uppercase" },
     btnCancel: { alignSelf: "center", marginTop: 16 },
     btnCancelText: { color: "#E53935", fontSize: 14, fontWeight: "900", textTransform: "uppercase", textDecorationLine: "underline" },
-    
-    simulationOverlay: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0,0,0,0.85)',
-      zIndex: 9999,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 24,
-    },
-    simulationTitle: {
-      color: '#FFFFFF',
-      fontSize: 22,
-      fontWeight: '900',
-      marginTop: 24,
-      textAlign: 'center',
-    },
-    simulationSubtitle: {
-      color: '#AAAAAA',
-      fontSize: 14,
-      fontWeight: 'bold',
-      marginTop: 8,
-      textAlign: 'center',
-    }
+    simulationOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.85)", zIndex: 9999, justifyContent: "center", alignItems: "center", padding: 24 },
+    simulationTitle: { color: "#FFFFFF", fontSize: 22, fontWeight: "900", marginTop: 24, textAlign: "center" },
+    simulationSubtitle: { color: "#AAAAAA", fontSize: 14, fontWeight: "bold", marginTop: 8, textAlign: "center" },
   });
