@@ -211,7 +211,7 @@ if [ "${TABLE_COUNT:-0}" -gt 0 ]; then
     fi
     ok "Banco recriado com sucesso"
   else
-    ok "Banco mantido — nenhuma alteração feita"
+    ok "Banco mantido"
   fi
 else
   info "Criando as tabelas do sistema..."
@@ -221,6 +221,14 @@ else
   fi
   ok "Tabelas criadas"
 fi
+
+echo ""
+info "Aplicando migrations..."
+if ! npm run --prefix backend migration:run; then
+  erro "Falha ao aplicar migrations. Verifique os logs acima."
+  exit 1
+fi
+ok "Migrations aplicadas"
 
 echo ""
 
