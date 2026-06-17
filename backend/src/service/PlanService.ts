@@ -43,7 +43,7 @@ export class PlanService {
             const billingDay = Number(process.env.MP_BILLING_DAY ?? 10)
             const mpPlan = await this.mercadoPagoService.createPlan({
                 reason: params.name,
-                back_url: process.env.MP_BACK_URL || process.env.FRONTEND_URL || '',
+                back_url: process.env.MP_BACK_URL || '',
                 auto_recurring: {
                     frequency: isAnual ? 12 : 1,
                     frequency_type: 'months',
@@ -130,7 +130,7 @@ export class PlanService {
                 const billingDay = Number(process.env.MP_BILLING_DAY ?? 10)
                 await this.mercadoPagoService.updatePlan(plan.mercadoPagoId, {
                     reason: params.name,
-                    back_url: process.env.MP_BACK_URL || process.env.FRONTEND_URL || '',
+                    back_url: process.env.MP_BACK_URL || '',
                     auto_recurring: {
                         frequency: isAnual ? 12 : 1,
                         frequency_type: 'months',
