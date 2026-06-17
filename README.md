@@ -172,9 +172,7 @@ O script irá:
 ./up.sh
 ```
 
-O sistema ficará disponível em:
-
-- **http://localhost:5173** 
+Quando o sistema estiver no ar, o terminal exibirá a URL do site e as credenciais do painel administrativo.
 
 O QR code do Expo (mobile) também aparecerá no terminal — escaneie com o app [**Expo Go**](https://play.google.com/store/apps/details?id=host.exp.exponent&hl=pt_BR&pli=1).
 

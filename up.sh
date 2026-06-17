@@ -16,6 +16,8 @@ info() { echo -e "  ${BLUE}→${RESET}  $1"; }
 warn() { echo -e "  ${YELLOW}!${RESET}  $1"; }
 erro() { echo -e "  ${RED}✗${RESET}  $1"; }
 
+trap 'echo -e "\n  ${RED}✗${RESET}  Ocorreu um erro inesperado. Verifique os logs acima.\n"' ERR
+
 # ── Cabeçalho ──────────────────────────────────────────────────────────────
 echo -e "
    ${BOLD}${GREEN}${DIM}───────────────────────────────────────────────────────                                                                  
