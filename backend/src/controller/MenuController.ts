@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { MenuService } from '../service/MenuService';
-import rateLimit from 'express-rate-limit'
+import rateLimit from 'express-rate-limit';
+import { logger } from '../utils/logger';
 
 export const menuLimiter = rateLimit({
     windowMs: 60 * 1000,
@@ -33,7 +34,7 @@ export class MenuController {
             const menu = await this.menuService.getFullMenu(Number(establishmentId), editMode);
             return res.status(200).json(menu);
         } catch (error) {
-            console.error("Erro no MenuService:", error);
+            logger.error("Erro no MenuService:", error);
             return res.status(500).json({ message: "Erro interno ao buscar o cardápio." });
         }
     }

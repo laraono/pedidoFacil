@@ -23,7 +23,6 @@ export class CouponRepository {
         const couponData = {
             ...cleanData,
             type: tipoDesconto,
-            tipoDescontoNome: tipoDesconto.nome,
             establishment: { id: establishmentId },
         };
 
@@ -59,7 +58,6 @@ export class CouponRepository {
             const tipoDesconto = await this.tipoDescontoRepo.findOne({ where: { nome: type } });
             if (!tipoDesconto) throw new AppError('Tipo de desconto inválido.', 400);
             patch.type = tipoDesconto;
-            patch.tipoDescontoNome = tipoDesconto.nome;
         }
 
         await this.repo.update(couponId, patch);

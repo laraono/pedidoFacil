@@ -9,6 +9,7 @@ import { authenticate } from '../middleware/authenticate';
 import { checkPermission } from '../middleware/roleAccessControl';
 import { Permission } from '../enum';
 import { subscriptionMiddleware } from '../middleware';
+import { verifyCategoryTenancy } from '../middleware/tenant';
 
 export const categoryRouter = express.Router();
 
@@ -38,6 +39,7 @@ categoryRouter.put(
   '/categories/:id',
   authenticate,
   subscriptionMiddleware,
+  verifyCategoryTenancy('id'),
   checkPermission(Permission.CARDAPIO),
   validateUpload.single('imagem'),
   validateRequest(updateCategorySchema),
@@ -50,6 +52,7 @@ categoryRouter.patch(
   '/categories/:id/deactivate',
   authenticate,
   subscriptionMiddleware,
+  verifyCategoryTenancy('id'),
   checkPermission(Permission.CARDAPIO),
   catchAsync((req: Request, res: Response) =>
     categoryController.deactivateCategory(req, res),
@@ -60,6 +63,7 @@ categoryRouter.patch(
   '/categories/:id/reactivate',
   authenticate,
   subscriptionMiddleware,
+  verifyCategoryTenancy('id'),
   checkPermission(Permission.CARDAPIO),
   catchAsync((req: Request, res: Response) =>
     categoryController.reactivateCategory(req, res),
@@ -70,6 +74,7 @@ categoryRouter.delete(
   '/categories/:id',
   authenticate,
   subscriptionMiddleware,
+  verifyCategoryTenancy('id'),
   checkPermission(Permission.CARDAPIO),
   catchAsync((req: Request, res: Response) =>
     categoryController.deleteCategory(req, res),

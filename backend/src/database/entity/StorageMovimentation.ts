@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, JoinColumn, ManyToOne } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, JoinColumn, ManyToOne, CreateDateColumn } from "typeorm"
 import { StorageIten } from "./StorageIten"
 import { User } from "./User"
 import { TipoMovimentacao } from "./TipoMovimentacao"
@@ -26,4 +26,7 @@ export class StorageMovimentation {
     @ManyToOne(() => User, (user) => user.movimentations)
     @JoinColumn({ name: 'ID_Usuario_Responsavel' })
     user!: User
+
+    @CreateDateColumn({ name: 'Data_Criacao' })
+    createdAt!: Date
 }

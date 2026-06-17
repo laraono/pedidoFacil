@@ -12,9 +12,6 @@ export class Coupon {
     @Column({ type: 'varchar', name: 'Codigo', nullable: false, length: 50 })
     code!: string
 
-    @Column({ type: 'varchar', name: 'Tipo_Desconto', nullable: false, length: 10 })
-    tipoDescontoNome!: string
-
     @ManyToOne(() => TipoDesconto, { eager: true })
     @JoinColumn({ name: 'ID_TipoDesconto' })
     type!: TipoDesconto
@@ -23,7 +20,7 @@ export class Coupon {
     value!: number
 
     @Column({ type: 'date', name: 'Data_Validade', nullable: true })
-    expirationDate!: String
+    expirationDate?: string | null
 
     @DeleteDateColumn({ name: 'Data_Exclusao', type: 'timestamp', nullable: true })
     deletedAt!: Date

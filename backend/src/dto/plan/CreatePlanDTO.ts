@@ -50,8 +50,8 @@ export type UpdatePlanMercadoPago = {
         frequency: number,
         frequency_type: 'months',
         repetitions?: number,
-        billing_day: number,
-        billing_day_proportional: boolean,
+        billing_day?: number,
+        billing_day_proportional?: boolean,
         transaction_amount: number,
         currency_id: string
     }

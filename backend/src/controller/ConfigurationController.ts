@@ -66,7 +66,10 @@ export class ConfigurationController {
 
   async getConfig(req: Request, res: Response) {
     try {
-      const establishmentId = Number(req.params.establishmentId) || 1;
+      const establishmentId = Number(req.params.establishmentId);
+      if (!establishmentId) {
+        return res.status(400).json({ message: 'ID do estabelecimento inválido.' });
+      }
 
       const config =
         await this.configurationService.getOrCreateConfiguration(

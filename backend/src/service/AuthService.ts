@@ -47,6 +47,8 @@ export class AuthService {
   async checkEmailAvailable(email: string) {
     const exists = await this.userRepository.findOne({ where: { email } });
     if (exists) throw new AppError('Este e-mail está inválido ou já está em uso.', 409);
+    const adminExists = await this.dataSource.getRepository(Admin).findOne({ where: { email } });
+    if (adminExists) throw new AppError('Este e-mail está inválido ou já está em uso.', 409);
     return { available: true };
   }
 
@@ -104,6 +106,8 @@ export class AuthService {
   private async validateUniqueness(data: RegisterCompleteDTO): Promise<void> {
     const emailExiste = await this.userRepository.findOne({ where: { email: data.email } });
     if (emailExiste) throw new AppError('Este e-mail está inválido ou já está em uso.', 409);
+    const adminEmailExiste = await this.dataSource.getRepository(Admin).findOne({ where: { email: data.email } });
+    if (adminEmailExiste) throw new AppError('Este e-mail está inválido ou já está em uso.', 409);
 
     if (data.cpf) {
       const cpfExiste = await this.dataSource.getRepository(PerfilGerente).findOne({ where: { cpf: data.cpf } });

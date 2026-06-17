@@ -133,7 +133,6 @@ CREATE TABLE IF NOT EXISTS PLANO (
   Nome                 VARCHAR(100) NOT NULL,
   Valor_Plano          DECIMAL(10, 2) NOT NULL,
   Frequencia           VARCHAR(20) NULL,
-  Funcionalidades      TEXT NULL,
   ID_MercadoPago_Plano VARCHAR(255) NULL,
   PRIMARY KEY (ID_Plano)
 ) ENGINE = InnoDB;
@@ -172,7 +171,7 @@ CREATE TABLE IF NOT EXISTS ESTABELECIMENTO_METODO_PAGAMENTO (
 
 CREATE TABLE IF NOT EXISTS CARGO (
   ID_Cargo           INT NOT NULL AUTO_INCREMENT,
-  ID_Estabelecimento INT NULL,
+  ID_Estabelecimento INT NOT NULL,
   Nome               VARCHAR(50) NOT NULL,
   Data_Exclusao      TIMESTAMP NULL,
   PRIMARY KEY (ID_Cargo),
@@ -181,11 +180,11 @@ CREATE TABLE IF NOT EXISTS CARGO (
 
 CREATE TABLE IF NOT EXISTS ASSINATURA (
   ID_Assinatura        INT NOT NULL AUTO_INCREMENT,
-  ID_Estabelecimento   INT NULL,
+  ID_Estabelecimento   INT NOT NULL,
   ID_Plano             INT NULL,
   Data_Inicio          DATE NOT NULL,
   Data_Vencimento_Prox DATE NOT NULL,
-  ID_Status            INT NULL,
+  ID_Status            INT NOT NULL,
   ID_MercadoPago       VARCHAR(255) NULL,
   Valor                DECIMAL(10, 2) NULL,
   PRIMARY KEY (ID_Assinatura),
@@ -240,7 +239,7 @@ CREATE TABLE IF NOT EXISTS HISTORICO_PAGAMENTO_ASSINATURA (
   ID_Assinatura   INT NULL,
   ID_MP_Pagamento VARCHAR(255) NOT NULL,
   Valor           DECIMAL(10, 2) NOT NULL,
-  ID_Status       INT NULL,
+  ID_Status       INT NOT NULL,
   Tipo_Pagamento  VARCHAR(50) NULL,
   Nome_Plano      VARCHAR(255) NOT NULL,
   Data_Pagamento  DATETIME NULL,
@@ -294,7 +293,7 @@ CREATE TABLE IF NOT EXISTS REFRESH_TOKEN_USUARIO (
 
 CREATE TABLE IF NOT EXISTS CATEGORIA (
   ID_Categoria       INT NOT NULL AUTO_INCREMENT,
-  ID_Estabelecimento INT NULL,
+  ID_Estabelecimento INT NOT NULL,
   Nome               VARCHAR(50) NOT NULL,
   Imagem             VARCHAR(255) NULL,
   Ativo              TINYINT NOT NULL DEFAULT 1,
@@ -305,7 +304,7 @@ CREATE TABLE IF NOT EXISTS CATEGORIA (
 
 CREATE TABLE IF NOT EXISTS CAIXA (
   ID_Caixa           INT NOT NULL AUTO_INCREMENT,
-  ID_Estabelecimento INT NULL,
+  ID_Estabelecimento INT NOT NULL,
   Nome               VARCHAR(255) NOT NULL,
   Mercado_Pago_Id    VARCHAR(255) NOT NULL,
   ID_Terminal        VARCHAR(255) NULL,
@@ -317,7 +316,7 @@ CREATE TABLE IF NOT EXISTS CAIXA (
 
 CREATE TABLE IF NOT EXISTS PRODUTO (
   ID_Produto    INT NOT NULL AUTO_INCREMENT,
-  ID_Categoria  INT NULL,
+  ID_Categoria  INT NOT NULL,
   Nome          VARCHAR(50) NOT NULL,
   Descricao     VARCHAR(255) NULL,
   Imagem        VARCHAR(500) NULL,
@@ -331,7 +330,7 @@ CREATE TABLE IF NOT EXISTS PRODUTO (
 
 CREATE TABLE IF NOT EXISTS PRODUTO_VARIACAO (
   ID_Variacao     INT NOT NULL AUTO_INCREMENT,
-  ID_Produto      INT NULL,
+  ID_Produto      INT NOT NULL,
   Nome            VARCHAR(50) NOT NULL,
   Preco_Adicional DECIMAL(10, 2) NOT NULL,
   Ativo           TINYINT NOT NULL DEFAULT 1,
@@ -342,7 +341,7 @@ CREATE TABLE IF NOT EXISTS PRODUTO_VARIACAO (
 
 CREATE TABLE IF NOT EXISTS ESTOQUE_ITEM (
   ID_Estoque_Item  INT NOT NULL AUTO_INCREMENT,
-  ID_Produto       INT NULL,
+  ID_Produto       INT NOT NULL,
   Nome             VARCHAR(50) NOT NULL,
   Unidade_Medida   VARCHAR(255) NOT NULL,
   Quantidade_Atual INT NOT NULL,
@@ -359,6 +358,7 @@ CREATE TABLE IF NOT EXISTS MOVIMENTACAO_ESTOQUE (
   ID_TipoMovimentacao    INT NULL,
   Quantidade             INT NOT NULL,
   Justificativa          VARCHAR(255) NULL,
+  Data_Criacao           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (ID_Movimentacao),
   FOREIGN KEY (ID_Estoque_Item) REFERENCES ESTOQUE_ITEM (ID_Estoque_Item),
   FOREIGN KEY (ID_Usuario_Responsavel) REFERENCES USUARIO (ID_Usuario),
@@ -367,7 +367,7 @@ CREATE TABLE IF NOT EXISTS MOVIMENTACAO_ESTOQUE (
 
 CREATE TABLE IF NOT EXISTS CUPOM_DESCONTO (
   ID_Cupom           INT NOT NULL AUTO_INCREMENT,
-  ID_Estabelecimento INT NULL,
+  ID_Estabelecimento INT NOT NULL,
   ID_TipoDesconto    INT NULL,
   Codigo             VARCHAR(50) NOT NULL,
   Valor_Desconto     DECIMAL(10, 2) NOT NULL,
@@ -381,9 +381,9 @@ CREATE TABLE IF NOT EXISTS CUPOM_DESCONTO (
 
 CREATE TABLE IF NOT EXISTS COMANDA (
   ID_Comanda                INT NOT NULL AUTO_INCREMENT,
-  ID_Estabelecimento        INT NULL,
+  ID_Estabelecimento        INT NOT NULL,
   ID_Cupom_Aplicado         INT NULL,
-  ID_Status                 INT NULL,
+  ID_Status                 INT NOT NULL,
   ID_Tipo_Desconto_Aplicado INT NULL,
   Descricao                 VARCHAR(100) NOT NULL,
   Total                     DECIMAL(10, 2) NOT NULL,
@@ -400,10 +400,10 @@ CREATE INDEX idx_comanda_est_status_data ON COMANDA (ID_Estabelecimento, ID_Stat
 
 CREATE TABLE IF NOT EXISTS PEDIDO (
   ID_Pedido              INT NOT NULL AUTO_INCREMENT,
-  ID_Comanda             INT NULL,
+  ID_Comanda             INT NOT NULL,
   ID_Usuario_Cancelador  INT NULL,
   ID_Usuario_Criador     INT NULL,
-  ID_Status              INT NULL,
+  ID_Status              INT NOT NULL,
   Observacao             VARCHAR(255) NULL,
   Cancelamento_Descricao VARCHAR(255) NULL,
   Autoatendimento        TINYINT NOT NULL DEFAULT 0,
@@ -434,10 +434,10 @@ CREATE TABLE IF NOT EXISTS ITEM_PEDIDO (
 
 CREATE TABLE IF NOT EXISTS PAGAMENTO (
   ID_Pagamento             INT NOT NULL AUTO_INCREMENT,
-  ID_Estabelecimento       INT NULL,
+  ID_Estabelecimento       INT NOT NULL,
   ID_Usuario_Caixa         INT NULL,
-  ID_MetodoPagamento       INT NULL,
-  ID_Status                INT NULL,
+  ID_MetodoPagamento       INT NOT NULL,
+  ID_Status                INT NOT NULL,
   Valor_Total              DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
   Troco                    DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
   ID_Pedido_MercadoPago    VARCHAR(255) NULL,
@@ -467,7 +467,7 @@ CREATE TABLE IF NOT EXISTS NOTA_FISCAL (
   ID_Pagamento     INT NOT NULL,
   Numero_Nota      VARCHAR(50) NOT NULL,
   CPF_CNPJ_Cliente VARCHAR(18) NULL,
-  ID_Status        INT NULL,
+  ID_Status        INT NOT NULL,
   Valor_Total      DECIMAL(10, 2) NOT NULL,
   Data_Emissao     TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   Data_Exclusao    TIMESTAMP(6) NULL,

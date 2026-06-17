@@ -39,9 +39,9 @@ export class Order {
     @OneToMany(() => ProductOrder, (productOrders) => productOrders.order)
     productOrders!: ProductOrder[]
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'ID_Usuario_Cancelador' })
-    user!: User
+    user?: User | null
 
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'ID_Usuario_Criador' })

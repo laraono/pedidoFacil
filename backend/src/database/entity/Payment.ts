@@ -71,9 +71,9 @@ export class Payment {
   @JoinColumn({ name: 'ID_Estabelecimento' })
   establishment!: Establishment;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'ID_Usuario_Caixa' })
-  user!: User;
+  user?: User | null;
 
   @OneToMany(() => PaymentOrder, (paymentOrder) => paymentOrder.payment)
   paymentOrders!: PaymentOrder[];

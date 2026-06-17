@@ -4,7 +4,7 @@ import { AppError } from "../middleware";
 import { PlanRepository } from "../repository";
 import { MercadoPagoService } from "./MercadoPagoService";
 import { SubscriptionService } from "./SubscriptionService";
-import { Plan, Subscription } from "../database";
+import { Plan } from "../database";
 import { PlanFeature } from "../database/entity/PlanFeature";
 import { SubscriptionStatus } from "../enum";
 
@@ -29,7 +29,7 @@ export class PlanService {
 
         return await this.dataSource.transaction(async (transactionalEntityManager) => {
             const features = params.features
-                ? [Object.assign(new PlanFeature(), { description: params.features })]
+                ? params.features.split('\n').map(f => f.trim()).filter(Boolean).map(description => Object.assign(new PlanFeature(), { description }))
                 : []
 
             const plan = await transactionalEntityManager.save(Plan, {
@@ -47,7 +47,9 @@ export class PlanService {
                 auto_recurring: {
                     frequency: isAnual ? 12 : 1,
                     frequency_type: 'months',
-                    ...(!isAnual && { billing_day: billingDay, billing_day_proportional: true }),
+                    ...(isAnual
+                        ? { billing_day_proportional: false }
+                        : { billing_day: billingDay, billing_day_proportional: true }),
                     transaction_amount: params.price,
                     currency_id: 'BRL'
                 },
@@ -78,7 +80,13 @@ export class PlanService {
             await this.subscriptionService.cancelSubscription(subscription.id)
         }
 
-        await this.dataSource.getRepository(Subscription).delete({ plan: { id: planId } })
+        await this.dataSource.query(
+            'UPDATE `ASSINATURA` SET `ID_Plano` = NULL WHERE `ID_Plano` = ?',
+            [planId]
+        )
+
+        await this.dataSource.getRepository(PlanFeature).delete({ plan: { id: planId } })
+
         await this.planRepository.deletePlan(planId)
     }
 
@@ -101,6 +109,22 @@ export class PlanService {
                 price: params.price,
             })
 
+            await transactionalEntityManager
+                .createQueryBuilder()
+                .delete()
+                .from(PlanFeature)
+                .where('ID_Plano = :planId', { planId })
+                .execute()
+
+            if (params.features) {
+                const features = params.features.split('\n').map(f => f.trim()).filter(Boolean)
+                if (features.length > 0) {
+                    await transactionalEntityManager.save(PlanFeature,
+                        features.map(description => Object.assign(new PlanFeature(), { description, plan: { id: planId } }))
+                    )
+                }
+            }
+
             if(plan.mercadoPagoId) {
                 const isAnual = params.frequency === 'anual'
                 const billingDay = Number(process.env.MP_BILLING_DAY ?? 10)
@@ -110,7 +134,9 @@ export class PlanService {
                     auto_recurring: {
                         frequency: isAnual ? 12 : 1,
                         frequency_type: 'months',
-                        ...(!isAnual && { billing_day: billingDay, billing_day_proportional: true }),
+                        ...(isAnual
+                        ? { billing_day_proportional: false }
+                        : { billing_day: billingDay, billing_day_proportional: true }),
                         transaction_amount: params.price,
                         currency_id: 'BRL'
                     }

@@ -81,12 +81,15 @@ const saveCategory = async () => {
       showToast(`Categoria "${form.value.name}" salva com sucesso!`, "success");
       showModal.value = false;
     } catch (error) {
+      const status = error?.response?.status || error?.status;
       const data = error.response?.data || error.data || error;
       if (data?.errors && Array.isArray(data.errors)) {
         data.errors.forEach((err) => {
           errors.value[err.campo.replace("body.", "")] = err.mensagem;
         });
         showToast("Verifique os campos destacados em vermelho.", "error");
+      } else if (status === 429) {
+        showToast("Muitas requisições. Tente novamente.", "error");
       } else {
         showToast(data?.message || "Erro ao salvar categoria.", "error");
       }
@@ -136,8 +139,12 @@ const handleDelete = (cat) => {
     title: "Excluir Categoria",
     message: `Excluir "${cat.name}" definitivamente? Esta ação não pode ser desfeita.`,
     onConfirm: async () => {
-      await menuStore.deleteCategory(cat.id);
-      showToast(`"${cat.name}" excluída.`, "success");
+      const result = await menuStore.deleteCategory(cat.id);
+      if (result && !result.success) {
+        showToast(result.status === 429 ? "Muitas requisições. Tente novamente." : result.message || "Erro ao excluir categoria.", "error");
+      } else {
+        showToast(`"${cat.name}" excluída.`, "success");
+      }
     },
   });
 };

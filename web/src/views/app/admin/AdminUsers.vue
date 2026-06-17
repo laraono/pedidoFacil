@@ -4,7 +4,7 @@ import { useToast } from '@/composables/useToast';
 import { useAsyncAction } from '@/composables/useAsyncAction';
 import { useConfirm } from '@/composables/useConfirm';
 import { ShieldAlert, Plus, Trash2, Pencil, Eye, EyeOff, KeyRound, Mail } from 'lucide-vue-next';
-import { adminUserApi, adminMetricsApi } from '@/services/adminApi';
+import { adminUserApi } from '@/services/adminApi';
 import { validatePasswordStrength } from '@/utils/password';
 import { PageHeader, BaseButton, BaseInput, FormModal, ConfirmModal, DataTable, EmptyState } from '@/components/ui';
 
@@ -15,6 +15,7 @@ const { confirmState, showConfirm, closeConfirm } = useConfirm();
 
 const users = ref([]);
 const masterId = ref(null);
+const currentAdminId = ref(null);
 const isModalOpen = ref(false);
 const isEditing = ref(false);
 const showPassword = ref(false);
@@ -28,17 +29,20 @@ const columns = [
 ];
 
 const tableActions = computed(() => [
-  { icon: Pencil, tooltip: 'Editar', handler: (u) => openEdit(u), class: 'text-[#757575] hover:text-[#212121] hover:bg-gray-100' },
-  { icon: Trash2, tooltip: 'Remover', handler: (u) => askDelete(u), class: 'text-[#757575] hover:text-red-500 hover:bg-red-50', condition: (u) => !!masterId.value && u.id !== masterId.value },
+  { icon: Pencil, tooltip: 'Editar', handler: (u) => openEdit(u), class: 'text-[#757575] hover:text-[#212121] hover:bg-gray-100', condition: (u) => currentAdminId.value === masterId.value || currentAdminId.value === u.id },
+  { icon: Trash2, tooltip: 'Remover', handler: (u) => askDelete(u), class: 'text-[#757575] hover:text-red-500 hover:bg-red-50', condition: (u) => !!masterId.value && currentAdminId.value === masterId.value && u.id !== masterId.value },
 ]);
 
 async function load() {
   const [data, masterData] = await Promise.all([
     runLoad(() => adminUserApi.list(), 'Erro ao carregar usuários admin.'),
-    adminMetricsApi.getMasterId().catch(() => null),
+    adminUserApi.getMasterId().catch(() => null),
   ]);
   if (data) users.value = data;
-  if (masterData) masterId.value = masterData.masterId;
+  if (masterData) {
+    masterId.value = masterData.masterId;
+    currentAdminId.value = masterData.currentId;
+  }
 }
 
 onMounted(load);

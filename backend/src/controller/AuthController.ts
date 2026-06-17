@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import rateLimit from 'express-rate-limit'
 import { AuthService } from '../service'
 import { auditLog } from '../utils/logger'
+import { calcRefreshMaxAgeMs } from '../utils/refreshExpiry'
 
 export const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -58,7 +59,7 @@ export class AuthController {
                     httpOnly: true,
                     secure: process.env.NODE_ENV === 'production',
                     sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-                    maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN || '7') * 24 * 60 * 60 * 1000
+                    maxAge: calcRefreshMaxAgeMs()
                 })
             }
 
@@ -96,7 +97,7 @@ async login(req: Request, res: Response) {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-                maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN || '7') * 24 * 60 * 60 * 1000
+                maxAge: calcRefreshMaxAgeMs()
             })
         }
 
@@ -125,7 +126,7 @@ async login(req: Request, res: Response) {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-            maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN || '7') * 24 * 60 * 60 * 1000
+            maxAge: calcRefreshMaxAgeMs()
         })
 
         res.json({ accessToken, usuario })

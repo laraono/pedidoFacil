@@ -92,7 +92,7 @@ const saveRole = async () => {
         });
         showToast("Corrija os erros destacados no formulário.", "error");
       } else {
-        showToast(data?.message || "Erro ao salvar cargo.", "error");
+        showToast(data?.error || data?.message || "Erro ao salvar cargo.", "error");
       }
     }
   });

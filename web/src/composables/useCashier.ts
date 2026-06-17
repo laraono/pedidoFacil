@@ -49,9 +49,11 @@ export function useCashier() {
       comandaStore.loadComandas(),
       couponStore.loadData(),
       establishmentApi.getProfile().then((data) => {
-        if (data.paymentMethods?.length > 0)
+        if (data?.paymentMethods?.length > 0)
           enabledPaymentMethods.value = data.paymentMethods;
-      }).catch(() => {}),
+      }).catch((e: any) => {
+        if (e?.status === 402) showToast('Assinatura expirada ou inválida.', 'error');
+      }),
     ]);
     pollInterval = setInterval(() => comandaStore.loadComandas(), 30_000);
 
@@ -316,7 +318,7 @@ export function useCashier() {
         );
       }
     } catch (error: any) {
-      showToast(error.response?.data?.message || "Erro no pagamento.", "error");
+      showToast(error.data?.message || error.message || "Erro no pagamento.", "error");
     } finally {
       isProcessingPayment.value = false;
     }

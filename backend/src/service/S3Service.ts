@@ -5,6 +5,7 @@ import { AppError } from "../middleware";
 import crypto from 'crypto';
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { S3ServiceException } from "@aws-sdk/client-s3";
+import { logger } from "../utils/logger";
 
 export interface UploadFileParams {
     bucket: string;
@@ -29,7 +30,7 @@ export async function uploadToS3({ bucket, key, body, contentType }: UploadFileP
             Location: `${endpoint}/${bucket}/${key}`,
         };
     } catch (error) {
-        console.error('S3 upload error:', error);
+        logger.error('S3 upload error:', error);
         throw new AppError('Erro fazendo upload da imagem', 500);
     }
 }
@@ -43,7 +44,7 @@ export async function getFromS3(bucket: string, key: string) {
     try {
         return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
     } catch (error) {
-        console.error('S3 get error:', error);
+        logger.error('S3 get error:', error);
         throw new AppError('Erro fazendo download da imagem', 500);
     }
 }
@@ -57,7 +58,7 @@ export async function createBucket(bucketName: string) {
         const result = await s3Client.send(command);
         return result;
     } catch (error) {
-        console.error('Error creating bucket:', error);
+        logger.error('Error creating bucket:', error);
         throw new AppError('Erro fazendo upload da imagem', 500);
     }
 }
@@ -75,9 +76,9 @@ export async function doesBucketExist(bucketName: string): Promise<boolean> {
         }
 
         if (error instanceof Error) {
-            console.error('Error checking bucket:', error.message);
+            logger.error('Error checking bucket:', error.message);
         } else {
-            console.error('Unknown error checking bucket:', error);
+            logger.error('Unknown error checking bucket:', error);
         }
 
         throw new AppError('Erro fazendo upload da imagem', 500);
@@ -116,7 +117,7 @@ export async function ensureBucketExists(bucketName: string): Promise<void> {
         await setBucketPublicPolicy(bucketName);
         return;
     } catch (error) {
-        console.error('Error ensuring bucket existense', error)
+        logger.error('Error ensuring bucket existense', error)
         throw new AppError('Erro fazendo upload da imagem', 500);
     }
 

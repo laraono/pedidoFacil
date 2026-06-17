@@ -32,8 +32,9 @@ export class AdminController {
         return res.sendStatus(204);
     });
 
-    getMasterId = catchAsync(async (_req: Request, res: Response) => {
+    getMasterId = catchAsync(async (req: Request, res: Response) => {
         const masterId = await this.adminService.getMasterId();
-        return res.status(200).json({ masterId });
+        const currentId = Number((req as any).usuario?.id);
+        return res.status(200).json({ masterId, currentId });
     });
 }

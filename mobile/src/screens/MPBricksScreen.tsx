@@ -8,8 +8,6 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useCart } from "../contexts/CartContext";
 import { appConfig } from "../services/apiConfig";
 
-const MP_PUBLIC_KEY = "APP_USR-ba3efb9f-43f7-41b0-8c60-44b4bd0969ee";
-
 function buildBrickHtml(amount: number, method: string): string {
   const isPix = method === "PIX";
   const paymentMethodsConfig = isPix
@@ -31,7 +29,7 @@ function buildBrickHtml(amount: number, method: string): string {
 <body>
   <div id="paymentBrick_container"></div>
   <script>
-    const mp = new MercadoPago("${MP_PUBLIC_KEY}", { locale: "pt-BR" });
+    const mp = new MercadoPago("", { locale: "pt-BR" });
     const bricksBuilder = mp.bricks();
     const settings = {
       initialization: { amount: ${amount}, payer: { email: "comprador@teste.com" } },

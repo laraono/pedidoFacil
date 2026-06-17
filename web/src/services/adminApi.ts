@@ -38,6 +38,8 @@ export const adminUserApi = {
 
   get: (adminId: number) => request(`/admin/admins/${adminId}`, { method: 'GET' }),
 
+  getMasterId: () => request('/admin/admins/master-id', { method: 'GET' }),
+
   create: (data: Record<string, unknown>) =>
     request('/admin/admins', { method: 'POST', body: JSON.stringify(data) }),
 
@@ -74,5 +76,4 @@ export const adminEstablishmentApi = {
 export const adminMetricsApi = {
   getSubscriptionMetrics: (period: '3m' | '6m' | '12m' | 'all' = '12m') =>
     request(`/admin/metrics/subscriptions?period=${period}`, { method: 'GET' }),
-  getMasterId: () => request('/admin/admins/master-id', { method: 'GET' }),
 };

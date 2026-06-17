@@ -1,4 +1,5 @@
 import { DataSource, EntityManager } from 'typeorm';
+import { logger } from '../utils/logger';
 import { Comanda } from '../database/entity/Comanda';
 import { Order } from '../database/entity/Order';
 import { StatusPedido } from '../database/entity/StatusPedido';
@@ -257,7 +258,7 @@ export class ComandaService {
       try {
         await this.receiptService.generateReceipt(paymentId, establishmentId, cpfcnpj);
       } catch (error: any) {
-        console.error('[ComandaService] Erro ao gerar Nota Fiscal:', error.message);
+        logger.error('[ComandaService] Erro ao gerar Nota Fiscal:', error.message);
       }
     }
 

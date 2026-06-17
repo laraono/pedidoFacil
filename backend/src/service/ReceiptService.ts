@@ -57,8 +57,7 @@ export class ReceiptService {
         if (!receipt) throw new AppError('Nota Fiscal não encontrada.', 404);
 
         receipt.status = { id: STATUS_NOTA_FISCAL_IDS.CANCELADA } as any;
-        await this.receiptRepository.save(receipt);
-        return await this.receiptRepository.softRemove(receipt);
+        return await this.receiptRepository.save(receipt);
     }
 
     async getMetrics(establishmentId: number, startDate: string, endDate: string) {

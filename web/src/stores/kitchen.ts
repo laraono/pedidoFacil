@@ -149,8 +149,6 @@ export const useKitchenStore = defineStore('kitchen', () => {
 
 
     socket.on('new_order', (data: any) => {
-      console.log('[Kitchen Socket] Novo pedido recebido:', data);
-
       const newOrder: KitchenOrder = {
         id: data.orderId,
         comandaId: data.comandaId,
@@ -174,8 +172,6 @@ export const useKitchenStore = defineStore('kitchen', () => {
     });
 
     socket.on('order_status_updated', (data: any) => {
-      console.log('[Kitchen Socket] Status atualizado:', data);
-      
       const order = orders.value.find(o => o.id === data.orderId);
       if (!order) return;
 

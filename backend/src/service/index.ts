@@ -76,7 +76,7 @@ const establishmentService = new EstablishmentService(
 
 const profileService = new ProfileService(userRepository, refreshTokenRepository);
 
-const employeeService = new EmployeeService(userRepository, roleRepository, refreshTokenRepository);
+const employeeService = new EmployeeService(userRepository, roleRepository, refreshTokenRepository, AppDataSource);
 
 const menuService = new MenuService(categoryRepository, productRepository);
 

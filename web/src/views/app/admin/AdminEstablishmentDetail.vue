@@ -145,10 +145,10 @@ const paymentColumns = [
           </template>
           <template #cell-status="{ item }">
             <span class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border"
-              :class="item.status?.nome === 'Aprovado'  ? 'text-accent bg-accent-light border-accent/25'
-                    : item.status?.nome === 'Cancelado' ? 'text-red-400 bg-red-500/10 border-red-500/20'
+              :class="item.status === 'Aprovado'  ? 'text-accent bg-accent-light border-accent/25'
+                    : item.status === 'Rejeitado' ? 'text-red-400 bg-red-500/10 border-red-500/20'
                     : 'text-amber-400 bg-amber-500/10 border-amber-500/25'">
-              {{ item.status?.nome }}
+              {{ item.status || '—' }}
             </span>
           </template>
           <template #cell-name="{ item }">

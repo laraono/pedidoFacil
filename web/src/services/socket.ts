@@ -14,10 +14,6 @@ export function connectSocket(room: string): Socket {
       timeout: 10000,
     });
 
-    socket.on('connect', () => {
-      console.log(`[Socket.IO] Conectado com sucesso em: ${BACKEND_URL}`);
-    });
-
     socket.on('connect_error', (err: Error) => {
       console.error(`[Socket.IO] Falha na conexão: ${err.message}`);
     });

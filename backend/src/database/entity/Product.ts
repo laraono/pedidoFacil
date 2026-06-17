@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, DeleteDateColumn, JoinColumn } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, OneToOne, ManyToOne, DeleteDateColumn, JoinColumn } from "typeorm"
 import { ProductVariation } from "./ProductVariation"
 import { Category } from "./Category"
 import { ProductOrder } from "./ProductOrder"
+import { StorageIten } from "./StorageIten"
 
 @Entity({name: 'PRODUTO'})
 export class Product {
@@ -77,5 +78,8 @@ export class Product {
         name: 'ID_Categoria'
     })
     category!: Category
+
+    @OneToOne(() => StorageIten, (storage) => storage.product, { nullable: true })
+    storageIten?: StorageIten
 
 }

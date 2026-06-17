@@ -98,7 +98,7 @@ export class EstablishmentService {
   async softDeleteEstablishment(establishmentId: number) {
     const establishment = await this.getEstablishmentProfile(establishmentId);
     await this.establishmentRepository.softRemove(establishment);
-    return { message: 'Establishment desativado com sucesso (Soft Delete).' };
+    return { message: 'Establishment desativado com sucesso.' };
   }
 
   async listForAdmin() {

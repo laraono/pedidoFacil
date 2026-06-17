@@ -7,10 +7,10 @@ import { useAsyncAction } from '@/composables/useAsyncAction';
 import { useUtils } from '@/composables/useUtils';
 import { applyPriceMask, applyPercentMask } from '@/composables/usePriceMask';
 import {
-  BaseButton, BaseInput, BaseSelect, BaseToggle,
+  BaseButton, BaseInput, BaseSelect,
   ConfirmModal, EmptyState, FormModal, PageHeader, ToastMessage,
 } from '@/components/ui';
-import { PlusCircle, Edit, Trash2, Tag, Power, Calendar, BadgePercent, DollarSign } from 'lucide-vue-next';
+import { PlusCircle, Edit, Trash2, Tag, Calendar, BadgePercent, DollarSign } from 'lucide-vue-next';
 
 const store = useCouponStore();
 const { showToast } = useToast();
@@ -32,7 +32,7 @@ const typeOptions = [
   { value: 'fixed',   label: 'Valor fixo (R$)' },
 ];
 
-const emptyForm = () => ({ id: null, code: '', description: '', type: 'percent', value: '', expiresAt: '', active: true });
+const emptyForm = () => ({ id: null, code: '', description: '', type: 'percent', value: '', expiresAt: '' });
 const form = ref(emptyForm());
 
 const onValueInput = (e) => {
@@ -70,7 +70,6 @@ const openEdit = (c) => {
     type: c.type,
     value: c.type === 'percent' ? String(c.value) : String(c.value).replace('.', ','),
     expiresAt: c.expiresAt || '',
-    active: c.active !== false,
   };
   errors.value = {};
   showModal.value = true;
@@ -91,7 +90,6 @@ const save = () => runSave(async () => {
     type: form.value.type,
     value: parsed,
     expiresAt: form.value.expiresAt || null,
-    active: form.value.active,
   };
 
   try {
@@ -111,14 +109,6 @@ const save = () => runSave(async () => {
     }
   }
 });
-
-const toggleActive = (c) => run(
-  async () => {
-    await store.updateCoupon({ ...c, active: !c.active });
-    showToast(c.active !== false ? `${c.code} desativado.` : `${c.code} ativado.`, 'success');
-  },
-  'Erro ao atualizar cupom.'
-);
 
 const requestDelete = (coupon) => {
   showConfirm({
@@ -201,15 +191,7 @@ const statusOf = (c) => {
           <span v-else>Válido até {{ formatDate(coupon.expiresAt) }}</span>
         </div>
 
-        <div class="flex items-center justify-between pt-3 border-t border-[#E0E0E0] mt-auto">
-          <button
-            @click="toggleActive(coupon)"
-            class="flex items-center gap-1.5 text-xs font-bold transition-colors"
-            :class="coupon.active !== false ? 'text-accent hover:opacity-70' : 'text-[#757575] hover:text-[#757575]'"
-          >
-            <Power :size="13" />
-            {{ coupon.active !== false ? 'Ativo' : 'Inativo' }}
-          </button>
+        <div class="flex items-center justify-end pt-3 border-t border-[#E0E0E0] mt-auto">
           <div class="flex gap-1">
             <button @click="openEdit(coupon)" class="p-2 text-[#757575] hover:text-[#212121] hover:bg-gray-50 rounded transition-all" title="Editar">
               <Edit :size="16" />
@@ -279,11 +261,6 @@ const statusOf = (c) => {
           />
           <p v-if="!errors.expiresAt" class="text-[#757575] text-[10px] ml-2">Deixe em branco para cupom sem validade.</p>
         </div>
-        <BaseToggle
-          v-model="form.active"
-          label="Cupom ativo"
-          description="Cupons inativos não podem ser usados no caixa"
-        />
       </div>
     </FormModal>
 

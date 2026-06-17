@@ -7,7 +7,6 @@ export class ReceiptRepository extends Repository<Receipt> {
         super(Receipt, dataSource.createEntityManager());
     }
 
-    // Receipt não tem establishment direto — vai via payment
     async getMetrics(establishmentId: number, start: Date, end: Date) {
         const qb = this.createQueryBuilder('receipt')
             .innerJoin('receipt.payment', 'pay')

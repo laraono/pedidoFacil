@@ -16,7 +16,7 @@ const isFetching = ref(true);
 const logoPreview = ref(null);
 const logoFile = ref(null);
 
-const ALL_PAYMENT_METHODS = ["Dinheiro", "Cartão Débito", "Cartão Crédito", "PIX"];
+const ALL_PAYMENT_METHODS = ["Dinheiro", "Crédito", "Débito", "Pix"];
 const paymentMethods = ref([]);
 const originalPaymentMethods = ref([]);
 
@@ -231,28 +231,28 @@ const saveSettings = async () => {
     <div v-if="!isFetching" class="mt-8">
       <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl">
         <div class="flex items-center gap-3 mb-6">
-          <div class="w-10 h-10 bg-accent-light border border-accent/30 rounded flex items-center justify-center">
+          <div class="w-10 h-10 shrink-0 bg-accent-light border border-accent/30 rounded flex items-center justify-center">
             <Banknote :size="20" class="text-accent" />
           </div>
-          <div>
+          <div class="min-w-0">
             <h3 class="text-base font-black text-[#212121]">Métodos de Pagamento</h3>
             <p class="text-sm text-[#757575] mt-0.5">Selecione os métodos aceitos no seu estabelecimento.</p>
           </div>
         </div>
-        <div class="flex flex-wrap gap-3">
+        <div class="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:gap-2">
           <button
             v-for="method in ALL_PAYMENT_METHODS"
             :key="method"
             type="button"
             @click="togglePaymentMethod(method)"
-            class="flex items-center gap-2 px-5 py-3 rounded border-2 font-bold text-sm transition-all"
+            class="flex items-center gap-2 px-4 py-3 sm:px-3 sm:py-1.5 rounded border-2 sm:border font-bold text-sm sm:text-xs transition-all w-full sm:w-auto"
             :class="[
               paymentMethods.includes(method) ? 'bg-accent-light border-accent/40 text-accent' : 'bg-gray-50 border-[#E0E0E0] text-[#757575]',
               method === 'Dinheiro' ? 'opacity-90 cursor-not-allowed' : ''
             ]"
           >
             <div
-              class="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
+              class="w-4 h-4 sm:w-3.5 sm:h-3.5 rounded border-2 sm:border flex items-center justify-center shrink-0 transition-colors"
               :class="paymentMethods.includes(method) ? 'bg-accent border-accent' : 'border-[#E0E0E0]'"
             >
               <CheckCheck v-if="paymentMethods.includes(method)" :size="10" class="text-white" />
@@ -284,7 +284,7 @@ const saveSettings = async () => {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="bg-gray-50 border border-[#E0E0E0] rounded p-6 flex flex-col gap-4">
                 <div class="flex items-center gap-3">
-                  <div class="w-12 h-12 bg-accent-light border border-accent/30 rounded flex items-center justify-center">
+                  <div class="w-12 h-12 shrink-0 bg-accent-light border border-accent/30 rounded flex items-center justify-center">
                     <Smartphone :size="22" class="text-accent" />
                   </div>
                   <div>
@@ -303,7 +303,7 @@ const saveSettings = async () => {
                   <p class="text-xs text-[#757575]">Insira este código no app para vincular o dispositivo</p>
                 </div>
                 <div class="flex-1 bg-gray-100 border border-accent/30 rounded px-6 py-4 text-center">
-                  <span class="text-4xl font-black text-accent tracking-[0.3em]">{{ selfServiceCode }}</span>
+                  <span class="text-2xl sm:text-4xl font-black text-accent tracking-[0.15em] sm:tracking-[0.3em] break-all">{{ selfServiceCode }}</span>
                 </div>
                 <button
                   @click="copyCode"

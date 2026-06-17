@@ -47,7 +47,13 @@ export async function request(path: string, options: CustomRequestInit = {}) {
 
   if (res.status === 204) return null;
 
-  if (res.status === 402) return;
+  if (res.status === 402) {
+    const body = await res.json().catch(() => ({}));
+    const err: any = new Error(body.message || 'Assinatura expirada ou inválida');
+    err.status = 402;
+    err.data = body;
+    throw err;
+  }
 
   const data = await res.json().catch(() => ({}));
 
@@ -76,7 +82,13 @@ export async function request(path: string, options: CustomRequestInit = {}) {
 
       if (retry.status === 204) return null;
 
-      if (retry.status === 402) return;
+      if (retry.status === 402) {
+        const body = await retry.json().catch(() => ({}));
+        const err: any = new Error(body.message || 'Assinatura expirada ou inválida');
+        err.status = 402;
+        err.data = body;
+        throw err;
+      }
 
       if (!retry.ok) {
         const retryData = await retry.json().catch(() => ({}));

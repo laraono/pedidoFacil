@@ -65,13 +65,13 @@ function getComandaMainLabel(comanda) {
 
 function isOrderCancelled(order) {
   if (!order || !order.status) return false;
-  const s = String(order.status).toUpperCase();
+  const s = (order.status?.nome ?? '').toUpperCase();
   return ['CANCELADO', 'CANCELADA', 'CANCELLED'].includes(s);
 }
 
 function isCancelled(comanda) {
   if (!comanda) return false;
-  const s = String(comanda.status).toUpperCase();
+  const s = (comanda.status?.nome ?? '').toUpperCase();
   if (['CANCELADO', 'CANCELADA', 'CANCELLED'].includes(s)) return true;
   
   if (comanda.orders && comanda.orders.length > 0) {

@@ -43,7 +43,8 @@ productRouter.get(
   '/categories/:categoryId/products/active',
   authenticate,
   subscriptionMiddleware,
-  checkPermission(Permission.CARDAPIO), 
+  verifyCategoryTenancy('categoryId'),
+  checkPermission(Permission.CARDAPIO),
   catchAsync((req: Request, res: Response) => productController.listProductsByCategory(req, res))
 );
 
@@ -51,9 +52,10 @@ productRouter.put(
   '/categories/:categoryId/products/:productId',
   authenticate,
   subscriptionMiddleware,
+  verifyCategoryTenancy('categoryId'),
   checkPermission(Permission.CARDAPIO),
   validateUpload.single('imagem'),
-  validateRequest(updateProductSchema), 
+  validateRequest(updateProductSchema),
   catchAsync((req: Request, res: Response) => productController.updateProduct(req, res))
 );
 
@@ -61,6 +63,7 @@ productRouter.put(
   '/categories/:categoryId/products/:productId/status',
   authenticate,
   subscriptionMiddleware,
+  verifyCategoryTenancy('categoryId'),
   checkPermission(Permission.CARDAPIO),
   catchAsync((req: Request, res: Response) => productController.updateProduct(req, res))
 );
@@ -69,6 +72,7 @@ productRouter.delete(
   '/categories/:categoryId/products/:productId',
   authenticate,
   subscriptionMiddleware,
+  verifyCategoryTenancy('categoryId'),
   checkPermission(Permission.CARDAPIO),
   catchAsync((req: Request, res: Response) => productController.deleteProduct(req, res))
 );

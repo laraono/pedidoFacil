@@ -29,7 +29,7 @@ export class Subscription {
     @JoinColumn({ name: 'ID_Estabelecimento' })
     establishment!: Establishment
 
-    @ManyToOne(() => Plan, (plan) => plan.subscriptions)
+    @ManyToOne(() => Plan, (plan) => plan.subscriptions, { nullable: true })
     @JoinColumn({ name: 'ID_Plano' })
-    plan!: Plan
+    plan?: Plan | null
 }

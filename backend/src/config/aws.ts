@@ -5,8 +5,8 @@ export const s3Client = new S3Client({
   endpoint: process.env.LOCALSTACK_ENDPOINT || 'http://localhost:4566',
   forcePathStyle: true,
   credentials: {
-    accessKeyId: 'minioadmin',
-    secretAccessKey: 'minioadmin',
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'minioadmin',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'minioadmin',
   },
 });
 

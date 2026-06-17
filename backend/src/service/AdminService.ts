@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import { DataSource } from 'typeorm';
 import { Admin } from '../database/entity/Admin';
+import { User } from '../database/entity/User';
 import { RefreshTokenAdmin } from '../database/entity/RefreshTokenAdmin';
 import { AppError } from '../middleware/error/AppError';
 
@@ -42,6 +43,8 @@ export class AdminService {
     async create(data: CreateAdminDTO) {
         const existing = await this.repo.findOne({ where: { email: data.email } });
         if (existing) throw new AppError('Este e-mail já está em uso.', 400);
+        const existingUser = await this.dataSource.getRepository(User).findOne({ where: { email: data.email } });
+        if (existingUser) throw new AppError('Este e-mail já está em uso.', 400);
 
         const hashedPassword = await bcrypt.hash(data.password, 12);
         const admin = this.repo.create({
@@ -67,6 +70,8 @@ export class AdminService {
         if (data.email && data.email !== admin.email) {
             const emailInUse = await this.repo.findOne({ where: { email: data.email } });
             if (emailInUse) throw new AppError('Este e-mail já está em uso.', 400);
+            const emailInUseByUser = await this.dataSource.getRepository(User).findOne({ where: { email: data.email } });
+            if (emailInUseByUser) throw new AppError('Este e-mail já está em uso.', 400);
         }
 
         if (data.name) admin.name = data.name;

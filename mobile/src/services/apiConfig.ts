@@ -46,14 +46,14 @@ export const loadAppConfig = async (): Promise<boolean> => {
        if (appConfig.isConfigured && savedCode && appConfig.API_URL) {
       try {
         const response = await fetch(`${appConfig.API_URL}/estabelecimento/code/${savedCode}`);
-        if (response.status === 403) {
-          await AsyncStorage.removeItem('@PedidoFacil:EstID');
-          await AsyncStorage.removeItem('@PedidoFacil:TotemCode');
-          appConfig.ESTABLISHMENT_ID = null;
-          appConfig.selfServiceCode = null;
-          appConfig.isConfigured = false;
-        }
-      } catch {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      } catch (e) {
+        console.warn('[PedidoFácil] Código do totem inválido ou inacessível:', e);
+        await AsyncStorage.removeItem('@PedidoFacil:EstID');
+        await AsyncStorage.removeItem('@PedidoFacil:TotemCode');
+        appConfig.ESTABLISHMENT_ID = null;
+        appConfig.selfServiceCode = null;
+        appConfig.isConfigured = false;
       }
     }
 

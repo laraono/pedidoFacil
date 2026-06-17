@@ -1,8 +1,9 @@
-import { Not } from 'typeorm';
+import { DataSource, Not } from 'typeorm';
 import { UserRepository } from '../repository/UserRepository';
 import { RoleRepository } from '../repository/RoleRepository';
 import { RefreshTokenRepository } from '../repository/RefreshTokenRepository';
 import { AppError } from '../middleware/error/AppError';
+import { Admin } from '../database/entity/Admin';
 import * as bcrypt from 'bcrypt';
 import { CreateEmployeeDTO } from '../dto/employee/CreateEmployeeDTO';
 import { UpdateEmployeeDTO } from '../dto/employee/UpdateEmployeeDTO';
@@ -12,6 +13,7 @@ export class EmployeeService {
     private userRepository: UserRepository,
     private roleRepository: RoleRepository,
     private refreshTokenRepository: RefreshTokenRepository,
+    private dataSource: DataSource,
   ) {}
 
   async listEmployees(establishmentId: number, ativo: boolean) {
@@ -21,6 +23,8 @@ export class EmployeeService {
   async createEmployee(establishmentId: number, data: CreateEmployeeDTO) {
     const emailExists = await this.userRepository.findOne({ where: { email: data.email } });
     if (emailExists) throw new AppError('Este e-mail já está em uso.', 400);
+    const adminEmailExists = await this.dataSource.getRepository(Admin).findOne({ where: { email: data.email } });
+    if (adminEmailExists) throw new AppError('Este e-mail já está em uso.', 400);
 
     const role = await this.roleRepository.findOne({
       where: { id: data.roleId, establishment: { id: establishmentId } as any, name: Not('Gerente') },
@@ -30,7 +34,7 @@ export class EmployeeService {
     const newUser = this.userRepository.create({
       name: data.name,
       email: data.email,
-      password: await bcrypt.hash(data.password, 10),
+      password: await bcrypt.hash(data.password, 12),
       ativo: true,
       role,
     });
@@ -52,8 +56,12 @@ export class EmployeeService {
       user.role = role;
     }
 
-    if (data.password) user.password = await bcrypt.hash(data.password, 10);
+    if (data.password) user.password = await bcrypt.hash(data.password, 12);
     user.name = data.name || user.name;
+    if (data.email && data.email !== user.email) {
+      const adminEmailExists = await this.dataSource.getRepository(Admin).findOne({ where: { email: data.email } });
+      if (adminEmailExists) throw new AppError('Este e-mail já está em uso.', 400);
+    }
     user.email = data.email || user.email;
 
     await this.userRepository.save(user);
