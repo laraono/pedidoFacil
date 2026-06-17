@@ -143,13 +143,9 @@ export default function MenuScreen() {
                         )}
                         <Text style={styles.productPrice} numberOfLines={1} adjustsFontSizeToFit>
                           R${" "}
-                          {item.productVariations && item.productVariations.length > 0 && item.productVariations[0].price !== undefined
-                            ? Number(item.productVariations[0].price).toFixed(2).replace(".", ",")
-                            : item.basePrice !== undefined && item.basePrice !== null
-                              ? Number(item.basePrice).toFixed(2).replace(".", ",")
-                              : item.sizes && item.sizes.length > 0
-                                ? Number(item.sizes[0].price).toFixed(2).replace(".", ",")
-                                : "0,00"}
+                          {item.productVariations?.length > 0
+                            ? Math.min(...item.productVariations.map((v: any) => Number(v.addPrice || 0))).toFixed(2).replace(".", ",")
+                            : Number(item.basePrice ?? item.sizes?.[0]?.price ?? 0).toFixed(2).replace(".", ",")}
                         </Text>
                       </View>
 

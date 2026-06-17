@@ -55,7 +55,7 @@ export const useKitchenStore = defineStore('kitchen', () => {
       let allOrders: KitchenOrder[] = [];
 
       data.forEach((pedido: any) => {
-        const mappedStatus = dbToFrontMap[pedido.status];
+        const mappedStatus = dbToFrontMap[pedido.status?.nome];
         if (mappedStatus && mappedStatus !== 'finished' && mappedStatus !== 'cancelled') {
           const rawDate = pedido.created_at;
           const parsedDate = rawDate
@@ -71,8 +71,8 @@ export const useKitchenStore = defineStore('kitchen', () => {
             source: pedido.serviceType === 'Autoatendimento' ? 'totem' : undefined,
             status: mappedStatus,
             createdAt,
-            userId: pedido.user?.id,
-            user: pedido.user ? { id: pedido.user.id } : undefined,
+            userId: pedido.createdBy?.id,
+            user: pedido.createdBy ? { id: pedido.createdBy.id } : undefined,
             items: pedido.productOrders?.map((po: any) => ({
               name: po.product?.name || 'Produto Excluído',
               variationName: po.productVariation?.name || '',
@@ -124,22 +124,18 @@ export const useKitchenStore = defineStore('kitchen', () => {
     const order = orders.value.find(o => o.id === id);
     if (!order) return;
 
-    const finalStatus = cancelReason ? 'Cancelado' : 'Finalizado';
-
-    const bodyPayload: any = {
-      status: finalStatus
-    };
-
-    if (cancelReason) {
-      bodyPayload.cancellationDescription = cancelReason;
-    }
-
     try {
-      await request(`/commands/${order.comandaId}/orders/${id}`, {
-        method: 'PUT',
-        body: bodyPayload as any
-      });
-      
+      if (cancelReason) {
+        await request(`/commands/${order.comandaId}/orders/${id}/cancel`, {
+          method: 'POST',
+          body: JSON.stringify({ cancellationDescription: cancelReason }),
+        });
+      } else {
+        await request(`/commands/${order.comandaId}/orders/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ status: 'Finalizado' }),
+        });
+      }
       orders.value = orders.value.filter(o => o.id !== id);
     } catch (error) {
       console.error("Erro ao finalizar pedido:", error);

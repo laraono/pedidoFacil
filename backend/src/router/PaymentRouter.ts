@@ -5,10 +5,8 @@ import { subscriptionMiddleware } from '../middleware';
 
 const paymentRouter = Router();
 
-paymentRouter.use(authenticate, subscriptionMiddleware)
-
-paymentRouter.get('/', authenticate, paymentLimiter, paymentController.listPayments);
-paymentRouter.get('/:paymentId', authenticate, paymentLimiter, paymentController.getPaymentDetails);
-paymentRouter.post('/:paymentId/refund', authenticate, paymentLimiter, paymentController.refundPayment);
+paymentRouter.get('/', authenticate, subscriptionMiddleware, paymentLimiter, paymentController.listPayments);
+paymentRouter.get('/:paymentId', authenticate, subscriptionMiddleware, paymentLimiter, paymentController.getPaymentDetails);
+paymentRouter.post('/:paymentId/refund', authenticate, subscriptionMiddleware, paymentLimiter, paymentController.refundPayment);
 
 export { paymentRouter };

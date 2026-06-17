@@ -46,8 +46,8 @@
               class="sr-only"
             />
             <div
-              class="w-12 h-6 bg-gray-200 rounded transition-colors"
-              :class="{ 'bg-blue-600': splitPayment }"
+              class="w-12 h-6 rounded transition-colors"
+              :class="splitPayment ? 'bg-blue-600' : 'bg-gray-200'"
             />
             <div
               class="absolute left-1 top-1 w-4 h-4 bg-white rounded transition-transform"
@@ -161,10 +161,7 @@
           "
         >
           <span class="uppercase tracking-widest">Distribuído:</span>
-          <span
-            >R$ {{ totalPayments.toFixed(2) }} / R$
-            {{ totalWithDiscount.toFixed(2) }}</span
-          >
+          <span>{{ formatCurrency(totalPayments) }} / {{ formatCurrency(totalWithDiscount) }}</span>
         </div>
       </div>
     </div>

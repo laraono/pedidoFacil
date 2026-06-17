@@ -5,12 +5,12 @@
   import { useFeaturesStore } from "@/stores/features";
   import { storeToRefs } from "pinia";
   import { planApi } from "@/services/planApi";
-  import { User, Menu, X, Check } from "lucide-vue-next";
+  import { Check } from "lucide-vue-next";
+  import LandingHeader from "@/components/LandingHeader.vue";
   import { monthlyEquivalent } from "@/utils/frequency";
   import { useUtils } from "@/composables/useUtils";
   import { BaseButton, BaseInput, BaseTextArea } from "@/components/ui";
 
-  import imgLogo from "@/assets/light-logo.png";
   import imgOndas from "@/assets/ondas.png";
   import imgTablet from "@/assets/imgTablet.png";
   import imgGraficos from "@/assets/graficos.png";
@@ -47,13 +47,6 @@
 
   const isSending = ref(false);
   const feedback = ref({ show: false, message: "", type: "" });
-
-  const navigateToLogin = () => {
-    router.push("/login");
-  };
-  const navigateToRegister = () => {
-    router.push("/register");
-  };
 
   const navigateWithPlan = (plan) => {
     if (plan?.id) localStorage.setItem('pendingPlanId', String(plan.id));
@@ -119,66 +112,22 @@
     ></div>
 
     <div class="relative z-10">
-      <header
-        class="flex justify-between items-center px-5 py-4 lg:px-0 lg:py-0 max-w-[1200px] mx-auto relative"
-      >
-        <div class="flex-1 flex justify-start items-center">
-          <img
-            :src="imgLogo"
-            alt="Logo PedidoFácil"
-            class="h-9 lg:h-32 w-auto object-contain"
-          />
-        </div>
-
-        <div class="flex-[2] flex justify-center items-center hidden lg:flex">
-          <nav class="space-x-10 text-lg font-bold text-[#212121]">
-            <a
-              @click.prevent="scrollToSection('sobre')"
-              href="#sobre"
-              class="hover:text-accent transition-colors cursor-pointer"
-              >Sobre</a
-            >
-            <a
-              v-if="plans.length > 0"
-              @click.prevent="scrollToSection('planos')"
-              href="#planos"
-              class="hover:text-accent transition-colors cursor-pointer"
-              >Planos</a
-            >
-            <a
-              v-if="emailEnabled"
-              @click.prevent="scrollToSection('contato')"
-              href="#contato"
-              class="hover:text-accent transition-colors cursor-pointer"
-              >Contato</a
-            >
-          </nav>
-        </div>
-
-        <div class="flex-1 flex justify-end hidden lg:flex items-center gap-4">
-          <BaseButton variant="brand" class="text-sm" @click="navigateToRegister">
-            Cadastrar
-          </BaseButton>
-          <BaseButton variant="ghost" :icon="User" @click="navigateToLogin">
-            Login
-          </BaseButton>
-        </div>
-      </header>
+      <LandingHeader />
 
       <main class="flex flex-col items-center pb-20">
         <section
-          class="w-full max-w-[1200px] px-4 pt-4 pb-12 lg:px-0 lg:pt-20 lg:pb-20 flex flex-row items-start lg:items-center justify-between gap-2 lg:gap-10"
+          class="w-full max-w-[1200px] px-4 pt-6 pb-12 lg:px-0 lg:pt-20 lg:pb-20 flex flex-col-reverse lg:flex-row items-center justify-between gap-6 lg:gap-10"
         >
           <div
-            class="flex-1 flex flex-col items-start text-left w-[55%] lg:w-full order-2 lg:order-2"
+            class="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left w-full"
           >
             <h1
-              class="text-[#212121] font-extrabold mb-4 lg:mb-8 text-lg lg:text-[60px] leading-tight lg:leading-[1.1]"
+              class="text-[#212121] font-extrabold mb-4 lg:mb-8 text-3xl sm:text-4xl lg:text-[60px] leading-tight lg:leading-[1.1]"
             >
               Chega de comanda de papel
             </h1>
             <p
-              class="text-[#212121] mb-6 lg:mb-12 text-[20px] lg:text-[22px] leading-relaxed lg:leading-[34px] max-w-full lg:max-w-[650px]"
+              class="text-[#212121] mb-6 lg:mb-12 text-base lg:text-[22px] leading-relaxed lg:leading-[34px] max-w-full lg:max-w-[650px]"
             >
               A <strong class="text-[#212121]">solução ideal</strong> para
               <strong class="text-[#212121]">restaurantes</strong> que querem
@@ -189,7 +138,7 @@
               <BaseButton
                 v-if="plans.length > 0"
                 variant="brand"
-                class="py-2 px-5 lg:py-5 lg:px-14 text-xs lg:text-xl shadow-xl shadow-primary/20 hover:-translate-y-1 w-auto"
+                class="py-3 px-6 lg:py-5 lg:px-14 text-sm lg:text-xl shadow-xl shadow-primary/20 hover:-translate-y-1"
                 @click="scrollToSection('planos')"
               >
                 Conheça nossos planos
@@ -197,7 +146,7 @@
             </div>
           </div>
           <div
-            class="flex justify-center items-start lg:items-center flex-none w-[45%] lg:flex-1 order-1 lg:order-1"
+            class="flex justify-center items-center flex-none w-full max-w-[320px] sm:max-w-[380px] lg:max-w-none lg:flex-1"
           >
             <img
               :src="imgTablet"
@@ -208,7 +157,7 @@
         </section>
 
         <section
-          class="w-full max-w-[1200px] px-5 lg:px-0 py-16 flex flex-col lg:flex-row justify-around items-center gap-12 lg:gap-0 bg-white rounded border border-[#E0E0E0] mx-5 lg:mx-0 shadow-2xl"
+          class="max-w-[1200px] w-[calc(100%-2.5rem)] lg:w-full mx-auto py-16 flex flex-col lg:flex-row justify-around items-center gap-12 lg:gap-0 bg-white rounded border border-[#E0E0E0] shadow-2xl"
         >
           <div class="flex flex-col items-center text-center">
             <span
@@ -216,7 +165,7 @@
               >Mais</span
             >
             <span class="text-accent text-[56px] font-black mb-2 leading-tight"
-              >Esconomia</span
+              >Economia</span
             >
             <span class="text-[#212121] text-xl font-medium max-w-[250px]"
               >Utilize os equipamentos que você já tem</span

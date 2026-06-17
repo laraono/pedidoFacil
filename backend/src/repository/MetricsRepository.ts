@@ -43,9 +43,9 @@ export class MetricsRepository {
             INNER JOIN COMANDA cmd ON p.ID_Comanda = cmd.ID_Comanda
             INNER JOIN PRODUTO pr ON pp.ID_Produto = pr.ID_Produto
             LEFT JOIN CATEGORIA cat ON pr.ID_Categoria = cat.ID_Categoria
-            WHERE cmd.ID_Estabelecimento = ? AND p.ID_Status != ${SP_CANCELADO} AND p.Data_Hora_Chegada BETWEEN ? AND ?
+            WHERE cmd.ID_Estabelecimento = ? AND p.ID_Status != ${SP_CANCELADO} AND cmd.ID_Status = ${SC_FECHADA} AND cmd.Data_Abertura BETWEEN ? AND ?
             GROUP BY pr.ID_Produto
-            ORDER BY qtd DESC LIMIT 5
+            ORDER BY qtd DESC
         `, [establishmentId, start, end]).catch((e: any) => {
             auditLog('metrics.query_error', { aba: 'produtos', error: e.message });
             return [];
@@ -69,12 +69,17 @@ export class MetricsRepository {
 
     async getTopWaiters(establishmentId: number, start: Date, end: Date) {
         return this.dataSource.query(`
-            SELECT u.Nome as name, COUNT(c.ID_Comanda) as orders, SUM(c.Total) as revenue
-            FROM COMANDA c
-            INNER JOIN USUARIO u ON c.ID_Usuario_Abertura = u.ID_Usuario
+            SELECT u.Nome as name,
+                   COUNT(p.ID_Pedido) as orders,
+                   SUM(ip.Quantidade * ip.Preco_Unitario_Momento) as revenue
+            FROM PEDIDO p
+            INNER JOIN USUARIO u ON p.ID_Usuario_Criador = u.ID_Usuario
+            INNER JOIN COMANDA c ON p.ID_Comanda = c.ID_Comanda
+            INNER JOIN ITEM_PEDIDO ip ON ip.ID_Pedido = p.ID_Pedido
             WHERE c.ID_Estabelecimento = ? AND c.ID_Status = ${SC_FECHADA} AND c.Data_Abertura BETWEEN ? AND ?
+              AND p.ID_Status != ${SP_CANCELADO}
             GROUP BY u.ID_Usuario
-            ORDER BY revenue DESC LIMIT 5
+            ORDER BY revenue DESC
         `, [establishmentId, start, end]).catch((e: any) => {
             auditLog('metrics.query_error', { aba: 'operacional', error: e.message });
             return [];

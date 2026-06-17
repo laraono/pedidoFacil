@@ -14,7 +14,6 @@ export async function submitOrder({ cartItems, customerName = null }: {
 
   const body = {
     itens,
-    description: customerName,
     customerName,
   };
 

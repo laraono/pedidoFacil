@@ -19,16 +19,16 @@
 
 <template>
   <div
-    class="border rounded-xl p-6"
+    class="border rounded-xl p-6 min-w-0 overflow-hidden"
     :class="variantClasses[variant ?? 'default']"
   >
     <div
-      class="flex items-center gap-2 text-xs font-black uppercase tracking-widest mb-3 opacity-60"
+      class="flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-wide sm:tracking-widest mb-3 opacity-60"
     >
-      <component v-if="icon" :is="icon" :size="14" />
+      <component v-if="icon" :is="icon" :size="14" class="shrink-0" />
       {{ label }}
     </div>
-    <p class="text-3xl font-black">{{ value }}</p>
+    <p class="text-2xl sm:text-3xl font-black">{{ value }}</p>
     <p v-if="description" class="text-xs mt-1 opacity-60">{{ description }}</p>
   </div>
 </template>

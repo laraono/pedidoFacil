@@ -177,7 +177,7 @@ export class AuthService {
       cardsColor: '#FFFFFF',
       buttonsColor: '#E85D5D',
       comandaLabel: 'Comanda',
-      activeCateogryColor: '#E85D5D',
+      activeCategoryColor: '#E85D5D',
       textsColor: '#333333',
       buttonsTextColor: '#FFFFFF',
       fontFamily: 'Inter',
@@ -250,7 +250,7 @@ export class AuthService {
       accessToken,
       refreshToken,
       usuario: { id: admin.id, nome: admin.name, email: admin.email },
-      cargo: { id: 0, nome: 'Admin', permissoes: ['ALL'] },
+      cargo: { id: 0, nome: 'Admin', permissoes: [] },
       estabelecimentoId: null,
     };
   }
@@ -283,7 +283,7 @@ export class AuthService {
         accessToken,
         refreshToken,
         usuario: { id: admin.id, nome: admin.name, email: admin.email },
-        cargo: { id: 0, nome: 'Admin', permissoes: ['ALL'] },
+        cargo: { id: 0, nome: 'Admin', permissoes: [] },
         estabelecimentoId: null,
       };
     }
@@ -326,7 +326,7 @@ export class AuthService {
       if (!admin) throw new AppError('Admin não encontrado.', 401);
       return {
         usuario: { ...admin, isAdmin: true },
-        cargo: { nome: 'Admin', permissoes: ['ALL'] },
+        cargo: { nome: 'Admin', permissoes: [] },
         estabelecimentoId: null,
       };
     }

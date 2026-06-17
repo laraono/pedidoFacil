@@ -63,7 +63,7 @@ export class Comanda {
   @JoinColumn({ name: 'ID_Estabelecimento' })
   establishment!: Establishment;
 
-  @ManyToOne(() => Coupon)
+  @ManyToOne(() => Coupon, { nullable: true })
   @JoinColumn({ name: 'ID_Cupom_Aplicado' })
-  coupon!: Coupon;
+  coupon?: Coupon | null;
 }

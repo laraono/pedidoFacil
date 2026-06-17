@@ -12,6 +12,9 @@ export class Coupon {
     @Column({ type: 'varchar', name: 'Codigo', nullable: false, length: 50 })
     code!: string
 
+    @Column({ type: 'varchar', name: 'Tipo_Desconto', nullable: false, length: 10 })
+    tipoDescontoNome!: string
+
     @ManyToOne(() => TipoDesconto, { eager: true })
     @JoinColumn({ name: 'ID_TipoDesconto' })
     type!: TipoDesconto

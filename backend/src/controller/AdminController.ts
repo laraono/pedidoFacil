@@ -21,7 +21,8 @@ export class AdminController {
     });
 
     update = catchAsync(async (req: Request, res: Response) => {
-        const admin = await this.adminService.update(Number(req.params.adminId), req.body);
+        const requesterId = Number((req as any).usuario?.id);
+        const admin = await this.adminService.update(requesterId, Number(req.params.adminId), req.body);
         return res.status(200).json(admin);
     });
 

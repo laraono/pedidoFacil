@@ -8,7 +8,7 @@ interface EstablishmentConfig {
   backgroundColor?: string
   buttonsColor?: string
   buttonsTextColor?: string
-  activeCateogryColor?: string
+  activeCategoryColor?: string
   textsColor?: string
   cardsColor?: string
   fontFamily?: string
@@ -66,7 +66,7 @@ export function useMenuTheme() {
       bgColor.value = config.backgroundColor || "#F5F6FA";
       buttonColor.value = config.buttonsColor || "#1E7BC4";
       buttonTextColor.value = config.buttonsTextColor || "#FFFFFF";
-      categoryColor.value = config.activeCateogryColor || "#7AB648";
+      categoryColor.value = config.activeCategoryColor || "#7AB648";
       textColor.value = config.textsColor || "#212121";
       cardBg.value = config.cardsColor || "#FFFFFF";
       fontFamily.value = config.fontFamily || "Inter, sans-serif";
@@ -98,7 +98,7 @@ export function useMenuTheme() {
           textsColor: textColor.value,
           buttonsColor: buttonColor.value,
           buttonsTextColor: buttonTextColor.value,
-          activeCateogryColor: categoryColor.value,
+          activeCategoryColor: categoryColor.value,
           fontFamily: fontFamily.value,
           comandaLabel: comandaUnitLabel.value,
           allowObservations: observacoesPermitidas.value,

@@ -3,6 +3,7 @@ import { ConfigurationController } from '../controller/ConfigurationController';
 import { ConfigurationService } from '../service/ConfigurationService';
 import { authenticate } from '../middleware/authenticate';
 import { checkPermission } from '../middleware/roleAccessControl';
+import { Permission } from '../enum';
 import { subscriptionMiddleware } from '../middleware';
 import { validateUpload } from '../middleware/validateUpload';
 
@@ -15,7 +16,7 @@ configRouter.get(
   '/estabelecimento/:establishmentId/config',
   authenticate,
   subscriptionMiddleware,
-  checkPermission('CONFIGURACAO'),
+  checkPermission(Permission.CONFIGURACAO),
   (req, res) => configController.getConfig(req, res)
 );
 
@@ -23,7 +24,7 @@ configRouter.put(
   '/estabelecimento/config',
   authenticate,
   subscriptionMiddleware,
-  checkPermission('CONFIGURACAO'),
+  checkPermission(Permission.CONFIGURACAO),
   validateUpload.single('logo'),
   (req, res) => configController.updateConfig(req, res)
 );

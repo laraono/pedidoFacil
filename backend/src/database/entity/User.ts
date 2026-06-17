@@ -49,7 +49,7 @@ export class User {
     type: 'boolean',
     name: 'Ativo',
     nullable: false,
-    default: false,
+    default: true,
   })
   ativo!: boolean;
 
@@ -91,7 +91,7 @@ export class User {
 
   @OneToMany(
     () => StorageMovimentation,
-    (movimentation) => movimentation.storageIten,
+    (movimentation) => movimentation.user,
   )
   movimentations!: StorageMovimentation[];
 

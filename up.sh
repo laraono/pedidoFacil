@@ -23,7 +23,7 @@ echo -e "
     ░█▀▀░█▀▀░█░█░░█░░█░█░█░█░░░█▀▀░█▀█░█░░░░█░░█░░
     ░▀░░░▀▀▀░▀▀░░▀▀▀░▀▀░░▀▀▀░░░▀░░░▀░▀░▀▀▀░▀▀▀░▀▀▀
     
-    Bem vindo novamente!                                                                         
+    Bem vindo!
     Com esse assistente, o sistema iniciará a execução.
     ${DIM}───────────────────────────────────────────────────────${RESET}"
 # ── Verifica .env ──────────────────────────────────────────────────────────
@@ -156,6 +156,13 @@ info "Iniciando site..."
 npm run dev --prefix web > logs/web.log 2>&1 &
 WEB_PID=$!
 
+LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+if [ -z "$LOCAL_IP" ]; then
+  LOCAL_IP=$(ipconfig getifaddr en0 2>/dev/null || echo "localhost")
+fi
+MOBILE_URL="http://${LOCAL_IP}:${BACKEND_PORT}"
+echo "EXPO_PUBLIC_API_URL=${MOBILE_URL}" > mobile/.env
+
 info "Aguardando serviços iniciarem..."
 sleep 4
 
@@ -174,19 +181,17 @@ echo ""
 echo -e "    ${DIM}E-mail:${RESET}  ${BOLD}admin@admin.com${RESET}"
 echo -e "    ${DIM}Senha:${RESET}   ${BOLD}Admin@123${RESET}"
 echo ""
+echo -e "  ${BOLD}Mobile (Expo Go):${RESET}"
+echo ""
+echo -e "    ${DIM}API:${RESET}     ${BOLD}${MOBILE_URL}${RESET}"
+echo -e "    ${DIM}Escaneie o QR code abaixo com o app Expo Go.${RESET}"
+echo ""
 echo -e "  ${DIM}Logs: logs/backend.log · logs/web.log${RESET}"
 echo ""
 echo -e "  ${DIM}Pressione Ctrl+C para encerrar tudo.${RESET}"
 echo ""
 echo -e "  ${DIM}───────────────────────────────────────────────────────${RESET}"
 echo ""
-LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
-if [ -z "$LOCAL_IP" ]; then
-  LOCAL_IP=$(ipconfig getifaddr en0 2>/dev/null || echo "localhost")
-fi
-MOBILE_URL="http://${LOCAL_IP}:${BACKEND_PORT}"
-echo "EXPO_PUBLIC_API_URL=${MOBILE_URL}" > mobile/.env
-ok "Mobile configurado → ${MOBILE_URL}"
 
 info "Iniciando mobile (Expo)..."
 echo ""

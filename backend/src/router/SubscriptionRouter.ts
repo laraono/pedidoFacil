@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticate } from '../middleware/authenticate';
 import { checkPermission } from '../middleware/roleAccessControl';
+import { Permission } from '../enum';
 import { subscriptionController } from '../controller';
 import { validateRequest } from '../middleware/validateRequest';
 import { createSubscriptionSchema } from '../dto/subscription/CreateSubscriptionDTO';
@@ -15,10 +16,10 @@ subscriptionRouter.post('/process-order', authenticate, validateRequest(createSu
 subscriptionRouter.post('/process-order/:subscriptionId', authenticate, validateRequest(restoreSubscriptionSchema), subscriptionController.restoreSubscription);
 subscriptionRouter.put('/plans/:planId/subscriptions/:subscriptionId', authenticate, subscriptionController.updateSubscriptionPrice);
 subscriptionRouter.get('/process-oauth', subscriptionController.processCardInfo)
-subscriptionRouter.get('/subscriptions/establishment', authenticate, checkPermission('ASSINATURA'), subscriptionController.getEstablishmentSubscription)
-subscriptionRouter.get('/subscriptions/history', authenticate, checkPermission('ASSINATURA'), subscriptionController.getEstablishmentHistory)
-subscriptionRouter.patch('/subscriptions/change-plan', authenticate, checkPermission('ASSINATURA'), subscriptionController.changePlan)
-subscriptionRouter.post('/subscriptions/:subscriptionId/cancel', authenticate, checkPermission('ASSINATURA'), subscriptionController.cancelSubcription)
-subscriptionRouter.get('/subscriptions/admin/metrics', authenticate, checkPermission('ASSINATURA'), subscriptionController.getAdminMetrics)
+subscriptionRouter.get('/subscriptions/establishment', authenticate, checkPermission(Permission.ASSINATURA), subscriptionController.getEstablishmentSubscription)
+subscriptionRouter.get('/subscriptions/history', authenticate, checkPermission(Permission.ASSINATURA), subscriptionController.getEstablishmentHistory)
+subscriptionRouter.patch('/subscriptions/change-plan', authenticate, checkPermission(Permission.ASSINATURA), subscriptionController.changePlan)
+subscriptionRouter.post('/subscriptions/:subscriptionId/cancel', authenticate, checkPermission(Permission.ASSINATURA), subscriptionController.cancelSubcription)
+subscriptionRouter.get('/subscriptions/admin/metrics', authenticate, checkPermission(Permission.ASSINATURA), subscriptionController.getAdminMetrics)
 
 export { subscriptionRouter };

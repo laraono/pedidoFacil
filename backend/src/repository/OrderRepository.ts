@@ -28,7 +28,7 @@ export class OrderRepository extends Repository<Order> {
             },
             relations: [
                 'comanda',
-                'user',
+                'createdBy',
                 'productOrders',
                 'productOrders.product',
                 'productOrders.productVariation',
@@ -42,7 +42,7 @@ export class OrderRepository extends Repository<Order> {
                 comanda: { id: comandaId }
             },
             relations: [
-                'user', 
+                'createdBy',
                 'productOrders',
                 'productOrders.product',
                 'productOrders.productVariation',

@@ -141,6 +141,7 @@
                     v-model="newComandaNumber"
                     type="text"
                     placeholder="Número ou nome..."
+                    maxlength="10"
                     class="flex-1 border rounded px-3 py-2 font-bold text-sm outline-none adaptive-placeholder"
                     :style="{
                       color: theme.textColor,

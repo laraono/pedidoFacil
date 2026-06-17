@@ -122,7 +122,7 @@ const paymentColumns = [
           </div>
           <div>
             <p class="text-[10px] font-black uppercase tracking-widest text-[#757575] mb-1">Status</p>
-            <StatusBadge :status="detail.subscription.status" type="subscription" />
+            <StatusBadge :status="detail.subscription.status?.nome" type="subscription" />
           </div>
           <div>
             <p class="text-[10px] font-black uppercase tracking-widest text-[#757575] mb-1">Início</p>
@@ -145,10 +145,10 @@ const paymentColumns = [
           </template>
           <template #cell-status="{ item }">
             <span class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border"
-              :class="item.status === 'Aprovado'  ? 'text-accent bg-accent-light border-accent/25'
-                    : item.status === 'Cancelado' ? 'text-red-400 bg-red-500/10 border-red-500/20'
+              :class="item.status?.nome === 'Aprovado'  ? 'text-accent bg-accent-light border-accent/25'
+                    : item.status?.nome === 'Cancelado' ? 'text-red-400 bg-red-500/10 border-red-500/20'
                     : 'text-amber-400 bg-amber-500/10 border-amber-500/25'">
-              {{ item.status }}
+              {{ item.status?.nome }}
             </span>
           </template>
           <template #cell-name="{ item }">

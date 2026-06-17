@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { EstablishmentController } from '../controller/EstablishmentController';
 import { authenticate } from '../middleware/authenticate';
 import { checkPermission } from '../middleware/roleAccessControl';
+import { Permission } from '../enum';
 import { establishmentService } from '../service';
 //import { validateSaveOnboarding, validateFinalizeOnboarding } from '../validator/establishment/establishmentSchema';
 import { validateRequest } from '../middleware/validateRequest';
@@ -26,14 +27,14 @@ establishmentRouter.get(
 establishmentRouter.get(
   '/profile',
   authenticate,
-  checkPermission('CONFIGURACAO'),
+  checkPermission(Permission.CONFIGURACAO),
   establishmentController.getProfile
 );
 
 establishmentRouter.put(
   '/profile',
   authenticate,
-  checkPermission('CONFIGURACAO'),
+  checkPermission(Permission.CONFIGURACAO),
   validateUpload.fields([{ name: 'logo', maxCount: 1 }]),
   validateRequest(UpdateEstablishmentDTO),
   establishmentController.update
@@ -42,7 +43,7 @@ establishmentRouter.put(
 establishmentRouter.delete(
   '/disable',
   authenticate,
-  checkPermission('CONFIGURACAO'),
+  checkPermission(Permission.CONFIGURACAO),
   establishmentController.disable
 );
 

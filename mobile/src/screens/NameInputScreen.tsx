@@ -19,22 +19,23 @@ export default function NameInputScreen() {
   const { theme } = useTheme();
   const panHandlers = useIdleTimer(90);
 
-  const params = route.params as { descontoAplicado?: number } | undefined;
-  const descontoAplicado = params?.descontoAplicado || 0;
+  const params = route.params as { appliedDiscount?: number } | undefined;
+  const appliedDiscount = params?.appliedDiscount || 0;
 
   const [name, setName] = useState("");
 
   const { width } = Dimensions.get("window");
   const styles = useMemo(() => getStyles(theme, width), [theme, width]);
 
-  const pressKey = (key: string) => setName((prev) => prev + key);
-  const pressSpace = () => setName((prev) => prev + " ");
+  const MAX_NAME_LENGTH = 30;
+  const pressKey = (key: string) => setName((prev) => prev.length < MAX_NAME_LENGTH ? prev + key : prev);
+  const pressSpace = () => setName((prev) => prev.length < MAX_NAME_LENGTH ? prev + " " : prev);
   const pressBackspace = () => setName((prev) => prev.slice(0, -1));
 
   const handleConfirm = () => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    navigation.navigate("Payment", { descontoAplicado, customerName: trimmed });
+    navigation.navigate("Payment", { appliedDiscount, customerName: trimmed });
   };
 
   return (

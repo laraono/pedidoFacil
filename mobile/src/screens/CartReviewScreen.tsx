@@ -54,7 +54,9 @@ export default function CartReviewScreen() {
       }
 
       const found = await response.json();
-      const valorDesconto = found.type === "Percentual" ? cartTotal * (found.value / 100) : found.value;
+      const valorDesconto = found.type === "Percentual"
+        ? cartTotal * (Number(found.value) / 100)
+        : Number(found.value);
       setDesconto(valorDesconto);
       setCouponMessage("");
     } catch (error) {
@@ -79,14 +81,12 @@ export default function CartReviewScreen() {
     setEditModalVisible(true);
   };
 
-  const handleConfirmEdit = (newQuantity: number, obs: string) => {
-    if (!editingItem) return;
-    if (newQuantity === 0) {
-      removeFromCart(editingItem.id, editingItem.size.name);
-    } else {
-      updateCartItem(editingItem.id, editingItem.size.name, newQuantity, obs);
-    }
+  const handleConfirmEdit = (_size: any, newQuantity: number, obs: string) => {
+    if (!editingItem) { setEditModalVisible(false); return; }
+    if (newQuantity === 0) removeFromCart(editingItem.id, editingItem.size.name);
+    else updateCartItem(editingItem.id, editingItem.size.name, newQuantity, obs);
     setEditModalVisible(false);
+    setEditingItem(null);
   };
 
   return (
@@ -161,7 +161,7 @@ export default function CartReviewScreen() {
                 <Text style={styles.btnSecondaryText} numberOfLines={1} adjustsFontSizeToFit>Adicionar Mais</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.btnPrimary} onPress={() => navigation.navigate("NameInput", { descontoAplicado: desconto })} activeOpacity={0.8}>
+              <TouchableOpacity style={styles.btnPrimary} onPress={() => navigation.navigate("NameInput", { appliedDiscount: desconto })} activeOpacity={0.8}>
                 <Text style={styles.btnPrimaryText} numberOfLines={1} adjustsFontSizeToFit>Pagar</Text>
                 <Feather name="arrow-right" size={20} color={theme.textoBotoes} style={styles.btnIcon} />
               </TouchableOpacity>
@@ -173,7 +173,7 @@ export default function CartReviewScreen() {
       <ProductModal
         visible={editModalVisible}
         product={editingItem}
-        onClose={() => setEditModalVisible(false)}
+        onClose={() => { setEditModalVisible(false); setEditingItem(null); }}
         onConfirm={handleConfirmEdit}
       />
     </SafeAreaView>

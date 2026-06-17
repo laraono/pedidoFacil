@@ -6,8 +6,9 @@ export function getToken(): string | null {
   return localStorage.getItem('accessToken');
 }
 
-interface CustomRequestInit extends RequestInit {
+interface CustomRequestInit extends Omit<RequestInit, 'body'> {
   isMultipart?: boolean;
+  body?: BodyInit | null | Record<string, unknown>;
 }
 
 function isFormDataObj(data: any): boolean {
@@ -39,7 +40,7 @@ export async function request(path: string, options: CustomRequestInit = {}) {
 
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
-    body,
+    body: body as BodyInit | null | undefined,
     headers,
     credentials: 'include',
   });
@@ -68,7 +69,7 @@ export async function request(path: string, options: CustomRequestInit = {}) {
 
       const retry = await fetch(`${BASE_URL}${path}`, {
         ...options,
-        body,
+        body: body as BodyInit | null | undefined,
         headers,
         credentials: 'include',
       });

@@ -43,6 +43,20 @@ export const loadAppConfig = async (): Promise<boolean> => {
       appConfig.selfServiceCode = savedCode;
     }
 
+       if (appConfig.isConfigured && savedCode && appConfig.API_URL) {
+      try {
+        const response = await fetch(`${appConfig.API_URL}/estabelecimento/code/${savedCode}`);
+        if (response.status === 403) {
+          await AsyncStorage.removeItem('@PedidoFacil:EstID');
+          await AsyncStorage.removeItem('@PedidoFacil:TotemCode');
+          appConfig.ESTABLISHMENT_ID = null;
+          appConfig.selfServiceCode = null;
+          appConfig.isConfigured = false;
+        }
+      } catch {
+      }
+    }
+
     console.log(`[PedidoFácil] IP=${appConfig.API_URL} | EstID=${appConfig.ESTABLISHMENT_ID} | Configurado=${appConfig.isConfigured}`);
     return appConfig.isConfigured;
   } catch (error) {

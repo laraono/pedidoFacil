@@ -26,9 +26,12 @@ export const useSubscriptionStore = defineStore('subscription', () => {
       const sub = await subscriptionApi.getEstablishmentSubscription();
       subscriptionStatus.value = (sub as any)?.status?.nome ?? (sub as any)?.status ?? null;
       subscriptionExpirationDate.value = (sub as any)?.expirationDate ?? null;
-    } catch {
-      subscriptionStatus.value = null;
-      subscriptionExpirationDate.value = null;
+    } catch (error: any) {
+      const status = error?.response?.status || error?.status;
+      if (status !== 429 && status !== undefined) {
+        subscriptionStatus.value = null;
+        subscriptionExpirationDate.value = null;
+      }
     }
   }
 

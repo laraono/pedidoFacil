@@ -18,7 +18,6 @@
     --border:         #E0E0E0;
     --danger:         #E53935;
     --danger-light:   #FFEBEE;
-    /* legacy */
     --brand-green:       #7AB648;
     --brand-green-hover: #5A9030;
   }
@@ -56,6 +55,31 @@
 
   .btn-primary-admin {
     @apply py-3 px-6 bg-primary text-white font-black rounded hover:bg-primary-dark transition-all active:scale-95 shadow-sm flex items-center justify-center gap-2;
+  }
+
+  .btn-action {
+    @apply px-3 py-1.5 text-xs font-black rounded flex items-center gap-1 transition-all
+           bg-gray-50 border border-[#E0E0E0] text-[#757575] hover:bg-gray-100;
+  }
+
+  .btn-action-danger {
+    @apply btn-action bg-danger-light border-danger text-danger hover:bg-red-500/20;
+  }
+
+  .btn-action-warning {
+    @apply btn-action bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/20;
+  }
+
+  .btn-action {
+    @apply px-3 py-1.5 text-xs font-black rounded flex items-center gap-1 transition-all bg-gray-50 border border-[#E0E0E0] text-[#757575] hover:bg-gray-100;
+  }
+
+  .btn-action-danger {
+    @apply px-3 py-1.5 text-xs font-black rounded flex items-center gap-1 transition-all bg-danger-light border border-danger text-danger hover:bg-red-500/20;
+  }
+
+  .btn-action-warning {
+    @apply px-3 py-1.5 text-xs font-black rounded flex items-center gap-1 transition-all bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20;
   }
 
   /* --- Inputs --- */

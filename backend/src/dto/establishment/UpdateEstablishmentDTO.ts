@@ -31,7 +31,7 @@ export const UpdateEstablishmentDTO = z.object({
       textsColor: safeString(4, 7).optional(),
       buttonsColor: safeString(4, 7).optional(),
       buttonsTextColor: safeString(4, 7).optional(),
-      activeCateogryColor: safeString(4, 7).optional(),
+      activeCategoryColor: safeString(4, 7).optional(),
       fontFamily: safeString(1, 50).optional(),
       comandaLabel: safeString(1, 30).optional(),
       allowObservations: z.preprocess((val) => {

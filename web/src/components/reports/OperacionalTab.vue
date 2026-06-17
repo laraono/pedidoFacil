@@ -62,9 +62,9 @@
           :key="waiter.id"
           class="flex items-center justify-between p-5 bg-gray-50 border border-[#E0E0E0] rounded-xl hover:translate-x-2 transition-all cursor-default"
         >
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-4 min-w-0">
             <div
-              class="w-12 h-12 rounded-full flex items-center justify-center font-black text-lg border-2 border-white shadow-sm"
+              class="w-12 h-12 rounded-full flex items-center justify-center font-black text-lg border-2 border-white shadow-sm shrink-0"
               :class="
                 index === 0
                   ? 'bg-primary text-white'
@@ -73,8 +73,8 @@
             >
               {{ waiter.name.charAt(0) }}
             </div>
-            <div>
-              <span class="font-black text-[#212121] block text-sm">{{
+            <div class="min-w-0">
+              <span class="font-black text-[#212121] block text-sm truncate">{{
                 waiter.name
               }}</span>
               <span

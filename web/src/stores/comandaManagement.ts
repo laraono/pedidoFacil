@@ -27,14 +27,14 @@ export const useComandaStore = defineStore('comanda', () => {
 
     async function loadComandas() {
         try {
-            const response = await comandaApi.listByStatus('Aberta');
+            const response = await comandaApi.listOpen();
             if (!response) return;
 
             comandas.value = response.map((c: any) => ({
                 id: c.id,
                 label: c.description,
                 customerName: c.customerName ?? undefined,
-                isAutoatendimento: !!c.customerName || (c.description || '').startsWith('Totem #'),
+                isAutoatendimento: !!c.isAutoatendimento,
                 total: Number(c.total),
                 orders: c.pedidos || [],
                 discountType: c.discountType || c.Tipo_Desconto_Aplicado || null,

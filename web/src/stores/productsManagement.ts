@@ -55,8 +55,8 @@ export const useMenuStore = defineStore("menu", () => {
         categoryApi.list(),
         categoryApi.listInactive(),
       ]);
-      categories.value = active;
-      inactiveCategories.value = inactive;
+      categories.value = active.map((c: any) => ({ ...c, status: 'Ativa' }));
+      inactiveCategories.value = inactive.map((c: any) => ({ ...c, status: 'Inativa' }));
     } catch (error) {
       console.error("Erro ao carregar categorias:", error);
     }
@@ -102,8 +102,10 @@ export const useMenuStore = defineStore("menu", () => {
     try {
       await categoryApi.delete(id);
       await loadCategories();
-    } catch (error) {
-      console.error(error);
+      return { success: true };
+    } catch (error: any) {
+      const status = error?.response?.status || error?.status;
+      return { success: false, message: error?.message, status };
     }
   };
 

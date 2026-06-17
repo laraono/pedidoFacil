@@ -15,7 +15,15 @@
     emptyMessage: { type: String, default: "Nenhum item encontrado." },
     emptyIcon: { default: () => Inbox },
     isLoading: { type: Boolean, default: false },
+    breakpoint: { type: String, default: "md" },
   });
+
+  const bpClasses = {
+    sm: { table: "hidden sm:block", cards: "sm:hidden" },
+    md: { table: "hidden md:block", cards: "md:hidden" },
+    lg: { table: "hidden lg:block", cards: "lg:hidden" },
+  };
+  const bp = computed(() => bpClasses[props.breakpoint] ?? bpClasses.md);
 
   const emit = defineEmits(["update:sortKey", "update:sortOrder"]);
 
@@ -49,7 +57,7 @@
     <div
       v-if="isLoading || sortedData.length > 0"
       class="bg-white border border-[#E0E0E0] rounded overflow-x-auto shadow-2xl font-inter"
-      :class="hasMobileSlot ? 'hidden md:block' : ''"
+      :class="hasMobileSlot ? bp.table : ''"
     >
       <table class="w-full text-left border-collapse min-w-[740px]">
         <thead
@@ -146,7 +154,7 @@
     </div>
   </div>
 
-  <div v-if="hasMobileSlot" class="md:hidden space-y-4">
+  <div v-if="hasMobileSlot" :class="[bp.cards, 'space-y-4']">
     <div
       v-for="item in sortedData"
       :key="item.id"

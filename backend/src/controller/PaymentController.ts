@@ -6,7 +6,7 @@ import { auditLog } from '../utils/logger';
 
 export const paymentLimiter = rateLimit({
     windowMs: 5 * 60 * 1000,
-    max: 30,
+    max: 300,
     handler: (req: Request, res: Response) => {
         res.status(429).json({
             error: 'Muitas tentativas. Tente novamente mais tarde.',

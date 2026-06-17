@@ -54,7 +54,7 @@ export class Configuration {
     nullable: true,
     length: 7,
   })
-  activeCateogryColor?: string;
+  activeCategoryColor?: string;
 
   @Column({
     type: 'varchar',
@@ -62,7 +62,7 @@ export class Configuration {
     nullable: true,
     length: 50,
   })
-  fontFamily!: string;
+  fontFamily?: string | null;
 
   @Column({
     type: 'varchar',
@@ -70,7 +70,7 @@ export class Configuration {
     nullable: true,
     length: 30,
   })
-  comandaLabel!: string;
+  comandaLabel?: string | null;
 
   @Column({
     type: 'varchar',

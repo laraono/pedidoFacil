@@ -1,6 +1,55 @@
-export function getGroupedOrderItems(order) {
+interface Variation {
+  productVariation?: { name?: string };
+}
+
+interface OrderItem {
+  name?: string;
+  product?: { name?: string };
+  variations?: Variation[];
+  amount?: number;
+  quantity?: number;
+  price?: number;
+  Preco_Unitario_Momento?: number;
+  observation?: string;
+  obs?: string;
+}
+
+interface GroupedItem {
+  name: string;
+  amount: number;
+  price: number;
+  total: number;
+  observation: string;
+}
+
+interface PaymentOrder {
+  price?: number;
+}
+
+interface Order {
+  items?: OrderItem[];
+  productOrders?: OrderItem[];
+  price?: number;
+  paymentOrders?: PaymentOrder[];
+  status?: string;
+  id?: number;
+}
+
+interface KitchenOrder {
+  id?: number;
+  status: string;
+}
+
+interface Comanda {
+  isAutoatendimento?: boolean;
+  customerName?: string;
+  label?: string;
+  id?: number;
+}
+
+export function getGroupedOrderItems(order: Order): GroupedItem[] {
   const items = order.items || order.productOrders || [];
-  const groups = [];
+  const groups: GroupedItem[] = [];
   items.forEach((i) => {
     const variationName = (i.variations?.[0]?.productVariation?.name || "").trim();
     const baseName = (i.name || i.product?.name || "Item").trim();
@@ -21,27 +70,27 @@ export function getGroupedOrderItems(order) {
   return groups;
 }
 
-export function getOrderOriginalTotal(order) {
+export function getOrderOriginalTotal(order: Order): number {
   const items = getGroupedOrderItems(order);
   if (items.length === 0) return Number(order.price ?? 0);
   return items.reduce((sum, item) => sum + item.total, 0);
 }
 
-export function getOrderPaid(order) {
+export function getOrderPaid(order: Order): number {
   return (order.paymentOrders || []).reduce((sum, po) => sum + Number(po.price || 0), 0);
 }
 
-export function getOrderTotal(order) {
+export function getOrderTotal(order: Order): number {
   return Math.max(0, getOrderOriginalTotal(order) - getOrderPaid(order));
 }
 
-export function getComandaMainLabel(comanda) {
+export function getComandaMainLabel(comanda: Comanda | null | undefined): string {
   return comanda?.isAutoatendimento && comanda?.customerName
     ? comanda.customerName
     : comanda?.label || `#${comanda?.id}`;
 }
 
-export const BACKEND_TO_LOCAL_STATUS = {
+export const BACKEND_TO_LOCAL_STATUS: Record<string, string> = {
   Aguardando_Preparo: "pending",
   Em_Preparo: "preparing",
   Pronto: "ready",
@@ -51,13 +100,15 @@ export const BACKEND_TO_LOCAL_STATUS = {
 
 const INACTIVE_STATUSES = new Set(["cancelled", "Cancelado", "CANCELADO"]);
 
-export function resolveOrderStatus(order, kitchenOrders = []) {
+export function resolveOrderStatus(order: Order, kitchenOrders: KitchenOrder[] = []): string {
   const kitchenOrder = kitchenOrders.find((ko) => ko.id === order.id);
-  return kitchenOrder
-    ? kitchenOrder.status
-    : BACKEND_TO_LOCAL_STATUS[order.status] || order.status;
+  if (kitchenOrder) return kitchenOrder.status;
+  const rawStatus = typeof order.status === 'object' && order.status !== null
+    ? (order.status as any).nome
+    : (order.status as string);
+  return BACKEND_TO_LOCAL_STATUS[rawStatus || ""] || rawStatus || "";
 }
 
-export function isOrderActive(order, kitchenOrders = []) {
+export function isOrderActive(order: Order, kitchenOrders: KitchenOrder[] = []): boolean {
   return !INACTIVE_STATUSES.has(resolveOrderStatus(order, kitchenOrders));
 }

@@ -4,7 +4,7 @@ import rateLimit from 'express-rate-limit'
 
 export const menuLimiter = rateLimit({
     windowMs: 60 * 1000,
-    max: 60,
+    max: 1000,
     handler: (req: Request, res: Response) => {
         res.status(429).json({
             error: 'Muitas tentativas. Tente novamente mais tarde.',

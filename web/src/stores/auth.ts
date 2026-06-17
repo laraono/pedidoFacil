@@ -154,7 +154,7 @@ export const useAuthStore = defineStore('auth', {
       const permissoes = this.user?.cargo?.permissoes;
       if (!permissoes) return false;
       
-      return permissoes.includes('ALL') || permissoes.includes(permission);
+      return permissoes.includes(permission);
     },
 
     async logout(): Promise<void> {

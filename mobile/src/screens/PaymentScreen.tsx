@@ -32,8 +32,8 @@ export default function PaymentScreen() {
   const { theme } = useTheme();
   const panHandlers = useIdleTimer(120);
 
-  const params = route.params as { descontoAplicado?: number; customerName?: string } | undefined;
-  const desconto = params?.descontoAplicado || 0;
+  const params = route.params as { appliedDiscount?: number; customerName?: string } | undefined;
+  const desconto = params?.appliedDiscount || 0;
   const customerName = params?.customerName || null;
   const totalComDesconto = Math.max(0, cartTotal - desconto);
 

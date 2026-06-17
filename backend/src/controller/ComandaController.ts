@@ -2,6 +2,7 @@ import { ComandaService } from "../service";
 import { Request, Response } from 'express';
 import { auditLog } from "../utils/logger";
 import { getIO } from "../socket";
+import { ComandaStatus } from "../enum";
 
 export class ComandaController {
     private comandaService: ComandaService
@@ -43,9 +44,8 @@ export class ComandaController {
     }
 
     async listComandasByStatus(req: Request, res: Response) {
-        const estabelecimentoId = (req as any).usuario.estabelecimento; 
-        const { status } = req.query;
-        const comandas = await this.comandaService.listComandasByStatus(status as any, estabelecimentoId);
+        const estabelecimentoId = (req as any).usuario.estabelecimento;
+        const comandas = await this.comandaService.listComandasByStatus(ComandaStatus.ABERTA, estabelecimentoId);
         res.status(200).send(comandas);
     }
 

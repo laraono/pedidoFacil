@@ -22,8 +22,8 @@ echo -e "
     ░█▀▀░█▀▀░█░█░░█░░█░█░█░█░░░█▀▀░█▀█░█░░░░█░░█░░
     ░▀░░░▀▀▀░▀▀░░▀▀▀░▀▀░░▀▀▀░░░▀░░░▀░▀░▀▀▀░▀▀▀░▀▀▀
     
-    Bem vindo!                                                                         
-    Com esse assistente, o sistema será preparado para execução.
+    Instalação do PedidoFácil
+    Este assistente prepara o ambiente na primeira execução.
     ${DIM}───────────────────────────────────────────────────────${RESET}"
 # ── Pré-requisitos ─────────────────────────────────────────────────────────
 echo -e "${BOLD}  Verificando dependências...${RESET}"
@@ -219,4 +219,6 @@ echo ""
 echo -e "  ${DIM}───────────────────────────────────────────────────────${RESET}"
 echo ""
 echo -e "  ${GREEN}${BOLD}Tudo configurado! ✓${RESET}"
+echo ""
+echo -e "  Execute ${BOLD}./up.sh${RESET} para iniciar o sistema."
 echo ""

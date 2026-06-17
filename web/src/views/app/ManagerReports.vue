@@ -136,11 +136,12 @@ const tabs = [
         </button>
       </div>
 
-      <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <section class="flex gap-4 mb-8 overflow-x-auto pb-2 -mx-6 px-6 sm:mx-0 sm:px-0 custom-scrollbar">
         <MetricCard v-for="(val, key) in kpis" :key="key"
           :label="kpiLabels[key] || key"
           :value="formatKpi(key, val) || '---'"
           :icon="kpiIcons[key]"
+          class="min-w-[160px] shrink-0 flex-1"
         />
       </section>
 

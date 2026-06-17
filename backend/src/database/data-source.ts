@@ -21,6 +21,7 @@ export const AppDataSource = new DataSource({
     migrationsRun: false,
     logging: false,
     timezone: 'Z',
+    charset: 'utf8mb4',
     entities: [
         Admin, Category, Comanda, Configuration, Coupon, Endereco, Establishment,
         Order, Payment, PaymentMethod, PaymentOrder, Permissao, Plan, PlanFeature, Product, ProductOrder,

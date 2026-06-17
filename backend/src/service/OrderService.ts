@@ -51,9 +51,7 @@ export class OrderService {
         status: { id: statusId },
         autoatendimento: createOrder.autoatendimento ?? false,
         comanda: comanda,
-        establishment: { id: createOrder.establishmentId },
-        user: createOrder.userId ? { id: createOrder.userId } : undefined,
-        isDelivered: false,
+        createdBy: createOrder.userId ? { id: createOrder.userId } : undefined,
       }) as any;
 
       await this.saveItens(createOrder.itens, order, manager);
@@ -75,8 +73,6 @@ export class OrderService {
         status: { id: STATUS_PEDIDO_IDS.AGUARDANDO_PREPARO },
         autoatendimento: true,
         comanda: comanda,
-        establishment: { id: data.establishmentId },
-        isDelivered: false,
       }) as Order;
 
       await this.saveItens(data.itens, order, manager);
@@ -92,11 +88,9 @@ export class OrderService {
     for (const iten of itens) {
       const validated = await this.validateItens(iten, manager);
 
-      const basePrice = Number(validated.product.basePrice);
-      const addPrice = validated.productVariation
+      const finalPrice = validated.productVariation
         ? Number(validated.productVariation.addPrice)
-        : 0;
-      const finalPrice = basePrice + addPrice;
+        : Number(validated.product.basePrice);
 
       totalAcumulado += finalPrice * iten.quantity;
 
@@ -153,7 +147,7 @@ export class OrderService {
   ) {
     const order = await this.dataSource.getRepository(Order).findOne({
       where: { id: orderId },
-      relations: ['comanda', 'user', 'status'],
+      relations: ['comanda', 'createdBy', 'status'],
     });
 
     if (!order) throw new AppError('Pedido não encontrado', 404);
@@ -161,7 +155,7 @@ export class OrderService {
     if (expectedComandaId && order.comanda.id !== expectedComandaId)
       throw new AppError('Pedido não pertence a esta comanda', 403);
 
-    const orderUserId = order?.user?.id;
+    const orderUserId = order?.createdBy?.id;
 
     const updateData: any = { status: { id: ORDER_STATUS_ID[status] } };
 

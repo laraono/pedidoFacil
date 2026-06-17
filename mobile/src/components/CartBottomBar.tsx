@@ -28,7 +28,7 @@ export default function CartBottomBar() {
             <View style={styles.colLeft}>
               <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
               <Text style={styles.itemObs} numberOfLines={1}>
-                {item.size?.name !== "Padrão" ? `Tam: ${item.size?.name}` : ""}
+                {item.size?.name !== "Padrão" ? `Variação: ${item.size?.name}` : ""}
                 {item.observation ? ` | Obs: ${item.observation}` : ""}
               </Text>
             </View>

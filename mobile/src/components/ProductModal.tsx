@@ -93,7 +93,7 @@ export default function ProductModal({ visible, product, onClose, onConfirm }: P
 
             {!isSingleSize && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Escolha o Tamanho</Text>
+                <Text style={styles.sectionTitle}>Escolha a Variação</Text>
                 {variations.map((size, index) => {
                   const isSelected = selectedSize?.name === size.name;
                   const priceValue = Number(size.Preco_Adicional || size.addPrice || size.price || 0);
@@ -101,7 +101,7 @@ export default function ProductModal({ visible, product, onClose, onConfirm }: P
                     <TouchableOpacity
                       key={index}
                       style={[styles.sizeOption, isSelected && styles.sizeOptionSelected]}
-                      onPress={() => setSelectedSize({ ...size, price: priceValue })}
+                      onPress={() => setSelectedSize({ id: size.id, name: size.name, price: priceValue })}
                     >
                       <View style={styles.radioContainer}>
                         <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
@@ -135,7 +135,11 @@ export default function ProductModal({ visible, product, onClose, onConfirm }: P
             <View style={styles.quantityContainer}>
               <Text style={styles.quantityLabel}>Quantidade</Text>
               <View style={styles.quantityControls}>
-                <TouchableOpacity style={styles.qtyBtn} onPress={() => quantity > 1 && setQuantity(quantity - 1)}>
+                <TouchableOpacity
+                  style={[styles.qtyBtn, quantity <= 1 && styles.qtyBtnDisabled]}
+                  onPress={() => quantity > 1 && setQuantity(quantity - 1)}
+                  disabled={quantity <= 1}
+                >
                   <Feather name="minus" size={20} color={theme.corTextoPrincipal} />
                 </TouchableOpacity>
                 <Text style={styles.qtyValue}>{quantity}</Text>
@@ -152,7 +156,7 @@ export default function ProductModal({ visible, product, onClose, onConfirm }: P
               onPress={handleAdd}
               disabled={!selectedSize}
             >
-              <Text style={styles.addBtnText}>{selectedSize ? "Adicionar" : "Selecione um tamanho"}</Text>
+              <Text style={styles.addBtnText}>{selectedSize ? "Adicionar" : "Selecione uma variação"}</Text>
               {selectedSize && (
                 <Text style={styles.addBtnPrice}>R$ {currentTotal.toFixed(2).replace(".", ",")}</Text>
               )}
@@ -190,6 +194,7 @@ const getStyles = (theme: any) =>
     quantityLabel: { fontSize: 18, fontWeight: "800", color: theme.corTextoPrincipal },
     quantityControls: { flexDirection: "row", alignItems: "center" },
     qtyBtn: { width: 40, height: 40, backgroundColor: theme.fundoGeral, borderRadius: 8, justifyContent: "center", alignItems: "center" },
+    qtyBtnDisabled: { opacity: 0.35 },
     qtyValue: { width: 40, textAlign: "center", fontSize: 20, fontWeight: "900" },
     footer: { padding: 20, borderTopWidth: 1, borderTopColor: theme.borda },
     addBtn: { flexDirection: "row", justifyContent: "space-between", backgroundColor: theme.corBotoes, padding: 20, borderRadius: 16 },

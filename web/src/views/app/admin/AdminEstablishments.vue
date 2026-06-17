@@ -80,7 +80,7 @@ const actions = [
           <span v-else class="text-[#757575]">—</span>
         </template>
         <template #cell-status="{ item }">
-          <StatusBadge v-if="item.subscription?.status" :status="item.subscription.status" type="subscription" />
+          <StatusBadge v-if="item.subscription?.status" :status="item.subscription.status?.nome" type="subscription" />
           <span v-else class="text-[#757575] text-sm">—</span>
         </template>
       </DataTable>

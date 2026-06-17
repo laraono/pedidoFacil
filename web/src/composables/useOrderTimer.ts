@@ -12,7 +12,9 @@ export function useOrderTimer(orderOrGetter: OrderOrGetter, alertMinutes: number
     const val = typeof orderOrGetter === "function"
       ? orderOrGetter()?.createdAt
       : orderOrGetter?.createdAt;
-    return val instanceof Date ? val : (val ? new Date(val) : null);
+    if (!val) return null;
+    if (typeof (val as any).getTime === 'function') return val as Date;
+    return new Date(val as string);
   }
 
   function update() {

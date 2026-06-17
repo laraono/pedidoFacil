@@ -5,7 +5,7 @@ import { auditLog } from '../utils/logger';
 
 export const couponLimiter = rateLimit({
     windowMs: 60 * 1000,
-    max: 20,
+    max: 200,
     handler: (req: Request, res: Response) => {
         res.status(429).json({
             error: 'Muitas tentativas. Tente novamente mais tarde.',

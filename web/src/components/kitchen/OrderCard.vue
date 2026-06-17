@@ -27,7 +27,7 @@
   );
 
   const { elapsedTime, isDelayed } = useOrderTimer(
-    () => props.order.createdAt,
+    () => props.order,
     props.alertMinutes,
   );
 
@@ -103,8 +103,8 @@
       <div
         class="p-4 flex justify-between items-center border-b border-[#E0E0E0] bg-gray-50"
       >
-        <div class="flex items-center gap-3">
-          <div class="flex flex-col">
+        <div class="flex items-center gap-2 min-w-0 flex-1">
+          <div class="flex flex-col min-w-0">
             <span
               class="text-[9px] font-black uppercase tracking-[0.2em] leading-none"
               :class="isAutoatendimento ? 'text-blue-500' : 'text-[#757575]'"
@@ -112,7 +112,7 @@
               {{ isAutoatendimento ? "Autoatendimento" : unitLabel }}
             </span>
             <span
-              class="text-[#212121] font-black text-base uppercase italic leading-none"
+              class="text-[#212121] font-black text-sm md:text-base uppercase italic leading-none truncate"
             >
               {{
                 isAutoatendimento && order.customerName
@@ -123,16 +123,16 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 md:gap-2 shrink-0">
           <div
-            class="flex items-center gap-2 font-mono text-xl font-black px-4 py-1.5 rounded border transition-colors"
+            class="flex items-center gap-1 md:gap-1.5 font-mono text-sm font-black px-2 py-1.5 rounded border transition-colors"
             :class="
               isDelayed && order.status !== 'ready'
                 ? 'bg-red-600 text-white border-red-400'
                 : 'bg-gray-100 text-[#212121] border-[#E0E0E0]'
             "
           >
-            <Clock :size="18" stroke-width="3" />
+            <Clock :size="16" stroke-width="3" class="shrink-0" />
             {{ elapsedTime }}
           </div>
 

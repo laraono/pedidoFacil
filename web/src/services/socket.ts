@@ -10,7 +10,7 @@ export function connectSocket(room: string): Socket {
     socket = io(BACKEND_URL, {
       withCredentials: true,
       transports: ['websocket'],
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 30,
       timeout: 10000,
     });
 

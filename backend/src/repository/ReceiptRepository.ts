@@ -15,12 +15,8 @@ export class ReceiptRepository extends Repository<Receipt> {
             .where('pay.establishment = :id', { id: establishmentId })
             .andWhere('receipt.createdAt BETWEEN :start AND :end', { start, end });
 
-        const [emitidas, faturamentoRaw, comCpf, comErro] = await Promise.all([
+        const [emitidas, comCpf, comErro] = await Promise.all([
             qb.clone().andWhere('st.nome = :s', { s: ReceiptStatus.AUTORIZADA }).getCount(),
-            qb.clone()
-                .select('SUM(receipt.totalValue)', 'total')
-                .andWhere('st.nome = :s', { s: ReceiptStatus.AUTORIZADA })
-                .getRawOne(),
             qb.clone()
                 .andWhere('st.nome = :s', { s: ReceiptStatus.AUTORIZADA })
                 .andWhere('receipt.cpfcnpj IS NOT NULL')
@@ -30,12 +26,7 @@ export class ReceiptRepository extends Repository<Receipt> {
                 .getCount(),
         ]);
 
-        return {
-            emitidas,
-            faturado: parseFloat(faturamentoRaw?.total || 0),
-            comCpf,
-            comErro,
-        };
+        return { emitidas, comCpf, comErro };
     }
 
     async findByEstablishment(establishmentId: number, filters: any) {

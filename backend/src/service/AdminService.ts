@@ -54,7 +54,13 @@ export class AdminService {
         return { id: saved.id, name: saved.name, email: saved.email };
     }
 
-    async update(adminId: number, data: UpdateAdminDTO) {
+    async update(requesterId: number, adminId: number, data: UpdateAdminDTO) {
+        const masterId = await this.getMasterId();
+
+        if (adminId !== requesterId && requesterId !== masterId) {
+            throw new AppError('Apenas o admin master pode alterar dados de outros admins.', 403);
+        }
+
         const admin = await this.repo.findOne({ where: { id: adminId } });
         if (!admin) throw new AppError('Admin não encontrado.', 404);
 

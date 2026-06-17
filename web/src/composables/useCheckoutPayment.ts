@@ -128,6 +128,7 @@ export function useCheckoutPayment(
       const num = Math.min(100, parseInt(target.value.replace(/\D/g, ""), 10) || 0);
       discountValue.value = num;
       discountRaw.value = num === 0 ? "" : String(num);
+      target.value = discountRaw.value;
     } else {
       let val = target.value.replace(/[^\d,]/g, "");
       const commaIdx = val.indexOf(",");
@@ -142,6 +143,7 @@ export function useCheckoutPayment(
       const clamped = Math.min(parsed, subtotal.value);
       discountValue.value = clamped;
       discountRaw.value = clamped < parsed ? clamped.toFixed(2).replace(".", ",") : masked;
+      target.value = discountRaw.value;
     }
   }
 

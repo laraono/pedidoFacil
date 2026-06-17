@@ -12,13 +12,14 @@ import { useAuthStore } from "@/stores/auth";
 import { establishmentApi } from "@/services/establishmentApi";
 
 import SubscriptionGuard from "@/components/SubscriptionGuard.vue";
+import { BaseButton } from "@/components/ui";
 import ToastMessage from "@/components/ui/ToastMessage.vue";
 import MenuProductModal from "@/components/menu/MenuProductModal.vue";
 import MenuCartModal from "@/components/menu/MenuCartModal.vue";
 import MenuComandaModal from "@/components/menu/MenuComandaModal.vue";
 import MenuVisualEditor from "@/components/menu/MenuVisualEditor.vue";
 
-import { Utensils, Plus, ChefHat } from "lucide-vue-next";
+import { Utensils, Plus, ChefHat, ShoppingCart } from "lucide-vue-next";
 
 const route = useRoute();
 const router = useRouter();
@@ -112,29 +113,73 @@ function closeVisuals() {
       <div v-if="imageUrl" class="absolute inset-0 z-0 fixed" />
 
       <div class="relative z-10 flex flex-col h-screen overflow-hidden max-w-7xl mx-auto w-full">
-        <header class="p-4 sm:p-6 shrink-0 border-b border-white/10 flex items-center gap-4">
-          <div class="w-20 h-20 bg-white rounded flex items-center justify-center shadow-lg overflow-hidden">
+        <!-- Header -->
+        <header class="px-4 py-3 md:p-6 shrink-0 border-b border-white/10 flex items-center gap-3 md:gap-4">
+          <div class="w-12 h-12 md:w-20 md:h-20 bg-white rounded flex items-center justify-center shadow-lg overflow-hidden shrink-0">
             <img v-if="imageUrl" :src="imageUrl" class="w-full h-full object-contain p-1" />
-            <Utensils v-else :size="24" :style="{ color: textColor }" />
+            <Utensils v-else :size="20" :style="{ color: textColor }" />
           </div>
           <div>
-            <h1 class="text-2xl font-black tracking-tight leading-none" :style="{ color: textColor }">
+            <h1 class="text-lg md:text-2xl font-black tracking-tight leading-none" :style="{ color: textColor }">
               {{ establishmentName }}
             </h1>
-            <p class="opacity-70 text-sm mt-1" :style="{ color: textColor }">O que vai desejar hoje?</p>
+            <p class="hidden md:block opacity-70 text-sm mt-1" :style="{ color: textColor }">O que vai desejar hoje?</p>
           </div>
         </header>
 
-        <div class="flex flex-1 overflow-hidden relative">
-          <aside class="w-1/3 sm:w-64 overflow-y-auto custom-scrollbar p-3 sm:p-4 border-r border-white/5 shrink-0">
+        <nav class="md:hidden shrink-0 border-b border-white/10 overflow-x-auto no-scrollbar">
+          <div class="flex gap-2.5 px-3 py-3 min-w-max">
             <button
               v-for="category in productsByCategory"
               :key="category.id"
               @click="activeCategoryId = category.id"
-              class="relative w-full text-left rounded mb-3 transition-all shadow-sm flex overflow-hidden group"
+              class="relative flex items-end shrink-0 rounded-xl overflow-hidden transition-all active:scale-95 shadow-md"
+              :class="[
+                category.image ? 'w-36 h-28' : 'h-12 px-5 items-center',
+                !category.image && activeCategoryId !== category.id ? 'bg-white/10' : '',
+              ]"
+              :style="!category.image
+                ? activeCategoryId === category.id
+                  ? { backgroundColor: categoryColor, color: '#ffffff' }
+                  : { color: textColor }
+                : {}"
+            >
+              <template v-if="category.image">
+                <div
+                  class="absolute inset-0 bg-cover bg-center"
+                  :style="{ backgroundImage: `url(${getImageUrl(category.image)})` }"
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                <div
+                  class="absolute inset-0 transition-opacity duration-200"
+                  :style="{ backgroundColor: categoryColor, opacity: activeCategoryId === category.id ? 0.55 : 0 }"
+                />
+                <div
+                  v-if="activeCategoryId === category.id"
+                  class="absolute inset-0 rounded-xl border-2 transition-all"
+                  :style="{ borderColor: categoryColor }"
+                />
+              </template>
+              <span
+                class="relative z-10 font-bold leading-tight truncate"
+                :class="category.image ? 'text-white text-sm px-2 pb-2 drop-shadow max-w-[130px]' : 'text-base'"
+              >
+                {{ category.name }}
+              </span>
+            </button>
+          </div>
+        </nav>
+
+        <div class="flex flex-1 overflow-hidden relative">
+          <aside class="hidden md:flex md:w-56 lg:w-64 overflow-y-auto custom-scrollbar p-4 border-r border-white/5 shrink-0 flex-col gap-2">
+            <button
+              v-for="category in productsByCategory"
+              :key="category.id"
+              @click="activeCategoryId = category.id"
+              class="relative w-full text-left rounded-lg transition-all shadow-sm flex overflow-hidden group"
               :class="[
                 activeCategoryId === category.id ? 'shadow-lg scale-[1.02] z-10' : 'hover:scale-[1.02] hover:bg-white/5',
-                category.image ? 'h-24 sm:h-28 items-end p-4' : 'p-4 items-center justify-between',
+                category.image ? 'h-24 items-end p-4' : 'p-3 items-center',
               ]"
               :style="!category.image
                 ? activeCategoryId === category.id
@@ -152,56 +197,89 @@ function closeVisuals() {
                   class="absolute inset-0 transition-opacity duration-300"
                   :style="{ backgroundColor: categoryColor, opacity: activeCategoryId === category.id ? 0.6 : 0 }"
                 />
-                <div
-                  v-if="activeCategoryId === category.id"
-                  class="absolute inset-0 border-[1px] rounded transition-all"
-                  :style="{ borderColor: categoryColor }"
-                />
               </template>
               <span
                 class="relative z-10 truncate w-full tracking-wide"
-                :class="category.image ? 'text-white text-lg font-black drop-shadow-lg' : 'text-sm sm:text-base font-bold'"
+                :class="category.image ? 'text-white font-black drop-shadow-lg' : 'text-sm font-bold'"
               >
                 {{ category.name }}
               </span>
             </button>
           </aside>
 
-          <main class="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 pb-32">
+          <!-- Área de conteúdo -->
+          <main class="flex-1 overflow-y-auto custom-scrollbar pb-32">
             <div v-if="selectedCategory" class="animate-fadeIn">
-              <h2 class="text-3xl font-black mb-6 pb-2 border-b border-white/10 inline-block" :style="{ color: textColor }">
-                {{ selectedCategory.name }}
-              </h2>
-              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+              <div class="hidden md:block px-6 pt-6 pb-4">
+                <h2 class="text-3xl font-black pb-2 border-b border-white/10 inline-block" :style="{ color: textColor }">
+                  {{ selectedCategory.name }}
+                </h2>
+              </div>
+
+              <div class="md:hidden flex flex-col gap-3 p-3">
                 <div
                   v-for="product in selectedCategory.products"
                   :key="product.id"
                   @click="openProductModal(product)"
-                  class="rounded p-5 shadow-xl cursor-pointer hover:-translate-y-1 transition-all duration-300 flex flex-col h-full border border-white/5 group relative overflow-hidden"
+                  class="flex items-center gap-4 p-3 rounded-xl cursor-pointer active:scale-[0.98] transition-all shadow-sm"
                   :style="{ backgroundColor: cardBg }"
                 >
                   <div
                     v-if="product.image"
-                    class="w-full h-40 rounded mb-4 bg-cover bg-center shadow-inner"
+                    class="w-24 h-24 rounded-lg shrink-0 bg-cover bg-center shadow-sm"
+                    :style="{ backgroundImage: `url(${getImageUrl(product.image)})` }"
+                  />
+                  <div
+                    v-else
+                    class="w-24 h-24 rounded-lg shrink-0 flex items-center justify-center opacity-20 bg-white/5"
+                  >
+                    <Utensils :size="28" :style="{ color: textColor }" />
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-lg leading-tight" :style="{ color: textColor }">{{ product.name }}</h3>
+                    <p v-if="product.description" class="text-sm opacity-60 line-clamp-2 mt-1" :style="{ color: textColor }">{{ product.description }}</p>
+                    <div class="flex items-baseline gap-1 mt-2">
+                      <span v-if="product.sizes?.length > 1" class="text-[10px] opacity-60 uppercase tracking-widest font-bold" :style="{ color: textColor }">a partir de</span>
+                      <span class="font-black text-xl" :style="{ color: buttonColor }">
+                        {{ formatCurrency(product.sizes?.length ? Math.min(...product.sizes.map(s => s.price)) : (product.price ?? 0)) }}
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-md transition-transform active:scale-90"
+                    :style="{ backgroundColor: buttonColor, color: buttonTextColor }"
+                  >
+                    <Plus :size="24" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="hidden md:grid grid-cols-2 xl:grid-cols-3 gap-5 px-6 pb-6">
+                <div
+                  v-for="product in selectedCategory.products"
+                  :key="product.id"
+                  @click="openProductModal(product)"
+                  class="rounded-lg p-5 shadow-xl cursor-pointer hover:-translate-y-1 transition-all duration-300 flex flex-col border border-white/5 group relative overflow-hidden"
+                  :style="{ backgroundColor: cardBg }"
+                >
+                  <div
+                    v-if="product.image"
+                    class="w-full h-44 rounded-md mb-4 bg-cover bg-center shadow-inner"
                     :style="{ backgroundImage: `url(${getImageUrl(product.image)})` }"
                   />
                   <div class="flex-1 z-10">
-                    <h3 class="font-bold text-xl mb-2 leading-tight" :style="{ color: textColor }">{{ product.name }}</h3>
+                    <h3 class="font-bold text-lg mb-1 leading-tight" :style="{ color: textColor }">{{ product.name }}</h3>
                     <p class="text-sm opacity-70 line-clamp-2" :style="{ color: textColor }">{{ product.description }}</p>
                   </div>
-                  <div class="flex items-center justify-between mt-6 pt-4 border-t border-white/5 z-10">
+                  <div class="flex items-center justify-between mt-5 pt-4 border-t border-white/5 z-10">
                     <div class="flex flex-col">
-                      <span
-                        v-if="product.sizes?.length > 1"
-                        class="text-[10px] opacity-70 uppercase tracking-widest font-bold mb-0.5"
-                        :style="{ color: textColor }"
-                      >A partir de</span>
+                      <span v-if="product.sizes?.length > 1" class="text-[10px] opacity-70 uppercase tracking-widest font-bold mb-0.5" :style="{ color: textColor }">A partir de</span>
                       <span class="font-black text-xl" :style="{ color: buttonColor }">
-                        {{ formatCurrency(product.sizes?.[0]?.price ?? product.price ?? 0) }}
+                        {{ formatCurrency(product.sizes?.length ? Math.min(...product.sizes.map(s => s.price)) : (product.price ?? 0)) }}
                       </span>
                     </div>
                     <div
-                      class="w-10 h-10 rounded flex items-center justify-center font-bold transition-transform group-hover:scale-110 shadow-lg"
+                      class="w-10 h-10 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 shadow-lg"
                       :style="{ backgroundColor: buttonColor, color: buttonTextColor }"
                     >
                       <Plus :size="20" />
@@ -211,9 +289,9 @@ function closeVisuals() {
               </div>
             </div>
 
-            <div v-if="productsByCategory.length === 0" class="flex flex-col items-center justify-center h-full text-center px-6 py-12">
-              <ChefHat class="w-16 h-16 mb-4 opacity-30" :style="{ color: textColor }" />
-              <p class="text-lg font-bold mb-2" :style="{ color: textColor }">Sem itens disponíveis no cardápio</p>
+            <div v-if="productsByCategory.length === 0" class="flex flex-col items-center justify-center h-full text-center px-6 py-16">
+              <ChefHat class="w-14 h-14 mb-4 opacity-30" :style="{ color: textColor }" />
+              <p class="text-base font-bold mb-2" :style="{ color: textColor }">Sem itens disponíveis no cardápio</p>
               <p class="text-sm opacity-60" :style="{ color: textColor }">
                 Altere a disponibilidade de produtos em
                 <a href="/app/settings/products" class="underline font-bold hover:opacity-80 transition-opacity">Gerenciar Produtos</a>.
@@ -230,17 +308,23 @@ function closeVisuals() {
         leave-to-class="translate-y-24 opacity-0"
       >
         <div v-if="cart.length > 0" class="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-xl px-4 z-40">
-          <button
-            @click="isCartModalOpen = true"
+          <BaseButton
+            size="lg"
+            class="w-full shadow-[0_10px_40px_rgba(0,0,0,0.4)] hover:scale-[1.02]"
             :style="{ backgroundColor: buttonColor, color: buttonTextColor }"
-            class="w-full font-black py-4 px-6 rounded shadow-[0_10px_40px_rgba(0,0,0,0.4)] flex items-center justify-between hover:scale-[1.02] active:scale-95 transition-all"
+            @click="isCartModalOpen = true"
           >
-            <div class="flex items-center gap-3">
-              <div class="bg-black/20 px-3 py-1 rounded text-sm" :style="{ color: buttonTextColor }">{{ cartQuantity }}</div>
-              <span class="text-lg tracking-tight">Ver carrinho</span>
+            <div class="flex items-center justify-between w-full font-black">
+              <div class="flex items-center gap-3">
+                <div class="bg-black/20 px-3 py-1 rounded-lg text-sm flex items-center gap-1.5">
+                  <ShoppingCart :size="14" />
+                  {{ cartQuantity }}
+                </div>
+                <span class="text-lg tracking-tight">Ver carrinho</span>
+              </div>
+              <span class="text-lg">{{ formatCurrency(cartTotal) }}</span>
             </div>
-            <span class="text-lg">{{ formatCurrency(cartTotal) }}</span>
-          </button>
+          </BaseButton>
         </div>
       </Transition>
 
@@ -273,7 +357,7 @@ function closeVisuals() {
 
         <MenuComandaModal
           v-if="isComandaModalOpen"
-          :comandas="comandaStore.comandas"
+          :comandas="comandaStore.comandas.filter(c => !c.isAutoatendimento)"
           :comandaUnitLabel="comandaUnitLabel"
           :isSubmitting="isSubmitting"
           :theme="theme"
@@ -316,6 +400,9 @@ function closeVisuals() {
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156,163,175,0.5); border-radius: 10px; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 @keyframes slideUp {
   from { transform: translateY(100%); opacity: 0; }

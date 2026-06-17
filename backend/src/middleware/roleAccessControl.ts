@@ -15,7 +15,7 @@ export function checkPermission(...permissoes: string[]) {
 
         const lista = role.permissions?.map(p => p.name) ?? [];
 
-        const commonItems = lista.filter(item => permissoes.includes(item) || item === 'ALL');
+        const commonItems = lista.filter(item => permissoes.includes(item));
 
         if (commonItems.length === 0) {
             return res.status(403).json({ error: 'Acesso negado.' })

@@ -69,20 +69,20 @@ cd pedidofacil
 
 ### 2. Configure o ambiente
 
-Preencha as credenciais do banco de dados em `backend/.env`. 
-
-O `JWT_SECRET` é gerado automaticamente pelo script de instalação - não é necessário preencher manualmente.
-
-As demais variáveis (`MERCADOPAGO_*`, `MAIL_*`) podem ser obtidas pelas instruções da 2.1, ou, opcionalmente, devido a complexidade das configurações, o `.env.example` traz credenciais de teste criadas para este projeto, que podem ser usadas como alternativa para os tutoriais de configuração abaixo.
-
-Para utilizá-los, execute:
+Copie os arquivos de configuração:
 
 ```bash
 cp backend/.env.example backend/.env
 cp web/.env.example web/.env
 ```
 
-### 2.1 Integrações
+Devido a complexidade da configuração de ambiente, o `.env.example` já contêm credenciais de teste obrigatórias prontas para uso. Assim,**nenhum ajuste adicional é necessário para rodar localmente.**
+
+> O `JWT_SECRET` é gerado automaticamente pelo `./install.sh` caso esteja vazio.
+
+Para configurar suas próprias credenciais (MercadoPago, e-mail), consulte a seção 2.1
+
+### 2.1 Integrações (opcional)
 
 #### MercadoPago (assinaturas e pagamentos)
 
@@ -139,9 +139,9 @@ O bucket é criado automaticamente na primeira execução. As credenciais padrã
 
 ---
 
-#### E-mail (recuperação de senha)
+#### E-mail (Formulário de Contato)
 
-Necessário apenas para testar o fluxo de "esqueci minha senha". Use as credenciais SMTP do Gmail em `backend/.env`:
+Necessário apenas para testar o fluxo de "Formulário de Contato". Use as credenciais SMTP do Gmail em `backend/.env`:
 
 ```
 MAIL_USER=seu_email@gmail.com
@@ -150,6 +150,7 @@ MAIL_PASS=sua_senha_de_app
 
 Para obter a senha de app do Gmail, consulte o [tutorial da HostGator](https://www.hostgator.com.br/blog/como-usar-o-servidor-smtp-do-google/) (guia prático não oficial) ou a [documentação oficial do Google](https://knowledge.workspace.google.com/admin/gmail/advanced/route-outgoing-smtp-relay-messages-through-google?hl=pt-br) (oficial, apesar de ser voltada exclusivamente ao Google Workspace).
 
+Caso a credencial estiver vazia, o campo não estará visível.
 ---
 
 ### 3. Instale e prepare o ambiente
@@ -162,8 +163,8 @@ O script irá:
 1. Verificar Docker e Node.js.
 2. Instalar dependências do backend, web e mobile.
 3. Subir o banco de dados via Docker e executar as migrations.
-4. Gerar o `JWT_SECRET` automaticamente.
-5. Criar o primeiro acesso de administrador (nome, e-mail e senha).
+4. Gerar o `JWT_SECRET` automaticamente (se não estiver preenchido).
+5. Disponibilizar login e senha do admin master para acessá-lo
 
 ### 4. Inicie o sistema
 
@@ -171,7 +172,11 @@ O script irá:
 ./up.sh
 ```
 
-Acesse a plataforma pelo link exibido. O QR code do Expo (mobile) também aparecerá no terminal — escaneie com o app [**Expo Go**](https://play.google.com/store/apps/details?id=host.exp.exponent&hl=pt_BR&pli=1).
+O sistema ficará disponível em:
+
+- **http://localhost:5173** 
+
+O QR code do Expo (mobile) também aparecerá no terminal — escaneie com o app [**Expo Go**](https://play.google.com/store/apps/details?id=host.exp.exponent&hl=pt_BR&pli=1).
 
 Logs ficam em `logs/backend.log`, `logs/web.log` e `logs/mobile.log`.
 
@@ -179,23 +184,25 @@ Logs ficam em `logs/backend.log`, `logs/web.log` e `logs/mobile.log`.
 
 ## Primeiro Acesso
 
-1. Acesse plataforma e autentique-se com o e-mail e senha definidos no `./install.sh`.
+1. Acesse a plataforma e autentique-se com as credenciais exibidas ao final do `./up.sh` (`admin@admin.com` / `Admin@123`).
 2. Acesse o painel **Admin** e crie ao menos 2 planos antes de continuar.
 3. Realize o logout e acesse a landing page. Clique em um dos planos para iniciar o cadastro de um gerente e preencha o onboarding com dados do estabelecimento.
    > Para o onboarding, é possível usar dados gerados pelos geradores de [CNPJ](https://www.4devs.com.br/gerador_de_cnpj) e [CPF](https://www.4devs.com.br/gerador_de_cpf) para testes.
 4. Utilize a opção **Cargos Básicos** para configurar os cargos iniciais.
-5. Para a etapa de assinatura, use os [cartões de teste oficiais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards) e faça o pagamento **com o e-mail da conta do consumidor de teste** obtida na etapa 2.1, seção do Mercado Pago, ou disponibilizada a seguir: 
-``test_user_5092580542816123576@testuser.com``
-      - Use os [cartões de teste oficiais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards) e faça o pagamento com as credenciais de comprador. Sugestão:
+5. Para a etapa de assinatura, faça o pagamento com a conta do consumidor de teste:
 
-         ``5031 4332 1540 6351``
+   **E-mail:** `test_user_5092580542816123576@testuser.com`
 
-         ``11/30 123``
-         
-         ``Nome: APRO``
-         
-         ``CPF: 123.456.789-09``
-      
+   Use os [cartões de teste oficiais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards) ou os dados abaixo:
+
+   | Campo | Valor |
+   |---|---|
+   | Número | `5031 4332 1540 6351` |
+   | Validade / CVV | `11/30` / `123` |
+   | Nome | `APRO` |
+   | CPF | `123.456.789-09` |
+
+
 6. Cadastre produtos e inicie a operação pelo **Cardápio**.
 7. Depois, mova-se para a área da **Cozinha** para preparar o pedido.
 8. E logo ápos, para o **Caixa**, finalizando o processo básico de um restaurante.
