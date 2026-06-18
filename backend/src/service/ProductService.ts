@@ -97,6 +97,10 @@ export class ProductService {
         if (!product || product.ativo) {
             throw new AppError('Apenas produtos inativos podem ser excluídos.', 400);
         }
+        const hasActiveOrders = await this.productRepository.hasActiveOrders(productId);
+        if (hasActiveOrders) {
+            throw new AppError('Não é possível excluir um produto com pedidos em andamento.', 409);
+        }
         await this.productRepository.softDeleteProduct(productId);
     }
 

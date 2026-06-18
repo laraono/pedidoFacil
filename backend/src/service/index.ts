@@ -83,7 +83,7 @@ const menuService = new MenuService(categoryRepository, productRepository);
 const subscriptionService = new SubscriptionService(planRepository, subscriptionRepository, subscriptionPaymentRepository, mercadoPagoService, AppDataSource);
 const planService = new PlanService(planRepository, subscriptionService, mercadoPagoService, AppDataSource);
 
-const webhookService = new WebhookService(subscriptionRepository, subscriptionPaymentRepository, mercadoPagoService);
+const webhookService = new WebhookService(subscriptionRepository, subscriptionPaymentRepository, mercadoPagoService, AppDataSource);
 
 export {
   authService,

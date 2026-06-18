@@ -20,11 +20,13 @@ export class OrderController {
                 return res.status(401).json({ error: "Sessão ou código de estabelecimento inválido." });
             }
 
+            const clientRequestId = req.headers['x-idempotency-key'] as string | undefined;
             const order = await this.orderService.createOrder({
                 ...req.body,
                 comandaId: Number(comandaId),
                 establishmentId: usuario.estabelecimento,
-                userId: usuario.id || usuario.ID_Usuario 
+                userId: usuario.id || usuario.ID_Usuario,
+                clientRequestId: clientRequestId ?? null,
             }) as any;
 
             const fullOrder = await this.orderService.getOrderWithDetails(order.id);
@@ -39,7 +41,8 @@ export class OrderController {
                 };
             }) ?? [];
 
-            getIO().to('kitchen').emit('new_order', {
+            const estabId = usuario.estabelecimento;
+            getIO().to(`kitchen_${estabId}`).emit('new_order', {
                 orderId:      order.id,
                 comandaId:    Number(comandaId),
                 comandaLabel: req.body.comandaLabel || `Comanda #${comandaId}`,
@@ -87,7 +90,7 @@ export class OrderController {
                 };
             }) ?? [];
 
-            getIO().to('kitchen').emit('new_order', {
+            getIO().to(`kitchen_${usuario.estabelecimento}`).emit('new_order', {
                 orderId:      order.id,
                 comandaId:    order.comanda.id,
                 comandaLabel: comandaLabel,
@@ -123,7 +126,8 @@ export class OrderController {
             Number(comandaId)
         );
 
-        getIO().to('kitchen').to('cashier').to('waiter').emit('order_status_updated', {
+        const estabId = usuario.estabelecimento;
+        getIO().to(`kitchen_${estabId}`).to(`cashier_${estabId}`).to(`waiter_${estabId}`).emit('order_status_updated', {
             orderId:   Number(orderId),
             comandaId: Number(comandaId),
             status,
@@ -166,13 +170,14 @@ export class OrderController {
 
         auditLog('cancel_order.success', { orderId, userId: usuario.id, description: cancellationDescription });
         
-        getIO().to('kitchen').to('cashier').emit('order_cancelled', {
+        const estabId = usuario.estabelecimento;
+        getIO().to(`kitchen_${estabId}`).to(`cashier_${estabId}`).emit('order_cancelled', {
             orderId: Number(orderId),
             comandaId: result.comandaId
         });
 
         if (result.comandaCancelled) {
-            getIO().to('kitchen').to('cashier').emit('comanda_cancelled', {
+            getIO().to(`kitchen_${estabId}`).to(`cashier_${estabId}`).emit('comanda_cancelled', {
                 comandaId: result.comandaId
             });
         }

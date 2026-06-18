@@ -23,8 +23,8 @@ export class MenuController {
         const establishmentId = usuario?.estabelecimento || req.query.establishmentId;
 
         if (!establishmentId) {
-            return res.status(400).json({ 
-                message: "Identificação do estabelecimento não fornecida. Passe via Token ou ?establishmentId=1 na URL." 
+            return res.status(400).json({
+                message: "Identificação do estabelecimento não fornecida."
             });
         }
 

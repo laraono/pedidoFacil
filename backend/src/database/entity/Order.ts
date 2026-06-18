@@ -25,6 +25,9 @@ export class Order {
     @Column({ type: 'boolean', name: 'Autoatendimento', nullable: false, default: false })
     autoatendimento!: boolean
 
+    @Column({ type: 'varchar', length: 36, name: 'Idempotency_Key', nullable: true, unique: true })
+    clientRequestId?: string | null
+
     @CreateDateColumn({
         name: 'Data_Hora_Chegada',
         type: "timestamp",

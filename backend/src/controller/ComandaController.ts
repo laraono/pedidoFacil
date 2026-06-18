@@ -84,11 +84,12 @@ export class ComandaController {
         const { comandaId } = req.params;
 
         await this.comandaService.cancelComanda({
-            comandaId: Number(comandaId), 
+            comandaId: Number(comandaId),
             ...req.body
         });
-        
-        getIO().to('cashier').to('kitchen').emit('comanda_cancelled', {
+
+        const estabId = (req as any).usuario?.estabelecimento;
+        getIO().to(`cashier_${estabId}`).to(`kitchen_${estabId}`).emit('comanda_cancelled', {
             comandaId: Number(comandaId)
         });
 

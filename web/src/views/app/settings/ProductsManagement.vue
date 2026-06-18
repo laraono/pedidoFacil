@@ -273,7 +273,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
 <template>
   <main class="max-w-6xl mx-auto py-12 px-6 font-inter">
     <ToastMessage />
-    <PageHeader title="Gerenciar Produtos" subtitle="Controle do cardápio">
+    <PageHeader title="Gerenciar Produtos" subtitle="Controle do cardápio" backTo="/app/dashboard">
       <template #actions>
         <BaseButton
           :variant="showInactive ? 'secondary' : 'ghost'"

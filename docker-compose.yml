@@ -1,0 +1,71 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: pedido_facil_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASS}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_PASSWORD: ${DB_PASS}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "--silent"]
+      interval: 5s
+      timeout: 10s
+      retries: 12
+      start_period: 20s
+
+  minio:
+    image: minio/minio
+    container_name: pedido_facil_minio
+    ports:
+      - "4566:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY:-minioadmin}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    restart: always
+
+  backend:
+    build:
+      context: ./backend
+    container_name: pedido_facil_backend
+    env_file: ./backend/.env
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      LOCALSTACK_ENDPOINT: http://minio:9000
+      MINIO_PUBLIC_ENDPOINT: /storage
+      NODE_ENV: production
+    ports:
+      - "${PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    restart: always
+
+  web:
+    build:
+      context: ./web
+      args:
+        VITE_API_URL: /api/v1
+        VITE_MP_PUBLIC_KEY: ${VITE_MP_PUBLIC_KEY:-}
+    container_name: pedido_facil_web
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  mysql_data:
+  minio_data:

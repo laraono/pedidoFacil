@@ -207,7 +207,8 @@ const handleExport = () => window.print();
           <h2 class="font-black text-[#212121]">Faturamento Mensal (MRR)</h2>
         </div>
 
-        <div class="flex items-end gap-3 h-48">
+        <div class="overflow-x-auto">
+        <div class="flex items-end gap-3 h-48 min-w-[480px]">
           <div
             v-for="(item, i) in monthlyRevenue"
             :key="i"
@@ -225,6 +226,7 @@ const handleExport = () => window.print();
             </div>
             <span class="text-[10px] font-black text-[#757575]">{{ item.month }}</span>
           </div>
+        </div>
         </div>
       </div>
 

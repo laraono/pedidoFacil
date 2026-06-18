@@ -84,7 +84,8 @@ function goToEstablishment(sub) {
     <div v-if="loading" class="py-20 text-center text-[#757575]">Carregando...</div>
 
     <div v-else class="bg-white border border-[#E0E0E0] rounded-xl overflow-hidden">
-      <table class="w-full">
+      <div class="overflow-x-auto">
+      <table class="w-full min-w-[700px]">
         <thead>
           <tr class="border-b border-[#E0E0E0] bg-gray-100">
             <th class="text-left px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[#757575]">Estabelecimento</th>
@@ -138,6 +139,7 @@ function goToEstablishment(sub) {
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
   </main>
 </template>

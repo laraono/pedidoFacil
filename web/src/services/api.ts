@@ -59,7 +59,7 @@ export async function request(path: string, options: CustomRequestInit = {}) {
 
   if (res.status === 401 && path !== '/refresh' && path !== '/login') {
     if (!getToken()) {
-      const err: any = new Error(data.message || data.error || `Erro ${res.status}`);
+      const err: any = new Error(data.message || data.error || 'Ocorreu um erro inesperado. Tente novamente mais tarde.');
       err.data = data;
       throw err;
     }
@@ -92,7 +92,7 @@ export async function request(path: string, options: CustomRequestInit = {}) {
 
       if (!retry.ok) {
         const retryData = await retry.json().catch(() => ({}));
-        throw new Error(retryData.message || retryData.error || `Erro ${retry.status}`);
+        throw new Error(retryData.message || retryData.error || 'Ocorreu um erro inesperado. Tente novamente mais tarde.');
       }
       return retry.json();
     } catch {
@@ -106,7 +106,7 @@ export async function request(path: string, options: CustomRequestInit = {}) {
   }
 
   if (!res.ok) {
-    const err: any = new Error(data.message || data.error || `Erro ${res.status}`);
+    const err: any = new Error(data.message || data.error || 'Ocorreu um erro inesperado. Tente novamente mais tarde.');
     err.data = data;
     throw err;
   }

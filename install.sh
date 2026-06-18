@@ -165,7 +165,7 @@ if nc -z localhost "$DB_PORT_CHECK" 2>/dev/null; then
 fi
 
 info "Iniciando containers Docker..."
-docker compose -f backend/docker-compose.yml up -d mysql minio
+docker compose --env-file backend/.env up -d db minio
 
 echo ""
 info "Aguardando o banco de dados ficar pronto..."
@@ -229,6 +229,20 @@ if ! npm run --prefix backend migration:run; then
   exit 1
 fi
 ok "Migrations aplicadas"
+
+echo ""
+
+# ── Build das imagens Docker ───────────────────────────────────────────────
+echo -e "${BOLD}  Preparando imagens Docker (backend + web)...${RESET}"
+echo -e "  ${DIM}(Necessário para ./up.sh --docker)${RESET}"
+echo ""
+
+VITE_MP_PUBLIC_KEY=$(grep "^VITE_MP_PUBLIC_KEY=" web/.env | cut -d= -f2)
+if ! VITE_MP_PUBLIC_KEY="$VITE_MP_PUBLIC_KEY" docker compose --env-file backend/.env build backend web; then
+  warn "Build das imagens falhou — execute ${BOLD}./up.sh${RESET} após corrigir o erro acima."
+else
+  ok "Imagens prontas"
+fi
 
 echo ""
 

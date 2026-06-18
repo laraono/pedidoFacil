@@ -66,8 +66,8 @@
           class="flex items-center gap-3 px-4 py-3 rounded cursor-pointer transition-all hover:translate-x-1"
           :class="
             route.path === item.route
-              ? 'bg-accent/15 text-accent font-bold'
-              : 'text-accent/60 hover:bg-primary-dark/10 hover:text-accent'
+              ? 'bg-accent/15 text-accent-light font-bold'
+              : 'text-accent-light/60 hover:bg-primary-dark/10 hover:text-accent'
           "
         >
           <component :is="item.icon" class="w-5 h-5" />

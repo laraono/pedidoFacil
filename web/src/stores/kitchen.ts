@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { request } from '@/services/api';
-import { connectSocket, getSocket } from '@/services/socket';
+import { connectSocket, getSocket, disconnectSocket } from '@/services/socket';
 
 export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'finished' | 'cancelled';
 
@@ -43,6 +43,7 @@ export interface KitchenOrder {
 
 export const useKitchenStore = defineStore('kitchen', () => {
   const orders = ref<KitchenOrder[]>([]);
+  let reconnectHandler: (() => void) | null = null;
 
   const pendingOrders = computed(() => orders.value.filter(o => o.status === 'pending'));
   const preparingOrders = computed(() => orders.value.filter(o => o.status === 'preparing'));
@@ -147,6 +148,8 @@ export const useKitchenStore = defineStore('kitchen', () => {
     const socket = getSocket();
     if (!socket) return;
 
+    reconnectHandler = () => fetchOrders();
+    socket.io.on('reconnect', reconnectHandler);
 
     socket.on('new_order', (data: any) => {
       const newOrder: KitchenOrder = {
@@ -191,7 +194,12 @@ export const useKitchenStore = defineStore('kitchen', () => {
     if (socket) {
       socket.off('new_order');
       socket.off('order_status_updated');
+      if (reconnectHandler) {
+        socket.io.off('reconnect', reconnectHandler);
+        reconnectHandler = null;
+      }
     }
+    disconnectSocket();
   }
 
   return {

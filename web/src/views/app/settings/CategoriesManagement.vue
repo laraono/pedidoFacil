@@ -161,7 +161,7 @@ const tableColumns = [
     <PageHeader
       title="Gerenciar Categorias"
       subtitle="Controle de categorias de produtos do cardápio"
-      backTo="back"
+      backTo="/app/dashboard"
     >
       <template #actions>
         <BaseButton

@@ -16,6 +16,7 @@ export function connectMobileSocket(): Socket | null {
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 2000,
+    auth: { totemCode: appConfig.selfServiceCode },
   });
 
   socket.on("connect", () => {

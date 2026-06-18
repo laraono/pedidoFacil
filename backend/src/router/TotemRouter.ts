@@ -12,7 +12,7 @@ export const totemRouter = express.Router();
 
 const totemLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 600,
+  max: 60,
   message: { error: 'Muitos pedidos enviados. Aguarde um momento.' }
 });
 

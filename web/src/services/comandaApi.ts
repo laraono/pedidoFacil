@@ -21,8 +21,12 @@ export const comandaApi = {
 
   create: (data: unknown) => request('/commands', { method: 'POST', body: data as BodyInit }),
 
-  addOrder: (comandaId: number | string, data: unknown) =>
-    request(`/commands/${Number(comandaId)}/orders`, { method: 'POST', body: data as BodyInit }),
+  addOrder: (comandaId: number | string, data: unknown, idempotencyKey?: string) =>
+    request(`/commands/${Number(comandaId)}/orders`, {
+      method: 'POST',
+      body: data as BodyInit,
+      headers: idempotencyKey ? { 'X-Idempotency-Key': idempotencyKey } : undefined,
+    }),
 
   putStatus: (comandaId: number, status: string) =>
     request(`/commands/${comandaId}`, { method: 'PUT', body: JSON.stringify({ status }) }),

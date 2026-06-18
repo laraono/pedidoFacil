@@ -43,6 +43,7 @@ export function useCashier() {
   const showCancelComandaModal = ref(false);
 
   let pollInterval: ReturnType<typeof setInterval> | null = null;
+  let reconnectHandler: (() => void) | null = null;
 
   onMounted(async () => {
     await Promise.all([
@@ -59,6 +60,9 @@ export function useCashier() {
 
     connectSocket('cashier');
     const socket = getSocket();
+
+    reconnectHandler = () => comandaStore.loadComandas();
+    socket?.io.on('reconnect', reconnectHandler);
 
     socket?.on('order_status_updated', (data: any) => {
       const localStatus = BACKEND_TO_LOCAL_STATUS[data.status] || data.status;
@@ -104,6 +108,10 @@ export function useCashier() {
       socket.off('order_status_updated');
       socket.off('comanda_cancelled');
       socket.off('order_cancelled');
+      if (reconnectHandler) {
+        socket.io.off('reconnect', reconnectHandler);
+        reconnectHandler = null;
+      }
     }
     disconnectSocket();
     if (pollInterval) clearInterval(pollInterval);

@@ -8,14 +8,22 @@ import { establishmentService } from '../service';
 import { validateRequest } from '../middleware/validateRequest';
 import { UpdateEstablishmentDTO } from '../dto/establishment/UpdateEstablishmentDTO';
 import { validateUpload } from '../middleware/validateUpload';
+import rateLimit from 'express-rate-limit';
 
 const establishmentRouter = Router();
 const establishmentController = new EstablishmentController(establishmentService);
+
+const codeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  handler: (req, res) => res.status(429).json({ error: 'Muitas tentativas. Tente novamente em 15 minutos.' }),
+});
 
 establishmentRouter.post('/check-cnpj', establishmentController.checkCnpj);
 
 establishmentRouter.get(
   '/code/:code',
+  codeLimiter,
   establishmentController.getByCode
 );
 

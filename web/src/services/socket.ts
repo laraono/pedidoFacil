@@ -9,9 +9,10 @@ export function connectSocket(room: string): Socket {
   if (!socket) {
     socket = io(BACKEND_URL, {
       withCredentials: true,
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       reconnectionAttempts: 30,
       timeout: 10000,
+      auth: { token: localStorage.getItem('accessToken') },
     });
 
     socket.on('connect_error', (err: Error) => {

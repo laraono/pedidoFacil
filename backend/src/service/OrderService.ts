@@ -36,6 +36,13 @@ export class OrderService {
   }
 
   async createOrder(data: any) {
+    if (data.clientRequestId) {
+      const existing = await this.dataSource.getRepository(Order).findOne({
+        where: { clientRequestId: data.clientRequestId },
+      });
+      if (existing) return existing;
+    }
+
     const comanda = await this.comandaService.getComanda(data.comandaId);
     if (!comanda) throw new AppError('Comanda não encontrada', 404);
 
@@ -52,6 +59,7 @@ export class OrderService {
         autoatendimento: createOrder.autoatendimento ?? false,
         comanda: comanda,
         createdBy: createOrder.userId ? { id: createOrder.userId } : undefined,
+        clientRequestId: createOrder.clientRequestId ?? null,
       }) as any;
 
       await this.saveItens(createOrder.itens, order, manager);

@@ -18,7 +18,10 @@ export class ConfigurationController {
   }
 
   async updateConfig(req: Request, res: Response) {
-      const establishmentId = (req as any).usuario?.estabelecimento || 1;
+      const establishmentId = (req as any).usuario?.estabelecimento;
+      if (!establishmentId) {
+        return res.status(403).json({ message: 'Estabelecimento não identificado no token.' });
+      }
       let configData = req.body;
 
     try {
@@ -66,14 +69,18 @@ export class ConfigurationController {
 
   async getConfig(req: Request, res: Response) {
     try {
-      const establishmentId = Number(req.params.establishmentId);
-      if (!establishmentId) {
+      const usuario = (req as any).usuario;
+      const requestedId = Number(req.params.establishmentId);
+      if (!requestedId) {
         return res.status(400).json({ message: 'ID do estabelecimento inválido.' });
+      }
+      if (!usuario?.estabelecimento || usuario.estabelecimento !== requestedId) {
+        return res.status(403).json({ message: 'Acesso negado.' });
       }
 
       const config =
         await this.configurationService.getOrCreateConfiguration(
-          establishmentId,
+          usuario.estabelecimento,
         );
       return res.status(200).json(config);
     } catch (error) {

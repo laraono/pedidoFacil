@@ -134,7 +134,7 @@ function onPriceInput(e: Event) {
   <main class="max-w-4xl mx-auto py-12 px-6 font-inter">
     <PageHeader
       title="Planos"
-      subtitle="CRUD de planos — máximo de 2 planos ativos"
+      subtitle="Administração de planos"
       :category-icon="ShieldAlert"
       category-label="Painel Admin"
     >

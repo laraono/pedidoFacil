@@ -35,6 +35,7 @@ export function useMenuOrder() {
         comandaIdParaEnviar = novaComanda.id || novaComanda;
       }
 
+      const idempotencyKey = crypto.randomUUID();
       await comandaApi.addOrder(comandaIdParaEnviar, {
         status: "Aguardando_Preparo",
         serviceType: "Garcom",
@@ -44,7 +45,7 @@ export function useMenuOrder() {
           observation: item.obs || "",
           productVariationId: item.sizeId,
         })),
-      });
+      }, idempotencyKey);
 
       await comandaStore.loadComandas();
       isComandaModalOpen.value = false;
