@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { planApi } from '@/services/planApi';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
 
 export const useFeaturesStore = defineStore('features', () => {
   const emailEnabled = ref(false);
+  const plansEnabled = ref(false);
 
   async function fetchFeatures() {
     try {
@@ -16,5 +18,14 @@ export const useFeaturesStore = defineStore('features', () => {
     }
   }
 
-  return { emailEnabled, fetchFeatures };
+  async function fetchPlansEnabled() {
+    try {
+      const plans = await planApi.list();
+      plansEnabled.value = Array.isArray(plans) && plans.length > 0;
+    } catch {
+      plansEnabled.value = false;
+    }
+  }
+
+  return { emailEnabled, plansEnabled, fetchFeatures, fetchPlansEnabled };
 });

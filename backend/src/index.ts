@@ -80,7 +80,7 @@ AppDataSource.initialize().then(async () => {
     app.use('/api/v1/admin', authenticatedLimiter, adminRouter)
     app.use('/api/v1', publicLimiter, authRouter);
     app.use('/api/v1', publicLimiter, planRouter);
-    app.use('/api/v1', publicLimiter, menuRouter);
+    app.use('/api/v1', menuRouter);
     app.use('/api/v1', publicLimiter, totemRouter);
     app.use('/api/v1/estabelecimento', authenticatedLimiter, establishmentRouter);
     app.use('/api/v1/contato', contactRouter);
@@ -96,7 +96,7 @@ AppDataSource.initialize().then(async () => {
     app.use('/api/v1/cupons', authenticatedLimiter, couponRouter);
     app.use('/api/v1', authenticatedLimiter, configRouter);
     app.use('/api/v1', authenticatedLimiter, subscriptionRouter);
-    app.use('/api/v1', authenticatedLimiter, paymentRouter);
+    app.use('/api/v1/payments', authenticatedLimiter, paymentRouter);
     app.use('/webhook', publicLimiter, webhookRouter);
     app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
     app.use((req, res) => {

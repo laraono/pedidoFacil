@@ -46,7 +46,7 @@ const mercadoPagoService = new MercadoPagoService();
 const authService = new AuthService(AppDataSource, userRepository, refreshTokenRepository, establishmentRepository, mercadoPagoService);
 
 const receiptService = new ReceiptService(receiptRepository, paymentRepository, establishmentRepository);
-const paymentService = new PaymentService(AppDataSource, mercadoPagoService, paymentRepository, orderRepository);
+const paymentService = new PaymentService(AppDataSource);
 
 const comandaService = new ComandaService(
     AppDataSource,
@@ -70,8 +70,7 @@ const roleService = new RoleService(roleRepository, userRepository);
 
 const establishmentService = new EstablishmentService(
   establishmentRepository,
-  configurationRepository,
-  mercadoPagoService,
+  configurationRepository
 );
 
 const profileService = new ProfileService(userRepository, refreshTokenRepository);

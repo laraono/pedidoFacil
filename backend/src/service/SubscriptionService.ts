@@ -215,6 +215,8 @@ export class SubscriptionService {
     }
 
     async getSubscription(subscriptionId: number) {
-        return await this.subscriptionRepository.getSubscription(subscriptionId)
+        const subscription = await this.subscriptionRepository.getSubscription(subscriptionId)
+        if (!subscription) throw new AppError('Assinatura não encontrada.', 404)
+        return subscription
     }
 }

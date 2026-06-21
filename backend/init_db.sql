@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS ADMIN (
 ) ENGINE = InnoDB;
 
 INSERT IGNORE INTO ADMIN (Nome, Email, Senha) VALUES (
-  'Admin',
-  'admin@admin.com',
+  'Dono da Plataforma',
+  'dono_master@admin.com',
   '$2b$12$ir18RboiRLVp8dWwlkicw.KnCEnuJwOlDTw85rwu9KEuTvUa1OjF2'
 );
 

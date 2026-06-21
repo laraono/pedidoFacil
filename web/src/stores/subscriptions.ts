@@ -56,7 +56,7 @@ export const useSubscriptionStore = defineStore('subscription', () => {
         manager: s.establishment?.manager?.name ?? '—',
         plan: s.plan?.name ?? '—',
         planFrequency: s.plan?.frequency ?? '—',
-        status: s.status,
+        status: s.status?.nome ?? '—',
         nextDueDate: s.expirationDate,
         amount: Number(s.plan?.price ?? 0),
         users: (s.establishment?.roles ?? []).reduce(

@@ -30,7 +30,10 @@ export async function subscriptionMiddleware(req: Request, res: Response, next: 
         if (subscription.status.nome === SubscriptionStatus.PAGA)
             return next()
 
-        const mp = await mercadoPagoService.getSubscription(subscription.mercadoPagoId!)
+        if (!subscription.mercadoPagoId)
+            return res.status(402).json({ message: 'Assinatura sem vínculo de pagamento' })
+
+        const mp = await mercadoPagoService.getSubscription(subscription.mercadoPagoId) // fallback pro webhook
 
         if (mp.status === 'authorized') {
             await subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.PAGA)

@@ -35,7 +35,7 @@ export default function NameInputScreen() {
   const handleConfirm = () => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    navigation.navigate("Payment", { appliedDiscount, customerName: trimmed });
+    navigation.navigate("Payment", { appliedDiscount, description: trimmed });
   };
 
   return (

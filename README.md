@@ -134,6 +134,8 @@ Logs ficam em `logs/backend.log`, `logs/web.log` e `logs/mobile.log`.
 5. Para a etapa de assinatura, faça o pagamento com a conta do consumidor de teste:
 
    **E-mail:** `test_user_5092580542816123576@testuser.com`
+   
+   > Este e-mail **é necessário** para a execução do processo de assinatura na sandbox. **Não utilize seu e-mail de cadastro**.
 
    Use os [cartões de teste oficiais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards) ou os dados abaixo:
 
@@ -142,7 +144,7 @@ Logs ficam em `logs/backend.log`, `logs/web.log` e `logs/mobile.log`.
    | Número | `5031 4332 1540 6351` |
    | Validade / CVV | `11/30` / `123` |
    | Nome | `APRO` |
-   | CPF | `123.456.789-09` |
+   | CPF | `12345678909` |
 
 
 6. Cadastre produtos e inicie a operação pelo **Cardápio**.

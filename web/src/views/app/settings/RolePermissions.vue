@@ -163,7 +163,7 @@ const togglePermission = (id) => {
 
     <div
       v-if="isLoading && roles.length === 0"
-      class="flex justify-center py-20 text-[#757575]"
+      class="flex justify-center py-20 text-muted"
     >
       <p class="font-bold">Carregando cargos...</p>
     </div>
@@ -188,26 +188,26 @@ const togglePermission = (id) => {
           <button
             v-if="!HIDDEN_ROLE_NAMES.includes(role.name)"
             @click.stop="deleteRole(role)"
-            class="p-1.5 text-[#757575] hover:text-red-500 hover:bg-danger-light rounded transition-all"
+            class="p-1.5 text-muted hover:text-red-500 hover:bg-danger-light rounded transition-all"
             title="Excluir cargo"
           >
             <Trash2 :size="16" />
           </button>
           <span
             v-else
-            class="text-[9px] font-black uppercase tracking-widest text-[#757575] px-2 py-1 bg-gray-50 rounded border border-[#E0E0E0]"
+            class="text-[9px] font-black uppercase tracking-widest text-muted px-2 py-1 bg-gray-50 rounded border border-[#E0E0E0]"
             title="Cargo protegido"
             >Fixo</span
           >
         </div>
         <h3 class="text-xl font-bold text-[#212121]">{{ role.name }}</h3>
         <div class="flex items-center gap-4 mt-2">
-          <p class="text-[10px] font-black uppercase tracking-widest text-[#757575]">
+          <p class="text-[10px] font-black uppercase tracking-widest text-muted">
             {{ role.permissions?.length || 0 }} Permissões
           </p>
           <p
             v-if="role.usersCount != null"
-            class="text-[10px] font-black uppercase tracking-widest text-[#757575] flex items-center gap-1"
+            class="text-[10px] font-black uppercase tracking-widest text-muted flex items-center gap-1"
           >
             <Users :size="10" />
             {{ role.usersCount }} Usuário{{ role.usersCount !== 1 ? "s" : "" }}
@@ -217,13 +217,13 @@ const togglePermission = (id) => {
           <span
             v-for="permId in (role.permissions || []).slice(0, 3)"
             :key="permId"
-            class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 bg-accent-light text-accent rounded border border-accent/30"
+            class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 bg-accent-light text-green-800 rounded border border-accent/30"
           >
             {{ AVAILABLE_PERMISSIONS.find((p) => p.id === permId)?.label || permId }}
           </span>
           <span
             v-if="(role.permissions?.length || 0) > 3"
-            class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 bg-gray-50 text-[#757575] rounded"
+            class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 bg-gray-50 text-muted rounded"
           >
             +{{ role.permissions.length - 3 }}
           </span>
@@ -249,7 +249,7 @@ const togglePermission = (id) => {
         />
 
         <div class="space-y-4">
-          <label class="text-xs font-black uppercase tracking-widest text-[#757575] ml-2">
+          <label class="text-xs font-black uppercase tracking-widest text-muted ml-2">
             Permissões de Acesso
           </label>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -283,7 +283,7 @@ const togglePermission = (id) => {
                 >
                   {{ perm.label }}
                 </span>
-                <span class="text-[10px] text-[#757575] font-medium">{{ perm.desc }}</span>
+                <span class="text-[10px] text-muted font-medium">{{ perm.desc }}</span>
               </div>
             </div>
           </div>

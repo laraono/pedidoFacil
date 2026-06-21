@@ -13,10 +13,9 @@ export default function OrderConfirmedScreen() {
   const route = useRoute();
   const { theme } = useTheme();
 
-  const params = route.params as { ticket?: string; label?: string; customerName?: string; isPaid?: boolean } | undefined;
-  const ticket = params?.ticket || "";
-  const label = params?.label || (ticket ? `Totem #${ticket}` : "—");
-  const customerName = params?.customerName || null;
+  const params = route.params as { label?: string; description?: string; isPaid?: boolean } | undefined;
+  const label = params?.label || "—";
+  const description = params?.description || null;
   const isPaid = params?.isPaid || false;
 
   const [seconds, setSeconds] = useState(COUNTDOWN);
@@ -43,8 +42,8 @@ export default function OrderConfirmedScreen() {
         <Text style={styles.title}>Pedido realizado!</Text>
 
         <View style={styles.ticketBox}>
-          <Text style={styles.ticketCaption}>{customerName ? "Olá," : "Seu número"}</Text>
-          <Text style={styles.ticketNumber}>{customerName || label}</Text>
+          <Text style={styles.ticketCaption}>{description ? "Olá," : "Seu número"}</Text>
+          <Text style={styles.ticketNumber}>{description || label}</Text>
         </View>
 
         <View style={styles.instructionBox}>

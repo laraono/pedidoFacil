@@ -108,10 +108,10 @@
           <h4
             class="text-danger font-black text-[11px] uppercase tracking-[0.2em] mb-1"
           >
-            Impacto Financeiro Estimado
+            Perda em Cancelamentos
           </h4>
           <p class="text-danger/70 text-xs leading-relaxed font-medium">
-            Cancelamentos geraram perda bruta de
+            Cancelamentos geraram uma perda de
             <strong class="text-danger font-black text-sm">{{
               financialImpact
             }}</strong

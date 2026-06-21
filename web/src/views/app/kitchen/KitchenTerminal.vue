@@ -195,23 +195,33 @@ const indicatorColor = (color) => {
         </div>
 
         <div class="flex items-center gap-3">
-          <button
-            @click="showOnlyMyOrders = !showOnlyMyOrders"
-            class="flex items-center gap-2 px-3 py-2 rounded transition-all border font-black text-[10px] sm:text-xs uppercase tracking-widest"
-            :class="showOnlyMyOrders ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-gray-50 text-[#757575] border-[#E0E0E0] hover:bg-gray-100'"
-            title="Mostrar apenas pedidos feitos por mim"
-          >
-            <User :size="16" />
-            <span class="hidden md:inline">{{ showOnlyMyOrders ? 'Meus Pedidos' : 'Todos os Pedidos' }}</span>
-          </button>
+          <div class="flex items-center bg-gray-100 border border-[#E0E0E0] rounded p-0.5 gap-0.5">
+            <button
+              @click="showOnlyMyOrders = false"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded font-black text-[10px] uppercase tracking-widest transition-all"
+              :class="!showOnlyMyOrders ? 'bg-white text-[#212121] shadow-sm' : 'text-[#757575] hover:text-[#212121]'"
+            >
+              <List :size="14" />
+              <span class="hidden sm:inline">Fila Geral</span>
+            </button>
+            <button
+              @click="showOnlyMyOrders = true"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded font-black text-[10px] uppercase tracking-widest transition-all"
+              :class="showOnlyMyOrders ? 'bg-white text-blue-600 shadow-sm' : 'text-[#757575] hover:text-[#212121]'"
+            >
+              <User :size="14" />
+              <span class="hidden sm:inline">Minha Fila</span>
+            </button>
+          </div>
 
           <div class="relative">
             <button
               @click="showTimerSettings = !showTimerSettings"
-              class="p-2.5 rounded transition-all border bg-gray-50 text-[#757575] border-[#E0E0E0] hover:text-[#212121] hover:bg-gray-100"
-              title="Configurar alerta de tempo"
+              class="flex items-center gap-1.5 px-3 py-2 rounded transition-all border font-black text-[10px] uppercase tracking-widest bg-gray-50 text-[#757575] border-[#E0E0E0] hover:text-[#212121] hover:bg-gray-100"
+              title="Configurar alerta de atraso"
             >
-              <Clock :size="18" />
+              <Clock :size="16" />
+              <span class="hidden sm:inline">{{ alertMinutes }}min</span>
             </button>
             <div
               v-if="showTimerSettings"
@@ -242,11 +252,13 @@ const indicatorColor = (color) => {
 
           <button
             @click="toggleAudio"
-            class="p-2.5 rounded transition-all border"
+            class="flex items-center gap-1.5 px-3 py-2 rounded transition-all border font-black text-[10px] uppercase tracking-widest"
             :class="audioEnabled ? 'bg-primary-light text-primary border-primary/20' : 'bg-danger-light text-danger border-danger'"
+            :title="audioEnabled ? 'Desativar alertas sonoros' : 'Ativar alertas sonoros'"
           >
-            <Volume2 v-if="audioEnabled" :size="18" />
-            <VolumeX v-else :size="18" />
+            <Volume2 v-if="audioEnabled" :size="16" />
+            <VolumeX v-else :size="16" />
+            <span class="hidden sm:inline">{{ audioEnabled ? 'Silenciar' : 'Ativar' }}</span>
           </button>
         </div>
       </header>

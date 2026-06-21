@@ -23,7 +23,7 @@ export function useMenuOrder() {
     newComandaNumber: string | number,
     onSuccess?: () => void,
   ) {
-    if (isSubmitting.value) return;
+    if (isSubmitting.value) return;  
 
     isSubmitting.value = true;
     try {
@@ -38,7 +38,6 @@ export function useMenuOrder() {
       const idempotencyKey = crypto.randomUUID();
       await comandaApi.addOrder(comandaIdParaEnviar, {
         status: "Aguardando_Preparo",
-        serviceType: "Garcom",
         itens: cart.map(item => ({
           productId: item.productId,
           quantity: item.quantity,

@@ -21,7 +21,7 @@ export const useCouponStore = defineStore("coupons", () => {
     id: c.id,
     code: c.code,
     description: "",
-    type: c.type === "Percentual" ? "percent" : "fixed",
+    type: c.type?.nome === "Percentual" ? "percent" : "fixed",
     value: Number(c.value),
     expiresAt: c.expirationDate ? c.expirationDate.split("T")[0] : null,
     active: true,

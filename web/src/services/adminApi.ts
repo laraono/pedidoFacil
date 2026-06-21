@@ -18,12 +18,6 @@ export interface PlanForm {
 }
 
 export const adminPlanApi = {
-  listPublic: () => request('/admin/public/plans', { method: 'GET' }),
-
-  list: () => request('/admin/plans', { method: 'GET' }),
-
-  get: (planId: number) => request(`/admin/plans/${planId}`, { method: 'GET' }),
-
   create: (data: Record<string, unknown>) =>
     request('/admin/plans', { method: 'POST', body: JSON.stringify(data) }),
 
@@ -51,21 +45,6 @@ export const adminUserApi = {
 
 export const adminSubscriptionApi = {
   list: () => request('/admin/subscriptions', { method: 'GET' }),
-
-  get: (subscriptionId: number) =>
-    request(`/admin/subscriptions/${subscriptionId}`, { method: 'GET' }),
-
-  updatePrice: (subscriptionId: number, amount: number) =>
-    request(`/admin/subscriptions/${subscriptionId}/price`, {
-      method: 'PUT',
-      body: JSON.stringify({ amount }),
-    }),
-
-  cancel: (subscriptionId: number) =>
-    request(`/admin/subscriptions/${subscriptionId}/cancel`, { method: 'POST' }),
-
-  delete: (subscriptionId: number) =>
-    request(`/admin/subscriptions/${subscriptionId}`, { method: 'DELETE' }),
 };
 
 export const adminEstablishmentApi = {

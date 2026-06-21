@@ -8,6 +8,7 @@ import {
   CheckCircle2, Package, DollarSign
 } from 'lucide-vue-next';
 import { adminPlanApi, type Plan, type PlanForm } from '@/services/adminApi';
+import { planApi } from '@/services/planApi';
 import { useUtils } from '@/composables/useUtils';
 import { applyPriceMask } from '@/composables/usePriceMask';
 import { PageHeader, StatusBadge, EmptyState, BaseButton, BaseInput, BaseTextArea, FormModal, ConfirmModal } from '@/components/ui';
@@ -30,7 +31,7 @@ async function load() {
   loading.value = true;
   loadError.value = false;
   try {
-    plans.value = await adminPlanApi.list();
+    plans.value = await planApi.list();
   } catch (e) {
     loadError.value = true;
   } finally {
@@ -47,15 +48,8 @@ function openCreate() {
   isModalOpen.value = true;
 }
 
-const FREQ_NORMALIZE: Record<string, string> = {
-  months: 'mensal', month: 'mensal', monthly: 'mensal', '1': 'mensal',
-  annual: 'anual', yearly: 'anual', '12': 'anual',
-};
-
 function normalizeFrequency(f?: string): string {
-  if (!f) return 'mensal';
-  const lower = f.toLowerCase();
-  return FREQ_NORMALIZE[lower] ?? lower;
+  return f === 'anual' ? 'anual' : 'mensal';
 }
 
 function openEdit(plan: Plan) {

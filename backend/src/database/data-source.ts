@@ -20,7 +20,7 @@ export const AppDataSource = new DataSource({
     synchronize: false,
     migrationsRun: false,
     logging: false,
-    timezone: 'Z',
+    timezone: 'local',
     charset: 'utf8mb4',
     entities: [
         Admin, Category, Comanda, Configuration, Coupon, Endereco, Establishment,

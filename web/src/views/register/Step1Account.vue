@@ -64,6 +64,8 @@ const errors = computed(() => {
 
 const canSubmit = computed(() =>
   nome.value.trim().includes(' ') &&
+  nome.value.trim().length <= 100 &&
+  /^[a-zA-ZÀ-ÿ\s]+$/.test(nome.value) &&
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim()) &&
   isPasswordStrong(senha.value) &&
   senha.value === confirmarSenha.value &&
@@ -107,7 +109,7 @@ async function handleNext() {
   <div>
     <div class="mb-8 text-center">
       <h2 class="text-3xl font-black text-[#212121] mb-2">Crie a sua conta</h2>
-      <p class="text-[#757575]">Preencha os dados do gestor principal</p>
+      <p class="text-muted">Preencha os dados do gestor principal</p>
     </div>
 
     <div v-if="noPlans" class="mb-6 p-4 bg-danger-light border border-danger rounded text-danger text-sm font-bold text-center">
@@ -123,7 +125,7 @@ async function handleNext() {
 
       <BaseInput v-model="senha" label="Senha" :type="showPassword ? 'text' : 'password'" placeholder="••••••••" dark :error="errors.senha">
         <template #suffix>
-          <button type="button" @click="showPassword = !showPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-[#757575] hover:text-accent">
+          <button type="button" @click="showPassword = !showPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-accent">
             <component :is="showPassword ? EyeOff : Eye" class="w-5 h-5" />
           </button>
         </template>
@@ -131,7 +133,7 @@ async function handleNext() {
 
       <BaseInput v-model="confirmarSenha" label="Confirme sua Senha" :type="showConfirmPassword ? 'text' : 'password'" placeholder="••••••••" dark :error="errors.confirmarSenha">
         <template #suffix>
-          <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-[#757575] hover:text-accent">
+          <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-accent">
             <component :is="showConfirmPassword ? EyeOff : Eye" class="w-5 h-5" />
           </button>
         </template>

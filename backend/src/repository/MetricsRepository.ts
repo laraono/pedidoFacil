@@ -23,13 +23,24 @@ export class MetricsRepository {
     }
 
     async getChartData(establishmentId: number, start: Date, end: Date, filter: string) {
-        const sql = filter === '24h'
-            ? `SELECT DATE_FORMAT(Data_Abertura, '%H:00') as label, SUM(Total) as value
-               FROM COMANDA WHERE ID_Estabelecimento = ? AND ID_Status = ${SC_FECHADA} AND Data_Abertura BETWEEN ? AND ?
-               GROUP BY DATE_FORMAT(Data_Abertura, '%H:00') ORDER BY DATE_FORMAT(Data_Abertura, '%H:00')`
-            : `SELECT DATE_FORMAT(Data_Abertura, '%d/%m') as label, SUM(Total) as value
-               FROM COMANDA WHERE ID_Estabelecimento = ? AND ID_Status = ${SC_FECHADA} AND Data_Abertura BETWEEN ? AND ?
-               GROUP BY DATE_FORMAT(Data_Abertura, '%d/%m') ORDER BY MIN(Data_Abertura)`;
+        let labelExpr: string;
+        let groupExpr: string;
+        if (filter === '24h') {
+            labelExpr = `'%H:00'`;
+            groupExpr = `'%H:00'`;
+        } else if (filter === '7d' || filter === '30d') {
+            labelExpr = `'%d/%m'`;
+            groupExpr = `'%Y-%m-%d'`;
+        } else {
+            labelExpr = `'%m/%Y'`;
+            groupExpr = `'%Y-%m'`;
+        }
+        const sql = `
+            SELECT DATE_FORMAT(Data_Abertura, ${labelExpr}) as label, SUM(Total) as value
+            FROM COMANDA
+            WHERE ID_Estabelecimento = ? AND ID_Status = ${SC_FECHADA} AND Data_Abertura BETWEEN ? AND ?
+            GROUP BY DATE_FORMAT(Data_Abertura, ${groupExpr})
+            ORDER BY MIN(Data_Abertura)`;
         return this.dataSource.query(sql, [establishmentId, start, end]);
     }
 
@@ -37,12 +48,18 @@ export class MetricsRepository {
         return this.dataSource.query(`
             SELECT pr.Nome as nome, cat.Nome as categoria,
                    SUM(pp.Quantidade) as qtd,
-                   SUM(pp.Quantidade * pp.Preco_Unitario_Momento) as receita
+                   SUM(pp.Quantidade * pp.Preco_Unitario_Momento * (cmd.Total / NULLIF(cg.bruto, 0))) as receita
             FROM ITEM_PEDIDO pp
             INNER JOIN PEDIDO p ON pp.ID_Pedido = p.ID_Pedido
             INNER JOIN COMANDA cmd ON p.ID_Comanda = cmd.ID_Comanda
             INNER JOIN PRODUTO pr ON pp.ID_Produto = pr.ID_Produto
             LEFT JOIN CATEGORIA cat ON pr.ID_Categoria = cat.ID_Categoria
+            INNER JOIN (
+                SELECT p2.ID_Comanda AS ID_Comanda, SUM(i2.Quantidade * i2.Preco_Unitario_Momento) AS bruto
+                FROM PEDIDO p2 INNER JOIN ITEM_PEDIDO i2 ON i2.ID_Pedido = p2.ID_Pedido
+                WHERE p2.ID_Status != ${SP_CANCELADO}
+                GROUP BY p2.ID_Comanda
+            ) cg ON cg.ID_Comanda = cmd.ID_Comanda
             WHERE cmd.ID_Estabelecimento = ? AND p.ID_Status != ${SP_CANCELADO} AND cmd.ID_Status = ${SC_FECHADA} AND cmd.Data_Abertura BETWEEN ? AND ?
             GROUP BY pr.ID_Produto
             ORDER BY qtd DESC
@@ -70,12 +87,18 @@ export class MetricsRepository {
     async getTopWaiters(establishmentId: number, start: Date, end: Date) {
         return this.dataSource.query(`
             SELECT u.Nome as name,
-                   COUNT(p.ID_Pedido) as orders,
-                   SUM(ip.Quantidade * ip.Preco_Unitario_Momento) as revenue
+                   COUNT(DISTINCT p.ID_Pedido) as orders,
+                   SUM(ip.Quantidade * ip.Preco_Unitario_Momento * (c.Total / NULLIF(cg.bruto, 0))) as revenue
             FROM PEDIDO p
             INNER JOIN USUARIO u ON p.ID_Usuario_Criador = u.ID_Usuario
             INNER JOIN COMANDA c ON p.ID_Comanda = c.ID_Comanda
             INNER JOIN ITEM_PEDIDO ip ON ip.ID_Pedido = p.ID_Pedido
+            INNER JOIN (
+                SELECT p2.ID_Comanda AS ID_Comanda, SUM(i2.Quantidade * i2.Preco_Unitario_Momento) AS bruto
+                FROM PEDIDO p2 INNER JOIN ITEM_PEDIDO i2 ON i2.ID_Pedido = p2.ID_Pedido
+                WHERE p2.ID_Status != ${SP_CANCELADO}
+                GROUP BY p2.ID_Comanda
+            ) cg ON cg.ID_Comanda = c.ID_Comanda
             WHERE c.ID_Estabelecimento = ? AND c.ID_Status = ${SC_FECHADA} AND c.Data_Abertura BETWEEN ? AND ?
               AND p.ID_Status != ${SP_CANCELADO}
             GROUP BY u.ID_Usuario
@@ -111,17 +134,21 @@ export class MetricsRepository {
             SELECT CASE WHEN p.Autoatendimento = 1 THEN 'Autoatendimento' ELSE 'Garcom' END as name,
                    COUNT(*) as count
             FROM PEDIDO p INNER JOIN COMANDA c ON p.ID_Comanda = c.ID_Comanda
-            WHERE c.ID_Estabelecimento = ? AND p.Data_Hora_Chegada BETWEEN ? AND ?
+            WHERE c.ID_Estabelecimento = ? AND c.Data_Abertura BETWEEN ? AND ? AND p.ID_Status != ${SP_CANCELADO}
             GROUP BY p.Autoatendimento
         `, [establishmentId, start, end]);
     }
 
     async getCancellations(establishmentId: number, start: Date, end: Date) {
         return this.dataSource.query(`
-            SELECT COALESCE(Cancelamento_Descricao, 'Sem motivo informado') as motivo, COUNT(*) as count
-            FROM PEDIDO p INNER JOIN COMANDA c ON p.ID_Comanda = c.ID_Comanda
-            WHERE c.ID_Estabelecimento = ? AND p.ID_Status = ${SP_CANCELADO} AND p.Data_Hora_Chegada BETWEEN ? AND ?
-            GROUP BY Cancelamento_Descricao ORDER BY count DESC
+            SELECT COALESCE(p.Cancelamento_Descricao, 'Sem motivo informado') as motivo,
+                   COUNT(DISTINCT p.ID_Pedido) as count,
+                   COALESCE(SUM(ip.Quantidade * ip.Preco_Unitario_Momento), 0) as valor
+            FROM PEDIDO p
+            INNER JOIN COMANDA c ON p.ID_Comanda = c.ID_Comanda
+            LEFT JOIN ITEM_PEDIDO ip ON ip.ID_Pedido = p.ID_Pedido
+            WHERE c.ID_Estabelecimento = ? AND p.ID_Status = ${SP_CANCELADO} AND c.Data_Abertura BETWEEN ? AND ?
+            GROUP BY p.Cancelamento_Descricao ORDER BY count DESC
         `, [establishmentId, start, end]);
     }
 

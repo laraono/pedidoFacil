@@ -21,6 +21,18 @@ export class AdminSubscriptionMetricsRepository {
         return Number(row.total);
     }
 
+    async getMrr(): Promise<number> {
+        const [row] = await this.dataSource.query(`
+            SELECT COALESCE(SUM(
+                CASE WHEN p.Frequencia = 'anual' THEN p.Valor_Plano / 12 ELSE p.Valor_Plano END
+            ), 0) as mrr
+            FROM ASSINATURA a
+            INNER JOIN PLANO p ON a.ID_Plano = p.ID_Plano
+            WHERE a.ID_Status = ${SA_PAGA}
+        `);
+        return Number(row.mrr);
+    }
+
     async getOverdueCount(): Promise<number> {
         const [row] = await this.dataSource.query(
             `SELECT COUNT(*) as total FROM ASSINATURA WHERE ID_Status = ? AND Data_Vencimento_Prox < CURDATE()`,

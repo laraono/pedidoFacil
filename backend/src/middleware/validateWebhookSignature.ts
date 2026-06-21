@@ -3,9 +3,9 @@ import crypto from 'crypto';
 import { auditLog } from '../utils/logger';
 
 export function validateWebhookSignature(req: Request, res: Response, next: NextFunction) {
-    const signature = req.headers['x-signature'] as string;
-    const requestId = req.headers['x-request-id'] as string;
-    const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
+    const signature = req.headers['x-signature'] as string; // verifica se segue assinatura única
+    const requestId = req.headers['x-request-id'] as string; // compartilhada entre o sistema e o MP
+    const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET; 
 
     if (process.env.NODE_ENV === 'development') {
         return next();
@@ -51,7 +51,8 @@ export function validateWebhookSignature(req: Request, res: Response, next: Next
         .update(signedPayload)
         .digest('hex');
 
-    if (!crypto.timingSafeEqual(Buffer.from(receivedHmac), Buffer.from(expectedHmac))) {
+    if (receivedHmac.length !== expectedHmac.length || //  sempre demora o mesmo tempo & verifica o receivedHmac
+        !crypto.timingSafeEqual(Buffer.from(receivedHmac), Buffer.from(expectedHmac))) {
         auditLog('webhook.invalid_signature', {
             ip: req.ip,
             reason: 'hmac mismatch',

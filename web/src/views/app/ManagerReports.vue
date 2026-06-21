@@ -29,6 +29,7 @@ const cancellations = ref([]);
 const paymentMethods = ref([]);
 const topProducts = ref([]);
 const couponUsage = ref([]);
+const valorCancelado = ref(0);
 
 const handlePrint = () => window.print();
 
@@ -57,6 +58,7 @@ const loadData = async () => {
     paymentMethods.value = overview.paymentMethods || [];
     topProducts.value = overview.topProducts || [];
     couponUsage.value = overview.couponUsage || [];
+    valorCancelado.value = overview.valorCancelado || 0;
   }, 'Erro ao carregar relatórios');
   setTimeout(() => { isLoaded.value = true; }, 50);
 };
@@ -79,9 +81,7 @@ const currentDate = computed(() =>
 
 const totalCancellationsCount = computed(() => kpis.value.cancelamentos || 0);
 
-const financialImpact = computed(() =>
-  formatCurrency((kpis.value.cancelamentos || 0) * (kpis.value.ticketMedio || 0))
-);
+const financialImpact = computed(() => formatCurrency(valorCancelado.value));
 
 const performanceTitle = computed(() => ({
   '7d': 'Performance Diária',
@@ -95,8 +95,9 @@ const getMaxRevenue = () => {
   return max <= 0 ? 1 : max;
 };
 const maxCouponUses = () => Math.max(...couponUsage.value.map(c => c.uses), 1);
+const unitLabel = localStorageService.getComandaUnitLabel();
 
-const kpiLabels = { faturamento: 'Faturamento', ticketMedio: 'Ticket Médio', giroMesa: 'Giro de Mesa', cancelamentos: 'Cancelamentos' };
+const kpiLabels = { faturamento: 'Faturamento', ticketMedio: 'Ticket Médio', giroMesa: `${unitLabel}s`, cancelamentos: 'Cancelamentos' };
 const kpiIcons = { faturamento: DollarSign, ticketMedio: TrendingUp, giroMesa: Users, cancelamentos: AlertTriangle };
 const formatKpi = (key, val) => (key === 'faturamento' || key === 'ticketMedio') ? formatCurrency(val) : val;
 
@@ -158,6 +159,7 @@ const tabs = [
       v-if="isLoaded"
       :restaurant-name="restaurantName"
       :performance-title="performanceTitle"
+      :unit-label="unitLabel"
       :current-date="currentDate"
       :metrics="kpis"
       :revenue-data="revenueData"

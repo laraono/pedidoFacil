@@ -28,7 +28,7 @@ export function useMenuTheme() {
   const cardBg = ref("#FFFFFF");
   const fontFamily = ref("Inter, sans-serif");
   const comandaUnitLabel = ref("Comanda");
-  const observacoesPermitidas = ref(true);
+  const allowObservations = ref(true);
   const imageUrl = ref("");
   const isSavingTheme = ref(false);
 
@@ -53,8 +53,8 @@ export function useMenuTheme() {
     textColor: textColor.value,
     cardBg: cardBg.value,
     fontFamily: fontFamily.value,
-    adaptiveBorder: isCardDark.value ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.13)",
-    adaptiveInputBg: isCardDark.value ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.04)",
+    adaptiveBorder: isCardDark.value ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.13)", // Quando o gerente adiciona uma cor escura
+    adaptiveInputBg: isCardDark.value ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.04)",// Parte do menu é adaptado para essa cor
     adaptiveButtonBg: isCardDark.value ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.07)",
     adaptiveSubtleBg: isCardDark.value ? "rgba(0,0,0,0.15)" : "rgba(0,0,0,0.03)",
     adaptivePlaceholder: isCardDark.value ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.32)",
@@ -71,7 +71,7 @@ export function useMenuTheme() {
       cardBg.value = config.cardsColor || "#FFFFFF";
       fontFamily.value = config.fontFamily || "Inter, sans-serif";
       comandaUnitLabel.value = config.comandaLabel || "Comanda";
-      observacoesPermitidas.value = config.allowObservations ?? true;
+      allowObservations.value = config.allowObservations ?? true;
       if (config.logo) imageUrl.value = getImageUrl(config.logo);
     } catch {
       bgColor.value = localStorageService.getBackgroundColors() || "#F5F6FA";
@@ -101,7 +101,7 @@ export function useMenuTheme() {
           activeCategoryColor: categoryColor.value,
           fontFamily: fontFamily.value,
           comandaLabel: comandaUnitLabel.value,
-          allowObservations: observacoesPermitidas.value,
+          allowObservations: allowObservations.value,
         },
       });
 
@@ -129,7 +129,7 @@ export function useMenuTheme() {
 
   return {
     bgColor, buttonColor, buttonTextColor, categoryColor,
-    textColor, cardBg, fontFamily, comandaUnitLabel, observacoesPermitidas,
+    textColor, cardBg, fontFamily, comandaUnitLabel, allowObservations,
     imageUrl, isSavingTheme,
     backgroundStyle, theme,
     loadConfig, saveVisuals,

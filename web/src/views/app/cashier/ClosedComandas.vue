@@ -54,25 +54,20 @@ function formatDate(iso) {
   });
 }
 
-function getComandaTypeLabel(comanda) {
-  return comanda.isAutoatendimento ? 'Autoatendimento' : comandaUnitLabel;
-}
-
 function getComandaMainLabel(comanda) {
-  if (comanda.isAutoatendimento && comanda.customerName) return comanda.customerName;
-  return comanda.label || '#' + comanda.id;
+  return comanda.label;
 }
 
 function isOrderCancelled(order) {
   if (!order || !order.status) return false;
-  const s = (order.status?.nome ?? '').toUpperCase();
-  return ['CANCELADO', 'CANCELADA', 'CANCELLED'].includes(s);
+  const s = (order.status?.nome ?? order.status ?? '').toString().toUpperCase();
+  return s === 'CANCELADO';
 }
 
 function isCancelled(comanda) {
   if (!comanda) return false;
-  const s = (comanda.status?.nome ?? '').toUpperCase();
-  if (['CANCELADO', 'CANCELADA', 'CANCELLED'].includes(s)) return true;
+  const s = (comanda.status?.nome ?? comanda.status ?? '').toString().toUpperCase();
+  if (s === 'CANCELADA') return true;
   
   if (comanda.orders && comanda.orders.length > 0) {
     const allCanceled = comanda.orders.every(o => isOrderCancelled(o));
@@ -108,12 +103,7 @@ function totalItems(comanda) {
 
 function paymentSummary(comanda) {
   if (isCancelled(comanda)) return [{ type: 'Cancelado (Sem Cobrança)', amount: 0 }];
-  const payments = comanda.paymentDetails?.payments || [];
-  
-  return payments.map(p => {
-    if (p.type === 'Liquidado') return { ...p, amount: finalTotal(comanda) };
-    return p;
-  });
+  return comanda.paymentDetails?.payments || [];
 }
 
 function getGroupedOrderItems(order) {
@@ -159,7 +149,7 @@ function getGroupedOrderItems(order) {
           </button>
           <div>
             <h1 class="text-3xl font-black text-[#212121] tracking-tight">
-              {{ comandaUnitLabel }}s Finalizadas
+              Pedidos Finalizados
             </h1>
             <p class="text-[#757575] text-sm mt-1">Histórico completo de pedidos e pagamentos</p>
           </div>
@@ -191,7 +181,7 @@ function getGroupedOrderItems(order) {
               <div class="min-w-0 flex-grow">
                 <div class="flex items-center gap-3 flex-wrap">
                   <div class="flex flex-col leading-none">
-                    <span class="text-[9px] font-black uppercase tracking-widest mb-0.5" :class="comanda.isAutoatendimento ? 'text-blue-500' : 'text-[#757575]'">{{ getComandaTypeLabel(comanda) }}</span>
+                    <span class="text-[9px] font-black uppercase tracking-widest mb-0.5 text-[#757575]">{{ comandaUnitLabel }}</span>
                     <span class="text-[#212121] font-black text-lg tracking-tight">{{ getComandaMainLabel(comanda) }}</span>
                   </div>
                   
@@ -201,7 +191,7 @@ function getGroupedOrderItems(order) {
                   <span v-else-if="originalTotal(comanda) !== getValidSubtotal(comanda)" class="px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-600 text-[9px] font-black uppercase tracking-widest rounded">
                     Contém pedidos cancelados
                   </span>
-                  <span v-else class="px-2 py-0.5 bg-accent-light border border-accent/30 text-accent text-[9px] font-black uppercase tracking-widest rounded">
+                  <span v-else class="px-2 py-0.5 bg-accent-light border border-accent/30 text-green-800 text-[9px] font-black uppercase tracking-widest rounded">
                     Finalizado
                   </span>
                 </div>

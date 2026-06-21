@@ -49,7 +49,8 @@ const totalActive = computed(() =>
 const totalMRR = computed(() =>
   metrics.value ? metrics.value.receitaMensal : allSubs.value
     .filter(s => s.status === 'Paga')
-    .reduce((acc, s) => acc + s.amount, 0)
+    .reduce((acc, s) =>
+      acc + (String(s.planFrequency ?? '').toLowerCase().includes('anual') ? s.amount / 12 : s.amount), 0)
 );
 
 const totalAnnual = computed(() => {
@@ -204,7 +205,7 @@ const handleExport = () => window.print();
       <div class="lg:col-span-2 bg-white border border-[#E0E0E0] rounded p-8">
         <div class="flex items-center gap-2 mb-6">
           <BarChart3 :size="18" class="text-accent" />
-          <h2 class="font-black text-[#212121]">Faturamento Mensal (MRR)</h2>
+          <h2 class="font-black text-[#212121]">Faturamento Mensal</h2>
         </div>
 
         <div class="overflow-x-auto">
@@ -342,7 +343,7 @@ const handleExport = () => window.print();
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
       <div style="border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; background: #f9fafb;">
-        <p style="font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #111; margin: 0 0 8px;">Faturamento Mensal (MRR)</p>
+        <p style="font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #111; margin: 0 0 8px;">Faturamento Mensal</p>
         <div style="display: flex; align-items: flex-end; justify-content: space-between; height: 100px; gap: 4px;">
           <div v-for="(item, i) in monthlyRevenue" :key="i" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;">
             <span style="font-size: 6px; font-weight: 700; color: #374151; margin-bottom: 2px;">{{ Math.round(item.value/10)/100 }}k</span>

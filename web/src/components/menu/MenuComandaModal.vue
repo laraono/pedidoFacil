@@ -72,7 +72,7 @@
             <p
               class="text-xs font-black uppercase tracking-widest opacity-60 mb-3"
             >
-              Comandas Abertas
+              Abertas
             </p>
             <div class="space-y-2">
               <button
@@ -104,7 +104,7 @@
             <p
               class="text-xs font-black uppercase tracking-widest opacity-60 mb-3"
             >
-              Nova {{ comandaUnitLabel }}
+               {{ comandaUnitLabel }}
             </p>
             <div
               class="rounded border-2 transition-all overflow-hidden"

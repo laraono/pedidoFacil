@@ -3,12 +3,12 @@ import { AuthController, authLimiter, registrationLimiter } from '../controller/
 import { AuthService } from '../service/AuthService';
 import { MercadoPagoService } from '../service/MercadoPagoService';
 import { AppDataSource } from '../database/data-source';
-import { UserRepository, RefreshTokenRepository, EstablishmentRepository } from '../repository';
+import { UserRepository, RefreshTokenRepository, EstablishmentRepository, PlanRepository } from '../repository';
 import { catchAsync } from '../middleware/error/catchAsync';
 import { authenticate } from '../middleware/authenticate';
 import { validateRequest } from '../middleware/validateRequest';
 import { loginSchema } from '../dto/auth/LoginDTO';
-import { registerCompleteSchema } from '../dto/auth/RegisterCompleteDTO'; 
+import { registerCompleteSchema } from '../dto/auth/RegisterCompleteDTO';
 
 const userRepository = new UserRepository(AppDataSource);
 const refreshTokenRepository = new RefreshTokenRepository(AppDataSource);

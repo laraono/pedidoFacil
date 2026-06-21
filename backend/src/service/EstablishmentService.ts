@@ -5,16 +5,14 @@ import { PaymentMethod } from '../database/entity/PaymentMethod';
 import { AppError } from '../middleware/error/AppError';
 import { EstablishmentRepository } from '../repository/EstablishmentRepository';
 import { ConfigurationRepository } from '../repository/ConfigurationRepository';
-import { MercadoPagoService } from './MercadoPagoService';
-import { User } from '../database/entity/User';
 import { getIO } from '../socket';
+import { MercadoPagoService } from './MercadoPagoService';
 
 export class EstablishmentService {
 
   constructor(
     private establishmentRepository: EstablishmentRepository,
     private configRepository: ConfigurationRepository,
-    private mercadoPagoService?: MercadoPagoService
   ) { }
 
   async checkCnpjAvailable(cnpj: string) {
@@ -104,7 +102,7 @@ export class EstablishmentService {
   async listForAdmin() {
     const establishments = await this.establishmentRepository.findAllForAdmin();
     return establishments.map(e => {
-      const latestSub = e.subscription ?? null;
+      const latestSub = e.subscription;
       return {
         id: e.id,
         name: e.name,
@@ -132,7 +130,7 @@ export class EstablishmentService {
       cnpj: establishment.cnpj,
       phone: establishment.phone ?? null,
       address: establishment.endereco?.logradouro ?? null,
-      selfServiceCode: establishment.selfServiceCode ?? null,
+      selfServiceCode: establishment.selfServiceCode,
       manager: mgr ? {
         id: mgr.id,
         name: mgr.name,

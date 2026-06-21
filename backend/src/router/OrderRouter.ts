@@ -17,7 +17,7 @@ orderRouter.post(
   authenticate,
   subscriptionMiddleware,
   verifyComandaTenancy('comandaId'),
-  checkPermission(Permission.CAIXA, Permission.CRIAR_PEDIDO, Permission.COZINHA),
+  checkPermission(Permission.CRIAR_PEDIDO),
   validateRequest(createOrderSchema), 
   catchAsync((req: Request, res: Response) => orderController.createOrder(req, res))
 );
@@ -27,7 +27,7 @@ orderRouter.get(
   authenticate,
   subscriptionMiddleware,
   verifyComandaTenancy('comandaId'),
-  checkPermission(Permission.CAIXA),
+  checkPermission(Permission.CAIXA, Permission.COZINHA),
   catchAsync((req: Request, res: Response) => orderController.listOrdersByComanda(req, res))
 );
 
@@ -36,7 +36,7 @@ orderRouter.put(
   authenticate,
   subscriptionMiddleware,
   verifyComandaTenancy('comandaId'),
-  checkPermission(Permission.COZINHA),
+  checkPermission(Permission.COZINHA, Permission.CAIXA),
   validateRequest(updateOrderStatusSchema),
   catchAsync((req: Request, res: Response) => orderController.updateOrderStatus(req, res))
 );
@@ -47,7 +47,7 @@ orderRouter.post(
   subscriptionMiddleware,
   verifyComandaTenancy('comandaId'),
   validateRequest(cancelOrderSchema),
-  checkPermission(Permission.COZINHA),
+  checkPermission(Permission.CAIXA, Permission.COZINHA),
   catchAsync((req: Request, res: Response) => orderController.cancelOrder(req, res))
 );
 
@@ -55,6 +55,6 @@ orderRouter.get(
   '/orders',
   authenticate,
   subscriptionMiddleware,
-  checkPermission(Permission.COZINHA), 
+  checkPermission(Permission.COZINHA, Permission.CAIXA), 
   catchAsync((req: Request, res: Response) => orderController.listOrders(req, res))
 );

@@ -149,8 +149,6 @@ export const useAuthStore = defineStore('auth', {
     },
 
     hasPermission(permission: string): boolean {
-      if (this.isAdmin) return true;
-      
       const permissoes = this.user?.cargo?.permissoes;
       if (!permissoes) return false;
       

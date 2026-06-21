@@ -37,14 +37,14 @@
               class="p-3 rounded border shrink-0"
               :class="
                 confirmModal.isError
-                  ? 'bg-blue-500/10 border-blue-500/20'
-                  : 'bg-danger-light border-danger'
+                  ? 'bg-danger-light border-danger'
+                  : 'bg-blue-500/10 border-blue-500/20'
               "
             >
               <component
-                :is="confirmModal.isError ? Info : AlertTriangle"
+                :is="confirmModal.isError ? AlertTriangle : Info"
                 :size="20"
-                :class="confirmModal.isError ? 'text-blue-400' : 'text-danger'"
+                :class="confirmModal.isError ? 'text-danger' : 'text-blue-400'"
               />
             </div>
             <div>
@@ -66,11 +66,11 @@
             </button>
             <button
               @click="handleConfirm"
-              class="flex-1 py-3 rounded font-black transition-colors bg-primary"
+              class="flex-1 py-3 rounded font-black transition-colors"
               :class="
                 confirmModal.isError
-                  ? 'bg-primary text-white hover:bg-primary-dark'
-                  : 'bg-danger text-white hover:bg-red-400'
+                  ? 'bg-danger text-white hover:bg-red-400'
+                  : 'bg-primary text-white hover:bg-primary-dark'
               "
             >
               {{ confirmModal.isError ? "Entendi" : "Confirmar" }}

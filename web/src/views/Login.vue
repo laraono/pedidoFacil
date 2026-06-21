@@ -10,7 +10,7 @@ import AuthLayout from '@/components/AuthLayout.vue';
 import { PERMISSIONS } from '@/utils/permissions';
 
 const authStore = useAuthStore();
-const { emailEnabled } = storeToRefs(useFeaturesStore());
+const { emailEnabled, plansEnabled } = storeToRefs(useFeaturesStore());
 const router = useRouter();
 
 const email = ref('');
@@ -110,7 +110,7 @@ const goToPlans = () => router.push({ path: '/', hash: '#planos' });
           </div>
         </form>
 
-        <div class="mt-10 pt-6 border-t border-[#E0E0E0] text-center">
+        <div v-if="plansEnabled" class="mt-10 pt-6 border-t border-[#E0E0E0] text-center">
           <p class="text-[#757575] text-sm mb-3">Ainda não é cliente?</p>
           <a @click.prevent="goToPlans" href="/#planos" class="text-accent font-bold hover:text-[#212121] transition-colors cursor-pointer">
             Conheça os nossos planos

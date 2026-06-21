@@ -112,7 +112,7 @@
               {{ isAutoatendimento ? "Autoatendimento" : unitLabel }}
             </span>
             <span
-              class="text-[#212121] font-black text-sm md:text-base uppercase italic leading-none truncate"
+              class="text-[#212121] font-black text-sm md:text-base uppercase italic leading-tight break-words"
             >
               {{
                 isAutoatendimento && order.customerName

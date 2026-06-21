@@ -12,6 +12,7 @@ const featuresStore = useFeaturesStore();
 const { showToast } = useToast();
 
 featuresStore.fetchFeatures();
+featuresStore.fetchPlansEnabled();
 
 let currentSocketListener = null;
 

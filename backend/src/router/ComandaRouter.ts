@@ -8,7 +8,6 @@ import { Permission } from '../enum';
 import { validateRequest } from '../middleware/validateRequest'; 
 import { createComandaSchema } from '../dto/comanda/CreateComandaDTO'; 
 import { cancelComandaSchema } from '../dto/comanda/CancelComandaDTO';
-import { checkoutComandaSchema } from '../dto/comanda/CheckoutComandaDTO';
 
 export const comandaRouter = express.Router();
 

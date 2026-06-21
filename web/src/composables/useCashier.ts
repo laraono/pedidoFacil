@@ -194,7 +194,7 @@ export function useCashier() {
       closedComandaStore.addClosedComanda({
         ...comandaToCancel,
         closedAt: new Date().toISOString(),
-        status: "CANCELADO",
+        status: "Cancelada",
         cancelReason: reason,
       });
 

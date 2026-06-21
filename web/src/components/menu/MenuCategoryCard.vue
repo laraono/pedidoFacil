@@ -16,7 +16,7 @@ defineEmits(["click"]);
   <button
     class="relative flex overflow-hidden rounded-xl transition-all group"
     :class="[
-      variant === 'mobile'
+      variant === 'mobile' // Responsividade
         ? ['shrink-0 shadow-md active:scale-95', category.image ? 'w-36 h-28 items-end' : 'h-12 px-5 items-center']
         : ['w-full text-left shadow-sm', isActive ? 'shadow-lg scale-[1.02] z-10' : 'hover:scale-[1.02] hover:bg-white/5',
            category.image ? 'h-24 items-end p-4' : 'p-3 items-center'],

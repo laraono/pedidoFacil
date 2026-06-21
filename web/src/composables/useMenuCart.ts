@@ -36,8 +36,8 @@ export function useMenuCart() {
   const currentObservation = ref("");
   const selectedSize = ref<ProductSize | null>(null);
 
-  const cartQuantity = computed(() => cart.value.length);
-  const cartTotal = computed(() => cart.value.reduce((acc, item) => acc + item.price, 0));
+  const cartQuantity = computed(() => cart.value.reduce((acc, item) => acc + item.quantity, 0));
+  const cartTotal = computed(() => cart.value.reduce((acc, item) => acc + item.price * item.quantity, 0));
   const currentModalTotal = computed(() => {
     if (!currentProduct.value) return 0;
     return (selectedSize.value?.price ?? 0) * currentQuantity.value;
@@ -60,19 +60,16 @@ export function useMenuCart() {
 
   function addToCart() {
     if (!currentProduct.value || !selectedSize.value) return;
-    const unitPrice = selectedSize.value.price;
-    for (let i = 0; i < currentQuantity.value; i++) {
-      cart.value.push({
-        id: Date.now() + Math.random(),
-        productId: currentProduct.value.id,
-        name: currentProduct.value.name,
-        sizeName: selectedSize.value.name,
-        sizeId: selectedSize.value.id,
-        price: unitPrice,
-        quantity: 1,
-        obs: currentObservation.value,
-      });
-    }
+    cart.value.push({
+      id: Date.now() + Math.random(),
+      productId: currentProduct.value.id,
+      name: currentProduct.value.name,
+      sizeName: selectedSize.value.name,
+      sizeId: selectedSize.value.id,
+      price: selectedSize.value.price,
+      quantity: currentQuantity.value,
+      obs: currentObservation.value,
+    });
     showToast(`${currentQuantity.value}x ${currentProduct.value.name} adicionado!`, "success");
     closeProductModal();
   }

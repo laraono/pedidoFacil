@@ -9,7 +9,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useIdleTimer } from "../hooks/useIdleTimer";
 import BrandHeader from "../components/ui/BrandHeader";
 
-import { submitOrder } from "../services/orderService";
+import { submitOrder, registerTotemPayment } from "../services/orderService";
 import { connectMobileSocket } from "../services/socketService";
 import { appConfig } from "../services/apiConfig";
 
@@ -18,10 +18,10 @@ const { width } = Dimensions.get("window");
 type SimulationPhase = null | "processing" | "approved" | "cash";
 
 const PAYMENT_ICONS: Record<string, { icon: string; label: string; color: string }> = {
-  PIX: { icon: "qrcode-scan", label: "Pix", color: "#32BCAD" },
+  Pix: { icon: "qrcode-scan", label: "Pix", color: "#32BCAD" },
   Dinheiro: { icon: "cash-multiple", label: "Dinheiro", color: "#4CAF50" },
-  "Cartão Crédito": { icon: "credit-card", label: "Crédito", color: "#1976D2" },
-  "Cartão Débito": { icon: "credit-card-outline", label: "Débito", color: "#FF9800" },
+  Crédito: { icon: "credit-card", label: "Crédito", color: "#1976D2" },
+  Débito: { icon: "credit-card-outline", label: "Débito", color: "#FF9800" },
   MISTO: { icon: "wallet", label: "Pagar no Caixa", color: "#9C27B0" },
 };
 
@@ -32,9 +32,9 @@ export default function PaymentScreen() {
   const { theme } = useTheme();
   const panHandlers = useIdleTimer(120);
 
-  const params = route.params as { appliedDiscount?: number; customerName?: string } | undefined;
+  const params = route.params as { appliedDiscount?: number; description?: string } | undefined;
   const desconto = params?.appliedDiscount || 0;
-  const customerName = params?.customerName || null;
+  const description = params?.description || null;
   const totalComDesconto = Math.max(0, cartTotal - desconto);
 
   const [availableMethods, setAvailableMethods] = useState<string[]>([]);
@@ -83,25 +83,34 @@ export default function PaymentScreen() {
     setIsSubmitting(true);
 
     try {
-      const orderData = await submitOrder({ cartItems, customerName });
+      const orderData = await submitOrder({ cartItems, description });
 
       if (selectedMethod === "Dinheiro" || selectedMethod === "MISTO") {
         setSimulationPhase("cash");
         setTimeout(() => {
           setSimulationPhase(null);
           clearCart();
-          navigation.navigate("OrderConfirmed", { ticket: orderData.ticket, label: orderData.label, customerName, isPaid: false });
+          navigation.navigate("OrderConfirmed", { label: orderData.label, description, isPaid: false });
         }, 2000);
       } else {
         setSimulationPhase("processing");
+
+        const paymentPromise = registerTotemPayment({
+          comandaId: orderData.comandaId,
+          orderId: orderData.id,
+          type: selectedMethod,
+          amount: totalComDesconto,
+        });
+        await new Promise<void>(resolve => setTimeout(resolve, 2000));
+
+        const paid = await paymentPromise.then(() => true).catch(() => false);
+
+        setSimulationPhase(paid ? "approved" : "cash");
+        clearCart();
         setTimeout(() => {
-          setSimulationPhase("approved");
-          setTimeout(() => {
-            setSimulationPhase(null);
-            clearCart();
-            navigation.navigate("OrderConfirmed", { ticket: orderData.ticket, label: orderData.label, customerName, isPaid: true });
-          }, 1500);
-        }, 2000);
+          setSimulationPhase(null);
+          navigation.navigate("OrderConfirmed", { label: orderData.label, description, isPaid: paid });
+        }, paid ? 1500 : 2000);
       }
     } catch (error) {
       console.error("[PaymentScreen] Erro:", error);

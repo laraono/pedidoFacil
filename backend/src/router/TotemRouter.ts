@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { orderController } from '../controller';
+import { orderController, comandaController } from '../controller';
 import { catchAsync } from '../middleware';
 import { totemAccess } from '../middleware/checkTotemAccess';
 // import { MercadoPagoService } from '../service/MercadoPagoService';
@@ -34,10 +34,18 @@ totemRouter.post(
 );
 */
 
+
 totemRouter.post(
   '/totem/orders',
   totemLimiter,
   totemAccess,
   validateRequest(createTotemOrderSchema),
   catchAsync((req: Request, res: Response) => orderController.createTotemOrder(req, res))
+);
+
+totemRouter.post(
+  '/totem/comanda/:comandaId/payment',
+  totemLimiter,
+  totemAccess,
+  catchAsync((req: Request, res: Response) => comandaController.processTotemPayment(req, res))
 );

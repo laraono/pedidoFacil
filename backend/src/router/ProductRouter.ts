@@ -4,7 +4,7 @@ import { catchAsync, subscriptionMiddleware } from '../middleware';
 import { validateUpload } from '../middleware/validateUpload';
 import { validateRequest } from '../middleware/validateRequest';
 import { authenticate } from '../middleware/authenticate';
-import { verifyCategoryTenancy } from '../middleware/tenant';
+import { verifyCategoryTenancy, verifyProductTenancy } from '../middleware/tenant';
 import { checkPermission } from '../middleware/roleAccessControl';
 import { Permission } from '../enum';
 import { createProductSchema } from '../dto/product/CreateProductDTO';
@@ -81,6 +81,7 @@ productRouter.put(
   '/products/:id',
   authenticate,
   subscriptionMiddleware,
+  verifyProductTenancy('id'),
   checkPermission(Permission.CARDAPIO),
   validateUpload.single('imagem'),
   validateRequest(updateProductSchema),
@@ -91,6 +92,7 @@ productRouter.delete(
   '/products/:id',
   authenticate,
   subscriptionMiddleware,
+  verifyProductTenancy('id'),
   checkPermission(Permission.CARDAPIO),
   catchAsync((req: Request, res: Response) => productController.deleteProduct(req, res))
 );
@@ -99,6 +101,7 @@ productRouter.patch(
   '/products/:id/restore',
   authenticate,
   subscriptionMiddleware,
+  verifyProductTenancy('id'),
   checkPermission(Permission.CARDAPIO),
   catchAsync((req: Request, res: Response) => productController.restoreProduct(req, res))
 );

@@ -14,7 +14,7 @@ const props = defineProps({
   buttonTextColor: String,
   fontFamily: String,
   comandaUnitLabel: String,
-  observacoesPermitidas: Boolean,
+  allowObservations: Boolean,
   isSaving: Boolean,
 });
 
@@ -27,7 +27,7 @@ const emit = defineEmits([
   "update:buttonTextColor",
   "update:fontFamily",
   "update:comandaUnitLabel",
-  "update:observacoesPermitidas",
+  "update:allowObservations",
   "save",
   "close",
 ]);
@@ -131,8 +131,8 @@ const fontOptions = [
           </div>
           <input
             type="checkbox"
-            :checked="observacoesPermitidas"
-            @change="emit('update:observacoesPermitidas', $event.target.checked)"
+            :checked="allowObservations"
+            @change="emit('update:allowObservations', $event.target.checked)"
             class="w-5 h-5 accent-primary"
           />
         </label>

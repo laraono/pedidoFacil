@@ -48,9 +48,9 @@ const tableColumns = [
 ];
 
 const statusConfig = {
-  autorizada: { label: 'Autorizada', cls: 'bg-accent-light text-accent border-accent/30' },
+  autorizada: { label: 'Autorizada', cls: 'bg-accent-light text-green-800 border-accent/30' },
   erro:       { label: 'Erro',        cls: 'bg-danger-light text-danger border-danger' },
-  cancelada:  { label: 'Cancelada',   cls: 'bg-gray-100 text-[#757575] border-[#E0E0E0]' },
+  cancelada:  { label: 'Cancelada',   cls: 'bg-gray-100 text-muted border-[#E0E0E0]' },
   pendente:   { label: 'Pendente',    cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
 };
 
@@ -166,10 +166,10 @@ const nfActions = (nf) => ({
           <AlertTriangle :size="28" class="text-amber-400" />
         </div>
         <h2 class="text-xl font-black text-[#212121] mb-3">Dados fiscais não configurados</h2>
-        <p class="text-sm text-[#757575] mb-2 leading-relaxed">
+        <p class="text-sm text-muted mb-2 leading-relaxed">
           A emissão de Notas Fiscais requer o <span class="text-[#212121] font-bold">CNPJ</span> do estabelecimento cadastrado.
         </p>
-        <p class="text-xs text-[#757575] mb-8 leading-relaxed">
+        <p class="text-xs text-muted mb-8 leading-relaxed">
           Adicione o CNPJ nas configurações do estabelecimento para habilitar este módulo.
         </p>
         <BaseButton variant="primary" class="w-full uppercase tracking-widest text-sm" :icon="Building2" @click="router.push('/app/settings/establishment')">
@@ -179,7 +179,7 @@ const nfActions = (nf) => ({
     </div>
 
     <template v-if="hasCnpj">
-      <PageHeader title="Notas Fiscais" subtitle="Emissão e gestão de NF-e">
+      <PageHeader title="Notas Fiscais" subtitle="Emissão e gestão de NF-e" back-to="back">
         <template #actions>
           <BaseButton variant="secondary" :icon="Download" @click="exportAll">
             Exportar XML
@@ -199,7 +199,7 @@ const nfActions = (nf) => ({
           :key="tab.key"
           @click="activeTab = tab.key"
           class="px-4 py-2 rounded text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap"
-          :class="activeTab === tab.key ? 'bg-primary text-white' : 'text-[#757575] hover:text-[#212121]'"
+          :class="activeTab === tab.key ? 'bg-primary text-white' : 'text-muted hover:text-[#212121]'"
         >
           {{ tab.label }}
         </button>
@@ -207,15 +207,15 @@ const nfActions = (nf) => ({
 
       <div class="flex gap-3 mb-6 flex-wrap">
         <div class="relative flex-1 min-w-[200px]">
-          <Search :size="15" class="absolute left-3 top-1/2 -translate-y-1/2 text-[#757575] pointer-events-none" />
+          <Search :size="15" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
           <input
             v-model="searchQuery"
             placeholder="Buscar por número ou CPF..."
-            class="w-full py-3 pl-9 pr-4 bg-gray-50 border border-[#E0E0E0] rounded text-sm text-[#212121] placeholder:text-[#757575] outline-none focus:border-primary/40 transition-all"
+            class="w-full py-3 pl-9 pr-4 bg-gray-50 border border-[#E0E0E0] rounded text-sm text-[#212121] placeholder:text-muted outline-none focus:border-primary/40 transition-all"
           />
         </div>
-        <input v-model="dateFrom" type="date" class="py-3 px-4 bg-gray-50 border border-[#E0E0E0] rounded text-sm text-[#757575] outline-none focus:border-primary/40 transition-all" />
-        <input v-model="dateTo"   type="date" class="py-3 px-4 bg-gray-50 border border-[#E0E0E0] rounded text-sm text-[#757575] outline-none focus:border-primary/40 transition-all" />
+        <input v-model="dateFrom" type="date" class="py-3 px-4 bg-gray-50 border border-[#E0E0E0] rounded text-sm text-muted outline-none focus:border-primary/40 transition-all" />
+        <input v-model="dateTo"   type="date" class="py-3 px-4 bg-gray-50 border border-[#E0E0E0] rounded text-sm text-muted outline-none focus:border-primary/40 transition-all" />
       </div>
 
       <DataTable
@@ -254,7 +254,7 @@ const nfActions = (nf) => ({
               </span>
             </div>
             <div class="flex items-center justify-between text-sm">
-              <span class="text-[#757575]">{{ formatDate(item.emissao) }}</span>
+              <span class="text-muted">{{ formatDate(item.emissao) }}</span>
               <span class="font-black text-[#212121]">{{ formatCurrency(item.valor) }}</span>
             </div>
             <div class="flex gap-2 flex-wrap pt-1">
@@ -268,24 +268,24 @@ const nfActions = (nf) => ({
       </DataTable>
 
       <div class="flex items-center justify-between">
-        <p class="text-xs text-[#757575] font-bold">{{ filteredNFs.length }} nota(s) encontrada(s)</p>
+        <p class="text-xs text-muted font-bold">{{ filteredNFs.length }} nota(s) encontrada(s)</p>
         <div v-if="totalPages > 1" class="flex gap-2">
           <button
             @click="currentPage = Math.max(1, currentPage - 1)"
             :disabled="currentPage === 1"
-            class="px-4 py-2 bg-gray-50 border border-[#E0E0E0] text-[#757575] text-xs font-black rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            class="px-4 py-2 bg-gray-50 border border-[#E0E0E0] text-muted text-xs font-black rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           >← Anterior</button>
           <button
             v-for="p in totalPages"
             :key="p"
             @click="currentPage = p"
             class="px-4 py-2 text-xs font-black rounded transition-all border"
-            :class="currentPage === p ? 'bg-primary text-[#212121] border-accent' : 'bg-gray-50 text-[#757575] border-[#E0E0E0] hover:bg-gray-100'"
+            :class="currentPage === p ? 'bg-primary text-[#212121] border-accent' : 'bg-gray-50 text-muted border-[#E0E0E0] hover:bg-gray-100'"
           >{{ p }}</button>
           <button
             @click="currentPage = Math.min(totalPages, currentPage + 1)"
             :disabled="currentPage === totalPages"
-            class="px-4 py-2 bg-gray-50 border border-[#E0E0E0] text-[#757575] text-xs font-black rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            class="px-4 py-2 bg-gray-50 border border-[#E0E0E0] text-muted text-xs font-black rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           >Próxima →</button>
         </div>
       </div>

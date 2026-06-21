@@ -8,7 +8,7 @@
 
   const router = useRouter();
   const isMenuOpen = ref(false);
-  const { emailEnabled } = storeToRefs(useFeaturesStore());
+  const { emailEnabled, plansEnabled } = storeToRefs(useFeaturesStore());
 
   const scrollToSection = (sectionId) => {
     if (router.currentRoute.value.path === "/") {
@@ -47,6 +47,7 @@
           >Sobre</a
         >
         <a
+          v-if="plansEnabled"
           @click.prevent="scrollToSection('planos')"
           class="hover:text-accent transition-colors cursor-pointer"
           >Planos</a
@@ -97,6 +98,7 @@
           >Sobre nós</a
         >
         <a
+          v-if="plansEnabled"
           @click.prevent="scrollToSection('planos')"
           class="block py-3 border-b border-[#E0E0E0] text-[#212121] font-bold text-center cursor-pointer hover:text-accent transition-colors"
           >Planos</a

@@ -157,13 +157,13 @@ const savePassword = async () => {
       <div class="flex items-center gap-4">
         <button
           @click="router.back()"
-          class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] hover:bg-gray-100 transition-all"
+          class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-muted hover:text-[#212121] hover:bg-gray-100 transition-all"
         >
           <ArrowLeft :size="20" />
         </button>
         <div>
           <h1 class="text-3xl font-black text-[#212121] tracking-tight">Meu Perfil</h1>
-          <p class="text-[#757575] mt-1 text-sm">Dados pessoais e de contato para cobranças</p>
+          <p class="text-muted mt-1 text-sm">Dados pessoais e de contato para cobranças</p>
         </div>
       </div>
       <BaseButton variant="primary" :icon="Save" :isLoading="isLoadingProfile" class="hidden sm:flex" @click="saveProfile">
@@ -236,7 +236,7 @@ const savePassword = async () => {
 
       <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl">
         <h2 class="text-lg font-black text-[#212121] mb-6 flex items-center gap-2">
-          <Lock :size="20" class="text-[#757575]" /> Segurança da Conta
+          <Lock :size="20" class="text-muted" /> Segurança da Conta
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

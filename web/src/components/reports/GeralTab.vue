@@ -19,8 +19,8 @@
     props.isLoaded ? `${(val / maxRevenue.value) * 100}%` : "5%";
 
   const channelColorMap = {
-    "Auto-atendimento": "bg-blue-400",
-    Caixa: "bg-gray-400",
+    Autoatendimento: "bg-blue-400",
+    Garcom: "bg-gray-400",
   };
   const channelColor = (name) => channelColorMap[name] || "bg-brand-green";
 </script>

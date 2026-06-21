@@ -145,4 +145,20 @@ export class ComandaController {
             return res.status(500).json({ error: error.message || "Erro interno ao processar o pagamento." });
         }
     }
+
+    async processTotemPayment(req: Request, res: Response) {
+        const { comandaId } = req.params;
+        const { orderId, type, amount } = req.body;
+        const { estabelecimento } = (req as any).usuario;
+
+        const result = await this.comandaService.processPartialPayment(
+            Number(comandaId),
+            null,
+            Number(estabelecimento),
+            { type, amount: Number(amount) },
+            [Number(orderId)],
+            true,
+        );
+        return res.status(200).json(result);
+    }
 }
