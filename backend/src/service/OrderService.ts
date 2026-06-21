@@ -77,40 +77,22 @@ export class OrderService {
   }
 
   async createOrderWithTransaction(createOrder: any, comanda: any) {
-    const MAX_RETRIES = 3;
+    return await this.dataSource.transaction(async (manager) => {
+      const statusId = (createOrder.status && ORDER_STATUS_ID[createOrder.status as OrderStatus])
+        ?? STATUS_PEDIDO_IDS.AGUARDANDO_PREPARO;
 
-    for (let attempt = 1; ; attempt++) {
-      try {
-        return await this.dataSource.transaction(async (manager) => {
-          // pedidos concorrentes na mesma comanda entram em fila
-          await manager.findOne(Comanda, {
-            where: { id: comanda.id },
-            lock: { mode: 'pessimistic_write' },
-          });
+      const order = await manager.save(Order, {
+        status: { id: statusId },
+        autoatendimento: createOrder.autoatendimento ?? false,
+        comanda: comanda,
+        createdBy: createOrder.userId ? { id: createOrder.userId } : undefined,
+        clientRequestId: createOrder.clientRequestId ?? null,
+      }) as any;
 
-          const statusId = (createOrder.status && ORDER_STATUS_ID[createOrder.status as OrderStatus])
-            ?? STATUS_PEDIDO_IDS.AGUARDANDO_PREPARO;
+      await this.saveItens(createOrder.itens, order, manager);
 
-          const order = await manager.save(Order, {
-            status: { id: statusId },
-            autoatendimento: createOrder.autoatendimento ?? false,
-            comanda: comanda,
-            createdBy: createOrder.userId ? { id: createOrder.userId } : undefined,
-            clientRequestId: createOrder.clientRequestId ?? null,
-          }) as any;
-
-          await this.saveItens(createOrder.itens, order, manager);
-
-          return order;
-        });
-      } catch (err: any) {
-        const code = err?.code || err?.driverError?.code;
-        if ((code === 'ER_LOCK_DEADLOCK' || code === 'ER_LOCK_WAIT_TIMEOUT') && attempt < MAX_RETRIES) {
-          continue;
-        }
-        throw err;
-      }
-    }
+      return order;
+    });
   }
 
   async createTotemOrder(data: any) {
