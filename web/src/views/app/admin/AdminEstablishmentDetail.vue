@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAsyncAction } from '@/composables/useAsyncAction';
 import { useUtils } from '@/composables/useUtils';
@@ -14,12 +14,13 @@ const { formatCurrency } = useUtils();
 
 const detail = ref(null);
 
-onMounted(async () => {
+watch(() => route.params.id, async (id) => {
+  detail.value = null;
   detail.value = await runLoad(
-    () => adminEstablishmentApi.getDetail(Number(route.params.id)),
+    () => adminEstablishmentApi.getDetail(Number(id)),
     'Erro ao carregar estabelecimento.'
-  ) ?? detail.value;
-});
+  ) ?? null;
+}, { immediate: true });
 
 const formatDate = (d) =>
   d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -63,6 +64,7 @@ const paymentColumns = [
       :subtitle="detail?.cnpj || ''"
       :category-icon="Building2"
       category-label="Painel Admin"
+      back-to="back"
     >
     </PageHeader>
 

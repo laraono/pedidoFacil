@@ -70,6 +70,23 @@ app.use(cors({
 }));
 app.use(cookieParser());
 
+const SENSITIVE_KEYS = new Set(['password', 'senha', 'passwordResetToken', 'passwordResetExpires']);
+function scrubSensitive(value: any, depth = 0): any {
+    if (!value || typeof value !== 'object' || depth > 8) return value;
+    if (value instanceof Date) return value;
+    if (Array.isArray(value)) return value.map((v) => scrubSensitive(v, depth + 1));
+    for (const key of Object.keys(value)) {
+        if (SENSITIVE_KEYS.has(key)) delete value[key];
+        else value[key] = scrubSensitive(value[key], depth + 1);
+    }
+    return value;
+}
+app.use((req, res, next) => {
+    const originalJson = res.json.bind(res);
+    (res as any).json = (body: any) => originalJson(scrubSensitive(body));
+    next();
+});
+
 const httpServer = http.createServer(app);
 
 AppDataSource.initialize().then(async () => {

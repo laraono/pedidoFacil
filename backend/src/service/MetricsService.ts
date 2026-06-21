@@ -57,8 +57,10 @@ export class MetricsService {
         const cancellations = cancellationsRaw.map((c: any) => ({
             motivo: c.motivo,
             count: Number(c.count),
+            valor: Number(c.valor || 0),
         }));
         const totalCancelados = cancellations.reduce((acc: number, c: any) => acc + c.count, 0);
+        const valorCancelado = cancellations.reduce((acc: number, c: any) => acc + c.valor, 0);
 
         const paymentTotal = paymentsRaw.reduce((sum: number, r: any) => sum + Number(r.total), 0);
         const paymentMethods = paymentsRaw.map((r: any) => ({
@@ -77,6 +79,7 @@ export class MetricsService {
             salesByChannel,
             peakHours,
             cancellations,
+            valorCancelado,
             topProducts: productsRaw.map((p: any, i: number) => ({
                 id: i + 1,
                 nome: p.nome,

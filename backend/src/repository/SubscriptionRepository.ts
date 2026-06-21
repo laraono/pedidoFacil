@@ -24,7 +24,7 @@ export class SubscriptionRepository extends Repository<Subscription>{
     async listSubscriptions(status?: SubscriptionStatus, name?: string) {
         return await this.find({
             relations: {
-                establishment: { manager: true },
+                establishment: { manager: true, roles: { users: true } },
                 plan: true,
             },
             select: {
@@ -36,6 +36,7 @@ export class SubscriptionRepository extends Repository<Subscription>{
                     id: true,
                     name: true,
                     manager: { id: true, name: true },
+                    roles: { id: true, users: { id: true } },
                 }
             },
             where: (() => {

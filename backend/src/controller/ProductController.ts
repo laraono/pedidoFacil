@@ -8,6 +8,7 @@ import {
     uploadToS3,
     getImageContentType
 } from "../service/S3Service";
+import { sendError } from '../middleware/error/sendError';
 
 export class ProductController {
   private productService: ProductService;
@@ -122,7 +123,7 @@ export class ProductController {
       getIO().emit('menu_updated');
       res.status(200).json({ message: 'Produto updated com sucesso' });
     } catch (error: any) {
-      res.status(500).json({ error: error.message || 'Erro ao atualizar produto' });
+      sendError(res, error, 'Erro ao atualizar produto');
     }
   }
 
@@ -132,7 +133,7 @@ export class ProductController {
       getIO().emit('menu_updated');
       res.sendStatus(204);
     } catch (error: any) {
-      res.status(500).json({ error: error.message || 'Erro ao deletar produto' });
+      sendError(res, error, 'Erro ao deletar produto');
     }
   }
 
@@ -142,7 +143,7 @@ export class ProductController {
       getIO().emit('menu_updated');
       res.sendStatus(204);
     } catch (error: any) {
-      res.status(500).json({ error: error.message || 'Erro ao restaurar produto' });
+      sendError(res, error, 'Erro ao restaurar produto');
     }
   }
 }

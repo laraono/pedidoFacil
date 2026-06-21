@@ -25,6 +25,7 @@ export class AdminSubscriptionMetricsService {
             novosPorMesRaw,
             receitaPorMesRaw,
             revenueMetrics,
+            mrrReal,
         ] = await Promise.all([
             this.repo.getActiveCount(),
             this.repo.getOverdueCount(),
@@ -34,6 +35,7 @@ export class AdminSubscriptionMetricsService {
             this.repo.getNewPerMonth(intervalMonths),
             this.repo.getRevenuePerMonth(intervalMonths),
             this.paymentRepo.getMetricsForPeriod(start, end),
+            this.repo.getMrr(),
         ]);
 
         return {
@@ -41,7 +43,7 @@ export class AdminSubscriptionMetricsService {
             inadimplentes,
             canceladas,
             totalGeral,
-            receitaMensal: revenueMetrics.mrr,
+            receitaMensal: mrrReal,
             receitaColetada: revenueMetrics.receitaColetada,
             porPlano: porPlanoRaw.map((row: any) => ({
                 planId: row.planId,

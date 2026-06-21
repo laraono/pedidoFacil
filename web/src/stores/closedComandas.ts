@@ -39,23 +39,28 @@ export const useClosedComandaStore = defineStore('closedComandas', () => {
 
         const cancelledOrder = (c.pedidos || []).find((p: any) => p.cancellationDescription);
         const comandaStatusNome = typeof c.status === 'object' && c.status !== null ? c.status.nome : c.status;
-        const discountTypeNome = c.discountType?.nome;
+        const discountTypeNome = c.discountType?.nome || c.coupon?.type?.nome;
+        const rawDiscountValue = Number(c.discountValue || 0) || Number(c.coupon?.value || 0);
         const mappedDiscountType = discountTypeNome === 'Percentual' ? 'percent' : (discountTypeNome ? 'value' : null);
 
         return {
           id: c.id,
-          label: c.description || `Comanda #${c.id}`,
-          customerName: c.customerName ?? undefined,
-          isAutoatendimento: !!c.customerName || (c.description || '').startsWith('Totem #'),
-          closedAt: c.deleted_at || c.created_at || new Date(),
+          label: c.description,
+          closedAt: c.deleted_at,
           total: Number(c.total),
           status: comandaStatusNome,
           cancelReason: cancelledOrder?.cancellationDescription || undefined,
           orders: mappedOrders,
           paymentDetails: {
             discountType: mappedDiscountType,
-            discountValue: Number(c.discountValue || 0),
-            payments: [{ type: 'Liquidado', amount: Number(c.total) }]
+            discountValue: rawDiscountValue,
+            payments: [
+              ...new Map(
+                (c.pedidos || []).flatMap((p: any) => p.paymentOrders || [])
+                  .filter((po: any) => po.payment)
+                  .map((po: any) => [po.paymentId, po.payment])
+              ).values()
+            ].map((pay: any) => ({ type: pay.paymentMethod?.name, amount: Number(pay.totalValue) }))
           }
         };
       });

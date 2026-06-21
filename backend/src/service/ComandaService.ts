@@ -9,7 +9,6 @@ import { PaymentService } from './PaymentService';
 import { ReceiptService } from './ReceiptService';
 import { CreateComandaDTO } from '../dto/comanda/CreateComandaDTO';
 import { CancelComandaDTO } from '../dto/comanda/CancelComandaDTO';
-import { CheckoutComandaDTO } from '../dto/comanda/CheckoutComandaDTO';
 import { getIO } from '../socket';
 import {
   STATUS_COMANDA_IDS,
@@ -60,7 +59,9 @@ export class ComandaService {
       .leftJoinAndSelect('pedido.productOrders', 'po')
       .leftJoinAndSelect('po.product', 'product')
       .leftJoinAndSelect('po.productVariation', 'pv')
-      .leftJoinAndSelect('pedido.paymentOrders', 'paymentOrders');
+      .leftJoinAndSelect('pedido.paymentOrders', 'paymentOrders')
+      .leftJoinAndSelect('paymentOrders.payment', 'payment')
+      .leftJoinAndSelect('payment.paymentMethod', 'paymentMethod');
   }
 
   async listComandas(establishmentId: number): Promise<Comanda[]> {
@@ -126,13 +127,23 @@ export class ComandaService {
     valorAdicional: number,
     manager: EntityManager,
   ): Promise<void> {
-    comanda.total = Number(comanda.total) + Number(valorAdicional);
-    await manager.save(Comanda, comanda);
+    await manager.increment(Comanda, { id: comanda.id }, 'total', Number(valorAdicional));
+  }
+
+  async decrementComandaTotal(comandaId: number, valor: number): Promise<void> {
+    await this.dataSource
+      .getRepository(Comanda)
+      .createQueryBuilder()
+      .update(Comanda)
+      .set({ total: () => 'GREATEST(total - :valor, 0)' })
+      .where('id = :id', { id: comandaId })
+      .setParameters({ valor: Number(valor) })
+      .execute();
   }
 
   async processPartialPayment(
     comandaId: number,
-    userId: number,
+    userId: number | null,
     establishmentId: number,
     paymentInput: { type: string; amount: number; terminal?: string },
     selectedOrderIds: number[],
@@ -163,6 +174,7 @@ export class ComandaService {
       const ordersToPay = await manager
         .createQueryBuilder(Order, 'o')
         .innerJoin('o.status', 'os')
+        .leftJoinAndSelect('o.productOrders', 'po')
         .where('o.id IN (:...ids)', { ids: targetIds })
         .andWhere('o.ID_Comanda = :comandaId', { comandaId })
         .andWhere('os.nome != :cancelado', { cancelado: OrderStatus.CANCELADO })
@@ -228,11 +240,11 @@ export class ComandaService {
           if (finalDiscount > 0) {
             if (
               finalDiscountTypeName === 'percent' ||
-              finalDiscountTypeName === DiscountType.PERCENTUAL
+              finalDiscountTypeName === DiscountType.PERCENTUAL 
             ) {
-              novoTotal = novoTotal * (1 - finalDiscount / 100);
+              novoTotal = Math.round(novoTotal * (1 - finalDiscount / 100) * 100) / 100;
             } else {
-              novoTotal = Math.max(0, novoTotal - finalDiscount);
+              novoTotal = Math.round(Math.max(0, novoTotal - finalDiscount) * 100) / 100;
             }
           }
 
@@ -263,14 +275,5 @@ export class ComandaService {
     }
 
     return result;
-  }
-
-  async checkoutComanda(
-    comandaId: number,
-    userId: number,
-    establishmentId: number,
-    checkoutData: CheckoutComandaDTO,
-  ) {
-    return { success: true };
   }
 }

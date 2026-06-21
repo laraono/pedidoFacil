@@ -102,10 +102,38 @@ ok "Todos os containers no ar"
 BACKEND_PORT=$(grep "^PORT=" backend/.env | cut -d= -f2)
 BACKEND_PORT="${BACKEND_PORT:-3000}"
 
-LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
-[ -z "$LOCAL_IP" ] && LOCAL_IP=$(ipconfig getifaddr en0 2>/dev/null || echo "localhost")
-MOBILE_URL="http://${LOCAL_IP}:${BACKEND_PORT}"
-echo "EXPO_PUBLIC_API_URL=${MOBILE_URL}" > mobile/.env
+MOBILE_URL=$(grep "^EXPO_PUBLIC_API_URL=" mobile/.env 2>/dev/null | cut -d= -f2)
+if [ -z "$MOBILE_URL" ]; then
+  warn "mobile/.env sem EXPO_PUBLIC_API_URL — edite o arquivo com o IP da máquina antes de abrir o app."
+  MOBILE_URL="http://localhost:${BACKEND_PORT}"
+  echo "EXPO_PUBLIC_API_URL=${MOBILE_URL}" > mobile/.env
+fi
+LOCAL_IP=$(echo "$MOBILE_URL" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
+
+# ── Expo (mobile) ──────────────────────────────────────────────────────────
+info "Iniciando Expo (aguarde o QR code)..."
+CI=1 npm run start --prefix mobile > /tmp/expo.log 2>&1 &
+echo $! > .expo.pid
+
+for i in $(seq 1 60); do
+  sleep 1
+  if grep -q "Waiting on" /tmp/expo.log 2>/dev/null; then
+    break
+  fi
+done
+
+echo ""
+echo -e "  ${DIM}───────────────────────────────────────────────────────${RESET}"
+echo ""
+
+if grep -q "Waiting on" /tmp/expo.log 2>/dev/null; then
+  EXP_URL="exp://${LOCAL_IP}:8081"
+  node -e "require('./mobile/node_modules/qrcode-terminal').generate('$EXP_URL', {small: true}, function(qr){ console.log(qr) })"
+  echo ""
+  ok "Expo iniciado — URL: ${BOLD}${EXP_URL}${RESET}"
+else
+  warn "Expo ainda inicializando — acompanhe com: ${BOLD}tail -f /tmp/expo.log${RESET}"
+fi
 
 # ── Resultado ──────────────────────────────────────────────────────────────
 echo ""
@@ -114,16 +142,14 @@ echo ""
 echo -e "  ${GREEN}${BOLD}Sistema no ar! ✓${RESET}"
 echo ""
 echo -e "  ${BOLD}http://localhost:5173${RESET}       ${DIM}← site${RESET}"
-echo -e "  ${BOLD}http://localhost:${BACKEND_PORT}${RESET}         ${DIM}← backend (API)${RESET}"
-echo -e "  ${BOLD}http://localhost:9001${RESET}       ${DIM}← MinIO painel admin${RESET}"
 echo ""
-echo -e "  ${BOLD}Admin:${RESET}  admin@admin.com  /  Admin@123"
+echo -e "  ${BOLD}Acesso como administrador do sistema:${RESET}  dono_master@admin.com /  Admin@123"
 echo ""
 echo -e "  ${BOLD}Mobile (Expo Go):${RESET}"
-echo -e "    ${DIM}API configurada:${RESET} ${BOLD}${MOBILE_URL}${RESET}"
-echo -e "    Para iniciar: ${BOLD}npm run start --prefix mobile${RESET}"
+echo -e "    1. Instale o ${BOLD}Expo Go${RESET} no celular ${DIM}(Play Store / App Store)${RESET}"
+echo -e "    2. Escaneie o QR acima ${DIM}ou no Expo Go toque em 'Enter URL':${RESET} ${BOLD}exp://${LOCAL_IP}:8081${RESET}"
 echo ""
-echo -e "  Para encerrar: ${BOLD}docker compose --env-file backend/.env down${RESET}"
+echo -e "  Para encerrar: ${BOLD}./down.sh${RESET}"
 echo ""
 echo -e "  ${DIM}───────────────────────────────────────────────────────${RESET}"
 echo ""

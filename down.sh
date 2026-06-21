@@ -58,6 +58,17 @@ RESPOSTA="${RESPOSTA:-N}"
 
 echo ""
 
+# ── Encerra Expo ──────────────────────────────────────────────────────────
+info "Encerrando Expo..."
+if [ -f .expo.pid ]; then
+  EXPO_PID=$(cat .expo.pid)
+  kill -- -"$EXPO_PID" 2>/dev/null || kill "$EXPO_PID" 2>/dev/null || true
+  rm -f .expo.pid
+fi
+pkill -f "expo start" 2>/dev/null || true
+pkill -f "@expo/metro" 2>/dev/null || true
+ok "Expo encerrado"
+
 # ── Derruba os containers ──────────────────────────────────────────────────
 if [[ "$RESPOSTA" =~ ^[Ss]$ ]]; then
   warn "Apagando containers e volumes (banco e MinIO serão zerados)..."

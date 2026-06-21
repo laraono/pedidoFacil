@@ -2,17 +2,12 @@ import { DataSource, EntityManager } from 'typeorm';
 import { Payment, PaymentOrder, Order } from '../database/entity';
 import { PaymentMethod } from '../database/entity/PaymentMethod';
 import { AppError } from '../middleware/error/AppError';
-import { MercadoPagoService } from './MercadoPagoService';
-import { OrderRepository, PaymentRepository } from '../repository';
 import { PaymentStatus } from '../enum';
 import { STATUS_PAGAMENTO_IDS } from '../database/entity/lookup-ids';
 
 export class PaymentService {
     constructor(
-        private dataSource: DataSource,
-        private mercadoPagoService: MercadoPagoService,
-        private paymentRepository: PaymentRepository,
-        private orderRepository: OrderRepository,
+        private dataSource: DataSource
     ) {}
 
     async processCheckoutPayments(
@@ -20,7 +15,7 @@ export class PaymentService {
         paymentsData: Array<{ type: string, amount: number, terminal?: string }>,
         change: number,
         establishmentId: number,
-        userId: number,
+        userId: number | null,
         manager: EntityManager
     ) {
         if (!orders || orders.length === 0) {
@@ -29,6 +24,12 @@ export class PaymentService {
 
         const registeredPayments: Payment[] = [];
         let remainingChange = change;
+
+        const enabledRows: Array<{ ID_MetodoPagamento: number }> = await manager.query(
+            'SELECT ID_MetodoPagamento FROM ESTABELECIMENTO_METODO_PAGAMENTO WHERE ID_Estabelecimento = ?',
+            [establishmentId]
+        );
+        const enabledMethodIds = enabledRows.map(r => Number(r.ID_MetodoPagamento));
 
         for (const paymentInput of paymentsData) {
 
@@ -39,15 +40,17 @@ export class PaymentService {
 
             const paymentMethod = await manager.findOne(PaymentMethod, { where: { name: paymentInput.type } });
             if (!paymentMethod) throw new AppError(`Método de pagamento '${paymentInput.type}' não cadastrado.`, 400);
+            if (enabledMethodIds.length > 0 && !enabledMethodIds.includes(paymentMethod.id)) {
+                throw new AppError(`Método de pagamento '${paymentInput.type}' não está habilitado para este estabelecimento.`, 400);
+            }
 
             const payment = manager.create(Payment, {
                 paymentMethod,
                 totalValue: paymentInput.amount,
-                serviceTax: 0,
                 change: paymentMethod.name === 'Dinheiro' ? remainingChange : 0,
                 status: { id: STATUS_PAGAMENTO_IDS.APROVADO },
                 establishment: { id: establishmentId },
-                user: { id: userId }
+                user: userId ? { id: userId } : undefined
             });
 
             const savedPayment = await manager.save(Payment, payment);
@@ -75,11 +78,18 @@ export class PaymentService {
             for (const order of orders) {
                 if (amountToDistribute <= 0) break;
 
+                const orderTotal = (order.productOrders ?? []).reduce(
+                    (sum, po) => sum + Number(po.price) * Number(po.quantity),
+                    0,
+                );
+
+                const alloc = Math.min(amountToDistribute, orderTotal);
+                amountToDistribute -= alloc;
+
                 const paymentOrder = manager.create(PaymentOrder, {
                     orderId: order.id,
                     paymentId: savedPayment.id,
-                    quantity: 1,
-                    price: amountToDistribute
+                    price: alloc
                 });
 
                 await manager.save(PaymentOrder, paymentOrder);

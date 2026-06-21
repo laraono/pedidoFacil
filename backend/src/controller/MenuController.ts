@@ -28,10 +28,8 @@ export class MenuController {
             });
         }
 
-        const editMode = req.query.editMode === 'true';
-
         try {
-            const menu = await this.menuService.getFullMenu(Number(establishmentId), editMode);
+            const menu = await this.menuService.getFullMenu(Number(establishmentId));
             return res.status(200).json(menu);
         } catch (error) {
             logger.error("Erro no MenuService:", error);

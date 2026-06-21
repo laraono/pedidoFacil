@@ -1,9 +1,15 @@
 import { appConfig } from './apiConfig';
 import type { CartItem } from '../contexts/CartContext';
 
-export async function submitOrder({ cartItems, customerName = null }: {
+const totemHeaders = (): Record<string, string> => {
+  const h: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (appConfig.selfServiceCode) h['x-totem-code'] = appConfig.selfServiceCode;
+  return h;
+};
+
+export async function submitOrder({ cartItems, description = null }: {
   cartItems: CartItem[]
-  customerName?: string | null
+  description?: string | null
 }): Promise<any> {
   const itens = cartItems.map(item => ({
     productId: item.id,
@@ -14,19 +20,12 @@ export async function submitOrder({ cartItems, customerName = null }: {
 
   const body = {
     itens,
-    customerName,
+    description,
   };
-
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  if (appConfig.selfServiceCode) {
-    headers['x-totem-code'] = appConfig.selfServiceCode;
-  }
 
   const response = await fetch(
     `${appConfig.API_URL}/totem/orders`,
-    { method: 'POST', headers, body: JSON.stringify(body) },
+    { method: 'POST', headers: totemHeaders(), body: JSON.stringify(body) },
   );
 
   if (!response.ok) {
@@ -35,4 +34,17 @@ export async function submitOrder({ cartItems, customerName = null }: {
   }
 
   return await response.json();
+}
+
+export async function registerTotemPayment({ comandaId, orderId, type, amount }: {
+  comandaId: number;
+  orderId: number;
+  type: string;
+  amount: number;
+}): Promise<void> {
+  const response = await fetch(
+    `${appConfig.API_URL}/totem/comanda/${comandaId}/payment`,
+    { method: 'POST', headers: totemHeaders(), body: JSON.stringify({ orderId, type, amount }) },
+  );
+  if (!response.ok) throw new Error(await response.text());
 }

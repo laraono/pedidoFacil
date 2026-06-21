@@ -16,7 +16,7 @@ const establishmentController = new EstablishmentController(establishmentService
 const codeLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  handler: (req, res) => res.status(429).json({ error: 'Muitas tentativas. Tente novamente em 15 minutos.' }),
+  handler: (_req, res) => res.status(429).json({ error: 'Muitas tentativas. Tente novamente em 15 minutos.' }),
 });
 
 establishmentRouter.post('/check-cnpj', establishmentController.checkCnpj);

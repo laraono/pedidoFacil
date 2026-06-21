@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { auditLog } from "../utils/logger";
 import { getIO } from "../socket";
 import { ComandaStatus } from "../enum";
+import { sendError } from "../middleware/error/sendError";
 
 export class ComandaController {
     private comandaService: ComandaService
@@ -142,7 +143,7 @@ export class ComandaController {
                 error: error.message,
             });
 
-            return res.status(500).json({ error: error.message || "Erro interno ao processar o pagamento." });
+            return sendError(res, error, "Erro interno ao processar o pagamento.");
         }
     }
 
