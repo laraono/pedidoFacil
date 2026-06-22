@@ -28,6 +28,7 @@ const setupNotificationListener = () => {
     }
 
     const handler = (data) => {
+      if (authStore.user?.isAdmin) return;
       if (data.userId !== authStore.user?.id) return;
       showToast(`Comanda ${data.comanda} está PRONTA!`, 'success');
     };
