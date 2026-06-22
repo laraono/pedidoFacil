@@ -71,7 +71,8 @@ export class ProductController {
       }
 
       const status = req.query.status as string | undefined;
-      const result = await this.productService.listProducts(estabelecimentoId, page, limit, status);
+      const search = req.query.search as string | undefined;
+      const result = await this.productService.listProducts(estabelecimentoId, page, limit, status, search);
       return res.status(200).json(result);
     } catch (error: any) {
       res.status(500).json({ error: error.message || 'Erro ao listar produtos' });

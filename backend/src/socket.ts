@@ -11,7 +11,7 @@ const STAFF_ROOMS = new Set(['kitchen', 'cashier', 'waiter']);
 export function initSocket(httpServer: HttpServer): SocketIOServer {
     io = new SocketIOServer(httpServer, {
         cors: {
-            origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+            origin: true,
             credentials: true,
         },
     });

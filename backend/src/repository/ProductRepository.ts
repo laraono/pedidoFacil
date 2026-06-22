@@ -13,7 +13,7 @@ export class ProductRepository extends Repository<Product> {
         return await this.save(product as any);
     }
 
-    async listProducts(establishmentId: number, page: number, limit: number, status?: string) {
+    async listProducts(establishmentId: number, page: number, limit: number, status?: string, search?: string) {
         const skip = (page - 1) * limit;
 
         const qb = this.createQueryBuilder('product')
@@ -30,6 +30,13 @@ export class ProductRepository extends Repository<Product> {
 
         if (status !== undefined && status !== null) {
             qb.andWhere('product.ativo = :ativo', { ativo: status !== 'Inativo' && status !== 'false' });
+        }
+
+        if (search !== undefined && search !== null && search.trim() !== '') {
+            qb.andWhere(
+                '(LOWER(product.name) LIKE LOWER(:search) OR LOWER(product.description) LIKE LOWER(:search) OR LOWER(category.name) LIKE LOWER(:search))',
+                { search: `%${search.trim()}%` }
+            );
         }
 
         const [products, total] = await qb.getManyAndCount();
