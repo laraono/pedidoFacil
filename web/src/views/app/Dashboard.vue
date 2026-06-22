@@ -14,7 +14,7 @@ onMounted(() => {
 
 const dashboardCards = computed(() =>
   allMenuItems
-    .filter(item => !item.permission || authStore.hasPermission(item.permission))
+    .filter(item => (!item.permission || authStore.hasPermission(item.permission)) && (!item.managerOnly || authStore.user?.cargo?.name === 'Gerente'))
     .map(item => ({ ...item, route: item.route || '#' }))
 );
 

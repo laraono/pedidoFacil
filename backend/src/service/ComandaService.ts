@@ -212,8 +212,13 @@ export class ComandaService {
               status: { id: STATUS_PEDIDO_IDS.FINALIZADO } as any,
             });
             getIO()
-              .to('cashier')
-              .emit('order_status_updated', { orderId: p.id, status: OrderStatus.FINALIZADO });
+              .to(`cashier_${establishmentId}`)
+              .to(`kitchen_${establishmentId}`)
+              .emit('order_status_updated', {
+                orderId: p.id,
+                comandaId,
+                status: OrderStatus.FINALIZADO,
+              });
           }
         }
 

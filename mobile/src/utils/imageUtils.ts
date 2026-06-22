@@ -12,6 +12,10 @@ export const getFullImageUrl = (imagePath: string | null | undefined): { uri: st
     return { uri: fixedUrl };
   }
 
+  if (imagePath.startsWith("/storage/")) {
+    return { uri: `${appConfig.LOCALSTACK_URL}${imagePath.replace("/storage", "")}` };
+  }
+
   if (imagePath.startsWith("http") || imagePath.startsWith("data:")) {
     return { uri: imagePath };
   }

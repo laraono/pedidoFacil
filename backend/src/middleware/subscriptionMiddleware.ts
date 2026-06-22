@@ -16,7 +16,7 @@ export async function subscriptionMiddleware(req: Request, res: Response, next: 
         if (!subscription)
             return res.status(402).json({ message: 'Nenhuma assinatura encontrada' })
 
-        if (subscription.expirationDate <= new Date()) {
+        if (new Date(subscription.expirationDate) <= new Date()) {
             await subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.EXPIRADA)
             return res.status(402).json({ message: 'Assinatura expirada' })
         }

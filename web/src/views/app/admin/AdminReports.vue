@@ -173,17 +173,6 @@ const handleExport = () => window.print();
     >
       <template #actions>
         <Loader2 v-if="isLoading" :size="18" class="text-accent animate-spin" />
-        <div class="flex bg-white border border-[#E0E0E0] rounded overflow-hidden">
-          <button
-            v-for="opt in ['3m', '6m', '12m', 'all']"
-            :key="opt"
-            @click="dateFilter = opt"
-            :class="dateFilter === opt ? 'bg-primary text-white' : 'text-[#757575] hover:text-[#212121]'"
-            class="px-4 py-2 text-xs font-black uppercase transition-all"
-          >
-            {{ opt === 'all' ? 'Tudo' : opt.toUpperCase() }}
-          </button>
-        </div>
         <button
           @click="handleExport"
           class="flex items-center gap-2 px-4 py-2.5 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] text-sm font-bold transition-colors"
@@ -206,6 +195,17 @@ const handleExport = () => window.print();
         <div class="flex items-center gap-2 mb-6">
           <BarChart3 :size="18" class="text-accent" />
           <h2 class="font-black text-[#212121]">Faturamento Mensal</h2>
+          <div class="ml-auto flex bg-white border border-[#E0E0E0] rounded overflow-hidden">
+            <button
+              v-for="opt in ['3m', '6m', '12m', 'all']"
+              :key="opt"
+              @click="dateFilter = opt"
+              :class="dateFilter === opt ? 'bg-primary text-white' : 'text-[#757575] hover:text-[#212121]'"
+              class="px-3 py-1.5 text-xs font-black uppercase transition-all"
+            >
+              {{ opt === 'all' ? 'Tudo' : opt.toUpperCase() }}
+            </button>
+          </div>
         </div>
 
         <div class="overflow-x-auto">

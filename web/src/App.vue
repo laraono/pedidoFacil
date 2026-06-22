@@ -21,14 +21,14 @@ const setupNotificationListener = () => {
   const socket = getSocket();
   
   if (socket && authStore.user?.id) {
-    const eventName = `user_notification_${authStore.user.id}`;
+    const eventName = `user_notification`;
     
     if (currentSocketListener) {
       socket.off(currentSocketListener.eventName, currentSocketListener.handler);
     }
 
     const handler = (data) => {
-
+      if (data.userId !== authStore.user?.id) return;
       showToast(`Comanda ${data.comanda} está PRONTA!`, 'success');
     };
 

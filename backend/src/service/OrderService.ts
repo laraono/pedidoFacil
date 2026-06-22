@@ -196,14 +196,6 @@ export class OrderService {
     expectedComandaId?: number,
     establishmentId?: number,
   ) {
-    const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-      [OrderStatus.AGUARDANDO_PREPARO]: [OrderStatus.EM_PREPARO, OrderStatus.CANCELADO],
-      [OrderStatus.EM_PREPARO]:         [OrderStatus.PRONTO, OrderStatus.CANCELADO],
-      [OrderStatus.PRONTO]:             [OrderStatus.FINALIZADO],
-      [OrderStatus.FINALIZADO]:         [],
-      [OrderStatus.CANCELADO]:          [],
-    };
-
     const order = await this.dataSource.getRepository(Order).findOne({
       where: { id: orderId },
       relations: ['comanda', 'createdBy', 'status', 'productOrders'],
@@ -213,10 +205,6 @@ export class OrderService {
     if (!order.comanda) throw new AppError('Pedido sem comanda associada', 500);
     if (expectedComandaId && order.comanda.id !== expectedComandaId)
       throw new AppError('Pedido não pertence a esta comanda', 403);
-
-    const currentStatus = order.status?.nome as OrderStatus;
-    if (!ALLOWED_TRANSITIONS[currentStatus]?.includes(status))
-      throw new AppError(`Transição inválida: ${currentStatus} → ${status}`, 422);
 
     const orderUserId = order?.createdBy?.id;
     const comandaId = order.comanda.id;
@@ -268,12 +256,14 @@ export class OrderService {
           orderId,
           comandaId,
           status,
+          autoatendimento: order.autoatendimento,
         });
       }
       if (status === OrderStatus.PRONTO && orderUserId) {
-        io.emit(`user_notification_${orderUserId}`, {
+        io.emit('user_notification', {
           orderId,
           comanda: order.comanda.description,
+          userId: orderUserId,
         });
       }
     }

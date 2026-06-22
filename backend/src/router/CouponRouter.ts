@@ -25,7 +25,7 @@ couponRouter.use(subscriptionMiddleware);
 
 couponRouter.get(
   '/',
-  checkPermission(Permission.CUPONS),
+  checkPermission(Permission.CUPONS, Permission.CAIXA),
   couponController.list.bind(couponController),
 );
 

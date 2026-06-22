@@ -35,11 +35,14 @@ export class MetricsRepository {
             labelExpr = `'%m/%Y'`;
             groupExpr = `'%Y-%m'`;
         }
+        const groupBy = labelExpr === groupExpr
+            ? `DATE_FORMAT(Data_Abertura, ${groupExpr})`
+            : `DATE_FORMAT(Data_Abertura, ${groupExpr}), DATE_FORMAT(Data_Abertura, ${labelExpr})`;
         const sql = `
             SELECT DATE_FORMAT(Data_Abertura, ${labelExpr}) as label, SUM(Total) as value
             FROM COMANDA
             WHERE ID_Estabelecimento = ? AND ID_Status = ${SC_FECHADA} AND Data_Abertura BETWEEN ? AND ?
-            GROUP BY DATE_FORMAT(Data_Abertura, ${groupExpr})
+            GROUP BY ${groupBy}
             ORDER BY MIN(Data_Abertura)`;
         return this.dataSource.query(sql, [establishmentId, start, end]);
     }
@@ -158,7 +161,7 @@ export class MetricsRepository {
             FROM COMANDA
             WHERE ID_Estabelecimento = ? AND Data_Abertura BETWEEN ? AND ?
             GROUP BY DATE_FORMAT(Data_Abertura, '%H:00')
-            ORDER BY DATE_FORMAT(Data_Abertura, '%H:00')
+            ORDER BY MIN(Data_Abertura)
         `, [establishmentId, start, end]);
     }
 }

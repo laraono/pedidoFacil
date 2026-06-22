@@ -35,7 +35,7 @@ establishmentRouter.get(
 establishmentRouter.get(
   '/profile',
   authenticate,
-  checkPermission(Permission.CONFIGURACAO),
+  checkPermission(Permission.CONFIGURACAO, Permission.CAIXA, Permission.CRIAR_PEDIDO, Permission.COZINHA),
   establishmentController.getProfile
 );
 

@@ -5,7 +5,7 @@ import rateLimit from 'express-rate-limit'
 
 export const receiptLimiter = rateLimit({
     windowMs: 60 * 1000,
-    max: 30,
+    max: 60,
     handler: (req: Request, res: Response) => {
         res.status(429).json({
             error: 'Muitas tentativas. Tente novamente mais tarde.',

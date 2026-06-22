@@ -367,7 +367,7 @@
               >
                 {{ formatCurrency(monthlyEquivalent(Number(annualPlan.price), 'anual')) }}<span
                   class="text-xl font-normal text-[#757575] tracking-normal"
-                  >/mês</span
+                  >/mês*</span
                 >
               </div>
               <p class="text-xs text-primary font-bold mb-2">
@@ -375,7 +375,7 @@
                 {{ formatCurrency(Number(annualPlan.price)) }}
               </p>
               <p class="text-xs text-[#757575] mb-1">
-                Estimativa — cobrado à vista anualmente
+                *Estimativa, cobrado à vista anualmente
               </p>
               <div class="w-full h-px bg-primary/20 my-8"></div>
               <div class="flex flex-col gap-5 mb-10 w-full px-2 text-left">

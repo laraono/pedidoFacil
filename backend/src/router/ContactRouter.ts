@@ -8,7 +8,7 @@ const contactRouter = Router();
 
 const limitadorContato = createRateLimiter(
   60,
-  3,
+  6,
   'Muitas mensagens enviadas. Por favor, tente novamente em uma hora.',
 );
 

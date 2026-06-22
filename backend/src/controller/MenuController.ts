@@ -5,7 +5,7 @@ import { logger } from '../utils/logger';
 
 export const menuLimiter = rateLimit({
     windowMs: 60 * 1000,
-    max: 1000,
+    max: 600,
     handler: (req: Request, res: Response) => {
         res.status(429).json({
             error: 'Muitas tentativas. Tente novamente mais tarde.',

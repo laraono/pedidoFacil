@@ -21,7 +21,6 @@ export function connectMobileSocket(): Socket | null {
 
   socket.on("connect", () => {
     console.log("[Mobile Socket] Conectado:", socket!.id);
-    socket!.emit("join_room", "waiter");
     if (appConfig.selfServiceCode) {
       socket!.emit("join_room", `totem_${appConfig.selfServiceCode}`);
     }
@@ -36,24 +35,6 @@ export function connectMobileSocket(): Socket | null {
   });
 
   return socket;
-}
-
-export function listenOrderStatus(orderId: string | number, onUpdate: (data: any) => void): void {
-  if (!socket) {
-    console.warn("[Mobile Socket] Socket não conectado. Chame connectMobileSocket() primeiro.");
-    return;
-  }
-
-  socket.on("order_status_updated", (data: any) => {
-    if (data.orderId === orderId) {
-      console.log("[Mobile Socket] Status do meu pedido atualizado:", data);
-      onUpdate(data);
-    }
-  });
-}
-
-export function stopListeningOrderStatus(): void {
-  if (socket) socket.off("order_status_updated");
 }
 
 export function disconnectMobileSocket(): void {

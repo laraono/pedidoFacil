@@ -78,7 +78,7 @@ export function useCashier() {
         } as any);
       }
 
-      if (localStatus === "ready") {
+      if (localStatus === "ready" && !data.autoatendimento) {
         const comanda = comandaStore.comandas.find((c: any) => c.id === data.comandaId);
         const label = comanda?.label ? `${comandaUnitLabel} ${comanda.label}` : comandaUnitLabel;
         showToast(`Pedido de ${label} está PRONTO!`, "success");

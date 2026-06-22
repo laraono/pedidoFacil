@@ -70,10 +70,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         const data = await response.json();
         const config = data.configurations || {};
 
-        const logoPath: string | null = config.logo ?? null;
-        const logoUrl = logoPath
-          ? (logoPath.startsWith('http') ? logoPath : `${appConfig.BASE_IP}/uploads/${logoPath}`)
-          : null;
+        const logoUrl = getFullImageUrl(config.logo)?.uri ?? null;
 
         const bgColor = config.backgroundColor || defaultTheme.fundoGeral;
         const cardColor = config.cardsColor || defaultTheme.fundoProdutos;

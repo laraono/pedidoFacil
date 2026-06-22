@@ -20,7 +20,12 @@ function isFormDataObj(data: any): boolean {
   );
 }
 
-
+async function flagSubscriptionInactive(): Promise<void> {
+  try {
+    const { useSubscriptionStore } = await import('@/stores/subscriptions');
+    useSubscriptionStore().markInactiveFromBackend();
+  } catch {}
+}
 
 export async function request(path: string, options: CustomRequestInit = {}) {
   const isFormData = options.isMultipart === true || isFormDataObj(options.body);
@@ -49,6 +54,7 @@ export async function request(path: string, options: CustomRequestInit = {}) {
 
   if (res.status === 402) {
     const body = await res.json().catch(() => ({}));
+    await flagSubscriptionInactive();
     const err: any = new Error(body.message || 'Assinatura expirada ou inválida');
     err.status = 402;
     err.data = body;
@@ -84,6 +90,7 @@ export async function request(path: string, options: CustomRequestInit = {}) {
 
       if (retry.status === 402) {
         const body = await retry.json().catch(() => ({}));
+        await flagSubscriptionInactive();
         const err: any = new Error(body.message || 'Assinatura expirada ou inválida');
         err.status = 402;
         err.data = body;

@@ -58,7 +58,6 @@ export function initSocket(httpServer: HttpServer): SocketIOServer {
             if (typeof room !== 'string') return;
             const r = room.trim();
             if (role === 'TOTEM') {
-                if (r === 'waiter' && estabId) { socket.join(`waiter_${estabId}`); return; }
                 if (r.startsWith('totem_')) { socket.join(r); return; }
             } else {
                 if (STAFF_ROOMS.has(r) && estabId) { socket.join(`${r}_${estabId}`); return; }

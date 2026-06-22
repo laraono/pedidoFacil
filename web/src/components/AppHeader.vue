@@ -31,6 +31,9 @@
       if (item.permission && !authStore.hasPermission(item.permission)) {
         return false;
       }
+      if (item.managerOnly && roleName.value !== "Gerente") {
+        return false;
+      }
       return true;
     });
   });

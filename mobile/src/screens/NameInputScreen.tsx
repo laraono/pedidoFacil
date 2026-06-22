@@ -17,7 +17,7 @@ export default function NameInputScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute();
   const { theme } = useTheme();
-  const panHandlers = useIdleTimer(90);
+  const panHandlers = useIdleTimer(180);
 
   const params = route.params as { appliedDiscount?: number } | undefined;
   const appliedDiscount = params?.appliedDiscount || 0;

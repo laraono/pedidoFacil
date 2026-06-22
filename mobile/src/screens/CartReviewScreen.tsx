@@ -43,6 +43,7 @@ export default function CartReviewScreen() {
     try {
       const response = await fetch(
         `${appConfig.API_URL}/cupons/validate/${cupomInput.trim()}?establishmentId=${appConfig.ESTABLISHMENT_ID}`,
+        { headers: { "x-totem-code": appConfig.selfServiceCode ?? "" } },
       );
 
       if (!response.ok) {

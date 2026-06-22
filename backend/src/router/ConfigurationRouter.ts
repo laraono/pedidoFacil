@@ -16,8 +16,7 @@ configRouter.get(
   '/estabelecimento/:establishmentId/config',
   authenticate,
   subscriptionMiddleware,
-  checkPermission(Permission.CONFIGURACAO),
-  (req, res) => configController.getConfig(req, res)
+    (req, res) => configController.getConfig(req, res)
 );
 
 configRouter.put(

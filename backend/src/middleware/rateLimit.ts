@@ -12,5 +12,5 @@ export const createRateLimiter = (minutes: number, maxRequests: number, message:
   });
 };
 
-export const publicLimiter = createRateLimiter(1, 100, MSG);
-export const authenticatedLimiter = createRateLimiter(1, 600, MSG);
+export const publicLimiter = createRateLimiter(1, 200, MSG);
+export const authenticatedLimiter = createRateLimiter(1, 1200, MSG);

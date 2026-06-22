@@ -128,8 +128,9 @@ const deleteRole = (role) => {
         await fetchRoles();
         showToast(`Cargo "${role.name}" excluído.`, "success");
       } catch (error) {
+        const data = error.response?.data || error.data || error;
         showToast(
-          error.response?.data?.message || "Não é possível excluir este cargo.",
+          data?.error || data?.message || "Não é possível excluir este cargo.",
           "error"
         );
       }

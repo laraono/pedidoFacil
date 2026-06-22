@@ -158,8 +158,11 @@ export class ComandaController {
             Number(estabelecimento),
             { type, amount: Number(amount) },
             [Number(orderId)],
-            true,
+            false,
         );
+
+        await this.comandaService.updateComandaStatus(Number(comandaId), ComandaStatus.FECHADA);
+
         return res.status(200).json(result);
     }
 }

@@ -9,6 +9,7 @@ import { useIdleTimer } from "../hooks/useIdleTimer";
 import CartBottomBar from "../components/CartBottomBar";
 import BrandHeader from "../components/ui/BrandHeader";
 import ProductModal from "../components/ProductModal";
+import { getFullImageUrl } from "../utils/imageUtils";
 
 import { fetchFullMenu } from "../stores/menuStore";
 import { connectMobileSocket } from "../services/socketService";
@@ -21,7 +22,7 @@ export default function MenuScreen() {
   const { addToCart } = useCart();
   const { theme, loadTheme } = useTheme();
   const { width } = useWindowDimensions();
-  const panHandlers = useIdleTimer(45);
+  const panHandlers = useIdleTimer(60);
 
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
@@ -101,7 +102,7 @@ export default function MenuScreen() {
             return (
               <TouchableOpacity key={item.id} style={styles.sidebarItem} onPress={() => setSelectedCategory(item.id)} activeOpacity={0.8}>
                 <View style={[styles.imageWrapper, isSelected && styles.imageWrapperSelected]}>
-                  <Image source={item.image ? { uri: item.image } : undefined} style={styles.sidebarImage} resizeMode="cover" />
+                  <Image source={getFullImageUrl(item.image) ?? undefined} style={styles.sidebarImage} resizeMode="cover" />
                   {isSelected && <View style={styles.activeIndicator} />}
                 </View>
                 <Text style={[styles.sidebarLabel, isSelected && styles.sidebarLabelSelected]} numberOfLines={2} adjustsFontSizeToFit>
@@ -131,7 +132,7 @@ export default function MenuScreen() {
                   onPress={() => { setSelectedProduct(item); setModalVisible(true); }}
                   activeOpacity={0.9}
                 >
-                  <Image source={item.image ? { uri: item.image } : undefined} style={styles.productImage} resizeMode="cover" />
+                  <Image source={getFullImageUrl(item.image) ?? undefined} style={styles.productImage} resizeMode="cover" />
                   <View style={styles.productInfo}>
                     <Text style={styles.productTitle} numberOfLines={1}>{item.name}</Text>
                     <Text style={styles.productDescription} numberOfLines={2}>{item.description}</Text>

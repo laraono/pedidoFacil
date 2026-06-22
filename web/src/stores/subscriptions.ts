@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { adminSubscriptionApi, adminMetricsApi } from '@/services/adminApi';
 import { subscriptionApi } from '@/services/subscriptionApi';
+import { useAuthStore } from '@/stores/auth';
 
 export type SubscriptionStatus = 'Paga' | 'Pendente' | 'Expirada' | 'Cancelada';
 
@@ -22,6 +23,12 @@ export const useSubscriptionStore = defineStore('subscription', () => {
   const subscriptionExpirationDate = ref<string | null>(null);
 
   async function fetchSubscriptionStatus(): Promise<void> {
+    const auth = useAuthStore();
+
+    if (!auth.hasPermission('ASSINATURA')) {
+      if (subscriptionStatus.value === null) subscriptionStatus.value = 'Paga';
+      return;
+    }
     try {
       const sub = await subscriptionApi.getEstablishmentSubscription();
       subscriptionStatus.value = (sub as any)?.status?.nome ?? (sub as any)?.status ?? null;
@@ -33,6 +40,12 @@ export const useSubscriptionStore = defineStore('subscription', () => {
         subscriptionExpirationDate.value = null;
       }
     }
+  }
+
+  function markInactiveFromBackend(): void {
+    const auth = useAuthStore();
+    if (auth.hasPermission('ASSINATURA')) return;
+    subscriptionStatus.value = 'Expirada';
   }
 
   const isActive = computed(() => {
@@ -97,6 +110,7 @@ export const useSubscriptionStore = defineStore('subscription', () => {
   return {
     subscriptionStatus,
     fetchSubscriptionStatus,
+    markInactiveFromBackend,
     isActive,
     adminSubscriptions,
     adminSubscriptionsLoading,
