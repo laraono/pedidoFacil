@@ -91,9 +91,23 @@ cp backend/.env.example backend/.env
 cp web/.env.example web/.env
 ```
 
-Devido a complexidade da configuração de ambiente, o `.env.example` já contêm credenciais de teste obrigatórias prontas para uso. Assim,**nenhum ajuste adicional é necessário para rodar localmente.**
+Devido a complexidade da configuração de ambiente, o `.env.example` já contêm credenciais de teste obrigatórias prontas para uso. Assim, **nenhum ajuste adicional é necessário para rodar a web localmente.**
 
 > O `JWT_SECRET` é gerado automaticamente pelo `./install.sh` caso esteja vazio.
+>
+> **Windows:** se o `openssl` não estiver disponível na máquina, a chave pode não ser gerada e o `./up.sh` reclamará da variável `JWT_SECRET`. Nesse caso, gere uma com o Node (sempre instalado) e cole em `backend/.env`:
+> ```bash
+> node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+> ```
+
+**Para usar o app mobile**, edite `mobile/.env` com o **IP local da sua máquina** (onde o backend roda) e a porta do backend (padrão `3000`):
+
+```
+# mobile/.env
+EXPO_PUBLIC_API_URL=http://SEU_IP_LOCAL:3000
+```
+
+> O arquivo já vem com um IP de exemplo que **não é o da sua máquina** — sem trocar, o celular não encontra a API ("connection refused" / "failed to download remote update"). Descubra seu IP com `hostname -I` (Linux), `ipconfig getifaddr en0` (macOS) ou `ipconfig` no Windows (procure por "Endereço IPv4"). Celular e computador precisam estar na **mesma rede Wi-Fi**.
 
 Para configurar suas próprias credenciais (MercadoPago, e-mail), consulte a seção 6
 
@@ -126,7 +140,7 @@ Logs ficam em `logs/backend.log`, `logs/web.log` e `logs/mobile.log`.
 
 ## 5. Primeiro Acesso
 
-1. Acesse a plataforma e autentique-se com as credenciais exibidas ao final do `./up.sh` (`admin@admin.com` / `Admin@123`).
+1. Acesse a plataforma e autentique-se com as credenciais exibidas ao final do `./up.sh` (`dono_master@admin.com` / `Admin@123`).
 2. Acesse o painel **Admin** e crie ao menos 2 planos antes de continuar.
 3. Realize o logout e acesse a landing page. Clique em um dos planos para iniciar o cadastro de um gerente e preencha o onboarding com dados do estabelecimento.
    > Para o onboarding, é possível usar dados gerados pelos geradores de [CNPJ](https://www.4devs.com.br/gerador_de_cnpj) e [CPF](https://www.4devs.com.br/gerador_de_cpf) para testes.
