@@ -108,6 +108,7 @@ EXPO_PUBLIC_API_URL=http://SEU_IP_LOCAL:3000
 ```
 
 > O arquivo já vem com um IP de exemplo que **não é o da sua máquina** — sem trocar, o celular não encontra a API ("connection refused" / "failed to download remote update"). Descubra seu IP com `hostname -I` (Linux), `ipconfig getifaddr en0` (macOS) ou `ipconfig` no Windows (procure por "Endereço IPv4"). Celular e computador precisam estar na **mesma rede Wi-Fi**.
+> Se necessário, após mudança no env, rode `npx expo start --clear` para reexceução limpa do app mobile
 
 Para configurar suas próprias credenciais (MercadoPago, e-mail), consulte a seção 6
 
