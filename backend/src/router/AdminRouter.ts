@@ -14,12 +14,8 @@ const adminMetricsService = new AdminSubscriptionMetricsService(adminSubscriptio
 
 const adminRouter = Router();
 
-adminRouter.get('/public/plans', planController.listPlans);
-
 adminRouter.use(authenticateAdmin);
 
-adminRouter.get('/plans', planController.listPlans);
-adminRouter.get('/plans/:planId', planController.getPlan);
 adminRouter.post('/plans', planController.createPlan);
 adminRouter.put('/plans/:planId', planController.updatePlan);
 adminRouter.delete('/plans/:planId', planController.deletePlan);
@@ -35,9 +31,6 @@ adminRouter.get('/establishments', establishmentController.listForAdmin);
 adminRouter.get('/establishments/:id', establishmentController.getDetailForAdmin);
 
 adminRouter.get('/subscriptions', subscriptionController.listSubscriptions);
-adminRouter.get('/subscriptions/:subscriptionId', subscriptionController.getSubscription);
-adminRouter.put('/subscriptions/:subscriptionId/price', subscriptionController.updateSubscriptionPrice);
-adminRouter.post('/subscriptions/:subscriptionId/cancel', subscriptionController.cancelSubcription);
 
 adminRouter.get(
     '/metrics/subscriptions',

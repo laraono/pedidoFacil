@@ -18,7 +18,6 @@ const router = useRouter();
 const route = useRoute();
 
 const token = ref("");
-const email = ref("");
 const newPassword = ref("");
 const confirmPassword = ref("");
 const showNew = ref(false);
@@ -31,9 +30,8 @@ const errors = ref({});
 onMounted(() => {
   window.scrollTo(0, 0);
   token.value = route.query.token;
-  email.value = route.query.email;
 
-  if (!token.value || !email.value) {
+  if (!token.value) {
     router.push("/login");
   }
 });
@@ -56,7 +54,6 @@ const handleReset = async () => {
   try {
     await authApi.resetPassword({
       token: token.value,
-      email: email.value,
       novaSenha: newPassword.value,
     });
     done.value = true;

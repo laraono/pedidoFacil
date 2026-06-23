@@ -15,6 +15,8 @@ info() { echo -e "  ${BLUE}→${RESET}  $1"; }
 warn() { echo -e "  ${YELLOW}!${RESET}  $1"; }
 erro() { echo -e "  ${RED}✗${RESET}  $1"; }
 
+trap 'echo -e "\n  ${RED}✗${RESET}  Ocorreu um erro inesperado. Verifique os logs acima.\n"' ERR
+
 # ── Boas-vindas ────────────────────────────────────────────────────────────
 echo -e "
    ${BOLD}${GREEN}${DIM}───────────────────────────────────────────────────────                                                                  
@@ -22,8 +24,8 @@ echo -e "
     ░█▀▀░█▀▀░█░█░░█░░█░█░█░█░░░█▀▀░█▀█░█░░░░█░░█░░
     ░▀░░░▀▀▀░▀▀░░▀▀▀░▀▀░░▀▀▀░░░▀░░░▀░▀░▀▀▀░▀▀▀░▀▀▀
     
-    Bem vindo!                                                                         
-    Com esse assistente, o sistema será preparado para execução.
+    Instalação do PedidoFácil
+    Este assistente prepara o ambiente na primeira execução.
     ${DIM}───────────────────────────────────────────────────────${RESET}"
 # ── Pré-requisitos ─────────────────────────────────────────────────────────
 echo -e "${BOLD}  Verificando dependências...${RESET}"
@@ -61,49 +63,70 @@ update_env() {
   mv "$tmpfile" "$file"
 }
 
-# Backend .env
+fill_from_example() {
+  local example="$1" target="$2"
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.+)$ ]]; then
+      local key="${BASH_REMATCH[1]}" value="${BASH_REMATCH[2]}"
+      local current
+      current=$(grep "^${key}=" "$target" 2>/dev/null | cut -d= -f2-)
+      if [ -z "$current" ]; then
+        if grep -q "^${key}=" "$target" 2>/dev/null; then
+          update_env "$target" "$key" "$value"
+        fi
+      fi
+    fi
+  done < "$example"
+}
+
+
 if [ ! -f backend/.env ]; then
   cp backend/.env.example backend/.env
-  info "Arquivo backend/.env criado"
+  info "Arquivo backend/.env criado a partir do .env.example"
+else
+  fill_from_example backend/.env.example backend/.env
+  info "Valores padrão aplicados ao backend/.env"
 fi
 
-# Pede usuário do banco
-DB_USER_CURRENT=$(grep "^DB_USER=" backend/.env | cut -d= -f2)
-if [ -z "$DB_USER_CURRENT" ]; then
-  echo -e "  ${BOLD}Usuário do banco de dados${RESET} ${DIM}(normalmente 'root' em ambiente local)${RESET}"
-  read -p "  → Usuário [root]: " DB_USER_INPUT
-  DB_USER_INPUT="${DB_USER_INPUT:-root}"
-  update_env backend/.env "DB_USER" "$DB_USER_INPUT"
-  ok "Usuário do banco configurado"
-fi
-
-# Pede senha do banco
-DB_PASS_CURRENT=$(grep "^DB_PASS=" backend/.env | cut -d= -f2)
-if [ -z "$DB_PASS_CURRENT" ]; then
-  echo ""
-  echo -e "  ${BOLD}Senha do banco de dados${RESET}"
-  read -s -p "  → Senha: " DB_PASS_INPUT
-  echo ""
-  if [ -z "$DB_PASS_INPUT" ]; then
-    erro "A senha do banco não pode ser vazia."
-    exit 1
-  fi
-  update_env backend/.env "DB_PASS" "$DB_PASS_INPUT"
-  ok "Senha do banco configurada"
-fi
-
-# Gera JWT_SECRET automaticamente se estiver vazio
-JWT_CURRENT=$(grep "^JWT_SECRET=" backend/.env | cut -d= -f2)
-if [ -z "$JWT_CURRENT" ]; then
-  JWT_GENERATED=$(openssl rand -base64 32)
-  update_env backend/.env "JWT_SECRET" "$JWT_GENERATED"
-  ok "Chave de segurança JWT gerada automaticamente"
-fi
-
-# Web .env
 if [ ! -f web/.env ]; then
   cp web/.env.example web/.env
-  ok "Arquivo web/.env criado"
+  info "Arquivo web/.env criado a partir do .env.example"
+else
+  fill_from_example web/.env.example web/.env
+fi
+
+
+JWT_CURRENT=$(grep "^JWT_SECRET=" backend/.env | cut -d= -f2)
+if [ -z "$JWT_CURRENT" ]; then
+  update_env backend/.env "JWT_SECRET" "$(openssl rand -base64 32)"
+  ok "Chave de segurança JWT gerada"
+fi
+
+echo ""
+echo -e "  ${BOLD}Como deseja configurar as variáveis de ambiente?${RESET}"
+echo ""
+echo -e "  ${BOLD}[1]${RESET} Usar os valores padrão do .env.example ${DIM}(recomendado para desenvolvimento)${RESET}"
+echo -e "  ${BOLD}[2]${RESET} Configurar manualmente agora ${DIM}(token MercadoPago, e-mail etc.)${RESET}"
+echo ""
+read -p "  → Escolha [1]: " ENV_CHOICE
+ENV_CHOICE="${ENV_CHOICE:-1}"
+echo ""
+
+if [ "$ENV_CHOICE" = "2" ]; then
+
+  echo -e "  Os arquivos ${BOLD}backend/.env${RESET} e ${BOLD}web/.env${RESET} já foram criados."
+  echo ""
+  echo -e "  ${BOLD}Próximos passos:${RESET}"
+  echo ""
+  echo -e "    1. Leia o ${BOLD}README.md na seção 2.1 ${RESET} para instruções para obter cada variável"
+  echo -e "    2. Edite ${BOLD}backend/.env${RESET} com seus valores ${DIM}(token MP, e-mail, porta etc.)${RESET}"
+  echo -e "    3. Edite ${BOLD}web/.env${RESET} com sua chave pública do MercadoPago"
+  echo -e "    4. Execute ${BOLD}./up.sh${RESET} para iniciar o sistema"
+  echo ""
+  exit 0
+
+else
+  ok "Usando valores padrão do .env.example"
 fi
 
 echo ""
@@ -131,14 +154,26 @@ echo ""
 echo -e "${BOLD}  Preparando o banco de dados...${RESET}"
 echo ""
 
+DB_PORT_CHECK=$(grep "^DB_PORT=" backend/.env | cut -d= -f2)
+DB_PORT_CHECK="${DB_PORT_CHECK:-3306}"
+
+if nc -z localhost "$DB_PORT_CHECK" 2>/dev/null; then
+  if ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q 'pedido_facil_mysql'; then
+    erro "Porta ${DB_PORT_CHECK} já está em uso por outro serviço. Altere DB_PORT em backend/.env e tente novamente."
+    exit 1
+  fi
+fi
+
 info "Iniciando containers Docker..."
-docker compose -f backend/docker-compose.yml up -d mysql localstack
+docker compose --env-file backend/.env up -d db minio
 
 echo ""
 info "Aguardando o banco de dados ficar pronto..."
 DB_PASS=$(grep "^DB_PASS=" backend/.env | cut -d= -f2)
+DB_USER_INIT=$(grep "^DB_USER=" backend/.env | cut -d= -f2)
+DB_NAME_INIT=$(grep "^DB_NAME=" backend/.env | cut -d= -f2)
 TRIES=0
-until docker exec pedido_facil_mysql mysqladmin ping -u root -p"$DB_PASS" --silent 2>/dev/null; do
+until docker exec -e MYSQL_PWD="$DB_PASS" pedido_facil_mysql mysqladmin ping -u root --silent 2>/dev/null; do
   TRIES=$((TRIES+1))
   if [ $TRIES -gt 30 ]; then
     erro "O banco não respondeu após 60 segundos. Verifique se o Docker está rodando."
@@ -150,166 +185,85 @@ done
 echo ""
 ok "Banco de dados pronto"
 
-info "Criando as tabelas do sistema..."
-DB_USER_INIT=$(grep "^DB_USER=" backend/.env | cut -d= -f2)
-DB_NAME_INIT=$(grep "^DB_NAME=" backend/.env | cut -d= -f2)
-if ! docker exec -i pedido_facil_mysql mysql -u"$DB_USER_INIT" -p"$DB_PASS" "$DB_NAME_INIT" < backend/init_db.sql; then
-  erro "Falha ao criar as tabelas. Verifique os logs acima."
-  exit 1
-fi
-ok "Tabelas criadas"
+TABLE_COUNT=$(docker exec -e MYSQL_PWD="$DB_PASS" pedido_facil_mysql \
+  mysql -u"$DB_USER_INIT" -N -e \
+  "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${DB_NAME_INIT}';" 2>/dev/null | tail -1)
 
-echo ""
-
-# ── Primeiro acesso ────────────────────────────────────────────────────────
-echo -e "${BOLD}  Criando o seu primeiro acesso ao sistema${RESET}"
-echo ""
-echo -e "  Você vai usar esses dados para entrar na plataforma"
-echo -e "  como administrador pela primeira vez."
-echo ""
-
-read -p "  → Seu nome: " ADMIN_NAME
-if [ -z "$ADMIN_NAME" ]; then
-  erro "O nome não pode ser vazio."
-  exit 1
-fi
-
-while true; do
-  read -p "  → Seu e-mail: " ADMIN_EMAIL
-  if [ -z "$ADMIN_EMAIL" ]; then
-    erro "O e-mail não pode ser vazio."
-  elif ! [[ "$ADMIN_EMAIL" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
-    erro "E-mail inválido. Tente novamente."
-  else
-    break
-  fi
-done
-
-echo ""
-echo -e "  ${DIM}A senha precisa ter pelo menos 6 caracteres.${RESET}"
-
-while true; do
-  read -s -p "  → Crie uma senha: " ADMIN_PASS
+if [ "${TABLE_COUNT:-0}" -gt 0 ]; then
   echo ""
-  if [ ${#ADMIN_PASS} -lt 6 ]; then
-    erro "A senha precisa ter pelo menos 6 caracteres."
-    continue
-  fi
-  read -s -p "  → Repita a senha: " ADMIN_PASS_CONFIRM
+  warn "O banco '${DB_NAME_INIT}' já possui ${TABLE_COUNT} tabela(s)."
   echo ""
-  if [ "$ADMIN_PASS" != "$ADMIN_PASS_CONFIRM" ]; then
-    erro "As senhas não coincidem. Tente novamente."
-  else
-    break
-  fi
-done
-
-info "Criando acesso de administrador..."
-
-export ADMIN_NAME ADMIN_EMAIL ADMIN_PASS DB_PASS
-DB_USER=$(grep "^DB_USER=" backend/.env | cut -d= -f2)
-DB_NAME=$(grep "^DB_NAME=" backend/.env | cut -d= -f2)
-DB_PORT=$(grep "^DB_PORT=" backend/.env | cut -d= -f2)
-export DB_USER DB_NAME DB_PORT
-
-NODE_RESULT=$(node << 'EOF'
-const bcrypt = require('./backend/node_modules/bcrypt');
-const mysql2 = require('./backend/node_modules/mysql2/promise');
-
-async function main() {
-  const conn = await mysql2.createConnection({
-    host: 'localhost',
-    port: Number(process.env.DB_PORT) || 3307,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-  });
-
-  const [rows] = await conn.execute(
-    'SELECT ID_Admin FROM ADMIN WHERE Email = ?',
-    [process.env.ADMIN_EMAIL]
-  );
-
-  if (rows.length > 0) {
-    await conn.end();
-    console.log('EXISTS');
-    return;
-  }
-
-  const hash = await bcrypt.hash(process.env.ADMIN_PASS, 12);
-  await conn.execute(
-    'INSERT INTO ADMIN (Nome, Email, Senha) VALUES (?, ?, ?)',
-    [process.env.ADMIN_NAME, process.env.ADMIN_EMAIL, hash]
-  );
-
-  await conn.end();
-  console.log('CREATED');
-}
-
-main().catch(err => { console.error('ERRO:' + err.message); process.exit(1); });
-EOF
-)
-
-if [ "$NODE_RESULT" = "CREATED" ]; then
-  ok "Administrador criado com sucesso"
-elif [ "$NODE_RESULT" = "EXISTS" ]; then
+  echo -e "  ${BOLD}[1]${RESET} Manter o banco atual e continuar ${DIM}(padrão)${RESET}"
+  echo -e "  ${BOLD}[2]${RESET} Apagar tudo e recriar do zero ${DIM}(⚠ todos os dados serão perdidos)${RESET}"
   echo ""
-  warn "Já existe um administrador cadastrado com esse e-mail."
+  read -p "  → Escolha [1]: " DB_CHOICE
+  DB_CHOICE="${DB_CHOICE:-1}"
   echo ""
-  read -p "  Deseja substituí-lo pelo novo? [s/N]: " REPLACE_ADMIN
-  if [[ "$REPLACE_ADMIN" =~ ^[Ss]$ ]]; then
-    export ADMIN_REPLACE=true
-    NODE_RESULT2=$(node << 'EOF'
-const bcrypt = require('./backend/node_modules/bcrypt');
-const mysql2 = require('./backend/node_modules/mysql2/promise');
 
-async function main() {
-  const conn = await mysql2.createConnection({
-    host: 'localhost',
-    port: Number(process.env.DB_PORT) || 3307,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-  });
-
-  await conn.execute('DELETE FROM ADMIN WHERE Email = ?', [process.env.ADMIN_EMAIL]);
-
-  const hash = await bcrypt.hash(process.env.ADMIN_PASS, 12);
-  await conn.execute(
-    'INSERT INTO ADMIN (Nome, Email, Senha) VALUES (?, ?, ?)',
-    [process.env.ADMIN_NAME, process.env.ADMIN_EMAIL, hash]
-  );
-
-  await conn.end();
-  console.log('REPLACED');
-}
-
-main().catch(err => { console.error('ERRO:' + err.message); process.exit(1); });
-EOF
-    )
-    if [ "$NODE_RESULT2" = "REPLACED" ]; then
-      ok "Administrador substituído com sucesso"
-    else
-      erro "Não foi possível substituir o administrador: $NODE_RESULT2"
+  if [ "$DB_CHOICE" = "2" ]; then
+    warn "Apagando banco '${DB_NAME_INIT}'..."
+    docker exec -e MYSQL_PWD="$DB_PASS" pedido_facil_mysql \
+      mysql -u root -e "DROP DATABASE IF EXISTS \`${DB_NAME_INIT}\`; CREATE DATABASE \`${DB_NAME_INIT}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    info "Criando as tabelas do sistema..."
+    if ! docker exec -i -e MYSQL_PWD="$DB_PASS" pedido_facil_mysql mysql -u"$DB_USER_INIT" "$DB_NAME_INIT" < backend/init_db.sql; then
+      erro "Falha ao criar as tabelas. Verifique os logs acima."
       exit 1
     fi
+    ok "Banco recriado com sucesso"
   else
-    warn "Mantendo o administrador existente."
+    ok "Banco mantido"
   fi
 else
-  erro "Não foi possível criar o administrador: $NODE_RESULT"
-  exit 1
+  info "Criando as tabelas do sistema..."
+  if ! docker exec -i -e MYSQL_PWD="$DB_PASS" pedido_facil_mysql mysql -u"$DB_USER_INIT" "$DB_NAME_INIT" < backend/init_db.sql; then
+    erro "Falha ao criar as tabelas. Verifique os logs acima."
+    exit 1
+  fi
+  ok "Tabelas criadas"
 fi
 
+echo ""
+info "Aplicando migrations..."
+if ! npm run --prefix backend migration:run; then
+  erro "Falha ao aplicar migrations. Verifique os logs acima."
+  exit 1
+fi
+ok "Migrations aplicadas"
+
+echo ""
+
+# ── Build das imagens Docker ───────────────────────────────────────────────
+echo -e "${BOLD}  Preparando imagens Docker (backend + web)...${RESET}"
+echo -e "  ${DIM}(Necessário para ./up.sh --docker)${RESET}"
+echo ""
+
+VITE_MP_PUBLIC_KEY=$(grep "^VITE_MP_PUBLIC_KEY=" web/.env | cut -d= -f2)
+if ! VITE_MP_PUBLIC_KEY="$VITE_MP_PUBLIC_KEY" docker compose --env-file backend/.env build backend web; then
+  warn "Build das imagens falhou — execute ${BOLD}./up.sh${RESET} após corrigir o erro acima."
+else
+  ok "Imagens prontas"
+fi
+
+echo ""
+
 # ── Concluído ──────────────────────────────────────────────────────────────
+BACKEND_PORT=$(grep "^PORT=" backend/.env | cut -d= -f2)
+BACKEND_PORT="${BACKEND_PORT:-3000}"
+DB_PORT_SHOW=$(grep "^DB_PORT=" backend/.env | cut -d= -f2)
+DB_PORT_SHOW="${DB_PORT_SHOW:-3306}"
+
 echo ""
 echo -e "  ${DIM}───────────────────────────────────────────────────────${RESET}"
 echo ""
 echo -e "  ${GREEN}${BOLD}Tudo configurado! ✓${RESET}"
 echo ""
-echo -e "  Para iniciar o sistema, rode:"
+echo -e "  ${BOLD}Portas do sistema:${RESET}"
 echo ""
-echo -e "    ${BOLD}./up.sh${RESET}"
+echo -e "    ${BOLD}:5173${RESET}            ${DIM}← site (web)${RESET}"
+echo -e "    ${BOLD}:${BACKEND_PORT}${RESET}            ${DIM}← backend (API)${RESET}"
+echo -e "    ${BOLD}:${DB_PORT_SHOW}${RESET}           ${DIM}← MySQL (Docker)${RESET}"
+echo -e "    ${BOLD}:4566${RESET}            ${DIM}← MinIO / uploads (Docker)${RESET}"
+echo -e "    ${BOLD}:9001${RESET}            ${DIM}← MinIO painel admin (Docker)${RESET}"
 echo ""
-echo -e "  ${DIM}Guarde seu e-mail e senha — você vai precisar deles para entrar.${RESET}"
+echo -e "  Execute ${BOLD}./up.sh${RESET} para iniciar o sistema."
 echo ""

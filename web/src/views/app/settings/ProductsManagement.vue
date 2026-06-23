@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
 import { getImageUrl, validateImageFile } from "@/utils/imageUrl";
+import { useUtils } from "@/composables/useUtils";
 import { useMenuStore } from "@/stores/productsManagement";
 import { useToast } from "@/composables/useToast";
 import { useConfirm } from "@/composables/useConfirm";
@@ -22,6 +23,7 @@ import {
 const menuStore = useMenuStore();
 const { showToast } = useToast();
 const { confirmState, showConfirm } = useConfirm();
+const { formatCurrency } = useUtils();
 
 const showModal = ref(false);
 const isEditing = ref(false);
@@ -160,11 +162,18 @@ const executeBulk = async () => {
 const validate = () => {
   const e = {};
   if (!form.value.name?.trim()) e.name = "Nome do produto é obrigatório.";
-  const price = parseFloat(String(form.value.price).replace(",", "."));
-  if (form.value.sizes.length === 0 && (!form.value.price || isNaN(price) || price <= 0)) e.price = "Preço inválido.";
+  if (form.value.sizes.length === 0) {
+    const price = parseFloat(String(form.value.price).replace(",", "."));
+    if (!form.value.price || isNaN(price) || price < 0) e.price = "Preço inválido.";
+  }
   if (!form.value.categoryId) e.categoryId = "Selecione uma categoria.";
-  const badSize = form.value.sizes.some(s => s.name.trim() && (isNaN(parseFloat(String(s.price).replace(',', '.'))) || parseFloat(String(s.price).replace(',', '.')) <= 0));
-  if (badSize) e.sizes = "Informe um preço válido para cada tamanho.";
+  const badSize = form.value.sizes.some(s => {
+    const hasName = !!s.name.trim();
+    const price = parseFloat(String(s.price).replace(',', '.'));
+    const hasPrice = !isNaN(price) && price > 0;
+    return (hasName && !hasPrice) || (!hasName && hasPrice);
+  });
+  if (badSize) e.sizes = "Informe nome e preço para cada variação.";
   errors.value = e;
   return Object.keys(e).length === 0;
 };
@@ -187,7 +196,10 @@ const openEdit = (p) => {
   showModal.value = true; 
 };
 
-const addSize = () => form.value.sizes.push({ name: '', price: '' });
+const addSize = () => {
+  if (form.value.sizes.length === 0) form.value.price = "0,00";
+  form.value.sizes.push({ name: '', price: '' });
+};
 const removeSize = (i) => form.value.sizes.splice(i, 1);
 
 const handleImageUpload = (e) => {
@@ -214,7 +226,7 @@ const save = async () => {
     if (form.value.id) formData.append('id', form.value.id);
     formData.append('name', form.value.name);
     formData.append('description', form.value.description || "");
-    formData.append('price', parseFloat(String(form.value.price).replace(",", ".")));
+    formData.append('price', parsedSizes.length > 0 ? 0 : parseFloat(String(form.value.price).replace(",", ".")));
     formData.append('categoryId', form.value.categoryId);
     formData.append('available', form.value.available);
     formData.append('sizes', JSON.stringify(parsedSizes));
@@ -261,7 +273,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
 <template>
   <main class="max-w-6xl mx-auto py-12 px-6 font-inter">
     <ToastMessage />
-    <PageHeader title="Gerenciar Produtos" subtitle="Controle do cardápio">
+    <PageHeader title="Gerenciar Produtos" subtitle="Controle do cardápio" backTo="/app/dashboard">
       <template #actions>
         <BaseButton
           :variant="showInactive ? 'secondary' : 'ghost'"
@@ -413,7 +425,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         <p v-if="item.description" class="text-[#757575] text-xs mt-0.5 truncate max-w-[200px]">{{ item.description }}</p>
       </template>
       <template #cell-price="{ item }">
-        <span class="text-accent font-black">R$ {{ Number(item.price ?? item.sizes?.[0]?.price ?? 0).toFixed(2) }}</span>
+        <span class="text-accent font-black">{{ formatCurrency(item.sizes?.length ? Math.min(...item.sizes.map(s => Number(s.price))) : (Number(item.price) || 0)) }}</span>
       </template>
       <template #cell-status="{ item }">
         <span v-if="item.available === false" class="px-3 py-1 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded text-[10px] font-black uppercase tracking-widest">Inativo</span>
@@ -448,9 +460,9 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         <BaseInput v-model="form.name" label="Nome do Produto" placeholder="Ex: X-Burguer Especial" :maxlength="60" :error="errors.name" />
         <BaseInput v-model="form.description" label="Descrição (opcional)" placeholder="Ingredientes, detalhes..." :maxlength="120" :error="errors.description" />
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-black uppercase tracking-widest ml-2 transition-colors" :class="form.sizes.length > 0 ? 'text-[#BDBDBD]' : 'text-[#757575]'">
+          <label class="text-xs font-black uppercase tracking-widest ml-2 text-[#757575]">
             Preço base (R$)
-            <span v-if="form.sizes.length > 0" class="normal-case font-bold tracking-normal ml-1">(substituído pelas variações)</span>
+            <span v-if="form.sizes.length > 0" class="normal-case font-bold tracking-normal ml-1 text-[#757575]">(ignorado quando há variações)</span>
           </label>
           <input
             :value="form.price"
@@ -458,11 +470,8 @@ const tableActions = computed(() => bulkMode.value ? [] : [
             inputmode="numeric"
             placeholder="0,00"
             :disabled="form.sizes.length > 0"
-            class="w-full py-3.5 px-4 rounded border transition-all"
-            :class="[
-              form.sizes.length > 0 ? 'bg-gray-100 border-[#E0E0E0] text-[#BDBDBD] cursor-not-allowed opacity-60' : 'bg-gray-50 border-[#E0E0E0] text-[#212121] focus:outline-none focus:border-primary/50',
-              errors.price ? '!border-red-500' : ''
-            ]"
+            class="w-full py-3.5 px-4 rounded border transition-all text-[#212121] focus:outline-none focus:border-primary/50"
+            :class="[errors.price ? '!border-red-500' : 'border-[#E0E0E0]', form.sizes.length > 0 ? 'bg-gray-100 opacity-60 cursor-not-allowed' : 'bg-gray-50']"
           />
           <p v-if="errors.price" class="text-danger text-[11px] font-bold mt-0.5 ml-2">{{ errors.price }}</p>
         </div>
@@ -483,19 +492,32 @@ const tableActions = computed(() => bulkMode.value ? [] : [
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm font-bold text-[#212121]">Tamanhos / Variações</p>
-              <p class="text-xs text-[#757575]">Substituem o preço base no cardápio</p>
+              <p class="text-xs text-[#757575]">Preço de cada variação</p>
             </div>
             <button type="button" @click="addSize" class="flex items-center gap-1.5 px-3 py-2 bg-accent-light text-accent border border-accent/30 rounded text-xs font-black hover:bg-primary-dark/20 transition-colors">
               <PlusCircle :size="14" /> Adicionar
             </button>
           </div>
           <div v-for="(size, i) in form.sizes" :key="i" class="flex gap-2 items-center">
-            <input v-model="size.name" placeholder="Nome" class="flex-1 py-2.5 px-3 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] text-sm focus:outline-none focus:border-primary/50 transition-all" />
-            <input :value="size.price" @input="onSizePriceInput($event, i)" inputmode="numeric" placeholder="0,00" class="w-24 py-2.5 px-3 rounded border bg-gray-50 border-[#E0E0E0] text-[#212121] text-sm text-right focus:outline-none focus:border-primary/50 transition-all" />
+            <input
+              v-model="size.name"
+              placeholder="Nome"
+              class="flex-1 py-2.5 px-3 rounded border bg-gray-50 text-[#212121] text-sm focus:outline-none focus:border-primary/50 transition-all"
+              :class="errors.sizes && !size.name.trim() && size.price ? 'border-red-500' : 'border-[#E0E0E0]'"
+            />
+            <input
+              :value="size.price"
+              @input="onSizePriceInput($event, i)"
+              inputmode="numeric"
+              placeholder="0,00"
+              class="w-24 py-2.5 px-3 rounded border bg-gray-50 text-[#212121] text-sm text-right focus:outline-none focus:border-primary/50 transition-all"
+              :class="errors.sizes && size.name.trim() && (!size.price || parseFloat(String(size.price).replace(',','.')) <= 0) ? 'border-red-500' : 'border-[#E0E0E0]'"
+            />
             <button type="button" @click="removeSize(i)" class="p-2 text-[#757575] hover:text-danger hover:bg-danger-light rounded transition-all">
               <Trash2 :size="16" />
             </button>
           </div>
+          <p v-if="errors.sizes" class="text-danger text-[11px] font-bold mt-1 ml-1">{{ errors.sizes }}</p>
         </div>
       </div>
     </FormModal>

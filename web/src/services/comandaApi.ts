@@ -1,5 +1,14 @@
 import { request } from './api';
 
+interface PaymentPayload {
+  payment: { type: string; amount: number };
+  selectedOrderIds: number[];
+  isLastPayment: boolean;
+  discountType: string | null;
+  discountValue: number | null;
+  couponId: number | null;
+}
+
 export const comandaApi = {
   post: (description: string, status: string) =>
     request('/commands', { method: 'POST', body: JSON.stringify({ description, status }) }),
@@ -10,16 +19,21 @@ export const comandaApi = {
 
   listClosed: () => request('/commands/closed', { method: 'GET' }),
 
-  listByStatus: (status: string) => request(`/commands/open?status=${status}`, { method: 'GET' }),
-
   create: (data: unknown) => request('/commands', { method: 'POST', body: data as BodyInit }),
 
-  addOrder: (comandaId: number | string, data: unknown) =>
-    request(`/commands/${Number(comandaId)}/orders`, { method: 'POST', body: data as BodyInit }),
+  addOrder: (comandaId: number | string, data: unknown, idempotencyKey?: string) =>
+    request(`/commands/${Number(comandaId)}/orders`, {
+      method: 'POST',
+      body: data as BodyInit,
+      headers: idempotencyKey ? { 'X-Idempotency-Key': idempotencyKey } : undefined,
+    }),
 
   putStatus: (comandaId: number, status: string) =>
     request(`/commands/${comandaId}`, { method: 'PUT', body: JSON.stringify({ status }) }),
 
-  cancelComanda: (comandaId: number, reason: string) =>
-    request(`/commands/${comandaId}`, { method: 'PUT', body: JSON.stringify({ reason }) }),
+  cancel: (comandaId: number, reason: string, userId: number) =>
+    request(`/commands/${comandaId}/cancel`, { method: 'POST', body: JSON.stringify({ reason, userId }) }),
+
+  pay: (comandaId: number, payload: PaymentPayload) =>
+    request(`/commands/${comandaId}/payment`, { method: 'POST', body: JSON.stringify(payload) }),
 };

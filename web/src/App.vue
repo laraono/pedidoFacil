@@ -3,11 +3,16 @@ import { onMounted, onUnmounted, watch } from 'vue';
 import { RouterView } from 'vue-router';
 import ToastMessage from './components/ui/ToastMessage.vue';
 import { useAuthStore } from '@/stores/auth';
-import { getSocket, connectSocket } from '@/services/socket'; 
+import { useFeaturesStore } from '@/stores/features';
+import { getSocket, connectSocket } from '@/services/socket';
 import { useToast } from '@/composables/useToast';
 
 const authStore = useAuthStore();
+const featuresStore = useFeaturesStore();
 const { showToast } = useToast();
+
+featuresStore.fetchFeatures();
+featuresStore.fetchPlansEnabled();
 
 let currentSocketListener = null;
 
@@ -16,14 +21,15 @@ const setupNotificationListener = () => {
   const socket = getSocket();
   
   if (socket && authStore.user?.id) {
-    const eventName = `user_notification_${authStore.user.id}`;
+    const eventName = `user_notification`;
     
     if (currentSocketListener) {
       socket.off(currentSocketListener.eventName, currentSocketListener.handler);
     }
 
     const handler = (data) => {
-
+      if (authStore.user?.isAdmin) return;
+      if (data.userId !== authStore.user?.id) return;
       showToast(`Comanda ${data.comanda} está PRONTA!`, 'success');
     };
 

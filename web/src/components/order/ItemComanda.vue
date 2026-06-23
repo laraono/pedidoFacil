@@ -143,7 +143,7 @@
       case "preparing":
         return "border-blue-500/30 bg-blue-500/10 text-blue-600";
       case "ready":
-        return "border-accent/40 bg-accent-light text-accent";
+        return "border-accent/40 bg-accent-light text-green-800";
       case "cancelled":
         return "border-red-500/30 bg-red-50 text-red-600";
       default:

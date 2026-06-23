@@ -16,7 +16,7 @@ const isFetching = ref(true);
 const logoPreview = ref(null);
 const logoFile = ref(null);
 
-const ALL_PAYMENT_METHODS = ["Dinheiro", "Cartão Débito", "Cartão Crédito", "PIX"];
+const ALL_PAYMENT_METHODS = ["Dinheiro", "Crédito", "Débito", "Pix"];
 const paymentMethods = ref([]);
 const originalPaymentMethods = ref([]);
 
@@ -166,7 +166,7 @@ const saveSettings = async () => {
       </template>
     </PageHeader>
 
-    <div v-if="isFetching" class="flex justify-center items-center py-20 text-[#757575] font-bold">
+    <div v-if="isFetching" class="flex justify-center items-center py-20 text-muted font-bold">
       Carregando informações do estabelecimento...
     </div>
 
@@ -179,14 +179,14 @@ const saveSettings = async () => {
           <div class="relative group cursor-pointer w-48 h-48 mb-6">
             <div class="relative w-full h-full bg-gray-50 border-2 border-dashed border-[#E0E0E0] rounded overflow-hidden flex flex-col items-center justify-center group-hover:border-accent/50 transition-all">
               <img v-if="logoPreview" :src="logoPreview" class="w-full h-full object-contain p-4" />
-              <div v-else class="flex flex-col items-center text-[#757575]">
+              <div v-else class="flex flex-col items-center text-muted">
                 <UploadCloud :size="40" class="mb-2" />
                 <span class="text-xs font-bold uppercase tracking-widest">Subir Logo</span>
               </div>
               <input type="file" @change="handleLogoUpload" accept=".jpg,.jpeg,.png,.webp,.gif" class="absolute inset-0 opacity-0 cursor-pointer" />
             </div>
           </div>
-          <p class="text-[10px] text-[#757575] uppercase font-black tracking-widest">Clique para alterar</p>
+          <p class="text-[10px] text-muted uppercase font-black tracking-widest">Clique para alterar</p>
         </div>
       </section>
 
@@ -231,24 +231,24 @@ const saveSettings = async () => {
     <div v-if="!isFetching" class="mt-8">
       <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl">
         <div class="flex items-center gap-3 mb-6">
-          <div class="w-10 h-10 bg-accent-light border border-accent/30 rounded flex items-center justify-center">
+          <div class="w-10 h-10 shrink-0 bg-accent-light border border-accent/30 rounded flex items-center justify-center">
             <Banknote :size="20" class="text-accent" />
           </div>
-          <div>
+          <div class="min-w-0">
             <h3 class="text-base font-black text-[#212121]">Métodos de Pagamento</h3>
-            <p class="text-sm text-[#757575] mt-0.5">Selecione os métodos aceitos no seu estabelecimento.</p>
+            <p class="text-sm text-muted mt-0.5">Selecione os métodos aceitos no seu estabelecimento.</p>
           </div>
         </div>
-        <div class="flex flex-wrap gap-3">
+        <div class="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:gap-3">
           <button
             v-for="method in ALL_PAYMENT_METHODS"
             :key="method"
             type="button"
             @click="togglePaymentMethod(method)"
-            class="flex items-center gap-2 px-5 py-3 rounded border-2 font-bold text-sm transition-all"
+            class="flex items-center gap-2 px-4 py-3 rounded border-2 font-bold text-sm transition-all w-full sm:w-auto"
             :class="[
-              paymentMethods.includes(method) ? 'bg-accent-light border-accent/40 text-accent' : 'bg-gray-50 border-[#E0E0E0] text-[#757575]',
-              method === 'Dinheiro' ? 'opacity-90 cursor-not-allowed' : ''
+              paymentMethods.includes(method) ? 'bg-accent-light border-accent/40 text-green-800' : 'bg-gray-50 border-[#E0E0E0] text-muted',
+              method === 'Dinheiro' ? 'opacity-90 cursor-not-allowed' : 'hover:border-accent/30 hover:bg-accent-light/40'
             ]"
           >
             <div
@@ -263,7 +263,7 @@ const saveSettings = async () => {
 
         <div class="mt-6 flex items-start gap-2 p-4 bg-blue-500/5 rounded border border-blue-500/10">
           <AlertCircle :size="16" class="text-blue-500 shrink-0 mt-0.5" />
-          <p class="text-xs font-bold text-[#757575] leading-relaxed">
+          <p class="text-xs font-bold text-muted leading-relaxed">
             Por lei (Art. 39, inciso IX do Código de Defesa do Consumidor), estabelecimentos comerciais no Brasil são obrigados a aceitar pagamentos em dinheiro em espécie. Por este motivo, esta opção encontra-se bloqueada para desativação.
           </p>
         </div>
@@ -275,7 +275,7 @@ const saveSettings = async () => {
         <BaseToggle
           v-model="selfService"
           label="Autoatendimento"
-          description="Permite que clientes façam pedidos pelo aplicativo móvel."
+          description="Permite que clientes façam pedidos via aplicativo, tablet ou totem no estabelecimento."
           class="mb-2"
         />
 
@@ -284,30 +284,30 @@ const saveSettings = async () => {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="bg-gray-50 border border-[#E0E0E0] rounded p-6 flex flex-col gap-4">
                 <div class="flex items-center gap-3">
-                  <div class="w-12 h-12 bg-accent-light border border-accent/30 rounded flex items-center justify-center">
+                  <div class="w-12 h-12 shrink-0 bg-accent-light border border-accent/30 rounded flex items-center justify-center">
                     <Smartphone :size="22" class="text-accent" />
                   </div>
                   <div>
-                    <p class="font-black text-[#212121] text-sm">Aplicativo Mobile</p>
-                    <p class="text-xs text-[#757575]">Para iOS e Android</p>
+                    <p class="font-black text-[#212121] text-sm">Como configurar</p>
+                    <p class="text-xs text-muted">Mobile, tablet ou totem</p>
                   </div>
                 </div>
-                <p class="text-xs text-[#757575] leading-relaxed">
-                  Os clientes baixam o app PedidoFácil e inserem o código do seu estabelecimento para acessar o cardápio.
+                <p class="text-xs text-muted leading-relaxed">
+                  Instale o app PedidoFácil no dispositivo do estabelecimento (smartphone, tablet ou totem), abra o app e insira o código ao lado para iniciar o serviço de autoatendimento.
                 </p>
               </div>
 
               <div class="bg-gray-50 border border-[#E0E0E0] rounded p-6 flex flex-col gap-4">
                 <div>
-                  <p class="font-black text-[#212121] text-sm mb-1">Código de Acesso</p>
-                  <p class="text-xs text-[#757575]">Compartilhe este código com seus clientes</p>
+                  <p class="font-black text-[#212121] text-sm mb-1">Código do Estabelecimento</p>
+                  <p class="text-xs text-muted">Insira este código no app para vincular o dispositivo</p>
                 </div>
                 <div class="flex-1 bg-gray-100 border border-accent/30 rounded px-6 py-4 text-center">
-                  <span class="text-4xl font-black text-accent tracking-[0.3em]">{{ selfServiceCode }}</span>
+                  <span class="text-2xl sm:text-4xl font-black text-accent tracking-[0.15em] sm:tracking-[0.3em] break-all">{{ selfServiceCode }}</span>
                 </div>
                 <button
                   @click="copyCode"
-                  class="flex items-center justify-center gap-2 py-2.5 px-4 bg-accent-light border border-accent/30 rounded text-xs font-black transition-all text-accent"
+                  class="flex items-center justify-center gap-2 py-2.5 px-4 bg-accent-light border border-accent/30 rounded text-xs font-black transition-all text-green-800"
                 >
                   <component :is="codeCopied ? CheckCheck : Copy" :size="14" />
                   {{ codeCopied ? "Copiado!" : "Copiar código" }}

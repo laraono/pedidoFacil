@@ -5,10 +5,19 @@ import { useKitchenStore } from "@/stores/kitchen";
 import { useAuthStore } from "@/stores/auth";
 import { useToast } from "@/composables/useToast";
 import { useCouponStore } from "@/stores/coupons";
-import { request } from "@/services/api";
+import { comandaApi } from "@/services/comandaApi";
+import { orderApi } from "@/services/orderApi";
 import { establishmentApi } from "@/services/establishmentApi";
-import { connectSocket, getSocket } from "@/services/socket";
+import { connectSocket, getSocket, disconnectSocket } from "@/services/socket";
 import localStorageService from "@/services/localStorageService";
+
+const BACKEND_TO_LOCAL_STATUS: Record<string, string> = {
+  Aguardando_Preparo: "pending",
+  Em_Preparo: "preparing",
+  Pronto: "ready",
+  Finalizado: "finished",
+  Cancelado: "cancelled",
+};
 
 export function useCashier() {
   const comandaStore = useComandaStore();
@@ -20,7 +29,7 @@ export function useCashier() {
 
   const comandaUnitLabel = localStorageService.getComandaUnitLabel() || "Mesa";
 
-  const enabledPaymentMethods = ref<string[]>(["Dinheiro", "Cartão Débito", "Cartão Crédito", "PIX"]);
+  const enabledPaymentMethods = ref<string[]>(["Dinheiro", "Crédito", "Débito", "Pix"]);
 
   const selectedComanda = ref<any>(null);
   const showDetails = ref(false);
@@ -29,29 +38,31 @@ export function useCashier() {
   const discountType = ref<string | null>(null);
   const discountValue = ref<number | null>(null);
 
-  const BACKEND_TO_LOCAL_STATUS: Record<string, string> = {
-    Aguardando_Preparo: "pending",
-    Em_Preparo: "preparing",
-    Pronto: "ready",
-    Finalizado: "finished",
-    Cancelado: "cancelled",
-  };
+  const pendingCancelIds = new Set<number>();
+  const manualCancelTargetId = ref<number | null>(null);
+  const showCancelComandaModal = ref(false);
 
-  let pollInterval: any = null;
+  let pollInterval: ReturnType<typeof setInterval> | null = null;
+  let reconnectHandler: (() => void) | null = null;
 
   onMounted(async () => {
     await Promise.all([
       comandaStore.loadComandas(),
       couponStore.loadData(),
       establishmentApi.getProfile().then((data) => {
-        if (data.paymentMethods?.length > 0)
+        if (data?.paymentMethods?.length > 0)
           enabledPaymentMethods.value = data.paymentMethods;
-      }).catch(() => {}),
+      }).catch((e: any) => {
+        if (e?.status === 402) showToast('Assinatura expirada ou inválida.', 'error');
+      }),
     ]);
     pollInterval = setInterval(() => comandaStore.loadComandas(), 30_000);
 
     connectSocket('cashier');
     const socket = getSocket();
+
+    reconnectHandler = () => comandaStore.loadComandas();
+    socket?.io.on('reconnect', reconnectHandler);
 
     socket?.on('order_status_updated', (data: any) => {
       const localStatus = BACKEND_TO_LOCAL_STATUS[data.status] || data.status;
@@ -67,12 +78,13 @@ export function useCashier() {
         } as any);
       }
 
-      if (data.status === "Pronto") {
+      if (localStatus === "ready" && !data.autoatendimento) {
         const comanda = comandaStore.comandas.find((c: any) => c.id === data.comandaId);
         const label = comanda?.label ? `${comandaUnitLabel} ${comanda.label}` : comandaUnitLabel;
         showToast(`Pedido de ${label} está PRONTO!`, "success");
       }
     });
+
     if (socket) {
       socket.on("comanda_cancelled", (data: any) => {
         comandaStore.removeComanda(data.comandaId);
@@ -96,11 +108,14 @@ export function useCashier() {
       socket.off('order_status_updated');
       socket.off('comanda_cancelled');
       socket.off('order_cancelled');
+      if (reconnectHandler) {
+        socket.io.off('reconnect', reconnectHandler);
+        reconnectHandler = null;
+      }
     }
     disconnectSocket();
-    clearInterval(pollInterval);
+    if (pollInterval) clearInterval(pollInterval);
   });
-
 
   const ordersWithStatus = computed(() => {
     if (!selectedComanda.value) return [];
@@ -109,24 +124,19 @@ export function useCashier() {
         const kitchenOrder = kitchenStore.orders.find(
           (o: any) => o.id === order.id,
         );
+        const rawStatus = typeof order.status === 'object' && order.status !== null
+          ? (order.status as any).nome
+          : order.status;
         return {
           ...order,
           status: kitchenOrder
             ? (kitchenOrder as any).status
-            : BACKEND_TO_LOCAL_STATUS[order.status] ||
-              order.status ||
-              "pending",
+            : BACKEND_TO_LOCAL_STATUS[rawStatus] || rawStatus || "pending",
         };
       })
       .filter(
         (o: any) =>
-          ![
-            "cancelled",
-            "Cancelado",
-            "CANCELADO",
-            "finished",
-            "FINALIZADO",
-          ].includes(o.status) &&
+          !["cancelled", "finished"].includes(o.status) &&
           ((o.items?.length > 0) || (o.productOrders?.length > 0) || Number(o.price) > 0),
       );
   });
@@ -148,9 +158,6 @@ export function useCashier() {
     discountValue.value = null;
   }
 
-  const pendingCancelIds = new Set<number>();
-  const manualCancelTargetId = ref<number | null>(null);
-  const showCancelComandaModal = ref(false);
   const openManualCancel = (id: number) => {
     manualCancelTargetId.value = id;
   };
@@ -161,12 +168,10 @@ export function useCashier() {
   const confirmManualCancel = async (reason: string) => {
     if (!reason || !reason.trim()) return;
     try {
-      await request(
-        `/commands/${selectedComanda.value.id}/orders/${manualCancelTargetId.value}/cancel`,
-        {
-          method: "POST",
-          body: { cancellationDescription: reason } as any,
-        },
+      await orderApi.cancelOrder(
+        selectedComanda.value.id,
+        manualCancelTargetId.value!,
+        reason,
       );
       manualCancelTargetId.value = null;
       showToast("Cancelamento solicitado!", "success");
@@ -184,18 +189,12 @@ export function useCashier() {
     pendingCancelIds.add(comandaId);
     try {
       showCancelComandaModal.value = false;
-      await request(`/commands/${comandaId}/cancel`, {
-        method: "POST",
-        body: {
-          reason: reason,
-          userId: Number(authStore.user?.id || 1),
-        } as any,
-      });
+      await comandaApi.cancel(comandaId, reason, authStore.user!.id);
 
       closedComandaStore.addClosedComanda({
         ...comandaToCancel,
         closedAt: new Date().toISOString(),
-        status: "CANCELADO",
+        status: "Cancelada",
         cancelReason: reason,
       });
 
@@ -247,12 +246,10 @@ export function useCashier() {
       );
       try {
         for (const order of pendingOrders) {
-          await request(
-            `/commands/${selectedComanda.value.id}/orders/${order.id}/cancel`,
-            {
-              method: "POST",
-              body: { cancellationDescription: reason } as any,
-            },
+          await orderApi.cancelOrder(
+            selectedComanda.value.id,
+            order.id,
+            reason,
           );
         }
       } catch (e) {
@@ -304,18 +301,15 @@ export function useCashier() {
       const payment = pendingPayments.value[index];
       const isLast = index === pendingPayments.value.length - 1;
 
-      await request(`/commands/${selectedComanda.value.id}/payment`, {
-        method: "POST",
-        body: {
-          payment: { type: payment.type, amount: Number(payment.amount) },
-          selectedOrderIds: checkout.selectedOrderIds
-            ? checkout.selectedOrderIds.map(Number)
-            : [],
-          isLastPayment: isLast,
-          discountType: discountType.value,
-          discountValue: discountValue.value,
-          couponId: activeCoupon.value?.id || null,
-        } as any,
+      await comandaApi.pay(selectedComanda.value.id, {
+        payment: { type: payment.type, amount: Number(payment.amount) },
+        selectedOrderIds: checkout.selectedOrderIds
+          ? checkout.selectedOrderIds.map(Number)
+          : [],
+        isLastPayment: isLast,
+        discountType: discountType.value,
+        discountValue: discountValue.value,
+        couponId: activeCoupon.value?.id || null,
       });
 
       await comandaStore.loadComandas();
@@ -332,7 +326,7 @@ export function useCashier() {
         );
       }
     } catch (error: any) {
-      showToast(error.response?.data?.message || "Erro no pagamento.", "error");
+      showToast(error.data?.message || error.message || "Erro no pagamento.", "error");
     } finally {
       isProcessingPayment.value = false;
     }

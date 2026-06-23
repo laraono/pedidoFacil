@@ -8,7 +8,7 @@
     quantity: { type: Number, default: 1 },
     observation: { type: String, default: "" },
     selectedSize: Object,
-    observacoesPermitidas: { type: Boolean, default: true },
+    allowObservations: { type: Boolean, default: true },
     total: { type: Number, default: 0 },
     theme: { type: Object, required: true },
   });
@@ -120,7 +120,7 @@
             </div>
           </div>
 
-          <div v-if="observacoesPermitidas" class="space-y-3">
+          <div v-if="allowObservations" class="space-y-3">
             <label
               class="block text-sm font-bold uppercase tracking-wider opacity-70"
               >Alguma observação?</label

@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted, ref, computed } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useKitchenStore } from "@/stores/kitchen";
@@ -17,11 +17,11 @@ import {
   XCircle,
   ArrowLeft,
   Clock,
-  User 
+  User
 } from "lucide-vue-next";
+import notificationSound from '@/assets/pause.wav';
 
-const AUDIO_URL = "https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/pause.wav";
-const audioPlayer = new Audio(AUDIO_URL);
+const audioPlayer = new Audio(notificationSound);
 const audioEnabled = ref(false);
 
 const router = useRouter();
@@ -143,7 +143,7 @@ const filterKitchenOrders = (orders) => {
 
     if (locallyFinishedOrders.value.includes(order.id)) return false;
 
-    const isFinished = order.status === 'finished' || order.status === 'Finalizado' || order.status === 'FINALIZADO';
+    const isFinished = order.status === 'Finalizado';
     
     if (isFinished) {
       const isAutoatendimento = order.isAutoatendimento || (order.comanda && order.comanda.isAutoatendimento);
@@ -176,42 +176,52 @@ const indicatorColor = (color) => {
 <template>
   <SubscriptionGuard featureName="A Cozinha">
     <div class="h-screen bg-page flex flex-col font-inter overflow-hidden text-[#212121]">
-      <header class="h-16 md:h-20 bg-white border-b border-[#E0E0E0] flex items-center justify-between px-6 md:px-8 shadow-sm z-20 shrink-0">
-        <div class="flex items-center gap-3">
+      <header class="h-14 md:h-20 bg-white border-b border-[#E0E0E0] flex items-center justify-between px-4 md:px-8 shadow-sm z-20 shrink-0 gap-2">
+        <div class="flex items-center gap-2 md:gap-3 min-w-0">
           <button
             @click="router.push('/app/dashboard')"
-            class="p-2 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] transition-colors"
+            class="p-2 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] transition-colors shrink-0"
             title="Voltar ao Dashboard"
           >
             <ArrowLeft :size="18" />
           </button>
-          <div class="bg-accent p-2 rounded text-white shadow-sm">
-            <UtensilsCrossed :size="20" class="md:w-6 md:h-6" />
+          <div class="bg-accent p-2 rounded text-white shadow-sm shrink-0">
+            <UtensilsCrossed :size="18" class="md:w-6 md:h-6" />
           </div>
-          <div>
-            <h1 class="text-[#212121] font-black text-lg tracking-tight leading-none uppercase">Fila de Pedidos</h1>
-            <p class="text-[#757575] text-[10px] uppercase font-black tracking-widest mt-1">Monitor de Produção</p>
+          <div class="min-w-0">
+            <h1 class="text-[#212121] font-black text-sm md:text-lg tracking-tight leading-none uppercase truncate">Fila de Pedidos</h1>
+            <p class="hidden md:block text-[#757575] text-[10px] uppercase font-black tracking-widest mt-1">Monitor de Produção</p>
           </div>
         </div>
 
         <div class="flex items-center gap-3">
-          <button
-            @click="showOnlyMyOrders = !showOnlyMyOrders"
-            class="flex items-center gap-2 px-3 py-2 rounded transition-all border font-black text-[10px] sm:text-xs uppercase tracking-widest"
-            :class="showOnlyMyOrders ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-gray-50 text-[#757575] border-[#E0E0E0] hover:bg-gray-100'"
-            title="Mostrar apenas pedidos feitos por mim"
-          >
-            <User :size="16" />
-            <span class="hidden md:inline">{{ showOnlyMyOrders ? 'Meus Pedidos' : 'Todos os Pedidos' }}</span>
-          </button>
+          <div class="flex items-center bg-gray-100 border border-[#E0E0E0] rounded p-0.5 gap-0.5">
+            <button
+              @click="showOnlyMyOrders = false"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded font-black text-[10px] uppercase tracking-widest transition-all"
+              :class="!showOnlyMyOrders ? 'bg-white text-[#212121] shadow-sm' : 'text-[#757575] hover:text-[#212121]'"
+            >
+              <List :size="14" />
+              <span class="hidden sm:inline">Fila Geral</span>
+            </button>
+            <button
+              @click="showOnlyMyOrders = true"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded font-black text-[10px] uppercase tracking-widest transition-all"
+              :class="showOnlyMyOrders ? 'bg-white text-blue-600 shadow-sm' : 'text-[#757575] hover:text-[#212121]'"
+            >
+              <User :size="14" />
+              <span class="hidden sm:inline">Minha Fila</span>
+            </button>
+          </div>
 
           <div class="relative">
             <button
               @click="showTimerSettings = !showTimerSettings"
-              class="p-2.5 rounded transition-all border bg-gray-50 text-[#757575] border-[#E0E0E0] hover:text-[#212121] hover:bg-gray-100"
-              title="Configurar alerta de tempo"
+              class="flex items-center gap-1.5 px-3 py-2 rounded transition-all border font-black text-[10px] uppercase tracking-widest bg-gray-50 text-[#757575] border-[#E0E0E0] hover:text-[#212121] hover:bg-gray-100"
+              title="Configurar alerta de atraso"
             >
-              <Clock :size="18" />
+              <Clock :size="16" />
+              <span class="hidden sm:inline">{{ alertMinutes }}min</span>
             </button>
             <div
               v-if="showTimerSettings"
@@ -242,21 +252,23 @@ const indicatorColor = (color) => {
 
           <button
             @click="toggleAudio"
-            class="p-2.5 rounded transition-all border"
+            class="flex items-center gap-1.5 px-3 py-2 rounded transition-all border font-black text-[10px] uppercase tracking-widest"
             :class="audioEnabled ? 'bg-primary-light text-primary border-primary/20' : 'bg-danger-light text-danger border-danger'"
+            :title="audioEnabled ? 'Desativar alertas sonoros' : 'Ativar alertas sonoros'"
           >
-            <Volume2 v-if="audioEnabled" :size="18" />
-            <VolumeX v-else :size="18" />
+            <Volume2 v-if="audioEnabled" :size="16" />
+            <VolumeX v-else :size="16" />
+            <span class="hidden sm:inline">{{ audioEnabled ? 'Silenciar' : 'Ativar' }}</span>
           </button>
         </div>
       </header>
 
-      <main class="flex-grow flex flex-col md:flex-row p-4 md:p-8 gap-6 overflow-hidden pb-24 md:pb-8 bg-page">
+      <main class="flex-grow flex flex-col lg:flex-row p-3 lg:p-8 gap-4 lg:gap-6 overflow-hidden pb-24 lg:pb-8 bg-page">
         <section
           v-for="col in columns"
           :key="col.key"
-          class="flex-1 flex-col min-w-0 md:min-w-[360px] bg-white rounded border border-[#E0E0E0] shadow-sm overflow-hidden transition-all"
-          :class="activeTab === col.key ? 'flex' : 'hidden md:flex'"
+          class="flex-1 flex-col min-w-0 lg:min-w-[280px] bg-white rounded border border-[#E0E0E0] shadow-sm overflow-hidden transition-all"
+          :class="activeTab === col.key ? 'flex h-full' : 'hidden lg:flex'"
         >
           <header class="p-6 flex justify-between items-center bg-gray-50 z-10 border-b border-[#E0E0E0]">
             <div class="flex items-center gap-3">
@@ -289,7 +301,7 @@ const indicatorColor = (color) => {
         </section>
       </main>
 
-      <nav class="fixed bottom-0 left-0 w-full bg-white border-t border-[#E0E0E0] shadow-lg md:hidden z-50 px-8 py-3 pb-8 flex justify-between items-center">
+      <nav class="fixed bottom-0 left-0 w-full bg-white border-t border-[#E0E0E0] shadow-lg lg:hidden z-50 px-8 py-3 pb-8 flex justify-between items-center">
         <button
           @click="activeTab = 'pending'"
           class="flex flex-col items-center gap-1 p-2 transition-all relative"

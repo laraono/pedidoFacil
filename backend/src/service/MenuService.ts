@@ -1,5 +1,4 @@
 import { CategoryRepository, ProductRepository } from "../repository";
-import { ProductStatus } from "../enum";
 
 export class MenuService {
     constructor(
@@ -7,27 +6,29 @@ export class MenuService {
         private productRepository: ProductRepository
     ) {}
 
-    async getFullMenu(establishmentId: number, editMode: boolean = false) {
+    async getFullMenu(establishmentId: number) {
         const categories = await this.categoryRepository.find({
-            where: { establishment: { id: establishmentId } },
-            withDeleted: editMode,
+            where: {
+                establishment: { id: establishmentId },
+                ativo: true
+            },
             order: { id: 'ASC' }
         });
 
         const products = await this.productRepository.find({
-            where: { 
-                category: { establishment: { id: establishmentId } },
-                ...(editMode ? {} : { status: ProductStatus.ATIVO })
+            where: {
+                category: {
+                    establishment: { id: establishmentId },
+                    ativo: true
+                },
+                ativo: true
             },
             relations: ['category', 'productVariations'],
-            withDeleted: editMode,
             order: { name: 'ASC' }
         });
 
         const categoryIdsWithProducts = new Set(products.map(p => p.category?.id));
-        const filteredCategories = editMode
-            ? categories
-            : categories.filter(c => categoryIdsWithProducts.has(c.id));
+        const filteredCategories = categories.filter(c => categoryIdsWithProducts.has(c.id));
 
         return {
             categories: filteredCategories,

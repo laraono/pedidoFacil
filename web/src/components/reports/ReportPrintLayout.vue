@@ -6,6 +6,7 @@
   const props = defineProps({
     restaurantName: String,
     performanceTitle: String,
+    unitLabel: String,
     currentDate: String,
     metrics: Object,
     revenueData: Array,
@@ -32,7 +33,7 @@
       faturamento: "Faturamento",
       ticketMedio: "Ticket Médio",
       cancelamentos: "Cancelamentos",
-      giroMesa: "Giro de Mesa",
+      giroMesa: props.unitLabel ? `${props.unitLabel}s` : "Comandas",
     })[key] ?? key;
 
   const formatMetric = (key, val) => {
@@ -682,7 +683,7 @@
               text-overflow: ellipsis;
             "
           >
-            Total Projetado: {{ financialImpact }}
+            Perda em Cancelamentos: {{ financialImpact }}
           </p>
           <div
             v-if="!cancellations || cancellations.length === 0"

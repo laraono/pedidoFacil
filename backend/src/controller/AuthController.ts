@@ -2,20 +2,31 @@ import { Request, Response } from 'express'
 import rateLimit from 'express-rate-limit'
 import { AuthService } from '../service'
 import { auditLog } from '../utils/logger'
+import { calcRefreshMaxAgeMs } from '../utils/refreshExpiry'
 
 export const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 10,
+    max: 50,
     handler: (req: Request, res: Response) => {
         auditLog('login.exceededlimit', {
             ip: req.ip,
             email: req.body.email,
             timestamp: new Date().toISOString(),
         });
-        
+
         res.status(429).json({
             error: 'Muitas tentativas. Tente novamente mais tarde.',
             retryAfter: Math.ceil((req as any).rateLimit.resetTime / 1000)
+        })
+    }
+})
+
+export const registrationLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 30,
+    handler: (_req: Request, res: Response) => {
+        res.status(429).json({
+            error: 'Muitas tentativas de cadastro. Tente novamente mais tarde.',
         })
     }
 })
@@ -48,7 +59,7 @@ export class AuthController {
                     httpOnly: true,
                     secure: process.env.NODE_ENV === 'production',
                     sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-                    maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN || '7') * 24 * 60 * 60 * 1000
+                    maxAge: calcRefreshMaxAgeMs()
                 })
             }
 
@@ -86,7 +97,7 @@ async login(req: Request, res: Response) {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-                maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN || '7') * 24 * 60 * 60 * 1000
+                maxAge: calcRefreshMaxAgeMs()
             })
         }
 
@@ -104,6 +115,7 @@ async login(req: Request, res: Response) {
 
     async refresh(req: Request, res: Response) {
         const token = req.cookies.refreshToken
+        auditLog('refresh.attempt', { ip: req.ip, hasToken: !!token, timestamp: new Date().toISOString() })
         if (!token) {
             return res.status(401).json({ error: 'Token não fornecido.' })
         }
@@ -114,7 +126,7 @@ async login(req: Request, res: Response) {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-            maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN || '7') * 24 * 60 * 60 * 1000
+            maxAge: calcRefreshMaxAgeMs()
         })
 
         res.json({ accessToken, usuario })

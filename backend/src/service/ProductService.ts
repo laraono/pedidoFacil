@@ -2,7 +2,6 @@ import { CreateProductDTO } from "../dto/product/CreateProductDTO";
 import { AppError } from "../middleware/error/AppError";
 import { ProductRepository, ProductVariationRepository } from "../repository";
 import { CategoryService } from "./CategoryService";
-import { ProductStatus } from "../enum";
 
 export class ProductService {
     private categoryService: CategoryService
@@ -40,7 +39,7 @@ export class ProductService {
                 await this.productVariationRepository.createProductVariation({
                     ...variation,
                     product: { id: createdProduct.id },
-                    status: 'Ativo'
+                    ativo: true
                 } as any)
             }
         }
@@ -48,8 +47,8 @@ export class ProductService {
         return createdProduct.id
     }
 
-    async listProducts(establishmentId: number, page: number = 1, limit: number = 10, status?: string) {
-        return await this.productRepository.listProducts(establishmentId, page, limit, status);
+    async listProducts(establishmentId: number, page: number = 1, limit: number = 10, status?: string, search?: string) {
+        return await this.productRepository.listProducts(establishmentId, page, limit, status, search);
     }
 
     async listProductsByCategory(categoryId: number, establishmentId: number, page: number = 1, limit: number = 10) {
@@ -74,7 +73,7 @@ export class ProductService {
         if (data.categoryId !== undefined) updateData.category = { id: data.categoryId };
         
         if (data.available !== undefined) {
-            updateData.status = data.available ? ProductStatus.ATIVO : ProductStatus.INATIVO;
+            updateData.ativo = data.available;
         }
 
         await this.productRepository.updateProduct(productId, updateData);
@@ -86,7 +85,7 @@ export class ProductService {
                 await this.productVariationRepository.createProductVariation({
                     name: size.name,
                     addPrice: size.price,
-                    status: 'Ativo',
+                    ativo: true,
                     product: { id: productId }
                 } as any);
             }
@@ -95,8 +94,12 @@ export class ProductService {
 
     async softDeleteProduct(productId: number) {
         const product = await this.productRepository.getProduct(productId);
-        if (!product || product.status !== ProductStatus.INATIVO) {
+        if (!product || product.ativo) {
             throw new AppError('Apenas produtos inativos podem ser excluídos.', 400);
+        }
+        const hasActiveOrders = await this.productRepository.hasActiveOrders(productId);
+        if (hasActiveOrders) {
+            throw new AppError('Não é possível excluir um produto com pedidos em andamento.', 409);
         }
         await this.productRepository.softDeleteProduct(productId);
     }

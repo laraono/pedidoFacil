@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import AppHeader from '@/components/AppHeader.vue';
 import { CircleHelp } from 'lucide-vue-next';
+import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/auth';
+import { useFeaturesStore } from '@/stores/features';
 
 const authStore = useAuthStore();
+const { emailEnabled } = storeToRefs(useFeaturesStore());
 </script>
 
 <template>
@@ -15,7 +18,7 @@ const authStore = useAuthStore();
     </main>
 
     <a
-      v-if="!authStore.isAdmin"
+      v-if="emailEnabled && !authStore.isAdmin"
       href="/#contato"
       target="_blank"
       rel="noopener noreferrer"

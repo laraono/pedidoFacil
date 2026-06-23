@@ -73,7 +73,7 @@
                   color: theme.textColor,
                 }"
               >
-                1x
+                {{ item.quantity }}x
               </div>
               <div class="flex-1">
                 <div class="flex justify-between items-start mb-1">
@@ -84,7 +84,7 @@
                     >
                   </h4>
                   <span class="font-black ml-2">{{
-                    formatCurrency(item.price)
+                    formatCurrency(item.price * item.quantity)
                   }}</span>
                 </div>
                 <p

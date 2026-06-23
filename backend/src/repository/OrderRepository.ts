@@ -2,6 +2,7 @@ import { DataSource, Repository } from "typeorm";
 import { Order } from "../database";
 import { OrderParams } from "../dto";
 import { OrderStatus } from "../enum";
+import { STATUS_PEDIDO_IDS } from "../database/entity/lookup-ids";
 
 export class OrderRepository extends Repository<Order> {
 
@@ -27,7 +28,7 @@ export class OrderRepository extends Repository<Order> {
             },
             relations: [
                 'comanda',
-                'user',
+                'createdBy',
                 'productOrders',
                 'productOrders.product',
                 'productOrders.productVariation',
@@ -41,7 +42,7 @@ export class OrderRepository extends Repository<Order> {
                 comanda: { id: comandaId }
             },
             relations: [
-                'user', 
+                'createdBy',
                 'productOrders',
                 'productOrders.product',
                 'productOrders.productVariation',
@@ -50,6 +51,13 @@ export class OrderRepository extends Repository<Order> {
     }
 
     async updateOrderStatus(id: number, status: OrderStatus) {
-        await this.update(id, { status });
+        const statusIdMap: Record<OrderStatus, number> = {
+            [OrderStatus.AGUARDANDO_PREPARO]: STATUS_PEDIDO_IDS.AGUARDANDO_PREPARO,
+            [OrderStatus.EM_PREPARO]: STATUS_PEDIDO_IDS.EM_PREPARO,
+            [OrderStatus.PRONTO]: STATUS_PEDIDO_IDS.PRONTO,
+            [OrderStatus.FINALIZADO]: STATUS_PEDIDO_IDS.FINALIZADO,
+            [OrderStatus.CANCELADO]: STATUS_PEDIDO_IDS.CANCELADO,
+        };
+        await this.update(id, { status: { id: statusIdMap[status] } as any });
     }
 }

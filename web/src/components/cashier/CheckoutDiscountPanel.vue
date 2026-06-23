@@ -3,6 +3,9 @@
   import BaseSelect from "@/components/ui/BaseSelect.vue";
   import BaseButton from "@/components/ui/BaseButton.vue";
   import BaseInput from "@/components/ui/BaseInput.vue";
+  import { useUtils } from "@/composables/useUtils";
+
+  const { formatCurrency } = useUtils();
 
   defineProps({
     subtotal: { type: Number, required: true },
@@ -25,23 +28,23 @@
   ]);
 
   const discountTypeOptions = [
-    { value: "percent", label: "Percentual (%)" },
-    { value: "fixed", label: "Valor fixo (R$)" },
+    { value: "percent", label: "%" },
+    { value: "fixed", label: "R$" },
   ];
 </script>
 
 <template>
   <div
-    class="mt-10 border border-[#E0E0E0] rounded p-8 bg-page/40 shadow-inner"
+    class="mt-10 border border-[#E0E0E0] rounded p-4 sm:p-8 bg-page/40 shadow-inner"
   >
     <div
       class="flex justify-between text-sm font-black text-[#757575] uppercase tracking-widest"
     >
       <span>Subtotal da Conta:</span>
-      <span class="text-[#212121]">R$ {{ subtotal.toFixed(2) }}</span>
+      <span class="text-[#212121]">{{ formatCurrency(subtotal) }}</span>
     </div>
 
-    <div class="mt-6 p-6 bg-gray-50 rounded border border-[#E0E0E0]">
+    <div class="mt-6 p-3 sm:p-6 bg-gray-50 rounded border border-[#E0E0E0]">
       <label
         class="block text-[10px] font-black text-[#757575] uppercase tracking-widest mb-3"
         >Aplicar Ajuste/Desconto</label
@@ -70,7 +73,7 @@
       </div>
     </div>
 
-    <div class="mt-6 p-6 bg-gray-50 rounded border border-[#E0E0E0]">
+    <div class="mt-6 p-3 sm:p-6 bg-gray-50 rounded border border-[#E0E0E0]">
       <label
         class="block text-[10px] font-black text-[#757575] uppercase tracking-widest mb-3 flex items-center gap-2"
       >
@@ -80,18 +83,15 @@
         v-if="appliedCoupon"
         class="flex items-center justify-between p-3 bg-accent-light border border-accent/30 rounded"
       >
-        <div class="flex items-center gap-2">
-          <Tag :size="14" class="text-accent" />
-          <span
-            class="font-black text-accent text-sm font-mono tracking-widest"
-            >{{ appliedCoupon.code }}</span
-          >
+        <div class="flex items-center gap-2 flex-wrap min-w-0">
+          <Tag :size="14" class="text-accent shrink-0" />
+          <span class="font-black text-accent text-sm font-mono">{{ appliedCoupon.code }}</span>
           <span class="text-[#757575] text-xs">
             —
             {{
               appliedCoupon.type === "percent"
                 ? appliedCoupon.value + "%"
-                : "R$ " + Number(appliedCoupon.value).toFixed(2)
+                : formatCurrency(Number(appliedCoupon.value))
             }}
             off
           </span>
@@ -130,7 +130,7 @@
           v-if="appliedCoupon"
           class="text-[10px] text-accent font-bold mt-0.5"
         >
-          Cupom: − R$ {{ couponDiscount.toFixed(2) }}
+          Cupom: − {{ formatCurrency(couponDiscount) }}
         </div>
       </div>
       <div class="flex flex-col items-end">
@@ -138,10 +138,10 @@
           v-if="discountValue > 0 || appliedCoupon"
           class="text-sm font-bold text-[#757575] line-through mb-1"
         >
-          R$ {{ subtotal.toFixed(2) }}
+          {{ formatCurrency(subtotal) }}
         </span>
-        <span class="text-4xl font-black text-accent tracking-tighter">
-          R$ {{ totalWithDiscount.toFixed(2) }}
+        <span class="text-2xl sm:text-4xl font-black text-accent tracking-tighter">
+          {{ formatCurrency(totalWithDiscount) }}
         </span>
       </div>
     </div>

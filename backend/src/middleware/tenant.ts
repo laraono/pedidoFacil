@@ -1,5 +1,6 @@
 import { AppDataSource, Comanda } from '../database';
 import { Category } from '../database/entity/Category';
+import { Product } from '../database/entity/Product';
 import { Request, Response, NextFunction } from 'express';
 
 export function verifyComandaTenancy(paramId: string) {
@@ -32,6 +33,26 @@ export function verifyCategoryTenancy(paramId: string) {
 
             if (!category) return res.status(404).json({ error: 'Categoria não encontrada.' });
             if (category.establishment.id !== establishmentId) return res.status(403).json({ error: 'Acesso negado.' });
+
+            next();
+        } catch (err) {
+            next(err);
+        }
+    };
+}
+
+export function verifyProductTenancy(paramId: string) {
+    return async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const establishmentId = (req as any).usuario.estabelecimento;
+            const product = await AppDataSource.getRepository(Product).findOne({
+                where: { id: Number(req.params[paramId]) },
+                relations: { category: { establishment: true } },
+                withDeleted: true,
+            });
+
+            if (!product) return res.status(404).json({ error: 'Produto não encontrado.' });
+            if (product.category?.establishment?.id !== establishmentId) return res.status(403).json({ error: 'Acesso negado.' });
 
             next();
         } catch (err) {

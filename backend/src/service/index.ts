@@ -46,7 +46,7 @@ const mercadoPagoService = new MercadoPagoService();
 const authService = new AuthService(AppDataSource, userRepository, refreshTokenRepository, establishmentRepository, mercadoPagoService);
 
 const receiptService = new ReceiptService(receiptRepository, paymentRepository, establishmentRepository);
-const paymentService = new PaymentService(AppDataSource, mercadoPagoService, paymentRepository, orderRepository);
+const paymentService = new PaymentService(AppDataSource);
 
 const comandaService = new ComandaService(
     AppDataSource,
@@ -70,20 +70,19 @@ const roleService = new RoleService(roleRepository, userRepository);
 
 const establishmentService = new EstablishmentService(
   establishmentRepository,
-  configurationRepository,
-  mercadoPagoService,
+  configurationRepository
 );
 
 const profileService = new ProfileService(userRepository, refreshTokenRepository);
 
-const employeeService = new EmployeeService(userRepository, roleRepository, refreshTokenRepository);
+const employeeService = new EmployeeService(userRepository, roleRepository, refreshTokenRepository, AppDataSource);
 
 const menuService = new MenuService(categoryRepository, productRepository);
 
 const subscriptionService = new SubscriptionService(planRepository, subscriptionRepository, subscriptionPaymentRepository, mercadoPagoService, AppDataSource);
 const planService = new PlanService(planRepository, subscriptionService, mercadoPagoService, AppDataSource);
 
-const webhookService = new WebhookService(subscriptionRepository, subscriptionPaymentRepository, mercadoPagoService);
+const webhookService = new WebhookService(subscriptionRepository, subscriptionPaymentRepository, mercadoPagoService, AppDataSource);
 
 export {
   authService,

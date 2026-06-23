@@ -35,7 +35,9 @@ const showPassword = ref(false);
 const PROTECTED_ROLE_NAMES = ["Gerente"];
 
 const roleOptions = computed(() =>
-  roles.value.map((r) => ({ label: r.name, value: r.id }))
+  roles.value
+    .filter((r) => !PROTECTED_ROLE_NAMES.includes(r.name))
+    .map((r) => ({ label: r.name, value: r.id }))
 );
 
 function getRoleName(user) {
@@ -171,8 +173,8 @@ const activeColumns = [
 ];
 
 const activeActions = [
-  { icon: Pencil, tooltip: 'Editar', handler: openForm, class: 'text-[#757575] hover:text-[#212121] hover:bg-gray-50' },
-  { icon: Trash, tooltip: 'Desativar', handler: askDeactivate, condition: canDeleteUser, class: 'text-[#757575] hover:text-red-500 hover:bg-danger-light' },
+  { icon: Pencil, tooltip: 'Editar', handler: openForm, class: 'text-muted hover:text-[#212121] hover:bg-gray-50' },
+  { icon: Trash, tooltip: 'Desativar', handler: askDeactivate, condition: canDeleteUser, class: 'text-muted hover:text-red-500 hover:bg-danger-light' },
 ];
 
 const inactiveColumns = [
@@ -187,12 +189,12 @@ const inactiveColumns = [
     <header class="flex flex-col mb-10 gap-6">
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div class="flex items-center gap-4">
-          <button @click="router.back()" class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] transition-colors">
+          <button @click="router.back()" class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-muted hover:text-[#212121] transition-colors">
             <ArrowLeft :size="20" />
           </button>
           <div>
             <h1 class="text-3xl font-black text-[#212121]">Usuários</h1>
-            <p class="text-[#757575] text-sm">Gerencie o acesso da sua equipe</p>
+            <p class="text-muted text-sm">Gerencie o acesso da sua equipe</p>
           </div>
         </div>
         <BaseButton v-if="!showForm && activeTab === 'active'" @click="openForm()" :icon="PlusCircle" class="w-full sm:w-auto">
@@ -200,10 +202,10 @@ const inactiveColumns = [
         </BaseButton>
       </div>
       <div class="flex gap-6 mt-2 border-b border-[#E0E0E0]">
-        <button @click="activeTab = 'active'; closeForm();" :class="activeTab === 'active' ? 'text-accent border-b-2 border-accent' : 'text-[#757575] hover:text-[#212121]'" class="pb-3 font-bold text-sm transition-all px-2">
+        <button @click="activeTab = 'active'; closeForm();" :class="activeTab === 'active' ? 'text-accent border-b-2 border-accent' : 'text-muted hover:text-[#212121]'" class="pb-3 font-bold text-sm transition-all px-2">
           Ativos ({{ users.length }})
         </button>
-        <button @click="activeTab = 'inactive'; closeForm();" :class="activeTab === 'inactive' ? 'text-accent border-b-2 border-accent' : 'text-[#757575] hover:text-[#212121]'" class="pb-3 font-bold text-sm transition-all px-2">
+        <button @click="activeTab = 'inactive'; closeForm();" :class="activeTab === 'inactive' ? 'text-accent border-b-2 border-accent' : 'text-muted hover:text-[#212121]'" class="pb-3 font-bold text-sm transition-all px-2">
           Desativados ({{ inactiveUsers.length }})
         </button>
       </div>
@@ -217,7 +219,7 @@ const inactiveColumns = [
             <component :is="editingUser ? Pencil : PlusCircle" :size="24" class="text-accent" />
             {{ editingUser ? "Editar Usuário" : "Cadastrar Usuário" }}
           </h2>
-          <button @click="closeForm" class="p-2 text-[#757575] hover:text-[#212121] transition-colors">
+          <button @click="closeForm" class="p-2 text-muted hover:text-[#212121] transition-colors">
             <X :size="24" />
           </button>
         </div>
@@ -226,14 +228,14 @@ const inactiveColumns = [
           <BaseInput v-model="form.email" label="E-mail de Login" placeholder="ex: joao@email.com" :error="errors.email" />
           <BaseInput v-model="form.password" label="Senha" :type="showPassword ? 'text' : 'password'" :placeholder="editingUser ? 'Deixe em branco para manter' : '••••••••'" :error="errors.password">
             <template #suffix>
-              <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#757575] hover:text-[#212121] transition-colors">
+              <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-[#212121] transition-colors">
                 <component :is="showPassword ? EyeOff : Eye" :size="18" />
               </button>
             </template>
           </BaseInput>
           <BaseSelect v-model="form.roleId" label="Cargo" :options="roleOptions" placeholder="Selecione o cargo" :error="errors.roleId" :disabled="editingUser === currentUser?.id" />
           <div class="md:col-span-2 flex justify-end gap-4 mt-4 pt-8 border-t border-[#E0E0E0]">
-            <button type="button" @click="closeForm" class="px-8 py-4 rounded text-[#757575] font-bold hover:bg-gray-50 hover:text-[#212121] transition-colors">Cancelar</button>
+            <button type="button" @click="closeForm" class="px-8 py-4 rounded text-muted font-bold hover:bg-gray-50 hover:text-[#212121] transition-colors">Cancelar</button>
             <BaseButton @click="saveUser" :isLoading="isSaving" class="px-8 py-4">Salvar Usuário</BaseButton>
           </div>
         </div>
@@ -243,31 +245,31 @@ const inactiveColumns = [
     <div v-if="activeTab === 'active'" class="animate-fadeIn">
       <DataTable v-if="users.length" :columns="activeColumns" :data="users" :actions="activeActions">
         <template #cell-status="{ item }">
-          <span :class="isActive(item.status) ? 'bg-accent-light text-accent border-accent/30' : 'bg-danger-light text-red-500 border-danger'"
+          <span :class="isActive(item.status) ? 'bg-accent-light text-green-800 border-accent/30' : 'bg-danger-light text-red-500 border-danger'"
                 class="px-3 py-1 border rounded text-[10px] font-black uppercase tracking-widest">
             {{ item.status || "ATIVO" }}
           </span>
         </template>
         <template #cell-role="{ item }">
-          <span class="font-bold text-[#757575] text-sm">{{ getRoleName(item) }}</span>
+          <span class="font-bold text-muted text-sm">{{ getRoleName(item) }}</span>
         </template>
         <template #mobile-item="{ item }">
           <div class="p-6">
             <div class="flex justify-between items-start mb-4">
               <div>
                 <p class="font-bold text-[#212121] text-lg">{{ item.name }}</p>
-                <p class="text-sm text-[#757575] mt-1">{{ item.email }}</p>
+                <p class="text-sm text-muted mt-1">{{ item.email }}</p>
               </div>
-              <span class="bg-accent-light text-accent border-accent/30 px-2 py-1 border rounded text-[9px] font-black uppercase tracking-widest">
+              <span class="bg-accent-light text-green-800 border-accent/30 px-2 py-1 border rounded text-[9px] font-black uppercase tracking-widest">
                 {{ item.status || "ATIVO" }}
               </span>
             </div>
             <div class="flex justify-between items-center mt-6 pt-4 border-t border-[#E0E0E0]">
-              <span class="text-[10px] font-black uppercase tracking-widest text-[#757575] bg-gray-50 px-3 py-1 rounded border border-[#E0E0E0]">
+              <span class="text-[10px] font-black uppercase tracking-widest text-muted bg-gray-50 px-3 py-1 rounded border border-[#E0E0E0]">
                 {{ getRoleName(item) }}
               </span>
               <div class="flex gap-2">
-                <button @click="openForm(item)" class="p-2 text-[#757575] hover:text-[#212121] bg-gray-50 rounded">
+                <button @click="openForm(item)" class="p-2 text-muted hover:text-[#212121] bg-gray-50 rounded">
                   <Pencil :size="18" />
                 </button>
                 <button v-if="canDeleteUser(item)" @click="askDeactivate(item)" class="p-2 text-red-500 bg-danger-light rounded">
@@ -293,7 +295,7 @@ const inactiveColumns = [
           </span>
         </template>
         <template #row-actions="{ item }">
-          <button @click="handleReactivate(item)" class="flex items-center gap-2 px-4 py-2 bg-accent-light text-accent border border-accent/20 rounded text-[11px] font-black uppercase tracking-wider hover:bg-accent hover:text-white transition-all">
+          <button @click="handleReactivate(item)" class="flex items-center gap-2 px-4 py-2 bg-accent-light text-green-800 border border-accent/20 rounded text-[11px] font-black uppercase tracking-wider hover:bg-accent hover:text-white transition-all">
             <RotateCcw :size="14" /> Reativar
           </button>
           <button @click="askPermanentDelete(item)" class="flex items-center gap-2 px-4 py-2 bg-danger-light text-red-600 border border-red-200 rounded text-[11px] font-black uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all">
@@ -305,11 +307,11 @@ const inactiveColumns = [
             <div class="flex justify-between items-start mb-4">
               <div>
                 <p class="font-bold text-[#212121] text-lg line-through">{{ item.name }}</p>
-                <p class="text-sm text-[#757575] mt-1">{{ item.email }}</p>
+                <p class="text-sm text-muted mt-1">{{ item.email }}</p>
               </div>
             </div>
             <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-[#E0E0E0]">
-              <button @click="handleReactivate(item)" class="flex items-center gap-2 px-4 py-2 bg-accent-light text-accent border border-accent/20 rounded text-[11px] font-black uppercase tracking-wider">
+              <button @click="handleReactivate(item)" class="flex items-center gap-2 px-4 py-2 bg-accent-light text-green-800 border border-accent/20 rounded text-[11px] font-black uppercase tracking-wider">
                 <RotateCcw :size="14" /> Reativar
               </button>
               <button @click="askPermanentDelete(item)" class="flex items-center gap-2 px-4 py-2 bg-danger-light text-red-600 border border-red-200 rounded text-[11px] font-black uppercase tracking-wider">

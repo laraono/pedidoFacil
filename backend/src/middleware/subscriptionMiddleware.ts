@@ -16,32 +16,30 @@ export async function subscriptionMiddleware(req: Request, res: Response, next: 
         if (!subscription)
             return res.status(402).json({ message: 'Nenhuma assinatura encontrada' })
 
-        // Expiration takes priority over all statuses
-        if (subscription.expirationDate <= new Date()) {
+        if (new Date(subscription.expirationDate) <= new Date()) {
             await subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.EXPIRADA)
             return res.status(402).json({ message: 'Assinatura expirada' })
         }
 
-        if (subscription.status === SubscriptionStatus.EXPIRADA)
+        if (subscription.status.nome === SubscriptionStatus.EXPIRADA)
             return res.status(402).json({ message: 'Assinatura expirada' })
 
-        // Cancelled but expiration date not yet reached — still has access
-        if (subscription.status === SubscriptionStatus.CANCELADA)
+        if (subscription.status.nome === SubscriptionStatus.CANCELADA)
             return next()
 
-        // Already confirmed as paid — skip MP call
-        if (subscription.status === SubscriptionStatus.PAGA)
+        if (subscription.status.nome === SubscriptionStatus.PAGA)
             return next()
 
-        // Pending: check MP preapproval status
-        const mp = await mercadoPagoService.getSubscription(subscription.mercadoPagoId!)
+        if (!subscription.mercadoPagoId)
+            return res.status(402).json({ message: 'Assinatura sem vínculo de pagamento' })
+
+        const mp = await mercadoPagoService.getSubscription(subscription.mercadoPagoId) // fallback pro webhook
 
         if (mp.status === 'authorized') {
             await subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.PAGA)
             return next()
         }
 
-        // MP is retrying automatically — give benefit of the doubt
         if (mp.status === 'paused')
             return next()
 

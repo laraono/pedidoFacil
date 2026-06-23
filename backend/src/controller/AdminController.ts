@@ -21,7 +21,8 @@ export class AdminController {
     });
 
     update = catchAsync(async (req: Request, res: Response) => {
-        const admin = await this.adminService.update(Number(req.params.adminId), req.body);
+        const requesterId = Number((req as any).usuario?.id);
+        const admin = await this.adminService.update(requesterId, Number(req.params.adminId), req.body);
         return res.status(200).json(admin);
     });
 
@@ -31,8 +32,9 @@ export class AdminController {
         return res.sendStatus(204);
     });
 
-    getMasterId = catchAsync(async (_req: Request, res: Response) => {
+    getMasterId = catchAsync(async (req: Request, res: Response) => {
         const masterId = await this.adminService.getMasterId();
-        return res.status(200).json({ masterId });
+        const currentId = Number((req as any).usuario?.id);
+        return res.status(200).json({ masterId, currentId });
     });
 }

@@ -4,6 +4,7 @@ import { catchAsync, subscriptionMiddleware } from '../middleware';
 import { authenticate } from '../middleware/authenticate';
 import { verifyComandaTenancy } from '../middleware/tenant';
 import { checkPermission } from '../middleware/roleAccessControl';
+import { Permission } from '../enum';
 import { validateRequest } from '../middleware/validateRequest';
 import { createOrderSchema } from '../dto/order/CreateOrderDTO';
 import { cancelOrderSchema } from '../dto/order/CancelOrderDTO';
@@ -16,7 +17,7 @@ orderRouter.post(
   authenticate,
   subscriptionMiddleware,
   verifyComandaTenancy('comandaId'),
-  checkPermission('CAIXA', 'CRIAR_PEDIDO', 'COZINHA'),
+  checkPermission(Permission.CRIAR_PEDIDO),
   validateRequest(createOrderSchema), 
   catchAsync((req: Request, res: Response) => orderController.createOrder(req, res))
 );
@@ -26,7 +27,7 @@ orderRouter.get(
   authenticate,
   subscriptionMiddleware,
   verifyComandaTenancy('comandaId'),
-  checkPermission('CAIXA'),
+  checkPermission(Permission.CAIXA, Permission.COZINHA),
   catchAsync((req: Request, res: Response) => orderController.listOrdersByComanda(req, res))
 );
 
@@ -35,7 +36,7 @@ orderRouter.put(
   authenticate,
   subscriptionMiddleware,
   verifyComandaTenancy('comandaId'),
-  checkPermission('COZINHA'),
+  checkPermission(Permission.COZINHA, Permission.CAIXA),
   validateRequest(updateOrderStatusSchema),
   catchAsync((req: Request, res: Response) => orderController.updateOrderStatus(req, res))
 );
@@ -46,7 +47,7 @@ orderRouter.post(
   subscriptionMiddleware,
   verifyComandaTenancy('comandaId'),
   validateRequest(cancelOrderSchema),
-  checkPermission('COZINHA'),
+  checkPermission(Permission.CAIXA, Permission.COZINHA),
   catchAsync((req: Request, res: Response) => orderController.cancelOrder(req, res))
 );
 
@@ -54,6 +55,6 @@ orderRouter.get(
   '/orders',
   authenticate,
   subscriptionMiddleware,
-  checkPermission('COZINHA'), 
+  checkPermission(Permission.COZINHA, Permission.CAIXA), 
   catchAsync((req: Request, res: Response) => orderController.listOrders(req, res))
 );

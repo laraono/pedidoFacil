@@ -20,7 +20,7 @@ export const validateRequest = (schema: z.ZodSchema) =>
     } catch (error) {
       if (error instanceof ZodError) {
         return res.status(400).json({
-          message: 'Falha na validação dos dados',
+          error: error.issues[0]?.message ?? 'Falha na validação dos dados',
           errors: error.issues.map(err => ({
             campo: err.path.join('.'),
             mensagem: err.message

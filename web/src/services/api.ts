@@ -1,11 +1,14 @@
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
 
+let refreshPromise: Promise<any> | null = null;
+
 export function getToken(): string | null {
   return localStorage.getItem('accessToken');
 }
 
-interface CustomRequestInit extends RequestInit {
+interface CustomRequestInit extends Omit<RequestInit, 'body'> {
   isMultipart?: boolean;
+  body?: BodyInit | null | Record<string, unknown>;
 }
 
 function isFormDataObj(data: any): boolean {
@@ -17,7 +20,12 @@ function isFormDataObj(data: any): boolean {
   );
 }
 
-
+async function flagSubscriptionInactive(): Promise<void> {
+  try {
+    const { useSubscriptionStore } = await import('@/stores/subscriptions');
+    useSubscriptionStore().markInactiveFromBackend();
+  } catch {}
+}
 
 export async function request(path: string, options: CustomRequestInit = {}) {
   const isFormData = options.isMultipart === true || isFormDataObj(options.body);
@@ -37,37 +45,61 @@ export async function request(path: string, options: CustomRequestInit = {}) {
 
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
-    body,
+    body: body as BodyInit | null | undefined,
     headers,
     credentials: 'include',
   });
 
   if (res.status === 204) return null;
 
-  if (res.status === 402) return;
+  if (res.status === 402) {
+    const body = await res.json().catch(() => ({}));
+    await flagSubscriptionInactive();
+    const err: any = new Error(body.message || 'Assinatura expirada ou inválida');
+    err.status = 402;
+    err.data = body;
+    throw err;
+  }
 
   const data = await res.json().catch(() => ({}));
 
   if (res.status === 401 && path !== '/refresh' && path !== '/login') {
+    if (!getToken()) {
+      const err: any = new Error(data.message || data.error || 'Ocorreu um erro inesperado. Tente novamente mais tarde.');
+      err.data = data;
+      throw err;
+    }
     try {
-      const refreshed = await request('/refresh', { method: 'POST' });
+      if (!refreshPromise) {
+        refreshPromise = request('/refresh', { method: 'POST' }).finally(() => {
+          refreshPromise = null;
+        });
+      }
+      const refreshed = await refreshPromise;
       localStorage.setItem('accessToken', refreshed.accessToken);
       headers['Authorization'] = `Bearer ${refreshed.accessToken}`;
 
       const retry = await fetch(`${BASE_URL}${path}`, {
         ...options,
-        body,
+        body: body as BodyInit | null | undefined,
         headers,
         credentials: 'include',
       });
 
       if (retry.status === 204) return null;
 
-      if (retry.status === 402) return;
+      if (retry.status === 402) {
+        const body = await retry.json().catch(() => ({}));
+        await flagSubscriptionInactive();
+        const err: any = new Error(body.message || 'Assinatura expirada ou inválida');
+        err.status = 402;
+        err.data = body;
+        throw err;
+      }
 
       if (!retry.ok) {
         const retryData = await retry.json().catch(() => ({}));
-        throw new Error(retryData.message || retryData.error || `Erro ${retry.status}`);
+        throw new Error(retryData.message || retryData.error || 'Ocorreu um erro inesperado. Tente novamente mais tarde.');
       }
       return retry.json();
     } catch {
@@ -81,7 +113,7 @@ export async function request(path: string, options: CustomRequestInit = {}) {
   }
 
   if (!res.ok) {
-    const err: any = new Error(data.message || data.error || `Erro ${res.status}`);
+    const err: any = new Error(data.message || data.error || 'Ocorreu um erro inesperado. Tente novamente mais tarde.');
     err.data = data;
     throw err;
   }

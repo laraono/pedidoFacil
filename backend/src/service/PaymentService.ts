@@ -1,17 +1,13 @@
 import { DataSource, EntityManager } from 'typeorm';
 import { Payment, PaymentOrder, Order } from '../database/entity';
-import { PaymentStatus } from '../database/entity/Payment';
 import { PaymentMethod } from '../database/entity/PaymentMethod';
 import { AppError } from '../middleware/error/AppError';
-import { MercadoPagoService } from './MercadoPagoService';
-import { OrderRepository, PaymentRepository } from '../repository';
+import { PaymentStatus } from '../enum';
+import { STATUS_PAGAMENTO_IDS } from '../database/entity/lookup-ids';
 
 export class PaymentService {
     constructor(
-        private dataSource: DataSource,
-        private mercadoPagoService: MercadoPagoService,
-        private paymentRepository: PaymentRepository,
-        private orderRepository: OrderRepository,
+        private dataSource: DataSource
     ) {}
 
     async processCheckoutPayments(
@@ -19,15 +15,21 @@ export class PaymentService {
         paymentsData: Array<{ type: string, amount: number, terminal?: string }>,
         change: number,
         establishmentId: number,
-        userId: number,
-        manager: EntityManager 
+        userId: number | null,
+        manager: EntityManager
     ) {
         if (!orders || orders.length === 0) {
             throw new AppError('Não há pedidos válidos para pagamento nesta comanda.', 400);
         }
 
-        const registeredPayments: Payment[] = []; 
+        const registeredPayments: Payment[] = [];
         let remainingChange = change;
+
+        const enabledRows: Array<{ ID_MetodoPagamento: number }> = await manager.query(
+            'SELECT ID_MetodoPagamento FROM ESTABELECIMENTO_METODO_PAGAMENTO WHERE ID_Estabelecimento = ?',
+            [establishmentId]
+        );
+        const enabledMethodIds = enabledRows.map(r => Number(r.ID_MetodoPagamento));
 
         for (const paymentInput of paymentsData) {
 
@@ -38,15 +40,17 @@ export class PaymentService {
 
             const paymentMethod = await manager.findOne(PaymentMethod, { where: { name: paymentInput.type } });
             if (!paymentMethod) throw new AppError(`Método de pagamento '${paymentInput.type}' não cadastrado.`, 400);
+            if (enabledMethodIds.length > 0 && !enabledMethodIds.includes(paymentMethod.id)) {
+                throw new AppError(`Método de pagamento '${paymentInput.type}' não está habilitado para este estabelecimento.`, 400);
+            }
 
             const payment = manager.create(Payment, {
                 paymentMethod,
                 totalValue: paymentInput.amount,
-                serviceTax: 0,
                 change: paymentMethod.name === 'Dinheiro' ? remainingChange : 0,
-                status: PaymentStatus.PAID,
+                status: { id: STATUS_PAGAMENTO_IDS.APROVADO },
                 establishment: { id: establishmentId },
-                user: { id: userId }
+                user: userId ? { id: userId } : undefined
             });
 
             const savedPayment = await manager.save(Payment, payment);
@@ -74,11 +78,18 @@ export class PaymentService {
             for (const order of orders) {
                 if (amountToDistribute <= 0) break;
 
+                const orderTotal = (order.productOrders ?? []).reduce(
+                    (sum, po) => sum + Number(po.price) * Number(po.quantity),
+                    0,
+                );
+
+                const alloc = Math.min(amountToDistribute, orderTotal);
+                amountToDistribute -= alloc;
+
                 const paymentOrder = manager.create(PaymentOrder, {
                     orderId: order.id,
                     paymentId: savedPayment.id,
-                    quantity: 1, 
-                    price: amountToDistribute 
+                    price: alloc
                 });
 
                 await manager.save(PaymentOrder, paymentOrder);
@@ -87,11 +98,12 @@ export class PaymentService {
 
         return registeredPayments;
     }
-    
+
     async listPayments(establishmentId: number, filters: any): Promise<Payment[]> {
         const paymentRepo = this.dataSource.getRepository(Payment);
-        
+
         const query = paymentRepo.createQueryBuilder('payment')
+            .leftJoinAndSelect('payment.status', 'ps')
             .leftJoinAndSelect('payment.user', 'user')
             .leftJoinAndSelect('payment.paymentMethod', 'paymentMethod')
             .leftJoinAndSelect('payment.paymentOrders', 'paymentOrders')
@@ -105,7 +117,7 @@ export class PaymentService {
         }
 
         if (filters.status) {
-            query.andWhere('payment.status = :status', { status: filters.status });
+            query.andWhere('ps.nome = :status', { status: filters.status });
         }
 
         return await query.orderBy('payment.createdAt', 'DESC').getMany();
@@ -115,30 +127,27 @@ export class PaymentService {
         const paymentRepo = this.dataSource.getRepository(Payment);
         const payment = await paymentRepo.findOne({
             where: { id: paymentId, establishment: { id: establishmentId } },
-            relations: ['user', 'paymentMethod', 'paymentOrders', 'paymentOrders.order']
+            relations: ['status', 'user', 'paymentMethod', 'paymentOrders', 'paymentOrders.order']
         });
 
-        if (!payment) {
-            throw new AppError('Pagamento não encontrado.', 404);
-        }
-
+        if (!payment) throw new AppError('Pagamento não encontrado.', 404);
         return payment;
     }
 
     async refundPayment(paymentId: number, establishmentId: number, reason: string): Promise<Payment> {
         return await this.dataSource.transaction(async (manager) => {
             const payment = await manager.findOne(Payment, {
-                where: { id: paymentId, establishment: { id: establishmentId } }
+                where: { id: paymentId, establishment: { id: establishmentId } },
+                relations: ['status'],
             });
 
             if (!payment) throw new AppError('Pagamento não encontrado.', 404);
 
             // if(payment.mercadoPagoOrderId) await this.mercadoPagoService.refundOrder(payment.mercadoPagoOrderId);
 
-            if (payment.status === PaymentStatus.REFUNDED) throw new AppError('Pagamento já está estornado.', 400);
+            if (payment.status?.nome === PaymentStatus.REFUNDED) throw new AppError('Pagamento já está estornado.', 400);
 
-            payment.status = PaymentStatus.REFUNDED;
-                        
+            payment.status = { id: STATUS_PAGAMENTO_IDS.ESTORNADO } as any;
             return await manager.save(Payment, payment);
         });
     }

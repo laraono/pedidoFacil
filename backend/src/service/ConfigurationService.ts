@@ -19,7 +19,7 @@ export class ConfigurationService {
                 textsColor: '#333333',
                 buttonsColor: '#E85D5D',
                 buttonsTextColor: '#FFFFFF',
-                activeCateogryColor: '#4CAF50',
+                activeCategoryColor: '#4CAF50',
                 allowObservations: true
             })
             await this.configRepository.save(config)

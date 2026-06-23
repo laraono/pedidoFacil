@@ -3,8 +3,6 @@ import { roleRepository } from '../repository'
 
 export function checkPermission(...permissoes: string[]) {
     return async (req: Request, res: Response, next: NextFunction) => {
-        if ((req as any).usuario.isAdmin) return next()
-
         const cargoId = (req as any).usuario.cargo
 
         const role = await roleRepository.getRoleById(cargoId)
@@ -15,7 +13,7 @@ export function checkPermission(...permissoes: string[]) {
 
         const lista = role.permissions?.map(p => p.name) ?? [];
 
-        const commonItems = lista.filter(item => permissoes.includes(item) || item === 'ALL');
+        const commonItems = lista.filter(item => permissoes.includes(item));
 
         if (commonItems.length === 0) {
             return res.status(403).json({ error: 'Acesso negado.' })

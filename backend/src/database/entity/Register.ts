@@ -48,6 +48,6 @@ export class Register {
     @JoinColumn({
         name: 'ID_Estabelecimento'
     })
-    establishment?: Establishment
+    establishment!: Establishment
     
 }

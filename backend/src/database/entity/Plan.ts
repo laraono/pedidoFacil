@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm"
 import { Subscription } from "./Subscription"
+import { PlanFeature } from "./PlanFeature"
 
 @Entity({name: 'PLANO'})
 export class Plan {
@@ -25,7 +26,7 @@ export class Plan {
         nullable: false
     })
     price!: number
-    
+
     @Column({
         name: 'Frequencia',
         type: 'varchar',
@@ -33,13 +34,6 @@ export class Plan {
         length: 20
     })
     frequency?: string
-
-    @Column({
-        name: 'Funcionalidades',
-        type: 'text',
-        nullable: true
-    })
-    features?: string
 
     @Column({
         name: 'ID_MercadoPago_Plano',
@@ -51,4 +45,7 @@ export class Plan {
 
     @OneToMany(() => Subscription, (subscription) => subscription.plan)
     subscriptions!: Subscription[]
+
+    @OneToMany(() => PlanFeature, (feature) => feature.plan, { cascade: true, eager: true })
+    features!: PlanFeature[]
 }

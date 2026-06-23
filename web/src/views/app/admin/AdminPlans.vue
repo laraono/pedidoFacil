@@ -8,6 +8,7 @@ import {
   CheckCircle2, Package, DollarSign
 } from 'lucide-vue-next';
 import { adminPlanApi, type Plan, type PlanForm } from '@/services/adminApi';
+import { planApi } from '@/services/planApi';
 import { useUtils } from '@/composables/useUtils';
 import { applyPriceMask } from '@/composables/usePriceMask';
 import { PageHeader, StatusBadge, EmptyState, BaseButton, BaseInput, BaseTextArea, FormModal, ConfirmModal } from '@/components/ui';
@@ -30,7 +31,7 @@ async function load() {
   loading.value = true;
   loadError.value = false;
   try {
-    plans.value = await adminPlanApi.list();
+    plans.value = await planApi.list();
   } catch (e) {
     loadError.value = true;
   } finally {
@@ -47,15 +48,8 @@ function openCreate() {
   isModalOpen.value = true;
 }
 
-const FREQ_NORMALIZE: Record<string, string> = {
-  months: 'mensal', month: 'mensal', monthly: 'mensal', '1': 'mensal',
-  annual: 'anual', yearly: 'anual', '12': 'anual',
-};
-
 function normalizeFrequency(f?: string): string {
-  if (!f) return 'mensal';
-  const lower = f.toLowerCase();
-  return FREQ_NORMALIZE[lower] ?? lower;
+  return f === 'anual' ? 'anual' : 'mensal';
 }
 
 function openEdit(plan: Plan) {
@@ -64,7 +58,7 @@ function openEdit(plan: Plan) {
     name: plan.name,
     price: String(plan.price).replace('.', ','),
     frequency: normalizeFrequency(plan.frequency),
-    features: plan.features || '',
+    features: plan.features?.map(f => f.description).join('\n') || '',
   };
   errors.value = {};
   isEditing.value = true;
@@ -116,6 +110,11 @@ function askDelete(plan: Plan) {
   });
 }
 
+function featureLines(plan: Plan): string[] {
+  if (!plan.features?.length) return [];
+  return plan.features.flatMap(f => f.description.split('\n')).filter(Boolean);
+}
+
 function onPriceInput(e: Event) {
   const target = e.target as HTMLInputElement;
   const v = applyPriceMask(target.value);
@@ -129,7 +128,7 @@ function onPriceInput(e: Event) {
   <main class="max-w-4xl mx-auto py-12 px-6 font-inter">
     <PageHeader
       title="Planos"
-      subtitle="CRUD de planos — máximo de 2 planos ativos"
+      subtitle="Administração de planos"
       :category-icon="ShieldAlert"
       category-label="Painel Admin"
     >
@@ -175,10 +174,10 @@ function onPriceInput(e: Event) {
           <span class="text-3xl font-black text-[#212121]">{{ formatCurrency(plan.price) }}</span>
           <span class="text-[#757575] text-sm mb-1">{{ plan.frequency === 'anual' ? '/ano' : '/mês' }}</span>
         </div>
-        <div v-if="plan.features" class="border-t border-[#E0E0E0] pt-4">
+        <div v-if="plan.features?.length" class="border-t border-[#E0E0E0] pt-4">
           <p class="text-xs font-black text-[#757575] uppercase tracking-widest mb-2">Funcionalidades</p>
           <ul class="space-y-1.5">
-            <li v-for="(feature, i) in plan.features.split('\n').filter(Boolean)" :key="i"
+            <li v-for="(feature, i) in featureLines(plan)" :key="i"
               class="flex items-start gap-2 text-sm text-[#757575]">
               <CheckCircle2 :size="14" class="text-primary mt-0.5 shrink-0" />
               <span class="break-words min-w-0">{{ feature }}</span>

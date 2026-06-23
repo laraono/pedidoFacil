@@ -7,10 +7,10 @@ import { useAsyncAction } from '@/composables/useAsyncAction';
 import { useUtils } from '@/composables/useUtils';
 import { applyPriceMask, applyPercentMask } from '@/composables/usePriceMask';
 import {
-  BaseButton, BaseInput, BaseSelect, BaseToggle,
+  BaseButton, BaseInput, BaseSelect,
   ConfirmModal, EmptyState, FormModal, PageHeader, ToastMessage,
 } from '@/components/ui';
-import { PlusCircle, Edit, Trash2, Tag, Power, Calendar, BadgePercent, DollarSign } from 'lucide-vue-next';
+import { PlusCircle, Edit, Trash2, Tag, Calendar, BadgePercent, DollarSign } from 'lucide-vue-next';
 
 const store = useCouponStore();
 const { showToast } = useToast();
@@ -32,7 +32,7 @@ const typeOptions = [
   { value: 'fixed',   label: 'Valor fixo (R$)' },
 ];
 
-const emptyForm = () => ({ id: null, code: '', description: '', type: 'percent', value: '', expiresAt: '', active: true });
+const emptyForm = () => ({ id: null, code: '', description: '', type: 'percent', value: '', expiresAt: '' });
 const form = ref(emptyForm());
 
 const onValueInput = (e) => {
@@ -70,7 +70,6 @@ const openEdit = (c) => {
     type: c.type,
     value: c.type === 'percent' ? String(c.value) : String(c.value).replace('.', ','),
     expiresAt: c.expiresAt || '',
-    active: c.active !== false,
   };
   errors.value = {};
   showModal.value = true;
@@ -91,7 +90,6 @@ const save = () => runSave(async () => {
     type: form.value.type,
     value: parsed,
     expiresAt: form.value.expiresAt || null,
-    active: form.value.active,
   };
 
   try {
@@ -111,14 +109,6 @@ const save = () => runSave(async () => {
     }
   }
 });
-
-const toggleActive = (c) => run(
-  async () => {
-    await store.updateCoupon({ ...c, active: !c.active });
-    showToast(c.active !== false ? `${c.code} desativado.` : `${c.code} ativado.`, 'success');
-  },
-  'Erro ao atualizar cupom.'
-);
 
 const requestDelete = (coupon) => {
   showConfirm({
@@ -149,15 +139,15 @@ const isExpired = (c) => {
 
 const statusOf = (c) => {
   if (isExpired(c)) return { label: 'Vencido', cls: 'bg-danger-light text-danger border-danger' };
-  if (c.active === false) return { label: 'Inativo', cls: 'bg-gray-100 text-[#757575] border-[#E0E0E0]' };
-  return { label: 'Ativo', cls: 'bg-accent-light text-accent border-accent/30' };
+  if (c.active === false) return { label: 'Inativo', cls: 'bg-gray-100 text-muted border-[#E0E0E0]' };
+  return { label: 'Ativo', cls: 'bg-accent-light text-green-800 border-accent/30' };
 };
 </script>
 
 <template>
   <main class="max-w-6xl mx-auto py-12 px-6 font-inter">
     <ToastMessage />
-    <PageHeader title="Cupons de Desconto" subtitle="Gerencie cupons promocionais">
+    <PageHeader title="Cupons de Desconto" subtitle="Gerencie cupons promocionais" back-to="back">
       <template #actions>
         <BaseButton @click="openAdd" :icon="PlusCircle">Novo Cupom</BaseButton>
       </template>
@@ -178,7 +168,7 @@ const statusOf = (c) => {
             </div>
             <div class="min-w-0">
               <p class="font-black text-[#212121] text-base tracking-widest font-mono truncate">{{ coupon.code }}</p>
-              <p v-if="coupon.description" class="text-[#757575] text-xs mt-0.5 truncate">{{ coupon.description }}</p>
+              <p v-if="coupon.description" class="text-muted text-xs mt-0.5 truncate">{{ coupon.description }}</p>
             </div>
           </div>
           <span class="px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest border shrink-0" :class="statusOf(coupon).cls">
@@ -191,30 +181,22 @@ const statusOf = (c) => {
           <span class="text-accent font-black text-xl">
             {{ coupon.type === 'percent' ? coupon.value + '%' : formatCurrency(coupon.value) }}
           </span>
-          <span class="text-[#757575] text-xs ml-1">{{ coupon.type === 'percent' ? 'de desconto' : 'fixo' }}</span>
+          <span class="text-muted text-xs ml-1">{{ coupon.type === 'percent' ? 'de desconto' : 'fixo' }}</span>
         </div>
 
-        <div class="flex items-center gap-2 text-xs" :class="isExpired(coupon) ? 'text-danger' : 'text-[#757575]'">
+        <div class="flex items-center gap-2 text-xs" :class="isExpired(coupon) ? 'text-danger' : 'text-muted'">
           <Calendar :size="13" />
           <span v-if="!coupon.expiresAt">Sem data de validade</span>
           <span v-else-if="isExpired(coupon)">Vencido em {{ formatDate(coupon.expiresAt) }}</span>
           <span v-else>Válido até {{ formatDate(coupon.expiresAt) }}</span>
         </div>
 
-        <div class="flex items-center justify-between pt-3 border-t border-[#E0E0E0] mt-auto">
-          <button
-            @click="toggleActive(coupon)"
-            class="flex items-center gap-1.5 text-xs font-bold transition-colors"
-            :class="coupon.active !== false ? 'text-accent hover:opacity-70' : 'text-[#757575] hover:text-[#757575]'"
-          >
-            <Power :size="13" />
-            {{ coupon.active !== false ? 'Ativo' : 'Inativo' }}
-          </button>
+        <div class="flex items-center justify-end pt-3 border-t border-[#E0E0E0] mt-auto">
           <div class="flex gap-1">
-            <button @click="openEdit(coupon)" class="p-2 text-[#757575] hover:text-[#212121] hover:bg-gray-50 rounded transition-all" title="Editar">
+            <button @click="openEdit(coupon)" class="p-2 text-muted hover:text-[#212121] hover:bg-gray-50 rounded transition-all" title="Editar">
               <Edit :size="16" />
             </button>
-            <button @click="requestDelete(coupon)" class="p-2 text-[#757575] hover:text-danger hover:bg-danger-light rounded transition-all" title="Excluir">
+            <button @click="requestDelete(coupon)" class="p-2 text-muted hover:text-danger hover:bg-danger-light rounded transition-all" title="Excluir">
               <Trash2 :size="16" />
             </button>
           </div>
@@ -263,7 +245,7 @@ const statusOf = (c) => {
               @input="onValueInput"
             >
               <template #suffix>
-                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-[#757575] pointer-events-none">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-muted pointer-events-none">
                   {{ form.type === 'percent' ? '%' : 'R$' }}
                 </span>
               </template>
@@ -277,13 +259,8 @@ const statusOf = (c) => {
             label="Data de Validade (opcional)"
             :error="errors.expiresAt"
           />
-          <p v-if="!errors.expiresAt" class="text-[#757575] text-[10px] ml-2">Deixe em branco para cupom sem validade.</p>
+          <p v-if="!errors.expiresAt" class="text-muted text-[10px] ml-2">Deixe em branco para cupom sem validade.</p>
         </div>
-        <BaseToggle
-          v-model="form.active"
-          label="Cupom ativo"
-          description="Cupons inativos não podem ser usados no caixa"
-        />
       </div>
     </FormModal>
 

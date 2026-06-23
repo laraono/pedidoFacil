@@ -1,7 +1,10 @@
+import { DataSource } from 'typeorm';
 import { SubscriptionPaymentRepository, SubscriptionRepository } from '../repository';
 import { MercadoPagoService } from './MercadoPagoService';
-import { SubscriptionPaymentStatus, SubscriptionStatus } from '../enum';
+import { SubscriptionStatus } from '../enum';
 import { auditLog } from '../utils/logger';
+import { STATUS_ASSINATURA_IDS, STATUS_HISTORICO_IDS } from '../database/entity/lookup-ids';
+import { Subscription, SubscriptionPayment } from '../database';
 
 function resolvePaymentType(id: string): string {
     if (id === 'credit_card') return 'Cartão de Crédito'
@@ -14,7 +17,8 @@ export class WebhookService {
     constructor(
         private subscriptionRepository: SubscriptionRepository,
         private subscriptionPaymentRepository: SubscriptionPaymentRepository,
-        private mercadoPagoService: MercadoPagoService
+        private mercadoPagoService: MercadoPagoService,
+        private dataSource: DataSource
     ) {}
 
     async handleEvent(eventId: string, eventType: string) {
@@ -34,7 +38,6 @@ export class WebhookService {
             });
             if (!subscription) return;
 
-            // Idempotência: MP garante at-least-once delivery
             const alreadyProcessed = await this.subscriptionPaymentRepository.findOne({
                 where: { mercadoPagoPaymentId: eventId }
             });
@@ -44,12 +47,11 @@ export class WebhookService {
                 await this.subscriptionPaymentRepository.createPayment({
                     mercadoPagoPaymentId: eventId,
                     amount: payment.transaction_amount,
-                    status: SubscriptionPaymentStatus.REJEITADO,
+                    status: { id: STATUS_HISTORICO_IDS.REJEITADO } as any,
                     paymentType: resolvePaymentType(payment.payment_type_id),
                     planName: subscription.plan.name,
                     subscription: { id: subscription.id } as any,
                 });
-                // MP vai retentar automaticamente — apenas logar
                 auditLog('subscription.payment_rejected', { subscriptionId: subscription.id, paymentId: eventId });
             }
 
@@ -69,27 +71,46 @@ export class WebhookService {
             if (!subscription) return;
 
             if (mp.status === 'authorized') {
-                await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.PAGA);
-                auditLog('subscription.reactivated_by_mp', { subscriptionId: subscription.id });
-
                 const { charged_quantity, last_charged_amount, last_charged_date } = mp.summarized;
-                if (subscription.plan && charged_quantity !== null && last_charged_amount !== null) {
-                    const paymentId = `preapproval_${eventId}_q${charged_quantity}`;
-                    const alreadyRecorded = await this.subscriptionPaymentRepository.findOne({
-                        where: { mercadoPagoPaymentId: paymentId }
+
+                await this.dataSource.transaction(async manager => {
+                    const sub = await manager.findOne(Subscription, {
+                        where: { id: subscription.id },
+                        relations: { plan: true },
                     });
-                    if (!alreadyRecorded) {
-                        await this.subscriptionPaymentRepository.createPayment({
-                            mercadoPagoPaymentId: paymentId,
-                            amount: last_charged_amount,
-                            status: SubscriptionPaymentStatus.APROVADO,
-                            paymentType: 'Cartão',
-                            planName: subscription.plan.name,
-                            paidAt: last_charged_date ? new Date(last_charged_date) : new Date(),
-                            subscription: { id: subscription.id } as any,
-                        });
-                        auditLog('subscription.payment_recorded', { subscriptionId: subscription.id, chargedQuantity: charged_quantity });
+                    const expirationDate = new Date();
+                    if (sub?.plan?.frequency === 'anual') {
+                        expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+                    } else {
+                        expirationDate.setMonth(expirationDate.getMonth() + 1);
                     }
+                    await manager.update(Subscription, subscription.id, {
+                        status: { id: STATUS_ASSINATURA_IDS.PAGA } as any,
+                        expirationDate,
+                    });
+
+                    if (subscription.plan && charged_quantity !== null && last_charged_amount !== null) {
+                        const paymentId = `preapproval_${eventId}_q${charged_quantity}`;
+                        const exists = await manager.findOne(SubscriptionPayment, {
+                            where: { mercadoPagoPaymentId: paymentId },
+                        });
+                        if (!exists) {
+                            await manager.save(SubscriptionPayment, {
+                                mercadoPagoPaymentId: paymentId,
+                                amount: last_charged_amount,
+                                status: { id: STATUS_HISTORICO_IDS.APROVADO } as any,
+                                paymentType: 'Cartão',
+                                planName: subscription.plan.name,
+                                paidAt: last_charged_date ? new Date(last_charged_date) : new Date(),
+                                subscription: { id: subscription.id } as any,
+                            });
+                        }
+                    }
+                });
+
+                auditLog('subscription.reactivated_by_mp', { subscriptionId: subscription.id });
+                if (charged_quantity !== null) {
+                    auditLog('subscription.payment_recorded', { subscriptionId: subscription.id, chargedQuantity: charged_quantity });
                 }
             } else if (mp.status === 'cancelled') {
                 await this.subscriptionRepository.updateSubscriptionStatus(subscription.id, SubscriptionStatus.CANCELADA);

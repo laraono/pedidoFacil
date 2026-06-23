@@ -3,9 +3,12 @@
   import { useRouter } from "vue-router";
   import { User, Menu, X } from "lucide-vue-next";
   import imgLogo from "@/assets/light-logo.png";
+  import { useFeaturesStore } from "@/stores/features";
+  import { storeToRefs } from "pinia";
 
   const router = useRouter();
   const isMenuOpen = ref(false);
+  const { emailEnabled, plansEnabled } = storeToRefs(useFeaturesStore());
 
   const scrollToSection = (sectionId) => {
     if (router.currentRoute.value.path === "/") {
@@ -44,11 +47,13 @@
           >Sobre</a
         >
         <a
+          v-if="plansEnabled"
           @click.prevent="scrollToSection('planos')"
           class="hover:text-accent transition-colors cursor-pointer"
           >Planos</a
         >
         <a
+          v-if="emailEnabled"
           @click.prevent="scrollToSection('contato')"
           class="hover:text-accent transition-colors cursor-pointer"
           >Contato</a
@@ -93,11 +98,13 @@
           >Sobre nós</a
         >
         <a
+          v-if="plansEnabled"
           @click.prevent="scrollToSection('planos')"
           class="block py-3 border-b border-[#E0E0E0] text-[#212121] font-bold text-center cursor-pointer hover:text-accent transition-colors"
           >Planos</a
         >
         <a
+          v-if="emailEnabled"
           @click.prevent="scrollToSection('contato')"
           class="block py-3 border-b border-[#E0E0E0] text-[#212121] font-bold text-center cursor-pointer hover:text-accent transition-colors"
           >Contato</a

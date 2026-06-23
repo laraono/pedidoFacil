@@ -8,7 +8,7 @@
         class="bg-white border border-[#E0E0E0] rounded w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
       >
         <div
-          class="p-8 border-b border-[#E0E0E0] flex justify-between items-center bg-gray-50 shrink-0"
+          class="p-4 sm:p-8 border-b border-[#E0E0E0] flex justify-between items-center bg-gray-50 shrink-0"
         >
           <div class="flex items-center gap-4">
             <div
@@ -44,7 +44,7 @@
           </button>
         </div>
 
-        <div class="p-8 overflow-y-auto custom-scrollbar bg-white">
+        <div class="p-4 sm:p-8 overflow-y-auto custom-scrollbar bg-white">
           <div
             class="flex gap-4 mb-8 bg-gray-50 p-1.5 rounded border border-[#E0E0E0]"
           >
@@ -151,7 +151,7 @@
         </div>
 
         <div
-          class="p-8 border-t border-[#E0E0E0] bg-page/20 flex flex-col gap-6 shrink-0"
+          class="p-4 sm:p-8 border-t border-[#E0E0E0] bg-page/20 flex flex-col gap-6 shrink-0"
         >
           <div class="flex flex-col sm:flex-row justify-between gap-4 w-full">
             <div class="flex gap-3">

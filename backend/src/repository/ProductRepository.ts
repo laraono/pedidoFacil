@@ -1,6 +1,7 @@
 import { DataSource, Repository, IsNull, Not } from "typeorm";
 import { Product } from "../database";
 import { ProductParams } from "../dto";
+import { OrderStatus } from "../enum/status";
 
 export class ProductRepository extends Repository<Product> {
 
@@ -12,7 +13,7 @@ export class ProductRepository extends Repository<Product> {
         return await this.save(product as any);
     }
 
-    async listProducts(establishmentId: number, page: number, limit: number, status?: string) {
+    async listProducts(establishmentId: number, page: number, limit: number, status?: string, search?: string) {
         const skip = (page - 1) * limit;
 
         const qb = this.createQueryBuilder('product')
@@ -27,8 +28,15 @@ export class ProductRepository extends Repository<Product> {
             .take(limit)
             .skip(skip);
 
-        if (status) {
-            qb.andWhere('product.status = :status', { status });
+        if (status !== undefined && status !== null) {
+            qb.andWhere('product.ativo = :ativo', { ativo: status !== 'Inativo' && status !== 'false' });
+        }
+
+        if (search !== undefined && search !== null && search.trim() !== '') {
+            qb.andWhere(
+                '(LOWER(product.name) LIKE LOWER(:search) OR LOWER(product.description) LIKE LOWER(:search) OR LOWER(category.name) LIKE LOWER(:search))',
+                { search: `%${search.trim()}%` }
+            );
         }
 
         const [products, total] = await qb.getManyAndCount();
@@ -92,6 +100,18 @@ export class ProductRepository extends Repository<Product> {
 
     async updateProduct(productId: number, data: Partial<Product>) {
         await this.update(productId, data);
+    }
+
+    async hasActiveOrders(productId: number): Promise<boolean> {
+        const activeStatuses = [OrderStatus.AGUARDANDO_PREPARO, OrderStatus.EM_PREPARO, OrderStatus.PRONTO];
+        const count = await this.createQueryBuilder('product')
+            .innerJoin('product.productOrders', 'item')
+            .innerJoin('item.order', 'order')
+            .innerJoin('order.status', 'status')
+            .where('product.id = :productId', { productId })
+            .andWhere('status.nome IN (:...statuses)', { statuses: activeStatuses })
+            .getCount();
+        return count > 0;
     }
 
     async softDeleteProduct(productId: number) {

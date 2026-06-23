@@ -42,7 +42,7 @@ export class StorageIten {
     @OneToMany(() => StorageMovimentation, (movimentation) => movimentation.storageIten)
     movimentations!: StorageMovimentation[]
 
-    @OneToOne(() => Product)
+    @OneToOne(() => Product, (product) => product.storageIten)
     @JoinColumn({
         name: 'ID_Produto'
     })

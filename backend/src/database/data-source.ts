@@ -2,10 +2,12 @@ import "reflect-metadata"
 import "dotenv/config"
 import { DataSource } from "typeorm"
 import {
-    Admin, Category, Comanda, Configuration, Coupon, Establishment,
-    Order, Payment, PaymentMethod, PaymentOrder, Permissao, Plan, Product, ProductOrder,
-    ProductVariation, Receipt, RefreshTokenUser, RefreshTokenAdmin, Role, StorageIten,
-    StorageMovimentation, Subscription, SubscriptionPayment, User, Register, PerfilGerente
+    Admin, Category, Comanda, Configuration, Coupon, Endereco, Establishment,
+    Order, Payment, PaymentMethod, PaymentOrder, Permissao, Plan, PlanFeature, Product, ProductOrder,
+    ProductVariation, Receipt, RefreshTokenUser, RefreshTokenAdmin, Role, StatusAssinatura,
+    StatusComanda, StatusHistoricoAssinatura, StatusNotaFiscal, StatusPagamento, StatusPedido,
+    StorageIten, StorageMovimentation, Subscription, SubscriptionPayment, TipoDesconto,
+    TipoMovimentacao, User, Register, PerfilGerente
 } from "./entity/"
 
 export const AppDataSource = new DataSource({
@@ -16,13 +18,17 @@ export const AppDataSource = new DataSource({
     password: process.env.DB_PASS || "root",
     database: process.env.DB_NAME || "foodsystem_db",
     synchronize: false,
+    migrationsRun: false,
     logging: false,
-    timezone: 'Z',
+    timezone: 'local',
+    charset: 'utf8mb4',
     entities: [
-        Admin, Category, Comanda, Configuration, Coupon, Establishment,
-        Order, Payment, PaymentMethod, PaymentOrder, Permissao, Plan, Product, ProductOrder,
-        ProductVariation, Receipt, RefreshTokenUser, RefreshTokenAdmin, Role, StorageIten,
-        StorageMovimentation, Subscription, SubscriptionPayment, User, Register, PerfilGerente
+        Admin, Category, Comanda, Configuration, Coupon, Endereco, Establishment,
+        Order, Payment, PaymentMethod, PaymentOrder, Permissao, Plan, PlanFeature, Product, ProductOrder,
+        ProductVariation, Receipt, RefreshTokenUser, RefreshTokenAdmin, Role, StatusAssinatura,
+        StatusComanda, StatusHistoricoAssinatura, StatusNotaFiscal, StatusPagamento, StatusPedido,
+        StorageIten, StorageMovimentation, Subscription, SubscriptionPayment, TipoDesconto,
+        TipoMovimentacao, User, Register, PerfilGerente
     ],
     migrations: [__dirname + '/migration/*{.ts,.js}'],
     subscribers: [],

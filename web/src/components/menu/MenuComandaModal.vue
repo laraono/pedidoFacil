@@ -72,7 +72,7 @@
             <p
               class="text-xs font-black uppercase tracking-widest opacity-60 mb-3"
             >
-              Comandas Abertas
+              Abertas
             </p>
             <div class="space-y-2">
               <button
@@ -104,7 +104,7 @@
             <p
               class="text-xs font-black uppercase tracking-widest opacity-60 mb-3"
             >
-              Nova {{ comandaUnitLabel }}
+               {{ comandaUnitLabel }}
             </p>
             <div
               class="rounded border-2 transition-all overflow-hidden"
@@ -141,6 +141,7 @@
                     v-model="newComandaNumber"
                     type="text"
                     placeholder="Número ou nome..."
+                    maxlength="10"
                     class="flex-1 border rounded px-3 py-2 font-bold text-sm outline-none adaptive-placeholder"
                     :style="{
                       color: theme.textColor,

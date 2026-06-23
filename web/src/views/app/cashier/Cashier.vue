@@ -5,6 +5,12 @@
         class="h-16 md:h-20 bg-white border-b border-[#E0E0E0] flex items-center justify-between px-6 md:px-8 shadow-sm z-20 shrink-0"
       >
         <div class="flex items-center gap-4">
+          <button
+            @click="router.back()"
+            class="p-2 rounded border border-[#E0E0E0] text-[#757575] hover:bg-gray-50 transition-colors"
+          >
+            <ArrowLeft :size="20" />
+          </button>
           <div class="bg-accent p-2 rounded text-white shadow-sm">
             <Monitor :size="20" class="md:w-6 md:h-6" />
           </div>
@@ -12,12 +18,12 @@
             <h1
               class="text-[#212121] font-black text-lg tracking-tight leading-none uppercase"
             >
-              Caixa de Operações
+              Pagamentos
             </h1>
             <p
               class="text-[#757575] text-[10px] uppercase font-black tracking-widest mt-1"
             >
-              Terminal de Liquidação
+              Realize e controle pagamentos de cada {{ comandaUnitLabel }}
             </p>
           </div>
         </div>
@@ -35,7 +41,7 @@
               <h2
                 class="font-black text-[#212121] text-base md:text-lg uppercase tracking-widest"
               >
-                {{ comandaUnitLabel }}s Ativas
+                {{ comandaUnitLabel }} com pedidos ativos
               </h2>
             </div>
             <span
@@ -52,7 +58,7 @@
             >
               <FileText :size="48" class="mb-4" />
               <p class="font-black uppercase tracking-widest text-sm">
-                Nenhuma {{ comandaUnitLabel.toLowerCase() }} ativa
+                Sem pedidos ativos
               </p>
             </div>
             <div
@@ -129,8 +135,11 @@ import CheckoutModal from "@/components/cashier/CheckoutModal.vue";
 import ComandaCard from "@/components/cashier/ComandaCard.vue";
 import PaymentFlowModal from "@/components/cashier/PaymentFlowModal.vue";
 import CheckoutRulesModal from "@/components/cashier/CheckoutRulesModal.vue";
-import { Monitor, FileText } from "lucide-vue-next";
+import { Monitor, FileText, ArrowLeft } from "lucide-vue-next";
+import { useRouter } from "vue-router";
 import { useCashier } from "@/composables/useCashier";
+
+const router = useRouter();
 
 const {
   comandaUnitLabel,

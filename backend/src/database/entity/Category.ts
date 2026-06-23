@@ -9,7 +9,6 @@ import {
 } from 'typeorm';
 import { Product } from './Product';
 import { Establishment } from './Establishment';
-import { CategoryStatus } from '../../enum';
 
 @Entity({ name: 'CATEGORIA' })
 export class Category {
@@ -34,12 +33,12 @@ export class Category {
   image?: string;
 
   @Column({
-    type: 'varchar',
-    name: 'Status',
+    type: 'boolean',
+    name: 'Ativo',
     nullable: false,
-    default: CategoryStatus.ATIVA,
+    default: true,
   })
-  status!: CategoryStatus;
+  ativo!: boolean;
 
   @DeleteDateColumn({
     name: 'Data_Exclusao',

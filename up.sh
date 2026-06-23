@@ -1,5 +1,5 @@
 #!/bin/bash
-set -o pipefail
+set -e
 
 # ── Cores ──────────────────────────────────────────────────────────────────
 GREEN='\033[0;32m'
@@ -15,17 +15,20 @@ info() { echo -e "  ${BLUE}→${RESET}  $1"; }
 warn() { echo -e "  ${YELLOW}!${RESET}  $1"; }
 erro() { echo -e "  ${RED}✗${RESET}  $1"; }
 
+trap 'echo -e "\n  ${RED}✗${RESET}  Ocorreu um erro inesperado. Verifique os logs acima.\n"' ERR
+
 # ── Cabeçalho ──────────────────────────────────────────────────────────────
 echo -e "
-   ${BOLD}${GREEN}${DIM}───────────────────────────────────────────────────────                                                                  
+   ${BOLD}${GREEN}${DIM}───────────────────────────────────────────────────────
     ░█▀█░█▀▀░█▀▄░▀█▀░█▀▄░█▀█░░░█▀▀░█▀█░█▀▀░▀█▀░█░░
     ░█▀▀░█▀▀░█░█░░█░░█░█░█░█░░░█▀▀░█▀█░█░░░░█░░█░░
     ░▀░░░▀▀▀░▀▀░░▀▀▀░▀▀░░▀▀▀░░░▀░░░▀░▀░▀▀▀░▀▀▀░▀▀▀
-    
-    Bem vindo novamente!                                                                         
+
+    Bem vindo!
     Com esse assistente, o sistema iniciará a execução.
     ${DIM}───────────────────────────────────────────────────────${RESET}"
-# ── Verifica .env ──────────────────────────────────────────────────────────
+
+# ── Verifica pré-requisitos ────────────────────────────────────────────────
 echo -e "${BOLD}  Verificando configurações...${RESET}"
 echo ""
 
@@ -35,109 +38,118 @@ if [ ! -f backend/.env ]; then
   exit 1
 fi
 
-REQUIRED_VARS=("DB_HOST" "DB_PORT" "DB_USER" "DB_PASS" "DB_NAME" "JWT_SECRET")
-MISSING=()
-
-for var in "${REQUIRED_VARS[@]}"; do
-  value=$(grep "^${var}=" backend/.env | cut -d= -f2)
-  if [ -z "$value" ]; then
-    MISSING+=("$var")
-  fi
-done
-
-if [ ${#MISSING[@]} -gt 0 ]; then
-  erro "Algumas configurações obrigatórias estão faltando no backend/.env:"
-  echo ""
-  for var in "${MISSING[@]}"; do
-    echo -e "     ${YELLOW}•${RESET} $var"
-  done
-  echo ""
-  echo -e "  Abra o arquivo ${BOLD}backend/.env${RESET} e preencha os valores em falta."
-  echo -e "  Depois rode ${BOLD}./up.sh${RESET} novamente."
-  exit 1
-fi
-
-ok "Configurações ok"
-
-# ── Docker ─────────────────────────────────────────────────────────────────
-echo ""
-echo -e "${BOLD}  Iniciando o banco de dados...${RESET}"
-echo ""
-
 if ! docker info &>/dev/null; then
   erro "Docker não está rodando."
   echo -e "     Abra o Docker Desktop e tente novamente."
   exit 1
 fi
 
-docker compose -f backend/docker-compose.yml up -d mysql localstack
+REQUIRED_VARS=("DB_HOST" "DB_PORT" "DB_USER" "DB_PASS" "DB_NAME" "JWT_SECRET" "MERCADOPAGO_ACCESS_TOKEN_ASSINATURA")
+MISSING=()
+for var in "${REQUIRED_VARS[@]}"; do
+  value=$(grep "^${var}=" backend/.env | cut -d= -f2)
+  [ -z "$value" ] && MISSING+=("$var")
+done
 
-DB_PASS=$(grep "^DB_PASS=" backend/.env | cut -d= -f2)
-info "Aguardando banco de dados..."
-TRIES=0
-until docker exec pedido_facil_mysql mysqladmin ping -u root -p"$DB_PASS" --silent 2>/dev/null; do
-  TRIES=$((TRIES+1))
-  if [ $TRIES -gt 20 ]; then
-    erro "Banco não respondeu. Verifique se o Docker está saudável."
+if [ ${#MISSING[@]} -gt 0 ]; then
+  erro "Variáveis obrigatórias faltando em backend/.env:"
+  for var in "${MISSING[@]}"; do
+    echo -e "     ${YELLOW}•${RESET} $var"
+  done
+  echo ""
+  echo -e "  Edite ${BOLD}backend/.env${RESET} e rode ${BOLD}./up.sh${RESET} novamente."
+  exit 1
+fi
+
+MAIL_USER_VAL=$(grep "^MAIL_USER=" backend/.env | cut -d= -f2)
+MAIL_PASS_VAL=$(grep "^MAIL_PASS=" backend/.env | cut -d= -f2)
+if [ -z "$MAIL_USER_VAL" ] || [ -z "$MAIL_PASS_VAL" ]; then
+  warn "E-mail não configurado — 'Esqueci minha senha' e contato ficarão desabilitados."
+fi
+
+ok "Configurações verificadas"
+
+# ── Checagem de portas ─────────────────────────────────────────────────────
+DB_PORT_CHECK=$(grep "^DB_PORT=" backend/.env | cut -d= -f2)
+DB_PORT_CHECK="${DB_PORT_CHECK:-3306}"
+
+if nc -z localhost "$DB_PORT_CHECK" 2>/dev/null; then
+  if ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q 'pedido_facil_mysql'; then
+    erro "Porta ${DB_PORT_CHECK} já está em uso. Altere DB_PORT em backend/.env e tente novamente."
     exit 1
   fi
-  printf "."
-  sleep 2
-done
-echo ""
-ok "Banco de dados pronto"
+fi
 
-# ── Iniciando serviços ─────────────────────────────────────────────────────
+if nc -z localhost 5173 2>/dev/null; then
+  if ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q 'pedido_facil_web'; then
+    erro "Porta 5173 já está em uso. Encerre o processo antes de continuar."
+    exit 1
+  fi
+fi
+
+# ── Subindo containers ─────────────────────────────────────────────────────
+echo ""
+echo -e "${BOLD}  Subindo containers...${RESET}"
+echo ""
+
+VITE_MP_PUBLIC_KEY=$(grep "^VITE_MP_PUBLIC_KEY=" web/.env 2>/dev/null | cut -d= -f2)
+VITE_MP_PUBLIC_KEY="$VITE_MP_PUBLIC_KEY" docker compose --env-file backend/.env up -d
+
+echo ""
+ok "Todos os containers no ar"
+
+# ── Mobile ─────────────────────────────────────────────────────────────────
 BACKEND_PORT=$(grep "^PORT=" backend/.env | cut -d= -f2)
 BACKEND_PORT="${BACKEND_PORT:-3000}"
 
-mkdir -p logs
+MOBILE_URL=$(grep "^EXPO_PUBLIC_API_URL=" mobile/.env 2>/dev/null | cut -d= -f2)
+if [ -z "$MOBILE_URL" ]; then
+  warn "mobile/.env sem EXPO_PUBLIC_API_URL — edite o arquivo com o IP da máquina antes de abrir o app."
+  MOBILE_URL="http://localhost:${BACKEND_PORT}"
+  echo "EXPO_PUBLIC_API_URL=${MOBILE_URL}" > mobile/.env
+fi
+LOCAL_IP=$(echo "$MOBILE_URL" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
 
-BACKEND_PID=""
-WEB_PID=""
+# ── Expo (mobile) ──────────────────────────────────────────────────────────
+info "Iniciando Expo (aguarde o QR code)..."
+CI=1 npm run start --prefix mobile > /tmp/expo.log 2>&1 &
+echo $! > .expo.pid
 
-cleanup() {
+for i in $(seq 1 60); do
+  sleep 1
+  if grep -q "Waiting on" /tmp/expo.log 2>/dev/null; then
+    break
+  fi
+done
+
+echo ""
+echo -e "  ${DIM}───────────────────────────────────────────────────────${RESET}"
+echo ""
+
+if grep -q "Waiting on" /tmp/expo.log 2>/dev/null; then
+  EXP_URL="exp://${LOCAL_IP}:8081"
+  node -e "require('./mobile/node_modules/qrcode-terminal').generate('$EXP_URL', {small: true}, function(qr){ console.log(qr) })"
   echo ""
-  info "Encerrando..."
-  [ -n "$BACKEND_PID" ] && kill -- -"$BACKEND_PID" 2>/dev/null || true
-  [ -n "$WEB_PID" ]     && kill -- -"$WEB_PID"     2>/dev/null || true
-  wait 2>/dev/null || true
-  docker compose -f backend/docker-compose.yml down
-  echo ""
-  ok "Tudo encerrado. Até logo!"
-  echo ""
-}
-trap cleanup EXIT
+  ok "Expo iniciado — URL: ${BOLD}${EXP_URL}${RESET}"
+else
+  warn "Expo ainda inicializando — acompanhe com: ${BOLD}tail -f /tmp/expo.log${RESET}"
+fi
 
-info "Iniciando servidor backend..."
-setsid npm run dev --prefix backend > logs/backend.log 2>&1 &
-BACKEND_PID=$!
-
-info "Iniciando site..."
-setsid npm run dev --prefix web > logs/web.log 2>&1 &
-WEB_PID=$!
-
-info "Aguardando serviços iniciarem..."
-sleep 4
-
+# ── Resultado ──────────────────────────────────────────────────────────────
 echo ""
 echo -e "  ${DIM}───────────────────────────────────────────────────────${RESET}"
 echo ""
 echo -e "  ${GREEN}${BOLD}Sistema no ar! ✓${RESET}"
 echo ""
-echo -e "  Acesse no navegador:"
+echo -e "  ${BOLD}http://localhost:5173${RESET}       ${DIM}← site${RESET}"
 echo ""
-echo -e "    ${BOLD}${YELLOW}http://localhost:5173${RESET}       ${DIM}← site principal${RESET}"
-echo -e "    ${BOLD}${BLUE}http://localhost:${BACKEND_PORT}${RESET}         ${DIM}← backend (API)${RESET}"
+echo -e "  ${BOLD}Acesso como administrador do sistema:${RESET}  dono_master@admin.com /  Admin@123"
 echo ""
-echo -e "  ${DIM}Logs: logs/backend.log · logs/web.log${RESET}"
+echo -e "  ${BOLD}Mobile (Expo Go):${RESET}"
+echo -e "    1. Instale o ${BOLD}Expo Go${RESET} no celular ${DIM}(Play Store / App Store)${RESET}"
+echo -e "    2. Escaneie o QR acima ${DIM}ou no Expo Go toque em 'Enter URL':${RESET} ${BOLD}exp://${LOCAL_IP}:8081${RESET}"
 echo ""
-echo -e "  ${DIM}Pressione Ctrl+C para encerrar tudo.${RESET}"
+echo -e "  Para encerrar: ${BOLD}./down.sh${RESET}"
 echo ""
 echo -e "  ${DIM}───────────────────────────────────────────────────────${RESET}"
 echo ""
-info "Iniciando mobile (Expo)..."
-echo ""
-
-# Expo roda em foreground para exibir o QR code no terminal
-npm run start --prefix mobile

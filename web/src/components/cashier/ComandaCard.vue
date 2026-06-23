@@ -3,10 +3,10 @@
     class="bg-gray-50 rounded border border-[#E0E0E0] p-6 cursor-pointer hover:border-blue-500/50 hover:bg-gray-50 transition-all group"
     @click="$emit('click', comanda)"
   >
-    <div class="flex justify-between items-start mb-4">
-      <div>
+    <div class="flex justify-between items-start mb-4 gap-2">
+      <div class="min-w-0">
         <span
-          class="text-[10px] font-black uppercase tracking-widest block mb-1"
+          class="text-[10px] font-black uppercase tracking-widest block mb-1 truncate"
           :class="
             comanda.isAutoatendimento ? 'text-blue-500' : 'text-[#757575]'
           "
@@ -14,12 +14,12 @@
           {{ typeLabel }}
         </span>
         <span
-          class="font-black text-[#212121] text-xl tracking-tighter group-hover:text-blue-400 transition-colors"
+          class="font-black text-[#212121] text-xl tracking-tighter group-hover:text-blue-400 transition-colors block truncate"
         >
           {{ mainLabel }}
         </span>
       </div>
-      <span class="text-accent font-black text-lg tracking-tighter">
+      <span class="text-accent font-black text-lg tracking-tighter shrink-0">
         {{ formatCurrency(remainingTotal) }}
       </span>
     </div>

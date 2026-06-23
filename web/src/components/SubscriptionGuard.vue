@@ -2,6 +2,7 @@
   import { computed } from "vue";
   import { useRouter } from "vue-router";
   import { useSubscriptionStore } from "@/stores/subscriptions";
+  import { useAuthStore } from "@/stores/auth";
   import { AlertTriangle, CreditCard } from "lucide-vue-next";
 
   defineProps({
@@ -10,7 +11,9 @@
 
   const router = useRouter();
   const subscriptionStore = useSubscriptionStore();
+  const authStore = useAuthStore();
   const isActive = computed(() => subscriptionStore.isActive);
+  const canManage = computed(() => authStore.hasPermission("ASSINATURA"));
 </script>
 
 <template>
@@ -38,17 +41,24 @@
           <p class="text-sm text-[#757575] mb-1">
             {{ featureName }} não está disponível com sua assinatura atual.
           </p>
-          <p class="text-xs text-[#757575] mb-6">
-            Renove seu plano para continuar utilizando o sistema completo.
-          </p>
 
-          <button
-            @click="router.push('/app/subscription')"
-            class="w-full py-3.5 rounded bg-primary text-white font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary-dark transition-colors active:scale-95"
-          >
-            <CreditCard :size="16" />
-            Gerenciar Assinatura
-          </button>
+          <template v-if="canManage">
+            <p class="text-xs text-[#757575] mb-6">
+              Renove seu plano para continuar utilizando o sistema completo.
+            </p>
+
+            <button
+              @click="router.push('/app/subscription')"
+              class="w-full py-3.5 rounded bg-primary text-white font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary-dark transition-colors active:scale-95"
+            >
+              <CreditCard :size="16" />
+              Gerenciar Assinatura
+            </button>
+          </template>
+
+          <p v-else class="text-xs text-[#757575] mb-2">
+            Contate o gerente do estabelecimento para regularizar a assinatura.
+          </p>
         </div>
       </div>
     </Transition>

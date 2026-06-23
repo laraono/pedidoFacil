@@ -51,24 +51,24 @@ const routes: RouteRecordRaw[] = [
       {
         path: "settings/roles",
         component: RolePermissions,
-        meta: { permission: PERMISSIONS.CONFIGURACAO },
+        meta: { permission: PERMISSIONS.FUNCIONARIOS },
       },
       { path: "", redirect: "dashboard" },
       {
         path: "settings/categories",
         component: MenuCategories,
-        meta: { permission: PERMISSIONS.CONFIGURACAO },
+        meta: { permission: PERMISSIONS.CARDAPIO },
       },
       {
         path: "settings/products",
         component: MenuProducts,
-        meta: { permission: PERMISSIONS.CONFIGURACAO },
+        meta: { permission: PERMISSIONS.CARDAPIO },
       },
       {
         path: "settings/users",
         name: "users-settings",
         component: CreateUsers,
-        meta: { permission: PERMISSIONS.CONFIGURACAO },
+        meta: { permission: PERMISSIONS.FUNCIONARIOS },
       },
       {
         path: "settings/coupons",

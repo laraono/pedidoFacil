@@ -1,7 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, CreateDateColumn, DeleteDateColumn, JoinColumn } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, DeleteDateColumn, JoinColumn } from "typeorm"
 import { Product } from "./Product"
 import { ProductOrder } from "./ProductOrder"
-import { ProductStatus } from "../../enum"
 
 @Entity({name: 'PRODUTO_VARIACAO'})
 export class ProductVariation {
@@ -29,12 +28,12 @@ export class ProductVariation {
     addPrice!: number
 
     @Column({
-        type: 'varchar',
-        name: 'status',
+        type: 'boolean',
+        name: 'Ativo',
         nullable: false,
-        length: 30
+        default: true
     })
-    status!: ProductStatus
+    ativo!: boolean
 
     @DeleteDateColumn({
         name: 'Data_Exclusao',

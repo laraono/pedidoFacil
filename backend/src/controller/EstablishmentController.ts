@@ -53,6 +53,9 @@ export class EstablishmentController {
   
   getPublicProfile = catchAsync(async (req: Request, res: Response) => {
     const establishmentId = Number(req.params.id);
+    if (!establishmentId || isNaN(establishmentId)) {
+      return res.status(400).json({ error: 'ID do estabelecimento inválido.' });
+    }
     const establishment = await this.establishmentService.getEstablishmentProfile(establishmentId);
     
     return res.status(200).json({

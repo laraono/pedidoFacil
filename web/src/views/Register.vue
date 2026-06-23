@@ -18,6 +18,7 @@ if (authStore.isAuthenticated) router.push('/app/dashboard')
 const step = ref(1)
 const serverError = ref('')
 const isSubmitting = ref(false)
+const step4Ref = ref<any>(null)
 
 const account = reactive({ nome: '', email: '', cpf: '', senha: '', confirmarSenha: '' })
 const establishment = reactive({ nome: '', cnpj: '' })
@@ -70,6 +71,7 @@ async function handlePaymentSubmit(payload: { planId: number; cardToken: string;
     router.push('/app/dashboard')
   } catch (err: any) {
     serverError.value = err.message || 'Erro ao finalizar cadastro. Tente novamente.'
+    await step4Ref.value?.resetCardForm()
   } finally {
     isSubmitting.value = false
   }
@@ -126,6 +128,7 @@ async function handlePaymentSubmit(payload: { planId: number; cardToken: string;
           />
           <Step4Subscription
             v-else-if="step === 4"
+            ref="step4Ref"
             :isSubmitting="isSubmitting"
             :payerEmail="account.email"
             @submit="handlePaymentSubmit"

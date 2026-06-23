@@ -2,6 +2,8 @@ import { ComandaService } from "../service";
 import { Request, Response } from 'express';
 import { auditLog } from "../utils/logger";
 import { getIO } from "../socket";
+import { ComandaStatus } from "../enum";
+import { sendError } from "../middleware/error/sendError";
 
 export class ComandaController {
     private comandaService: ComandaService
@@ -43,9 +45,8 @@ export class ComandaController {
     }
 
     async listComandasByStatus(req: Request, res: Response) {
-        const estabelecimentoId = (req as any).usuario.estabelecimento; 
-        const { status } = req.query;
-        const comandas = await this.comandaService.listComandasByStatus(status as any, estabelecimentoId);
+        const estabelecimentoId = (req as any).usuario.estabelecimento;
+        const comandas = await this.comandaService.listComandasByStatus(ComandaStatus.ABERTA, estabelecimentoId);
         res.status(200).send(comandas);
     }
 
@@ -84,11 +85,12 @@ export class ComandaController {
         const { comandaId } = req.params;
 
         await this.comandaService.cancelComanda({
-            comandaId: Number(comandaId), 
+            comandaId: Number(comandaId),
             ...req.body
         });
-        
-        getIO().to('cashier').to('kitchen').emit('comanda_cancelled', {
+
+        const estabId = (req as any).usuario?.estabelecimento;
+        getIO().to(`cashier_${estabId}`).to(`kitchen_${estabId}`).emit('comanda_cancelled', {
             comandaId: Number(comandaId)
         });
 
@@ -141,7 +143,26 @@ export class ComandaController {
                 error: error.message,
             });
 
-            return res.status(500).json({ error: error.message || "Erro interno ao processar o pagamento." });
+            return sendError(res, error, "Erro interno ao processar o pagamento.");
         }
+    }
+
+    async processTotemPayment(req: Request, res: Response) {
+        const { comandaId } = req.params;
+        const { orderId, type, amount } = req.body;
+        const { estabelecimento } = (req as any).usuario;
+
+        const result = await this.comandaService.processPartialPayment(
+            Number(comandaId),
+            null,
+            Number(estabelecimento),
+            { type, amount: Number(amount) },
+            [Number(orderId)],
+            false,
+        );
+
+        await this.comandaService.updateComandaStatus(Number(comandaId), ComandaStatus.FECHADA);
+
+        return res.status(200).json(result);
     }
 }

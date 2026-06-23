@@ -5,7 +5,7 @@ import { auditLog } from '../utils/logger';
 
 export const couponLimiter = rateLimit({
     windowMs: 60 * 1000,
-    max: 20,
+    max: 400,
     handler: (req: Request, res: Response) => {
         res.status(429).json({
             error: 'Muitas tentativas. Tente novamente mais tarde.',
@@ -25,12 +25,12 @@ export class CouponController {
 
     async create(req: Request, res: Response) {
         const usuario = (req as any).usuario;
-        const establishmentId = usuario?.estabelecimento || req.body.establishmentId; 
-        
+        const establishmentId = usuario?.estabelecimento;
+
         const data = req.body;
 
         if (!establishmentId) {
-            return res.status(400).send({ error: "ID do estabelecimento é obrigatório." });
+            return res.status(400).send({ error: "ID do estabelecimento não encontrado no token." });
         }
 
         const couponId = await this.couponService.createCoupon(Number(establishmentId), data);
@@ -81,11 +81,11 @@ export class CouponController {
 
     async validate(req: Request, res: Response) {
         const usuario = (req as any).usuario;
-        const establishmentId = usuario?.estabelecimento || Number(req.query.establishmentId); 
+        const establishmentId = usuario?.estabelecimento;
         const code = req.params.code as string;
 
         if (!establishmentId) {
-            return res.status(400).send({ error: "ID do estabelecimento é obrigatório para validar o cupom." });
+            return res.status(400).send({ error: "Correu um erro na validação do cupom." });
         }
 
         const coupon = await this.couponService.validateAndApplyCoupon(code, Number(establishmentId));

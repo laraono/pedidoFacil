@@ -19,7 +19,7 @@ const error = ref('')
 const serverError = ref(null)
 const plans = ref([])
 const sub = ref(null)
-const currentPlan = ref({})
+const currentPlan = computed(() => sub.value?.plan ?? {})
 const isLoading = ref(true)
 const history = ref([])
 
@@ -28,7 +28,6 @@ onMounted(async () => {
     plans.value = await planApi.list()
     sub.value = await subscriptionApi.getEstablishmentSubscription()
     history.value = await subscriptionApi.getSubscriptionHistory()
-    currentPlan.value = sub.value?.plan ?? {}
     error.value = localStorage.getItem('subscriptionError') || ''
     await loadMercadoPago();
     mp = new window.MercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY);
@@ -46,15 +45,20 @@ const effectivePrice = computed(() =>
   sub.value?.price ?? sub.value?.plan?.price ?? 0
 );
 
-const isActive = computed(() => sub.value?.status === 'Paga');
+const statusNome = computed(() => {
+  const s = sub.value?.status;
+  return typeof s === 'string' ? s : s?.nome ?? null;
+});
+
+const isActive = computed(() => statusNome.value === 'Paga');
 
 const statusConfig = computed(() => {
-  const s = sub.value?.status;
-  if (s === 'Paga')      return { label: 'Ativa',     color: 'text-accent',        bg: 'bg-accent-light border-accent/30' };
+  const s = statusNome.value;
+  if (s === 'Paga')      return { label: 'Ativa',     color: 'text-green-800',        bg: 'bg-accent-light border-accent/30' };
   if (s === 'Pendente')  return { label: 'Pendente',  color: 'text-amber-600',     bg: 'bg-amber-50 border-amber-400/30' };
   if (s === 'Expirada')  return { label: 'Expirada',  color: 'text-danger',        bg: 'bg-danger-light border-danger' };
   if (s === 'Cancelada') return { label: 'Cancelada', color: 'text-danger',        bg: 'bg-danger-light border-danger' };
-  return                        { label: 'Inativa',   color: 'text-[#757575]',     bg: 'bg-gray-200/20 border-[#E0E0E0]' };
+  return                        { label: 'Inativa',   color: 'text-muted',     bg: 'bg-gray-200/20 border-[#E0E0E0]' };
 });
 
 const daysUntilDue = computed(() => {
@@ -89,7 +93,6 @@ const confirmPlanChange = async () => {
   try {
     isChanging.value = true;
     sub.value = await subscriptionApi.changePlan(tempSelectedPlan.value.id);
-    currentPlan.value = sub.value?.plan ?? {};
     showConfirmPlanModal.value = false;
     isPlanModalOpen.value = false;
   } catch (err) {
@@ -219,15 +222,15 @@ const closePaymentModal = () => {
               <AlertTriangle v-else :size="12" />
               {{ statusConfig.label }}
             </div>
-            <span class="text-xs text-[#757575] font-bold uppercase tracking-wider">Plano {{ currentPlan?.name }}</span>
+            <span class="text-xs text-muted font-bold uppercase tracking-wider">Plano {{ currentPlan?.name }}</span>
           </div>
           <p class="text-4xl font-black text-[#212121]">{{ formatCurrency(effectivePrice) }}</p>
-          <p class="text-[#757575] text-sm mt-1">cobrado por {{ formatFrequency(currentPlan?.frequency) }}</p>
+          <p class="text-muted text-sm mt-1">cobrado por {{ formatFrequency(currentPlan?.frequency) }}</p>
         </div>
 
         <div class="flex flex-col sm:flex-row gap-3 shrink-0">
           <button
-            v-if="sub?.status !== 'Pendente'"
+            v-if="statusNome.value !== 'Pendente'"
             @click="openCardModal()"
             class="flex items-center gap-2 px-6 py-3.5 rounded font-black text-sm uppercase tracking-wider transition-all active:scale-95"
             :class="isActive ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-danger text-white hover:bg-red-700'"
@@ -249,16 +252,16 @@ const closePaymentModal = () => {
 
       <div class="bg-white border border-[#E0E0E0] rounded p-6 flex items-center justify-between gap-4">
         <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#757575] mb-1">
+          <div class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-muted mb-1">
             <ArrowLeftRight :size="14" />
             Plano Atual
           </div>
           <p class="text-lg font-black text-[#212121]">{{ currentPlan?.name }}</p>
-          <p class="text-xs text-[#757575] mt-0.5">{{ formatCurrency(effectivePrice) }}/{{ formatFrequency(currentPlan?.frequency) }}</p>
+          <p class="text-xs text-muted mt-0.5">{{ formatCurrency(effectivePrice) }}/{{ formatFrequency(currentPlan?.frequency) }}</p>
         </div>
         <button
           @click="openPlanModal"
-          class="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded border border-[#E0E0E0] text-[#757575] font-bold text-sm hover:border-accent hover:text-accent transition-all"
+          class="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded border border-[#E0E0E0] text-muted font-bold text-sm hover:border-accent hover:text-accent transition-all"
         >
           <ArrowLeftRight :size="14" />
           Alterar Plano
@@ -283,7 +286,7 @@ const closePaymentModal = () => {
               </div>
               <div>
                 <p class="text-sm font-bold text-[#212121]">{{ payment.type }}</p>
-                <p class="text-xs text-[#757575]">
+                <p class="text-xs text-muted">
                   {{ new Date(payment.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) }}
                 </p>
               </div>
@@ -291,7 +294,7 @@ const closePaymentModal = () => {
             <div class="text-right flex flex-col items-end gap-1">
               <p class="text-sm font-black text-[#212121]">{{ formatCurrency(payment.amount) }}</p>
               <span class="text-[10px] font-black uppercase tracking-wider text-accent">{{ payment.status ?? '—' }}</span>
-              <p v-if="payment.installments && payment.installments > 1" class="text-[10px] text-[#757575]">
+              <p v-if="payment.installments && payment.installments > 1" class="text-[10px] text-muted">
                 {{ payment.installments }}x de {{ formatCurrency(payment.amount / payment.installments) }}
               </p>
               <a
@@ -308,7 +311,7 @@ const closePaymentModal = () => {
             </div>
           </div>
         </div>
-        <div v-else class="p-12 text-center text-[#757575]">
+        <div v-else class="p-12 text-center text-muted">
           <Clock :size="32" class="mx-auto mb-3 opacity-30" />
           <p class="text-sm font-bold">Nenhum pagamento registrado</p>
         </div>
@@ -325,7 +328,7 @@ const closePaymentModal = () => {
     @close="showCancelModal = false"
   >
     <div class="space-y-4">
-      <p class="text-sm text-[#757575] leading-relaxed">
+      <p class="text-sm text-muted leading-relaxed">
         Tem certeza que deseja cancelar sua assinatura?
         O acesso permanece ativo até o vencimento em
         <span class="font-bold text-[#212121]">{{ formattedDueDate }}</span>.
@@ -371,15 +374,15 @@ const closePaymentModal = () => {
             </p>
           </div>
           <div class="flex items-center gap-2">
-            <p class="text-xs text-[#757575]">{{ formatCurrency(plan.price) }}/{{ formatFrequency(plan.frequency) }}</p>
-            <span v-if="plan.id === sub?.plan?.id" class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-accent-light text-accent rounded border border-accent/30">Atual</span>
+            <p class="text-xs text-muted">{{ formatCurrency(plan.price) }}/{{ formatFrequency(plan.frequency) }}</p>
+            <span v-if="plan.id === sub?.plan?.id" class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-accent-light text-green-800 rounded border border-accent/30">Atual</span>
           </div>
         </div>
         <ul v-if="parsedFeatures(plan.features).length" class="mt-2 space-y-1 pl-8">
           <li
             v-for="feat in parsedFeatures(plan.features)"
             :key="feat"
-            class="text-xs text-[#757575] flex items-center gap-1.5"
+            class="text-xs text-muted flex items-center gap-1.5"
           >
             <span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>
             {{ feat }}
@@ -389,7 +392,7 @@ const closePaymentModal = () => {
 
       <div class="p-4 bg-amber-50 border border-amber-400/40 rounded flex items-start gap-3">
         <Info :size="15" class="text-amber-500 shrink-0 mt-0.5" />
-        <p class="text-xs text-[#757575] leading-relaxed">
+        <p class="text-xs text-muted leading-relaxed">
           A mudança é <strong class="text-[#212121]">imediata</strong>. O novo valor será cobrado na próxima renovação.
         </p>
       </div>
@@ -405,7 +408,7 @@ const closePaymentModal = () => {
     @close="showConfirmPlanModal = false"
     @save="confirmPlanChange"
   >
-    <p class="text-sm text-[#757575] leading-relaxed">
+    <p class="text-sm text-muted leading-relaxed">
       Tem certeza que deseja trocar para o plano
       <span class="font-bold text-[#212121]">{{ tempSelectedPlan?.name }}</span>
       por <span class="font-bold text-[#212121]">{{ formatCurrency(tempSelectedPlan?.price) }}/{{ formatFrequency(tempSelectedPlan?.frequency) }}</span>?
@@ -425,7 +428,7 @@ const closePaymentModal = () => {
         <div class="bg-white border border-[#E0E0E0] w-full max-w-lg rounded shadow-2xl max-h-[90vh] overflow-y-auto">
           <div class="p-6 border-b border-[#E0E0E0] flex justify-between items-center">
             <h2 class="text-xl font-black text-[#212121]">Mudar Cartão de Pagamento</h2>
-            <button @click="closePaymentModal" class="p-2 text-[#757575] hover:text-[#212121] transition-colors">
+            <button @click="closePaymentModal" class="p-2 text-muted hover:text-[#212121] transition-colors">
               <X :size="20" />
             </button>
           </div>
@@ -436,7 +439,7 @@ const closePaymentModal = () => {
 
             <div v-show="!isTokenizing">
               <div class="mb-4">
-                <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">E-mail cadastrado no Mercado Pago</label>
+                <label class="block text-xs font-bold text-muted uppercase tracking-wider mb-1.5">E-mail cadastrado no Mercado Pago</label>
                 <input
                   v-model="payerEmail"
                   type="email"
@@ -447,21 +450,21 @@ const closePaymentModal = () => {
               </div>
               <form id="mp-manager-card-form" class="space-y-4" @submit.prevent>
                 <div>
-                  <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Número do cartão</label>
+                  <label class="block text-xs font-bold text-muted uppercase tracking-wider mb-1.5">Número do cartão</label>
                   <div id="mp-mgr-cardNumber" class="w-full border border-[#E0E0E0] rounded bg-white" style="height: 42px;"></div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                   <div>
-                    <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Validade</label>
+                    <label class="block text-xs font-bold text-muted uppercase tracking-wider mb-1.5">Validade</label>
                     <div id="mp-mgr-expirationDate" class="w-full border border-[#E0E0E0] rounded bg-white" style="height: 42px;"></div>
                   </div>
                   <div>
-                    <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">CVV</label>
+                    <label class="block text-xs font-bold text-muted uppercase tracking-wider mb-1.5">CVV</label>
                     <div id="mp-mgr-securityCode" class="w-full border border-[#E0E0E0] rounded bg-white" style="height: 42px;"></div>
                   </div>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Nome no cartão</label>
+                  <label class="block text-xs font-bold text-muted uppercase tracking-wider mb-1.5">Nome no cartão</label>
                   <input
                     id="mp-mgr-cardholderName"
                     type="text"
@@ -474,7 +477,7 @@ const closePaymentModal = () => {
                 <select id="mp-mgr-installments" class="hidden"></select>
                 <div class="grid grid-cols-2 gap-3">
                   <div>
-                    <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Tipo de documento</label>
+                    <label class="block text-xs font-bold text-muted uppercase tracking-wider mb-1.5">Tipo de documento</label>
                     <select
                       id="mp-mgr-identificationType"
                       class="w-full border border-[#E0E0E0] rounded bg-white px-3 text-sm text-[#212121] focus:outline-none focus:border-primary transition-colors"
@@ -482,7 +485,7 @@ const closePaymentModal = () => {
                     ></select>
                   </div>
                   <div>
-                    <label class="block text-xs font-bold text-[#757575] uppercase tracking-wider mb-1.5">Número do documento</label>
+                    <label class="block text-xs font-bold text-muted uppercase tracking-wider mb-1.5">Número do documento</label>
                     <input
                       id="mp-mgr-identificationNumber"
                       type="text"
@@ -500,7 +503,7 @@ const closePaymentModal = () => {
 
             <div v-if="isTokenizing" class="py-12 flex flex-col items-center justify-center gap-4">
               <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
-              <p class="text-[#757575] font-medium text-sm">Processando...</p>
+              <p class="text-muted font-medium text-sm">Processando...</p>
             </div>
           </div>
         </div>

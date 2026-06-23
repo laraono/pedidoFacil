@@ -45,6 +45,7 @@
         :class="[
           'w-full py-3.5 px-4 rounded border transition-all duration-300 focus:outline-none',
           icon ? 'pl-12' : 'pl-4',
+          $slots.suffix ? 'pr-10' : '',
           dark
             ? 'bg-gray-50 border-[#E0E0E0] text-[#212121] placeholder-gray-600 focus:border-primary/50 focus:bg-gray-100'
             : 'bg-white border-gray-300 text-[#212121] placeholder-gray-400 focus:border-primary/50',

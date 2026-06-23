@@ -109,30 +109,6 @@ export class MercadoPagoService {
         }
     }
 
-    async getPlans() {
-        if(!process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA) {
-            throw new AppError('Erro de conexão com o Mercado Pago',  500)
-        }
-
-        const headers = {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + process.env.MERCADOPAGO_ACCESS_TOKEN_ASSINATURA 
-        }
-
-        try {
-            const answer = await axios({
-                method: "get",
-                url: "https://api.mercadopago.com/preapproval_plan/search",
-                headers
-            })
-            return answer.data
-        } catch(err: any) {
-
-            auditLog('mp.get_plans_error', { errors: err?.response?.data?.errors });
-            throw new AppError('Erro buscando planos', 500)
-        }
-    }
-
     async createSubscription(
         params: {
             preapproval_plan_id: string,

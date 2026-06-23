@@ -25,17 +25,17 @@ const filtered = computed(() => {
     const matchSearch = !search.value ||
       s.establishment?.name?.toLowerCase().includes(search.value.toLowerCase()) ||
       s.establishment?.manager?.name?.toLowerCase().includes(search.value.toLowerCase());
-    const matchStatus = filterStatus.value === 'todos' || s.status?.toLowerCase() === filterStatus.value;
+    const matchStatus = filterStatus.value === 'todos' || s.status?.nome?.toLowerCase() === filterStatus.value;
     return matchSearch && matchStatus;
   });
 });
 
 const counts = computed(() => ({
   total: subscriptions.value.length,
-  paga: subscriptions.value.filter(s => s.status === 'Paga').length,
-  pendente: subscriptions.value.filter(s => s.status === 'Pendente').length,
-  cancelada: subscriptions.value.filter(s => s.status === 'Cancelada').length,
-  expirada: subscriptions.value.filter(s => s.status === 'Expirada').length,
+  paga: subscriptions.value.filter(s => s.status?.nome === 'Paga').length,
+  pendente: subscriptions.value.filter(s => s.status?.nome === 'Pendente').length,
+  cancelada: subscriptions.value.filter(s => s.status?.nome === 'Cancelada').length,
+  expirada: subscriptions.value.filter(s => s.status?.nome === 'Expirada').length,
 }));
 
 const { formatCurrency } = useUtils();
@@ -84,7 +84,8 @@ function goToEstablishment(sub) {
     <div v-if="loading" class="py-20 text-center text-[#757575]">Carregando...</div>
 
     <div v-else class="bg-white border border-[#E0E0E0] rounded-xl overflow-hidden">
-      <table class="w-full">
+      <div class="overflow-x-auto">
+      <table class="w-full min-w-[700px]">
         <thead>
           <tr class="border-b border-[#E0E0E0] bg-gray-100">
             <th class="text-left px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[#757575]">Estabelecimento</th>
@@ -110,7 +111,7 @@ function goToEstablishment(sub) {
               </span>
             </td>
             <td class="px-4 py-4">
-              <StatusBadge :status="sub.status" type="subscription" />
+              <StatusBadge :status="sub.status?.nome" type="subscription" />
             </td>
             <td class="px-4 py-4 hidden lg:table-cell">
               <div class="flex items-center gap-1.5 text-sm text-[#757575]">
@@ -138,6 +139,7 @@ function goToEstablishment(sub) {
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
   </main>
 </template>

@@ -55,7 +55,7 @@ const validateProfile = () => {
   errors.value = {};
   if (!form.value.fullName.trim())
     errors.value.fullName = "Nome completo é obrigatório.";
-  if (!form.value.email.trim() || !form.value.email.includes("@"))
+  if (!form.value.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email.trim()))
     errors.value.email = "E-mail inválido.";
   if (form.value.cpf && !isValidCPF(form.value.cpf))
     errors.value.cpf = "CPF inválido.";
@@ -86,12 +86,12 @@ const saveProfile = async () => {
     const payload = {
       name: form.value.fullName,
       email: form.value.email,
-      cpf: form.value.cpf ? form.value.cpf.replace(/\D/g, "") : "",
-      phone: form.value.phone ? form.value.phone.replace(/\D/g, "") : "",
-      address: form.value.address,
-      city: form.value.city,
-      state: form.value.state,
-      zip: form.value.zip ? form.value.zip.replace(/\D/g, "") : "",
+      cpf: form.value.cpf ? form.value.cpf.replace(/\D/g, "") : null,
+      phone: form.value.phone ? form.value.phone.replace(/\D/g, "") : null,
+      address: form.value.address || null,
+      city: form.value.city || null,
+      state: form.value.state || null,
+      zip: form.value.zip ? form.value.zip.replace(/\D/g, "") : null,
     };
 
     const updatedUser = await profileApi.update(payload);
@@ -157,13 +157,13 @@ const savePassword = async () => {
       <div class="flex items-center gap-4">
         <button
           @click="router.back()"
-          class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] hover:bg-gray-100 transition-all"
+          class="p-3 bg-gray-50 border border-[#E0E0E0] rounded text-muted hover:text-[#212121] hover:bg-gray-100 transition-all"
         >
           <ArrowLeft :size="20" />
         </button>
         <div>
           <h1 class="text-3xl font-black text-[#212121] tracking-tight">Meu Perfil</h1>
-          <p class="text-[#757575] mt-1 text-sm">Dados pessoais e de contato para cobranças</p>
+          <p class="text-muted mt-1 text-sm">Dados pessoais e de contato para cobranças</p>
         </div>
       </div>
       <BaseButton variant="primary" :icon="Save" :isLoading="isLoadingProfile" class="hidden sm:flex" @click="saveProfile">
@@ -178,9 +178,9 @@ const savePassword = async () => {
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <BaseInput v-model="form.fullName" label="Nome Completo" placeholder="Ex: João da Silva" :error="errors.fullName" />
+          <BaseInput v-model="form.fullName" label="Nome Completo" placeholder="Ex: João da Silva" maxlength="100" :error="errors.fullName" />
 
-          <BaseInput v-model="form.email" type="email" label="E-mail de Login" placeholder="seu@email.com" :error="errors.email" />
+          <BaseInput v-model="form.email" type="email" label="E-mail de Login" placeholder="seu@email.com" maxlength="254" :error="errors.email" />
 
           <BaseInput
             :modelValue="form.phone"
@@ -201,18 +201,19 @@ const savePassword = async () => {
           />
 
           <div class="md:col-span-2">
-            <BaseInput v-model="form.address" label="Endereço" placeholder="Rua, número, complemento" />
+            <BaseInput v-model="form.address" label="Endereço" placeholder="Rua, número, complemento" maxlength="255" :error="errors.address" />
           </div>
 
-          <BaseInput v-model="form.city" label="Cidade" placeholder="Ex: São Paulo" />
+          <BaseInput v-model="form.city" label="Cidade" placeholder="Ex: São Paulo" maxlength="100" :error="errors.city" />
 
           <div class="grid grid-cols-2 gap-4">
-            <BaseInput v-model="form.state" label="Estado" placeholder="SP" maxlength="2" />
+            <BaseInput v-model="form.state" label="Estado" placeholder="SP" maxlength="2" :error="errors.state" />
             <BaseInput
               :modelValue="form.zip"
               label="CEP"
               placeholder="00000-000"
               maxlength="9"
+              :error="errors.zip"
               @input="(e) => { form.zip = maskZip(e.target.value); e.target.value = form.zip; }"
             />
           </div>
@@ -235,7 +236,7 @@ const savePassword = async () => {
 
       <div class="bg-white border border-[#E0E0E0] rounded p-8 shadow-xl">
         <h2 class="text-lg font-black text-[#212121] mb-6 flex items-center gap-2">
-          <Lock :size="20" class="text-[#757575]" /> Segurança da Conta
+          <Lock :size="20" class="text-muted" /> Segurança da Conta
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

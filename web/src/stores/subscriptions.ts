@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { adminSubscriptionApi, adminMetricsApi } from '@/services/adminApi';
 import { subscriptionApi } from '@/services/subscriptionApi';
+import { useAuthStore } from '@/stores/auth';
 
 export type SubscriptionStatus = 'Paga' | 'Pendente' | 'Expirada' | 'Cancelada';
 
@@ -22,14 +23,29 @@ export const useSubscriptionStore = defineStore('subscription', () => {
   const subscriptionExpirationDate = ref<string | null>(null);
 
   async function fetchSubscriptionStatus(): Promise<void> {
+    const auth = useAuthStore();
+
+    if (!auth.hasPermission('ASSINATURA')) {
+      if (subscriptionStatus.value === null) subscriptionStatus.value = 'Paga';
+      return;
+    }
     try {
       const sub = await subscriptionApi.getEstablishmentSubscription();
-      subscriptionStatus.value = (sub as any)?.status ?? null;
+      subscriptionStatus.value = (sub as any)?.status?.nome ?? (sub as any)?.status ?? null;
       subscriptionExpirationDate.value = (sub as any)?.expirationDate ?? null;
-    } catch {
-      subscriptionStatus.value = null;
-      subscriptionExpirationDate.value = null;
+    } catch (error: any) {
+      const status = error?.response?.status || error?.status;
+      if (status !== 429 && status !== undefined) {
+        subscriptionStatus.value = null;
+        subscriptionExpirationDate.value = null;
+      }
     }
+  }
+
+  function markInactiveFromBackend(): void {
+    const auth = useAuthStore();
+    if (auth.hasPermission('ASSINATURA')) return;
+    subscriptionStatus.value = 'Expirada';
   }
 
   const isActive = computed(() => {
@@ -53,7 +69,7 @@ export const useSubscriptionStore = defineStore('subscription', () => {
         manager: s.establishment?.manager?.name ?? '—',
         plan: s.plan?.name ?? '—',
         planFrequency: s.plan?.frequency ?? '—',
-        status: s.status,
+        status: s.status?.nome ?? '—',
         nextDueDate: s.expirationDate,
         amount: Number(s.plan?.price ?? 0),
         users: (s.establishment?.roles ?? []).reduce(
@@ -94,6 +110,7 @@ export const useSubscriptionStore = defineStore('subscription', () => {
   return {
     subscriptionStatus,
     fetchSubscriptionStatus,
+    markInactiveFromBackend,
     isActive,
     adminSubscriptions,
     adminSubscriptionsLoading,

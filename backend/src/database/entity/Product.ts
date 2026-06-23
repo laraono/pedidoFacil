@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, DeleteDateColumn, JoinColumn } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, OneToOne, ManyToOne, DeleteDateColumn, JoinColumn } from "typeorm"
 import { ProductVariation } from "./ProductVariation"
 import { Category } from "./Category"
 import { ProductOrder } from "./ProductOrder"
+import { StorageIten } from "./StorageIten"
 
 @Entity({name: 'PRODUTO'})
 export class Product {
@@ -23,14 +24,15 @@ export class Product {
         type: 'varchar',
         name: 'Descricao',
         nullable: true,
-        default: true
+        default: null
     })
     description?: string
 
     @Column({
-        type: 'longtext',
+        type: 'varchar',
         name: 'Imagem',
         nullable: true,
+        length: 500
     })
     image?: string
 
@@ -42,12 +44,12 @@ export class Product {
     estocavel!: boolean
 
     @Column({
-        type: 'varchar',
-        name: 'Status',
+        type: 'boolean',
+        name: 'Ativo',
         nullable: false,
-        default: 'Ativo'
+        default: true
     })
-    status!: string
+    ativo!: boolean
 
     @Column({
         name: 'Preco_Base',
@@ -76,5 +78,8 @@ export class Product {
         name: 'ID_Categoria'
     })
     category!: Category
+
+    @OneToOne(() => StorageIten, (storage) => storage.product, { nullable: true })
+    storageIten?: StorageIten
 
 }

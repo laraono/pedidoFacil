@@ -31,6 +31,8 @@ import { AppDataSource } from './database';
 import { errorHandler, publicLimiter, authenticatedLimiter } from './middleware';
 import { initSocket } from './socket';
 import { logger } from './utils/logger';
+import { ensureBucketExists } from './service/S3Service';
+import { S3_BUCKET } from './config/aws';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
@@ -68,13 +70,34 @@ app.use(cors({
 }));
 app.use(cookieParser());
 
+const SENSITIVE_KEYS = new Set(['password', 'senha', 'passwordResetToken', 'passwordResetExpires']);
+function scrubSensitive(value: any, depth = 0): any {
+    if (!value || typeof value !== 'object' || depth > 8) return value;
+    if (value instanceof Date) return value;
+    if (Array.isArray(value)) return value.map((v) => scrubSensitive(v, depth + 1));
+    for (const key of Object.keys(value)) {
+        if (SENSITIVE_KEYS.has(key)) delete value[key];
+        else value[key] = scrubSensitive(value[key], depth + 1);
+    }
+    return value;
+}
+app.use((req, res, next) => {
+    const originalJson = res.json.bind(res);
+    (res as any).json = (body: any) => originalJson(scrubSensitive(body));
+    next();
+});
+
 const httpServer = http.createServer(app);
 
 AppDataSource.initialize().then(async () => {
+    await ensureBucketExists(S3_BUCKET).catch(err =>
+        logger.error('Falha ao inicializar bucket S3', { error: err?.message })
+    );
+
     app.use('/api/v1/admin', authenticatedLimiter, adminRouter)
     app.use('/api/v1', publicLimiter, authRouter);
     app.use('/api/v1', publicLimiter, planRouter);
-    app.use('/api/v1', publicLimiter, menuRouter);
+    app.use('/api/v1', menuRouter);
     app.use('/api/v1', publicLimiter, totemRouter);
     app.use('/api/v1/estabelecimento', authenticatedLimiter, establishmentRouter);
     app.use('/api/v1/contato', contactRouter);
@@ -90,7 +113,7 @@ AppDataSource.initialize().then(async () => {
     app.use('/api/v1/cupons', authenticatedLimiter, couponRouter);
     app.use('/api/v1', authenticatedLimiter, configRouter);
     app.use('/api/v1', authenticatedLimiter, subscriptionRouter);
-    app.use('/api/v1', authenticatedLimiter, paymentRouter);
+    app.use('/api/v1/payments', authenticatedLimiter, paymentRouter);
     app.use('/webhook', publicLimiter, webhookRouter);
     app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
     app.use((req, res) => {

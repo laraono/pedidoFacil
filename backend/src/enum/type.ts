@@ -1,5 +1,5 @@
 export enum DiscountType {
-    VALOR ='Valor',
+    VALOR = 'Valor',
     PERCENTUAL = 'Percentual'
 }
 
@@ -7,12 +7,6 @@ export enum MovimentationType {
     ENTRADA = 'Entrada',
     SAIDA = 'Saida',
     AJUSTE = 'Ajuste'
-}
-
-export enum ServiceType {
-    GARCOM = 'Garcom',
-    CAIXA = 'Caixa',
-    AUTOATENDIMENTO = 'Autoatendimento'
 }
 
 export enum ProductVariationType {
@@ -34,4 +28,4 @@ export enum Permission {
     NOTA_FISCAL = 'NOTA_FISCAL',
 }
 
-export const allPermissions = Object.values(Permission);
+export const allPermissions = Object.values(Permission)

@@ -1,22 +1,12 @@
 <script setup lang="ts">
-import { loadMercadoPago } from '@mercadopago/sdk-js'
-import { ref, onBeforeUnmount, nextTick } from 'vue'
+import { ref, toRef } from 'vue'
 import { planApi } from '@/services/planApi'
 import { Check } from 'lucide-vue-next'
 import { useUtils } from '@/composables/useUtils'
 import { BaseButton, BaseInput } from '@/components/ui'
+import { useMercadoPago } from '@/composables/useMercadoPago'
 
 const { formatCurrency, parsedFeatures } = useUtils()
-
-const WIN = window as any
-if (!WIN.__mpState) WIN.__mpState = { mp: null as any, cardForm: null as any, lastUnmountAt: 0 }
-
-async function getOrCreateMp(): Promise<any> {
-  if (WIN.__mpState.mp) return WIN.__mpState.mp
-  await loadMercadoPago()
-  WIN.__mpState.mp = new WIN.MercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY, { locale: 'pt-BR' })
-  return WIN.__mpState.mp
-}
 
 const props = defineProps<{ isSubmitting: boolean; payerEmail: string }>()
 const emit = defineEmits<{
@@ -26,86 +16,24 @@ const emit = defineEmits<{
 const plans = ref<any[]>([])
 const selectedPlan = ref<any>(null)
 const showPayment = ref(false)
-const error = ref<string | null>(null)
-const isTokenizing = ref(false)
 const mpPayerEmail = ref(props.payerEmail)
 
 function isAnnual(plan: any) {
   return plan?.frequency === 'anual'
 }
 
-const initCardForm = async () => {
-  const elapsed = Date.now() - WIN.__mpState.lastUnmountAt
-  if (elapsed < 500) {
-    await new Promise(resolve => setTimeout(resolve, 500 - elapsed))
-  }
-
-  let mp: any
-  try {
-    mp = await getOrCreateMp()
-  } catch {
-    error.value = 'Falha ao carregar o sistema de pagamento.'
-    return
-  }
-
-  try {
-    WIN.__mpState.cardForm = mp.cardForm({
-      amount: Number(selectedPlan.value.price).toFixed(2),
-      iframe: true,
-      form: {
-        id: 'mp-card-form',
-        cardNumber: { id: 'mp-cardNumber', placeholder: '0000 0000 0000 0000' },
-        expirationDate: { id: 'mp-expirationDate', placeholder: 'MM/AA' },
-        securityCode: { id: 'mp-securityCode', placeholder: 'CVV' },
-        cardholderName: { id: 'mp-cardholderName' },
-        issuer: { id: 'mp-issuer', placeholder: 'Banco emissor' },
-        installments: { id: 'mp-installments' },
-        identificationType: { id: 'mp-identificationType' },
-        identificationNumber: { id: 'mp-identificationNumber' },
-      },
-      callbacks: {
-        onFormMounted: (err: any) => {
-          if (err) { error.value = 'Erro ao carregar formulário de pagamento.'; console.error(err) }
-        },
-        onSubmit: async (event: any) => {
-          event.preventDefault()
-          if (props.isSubmitting || isTokenizing.value) return
-          error.value = null
-          isTokenizing.value = true
-          try {
-            const { token } = WIN.__mpState.cardForm.getCardFormData()
-            if (!token) throw new Error('Não foi possível gerar o token. Verifique os dados do cartão.')
-            emit('submit', {
-              planId: selectedPlan.value.id,
-              cardToken: token,
-              payerEmail: mpPayerEmail.value,
-            })
-          } catch (err: any) {
-            error.value = err.message || 'Erro ao processar cartão.'
-          } finally {
-            isTokenizing.value = false
-          }
-        },
-        onError: (err: any) => {
-          console.error('MP Card Form error:', err)
-        },
-      },
-    })
-  } catch (e: any) {
-    error.value = 'Erro ao carregar formulário de pagamento.'
-    console.error('cardForm init error:', e)
-  }
-}
+const { error, isTokenizing, mountIfNeeded, resetCardForm } = useMercadoPago(
+  selectedPlan,
+  toRef(props, 'isSubmitting'),
+  mpPayerEmail,
+  payload => emit('submit', payload),
+)
 
 const selectPlan = async (plan: any) => {
   error.value = null
   selectedPlan.value = plan
   showPayment.value = true
-  if (!WIN.__mpState.cardForm) {
-    await nextTick()
-    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
-    await initCardForm()
-  }
+  await mountIfNeeded()
 }
 
 const goBack = () => {
@@ -124,11 +52,7 @@ planApi.list().then(async data => {
   }
 })
 
-onBeforeUnmount(() => {
-  try { WIN.__mpState.cardForm?.unmount() } catch {}
-  WIN.__mpState.cardForm = null
-  WIN.__mpState.lastUnmountAt = Date.now()
-})
+defineExpose({ resetCardForm })
 </script>
 
 <template>

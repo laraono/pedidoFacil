@@ -9,8 +9,8 @@
 </script>
 
 <template>
-  <div class="flex items-center justify-between p-2">
-    <div>
+  <div class="flex items-center justify-between gap-4 p-2">
+    <div class="flex-1 min-w-0">
       <label v-if="label" class="block text-sm font-bold text-[#757575]">{{
         label
       }}</label>
@@ -22,7 +22,7 @@
     <button
       type="button"
       @click="emit('update:modelValue', !modelValue)"
-      class="relative inline-flex h-7 w-12 items-center rounded transition-colors duration-300 focus:outline-none"
+      class="relative inline-flex shrink-0 h-7 w-12 items-center rounded transition-colors duration-300 focus:outline-none"
       :class="modelValue ? 'bg-green-500' : 'bg-gray-300'"
     >
       <span

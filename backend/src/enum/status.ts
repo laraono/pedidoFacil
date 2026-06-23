@@ -12,19 +12,11 @@ export enum ComandaStatus {
     CANCELADA = 'Cancelada'
 }
 
-export enum ProductStatus {
-    ATIVO = 'Ativo',
-    INATIVO = 'Inativo'
-}
-
-export enum CategoryStatus {
-    ATIVA = 'Ativa',
-    INATIVA = 'Inativa'
-}
-
-export enum UserStatus {
-    ATIVO ='Ativo',
-    INATIVO = 'Inativo',
+export enum PaymentStatus {
+    PENDING = 'Pendente',
+    PAID = 'Aprovado',
+    CANCELED = 'Cancelado',
+    REFUNDED = 'Estornado'
 }
 
 export enum SubscriptionStatus {
@@ -44,4 +36,3 @@ export enum SubscriptionPaymentStatus {
     APROVADO = 'Aprovado',
     REJEITADO = 'Rejeitado'
 }
-

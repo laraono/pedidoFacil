@@ -6,6 +6,7 @@ import {
     JoinColumn,
     OneToMany,
     ManyToMany,
+    ManyToOne,
     JoinTable,
     DeleteDateColumn
 } from "typeorm"
@@ -19,6 +20,7 @@ import { Payment } from "./Payment"
 import { Configuration } from "./Configuration"
 import { Register } from "./Register"
 import { PaymentMethod } from "./PaymentMethod"
+import { Endereco } from "./Endereco"
 
 @Entity({ name: 'ESTABELECIMENTO' })
 export class Establishment {
@@ -53,13 +55,9 @@ export class Establishment {
     })
     phone?: string
 
-    @Column({
-        type: 'varchar',
-        name: 'Endereco',
-        nullable: true,
-        length: 255
-    })
-    address?: string
+    @ManyToOne(() => Endereco, { eager: true, nullable: true })
+    @JoinColumn({ name: 'ID_Endereco' })
+    endereco?: Endereco | null
 
     @ManyToMany(() => PaymentMethod)
     @JoinTable({

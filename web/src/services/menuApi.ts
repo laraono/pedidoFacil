@@ -3,15 +3,19 @@ import { request } from './api';
 export const menuApi = {
   getFullMenu: (editMode = false) => {
     const userStr = localStorage.getItem('user');
-    let estId = 1;
+    let estId: number | null = null;
 
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
-        estId = user.estabelecimentoId || user.id || 1;
+        estId = user.estabelecimentoId ?? null;
       } catch {
-        console.warn('Falha ao ler usuário do localStorage');
+        throw new Error('Falha ao ler dados do usuário. Faça login novamente.');
       }
+    }
+
+    if (!estId) {
+      throw new Error('Estabelecimento não identificado. Faça login novamente.');
     }
 
     return request(`/menu?editMode=${editMode}&establishmentId=${estId}`, { method: 'GET' });

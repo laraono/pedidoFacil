@@ -9,7 +9,6 @@ import {
   DeleteDateColumn,
   CreateDateColumn,
 } from 'typeorm';
-import { UserStatus } from '../../enum';
 import { Role } from './Role';
 import { StorageMovimentation } from './StorageMovimentation';
 import { Payment } from './Payment';
@@ -47,12 +46,12 @@ export class User {
   password!: string;
 
   @Column({
-    type: 'varchar',
-    name: 'Status',
+    type: 'boolean',
+    name: 'Ativo',
     nullable: false,
-    default: UserStatus.INATIVO,
+    default: true,
   })
-  status!: UserStatus;
+  ativo!: boolean;
 
   @Column({
     type: 'varchar',
@@ -92,7 +91,7 @@ export class User {
 
   @OneToMany(
     () => StorageMovimentation,
-    (movimentation) => movimentation.storageIten,
+    (movimentation) => movimentation.user,
   )
   movimentations!: StorageMovimentation[];
 

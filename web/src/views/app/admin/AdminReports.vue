@@ -49,7 +49,8 @@ const totalActive = computed(() =>
 const totalMRR = computed(() =>
   metrics.value ? metrics.value.receitaMensal : allSubs.value
     .filter(s => s.status === 'Paga')
-    .reduce((acc, s) => acc + s.amount, 0)
+    .reduce((acc, s) =>
+      acc + (String(s.planFrequency ?? '').toLowerCase().includes('anual') ? s.amount / 12 : s.amount), 0)
 );
 
 const totalAnnual = computed(() => {
@@ -172,17 +173,6 @@ const handleExport = () => window.print();
     >
       <template #actions>
         <Loader2 v-if="isLoading" :size="18" class="text-accent animate-spin" />
-        <div class="flex bg-white border border-[#E0E0E0] rounded overflow-hidden">
-          <button
-            v-for="opt in ['3m', '6m', '12m', 'all']"
-            :key="opt"
-            @click="dateFilter = opt"
-            :class="dateFilter === opt ? 'bg-primary text-white' : 'text-[#757575] hover:text-[#212121]'"
-            class="px-4 py-2 text-xs font-black uppercase transition-all"
-          >
-            {{ opt === 'all' ? 'Tudo' : opt.toUpperCase() }}
-          </button>
-        </div>
         <button
           @click="handleExport"
           class="flex items-center gap-2 px-4 py-2.5 bg-gray-50 border border-[#E0E0E0] rounded text-[#757575] hover:text-[#212121] text-sm font-bold transition-colors"
@@ -204,10 +194,22 @@ const handleExport = () => window.print();
       <div class="lg:col-span-2 bg-white border border-[#E0E0E0] rounded p-8">
         <div class="flex items-center gap-2 mb-6">
           <BarChart3 :size="18" class="text-accent" />
-          <h2 class="font-black text-[#212121]">Faturamento Mensal (MRR)</h2>
+          <h2 class="font-black text-[#212121]">Faturamento Mensal</h2>
+          <div class="ml-auto flex bg-white border border-[#E0E0E0] rounded overflow-hidden">
+            <button
+              v-for="opt in ['3m', '6m', '12m', 'all']"
+              :key="opt"
+              @click="dateFilter = opt"
+              :class="dateFilter === opt ? 'bg-primary text-white' : 'text-[#757575] hover:text-[#212121]'"
+              class="px-3 py-1.5 text-xs font-black uppercase transition-all"
+            >
+              {{ opt === 'all' ? 'Tudo' : opt.toUpperCase() }}
+            </button>
+          </div>
         </div>
 
-        <div class="flex items-end gap-3 h-48">
+        <div class="overflow-x-auto">
+        <div class="flex items-end gap-3 h-48 min-w-[480px]">
           <div
             v-for="(item, i) in monthlyRevenue"
             :key="i"
@@ -225,6 +227,7 @@ const handleExport = () => window.print();
             </div>
             <span class="text-[10px] font-black text-[#757575]">{{ item.month }}</span>
           </div>
+        </div>
         </div>
       </div>
 
@@ -340,7 +343,7 @@ const handleExport = () => window.print();
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
       <div style="border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; background: #f9fafb;">
-        <p style="font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #111; margin: 0 0 8px;">Faturamento Mensal (MRR)</p>
+        <p style="font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #111; margin: 0 0 8px;">Faturamento Mensal</p>
         <div style="display: flex; align-items: flex-end; justify-content: space-between; height: 100px; gap: 4px;">
           <div v-for="(item, i) in monthlyRevenue" :key="i" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;">
             <span style="font-size: 6px; font-weight: 700; color: #374151; margin-bottom: 2px;">{{ Math.round(item.value/10)/100 }}k</span>

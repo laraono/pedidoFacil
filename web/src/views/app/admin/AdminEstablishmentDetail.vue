@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAsyncAction } from '@/composables/useAsyncAction';
 import { useUtils } from '@/composables/useUtils';
@@ -14,12 +14,13 @@ const { formatCurrency } = useUtils();
 
 const detail = ref(null);
 
-onMounted(async () => {
+watch(() => route.params.id, async (id) => {
+  detail.value = null;
   detail.value = await runLoad(
-    () => adminEstablishmentApi.getDetail(Number(route.params.id)),
+    () => adminEstablishmentApi.getDetail(Number(id)),
     'Erro ao carregar estabelecimento.'
-  ) ?? detail.value;
-});
+  ) ?? null;
+}, { immediate: true });
 
 const formatDate = (d) =>
   d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -63,6 +64,7 @@ const paymentColumns = [
       :subtitle="detail?.cnpj || ''"
       :category-icon="Building2"
       category-label="Painel Admin"
+      back-to="back"
     >
     </PageHeader>
 
@@ -122,7 +124,7 @@ const paymentColumns = [
           </div>
           <div>
             <p class="text-[10px] font-black uppercase tracking-widest text-[#757575] mb-1">Status</p>
-            <StatusBadge :status="detail.subscription.status" type="subscription" />
+            <StatusBadge :status="detail.subscription.status?.nome" type="subscription" />
           </div>
           <div>
             <p class="text-[10px] font-black uppercase tracking-widest text-[#757575] mb-1">Início</p>
@@ -146,9 +148,9 @@ const paymentColumns = [
           <template #cell-status="{ item }">
             <span class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border"
               :class="item.status === 'Aprovado'  ? 'text-accent bg-accent-light border-accent/25'
-                    : item.status === 'Cancelado' ? 'text-red-400 bg-red-500/10 border-red-500/20'
+                    : item.status === 'Rejeitado' ? 'text-red-400 bg-red-500/10 border-red-500/20'
                     : 'text-amber-400 bg-amber-500/10 border-amber-500/25'">
-              {{ item.status }}
+              {{ item.status || '—' }}
             </span>
           </template>
           <template #cell-name="{ item }">

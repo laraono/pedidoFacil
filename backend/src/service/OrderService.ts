@@ -6,10 +6,20 @@ import {
   ProductVariation,
   Comanda,
 } from '../database';
-import { OrderStatus, ComandaStatus, ServiceType } from '../enum';
+import { OrderStatus, ComandaStatus } from '../enum';
 import { AppError } from '../middleware';
 import { OrderRepository } from '../repository';
 import { ComandaService } from './ComandaService';
+import { STATUS_COMANDA_IDS, STATUS_PEDIDO_IDS } from '../database/entity/lookup-ids';
+import { getIO } from '../socket';
+
+const ORDER_STATUS_ID: Record<OrderStatus, number> = {
+  [OrderStatus.AGUARDANDO_PREPARO]: STATUS_PEDIDO_IDS.AGUARDANDO_PREPARO,
+  [OrderStatus.EM_PREPARO]:         STATUS_PEDIDO_IDS.EM_PREPARO,
+  [OrderStatus.PRONTO]:             STATUS_PEDIDO_IDS.PRONTO,
+  [OrderStatus.FINALIZADO]:         STATUS_PEDIDO_IDS.FINALIZADO,
+  [OrderStatus.CANCELADO]:          STATUS_PEDIDO_IDS.CANCELADO,
+};
 
 export class OrderService {
   private dataSource: DataSource;
@@ -26,22 +36,57 @@ export class OrderService {
     this.comandaService = comandaService;
   }
 
+  private buildMappedItems(fullOrder: any) {
+    return fullOrder?.productOrders?.map((po: any) => ({
+      name: po.product?.name || 'Produto',
+      variationName: po.productVariation?.name || '',
+      quantity: po.quantity,
+      observation: po.observation,
+    })) ?? [];
+  }
+
   async createOrder(data: any) {
+    if (data.clientRequestId) {
+      const existing = await this.dataSource.getRepository(Order).findOne({
+        where: { clientRequestId: data.clientRequestId },
+      });
+      if (existing) return existing;
+    }
+
     const comanda = await this.comandaService.getComanda(data.comandaId);
     if (!comanda) throw new AppError('Comanda não encontrada', 404);
 
-    return await this.createOrderWithTransaction(data, comanda);
+    const order = await this.createOrderWithTransaction(data, comanda) as any;
+
+    const comandaLabel = data.comandaLabel || `Comanda #${data.comandaId}`;
+    const fullOrder = await this.getOrderWithDetails(order.id);
+    const items = this.buildMappedItems(fullOrder);
+
+    getIO().to(`kitchen_${data.establishmentId}`).emit('new_order', {
+      orderId:      order.id,
+      comandaId:    Number(data.comandaId),
+      comandaLabel,
+      items,
+      createdAt:    fullOrder?.created_at ? new Date(fullOrder.created_at).toISOString() : new Date().toISOString(),
+      source:       data.source || 'web',
+      userId:       data.userId,
+      user:         { id: data.userId },
+    });
+
+    return order;
   }
 
   async createOrderWithTransaction(createOrder: any, comanda: any) {
     return await this.dataSource.transaction(async (manager) => {
+      const statusId = (createOrder.status && ORDER_STATUS_ID[createOrder.status as OrderStatus])
+        ?? STATUS_PEDIDO_IDS.AGUARDANDO_PREPARO;
+
       const order = await manager.save(Order, {
-        status: createOrder.status,
-        serviceType: createOrder.serviceType,
+        status: { id: statusId },
+        autoatendimento: createOrder.autoatendimento ?? false,
         comanda: comanda,
-        establishment: { id: createOrder.establishmentId },
-        user: createOrder.userId ? { id: createOrder.userId } : undefined,
-        isDelivered: false,
+        createdBy: createOrder.userId ? { id: createOrder.userId } : undefined,
+        clientRequestId: createOrder.clientRequestId ?? null,
       }) as any;
 
       await this.saveItens(createOrder.itens, order, manager);
@@ -51,27 +96,41 @@ export class OrderService {
   }
 
   async createTotemOrder(data: any) {
-    return await this.dataSource.transaction(async (manager) => {
+    const order = await this.dataSource.transaction(async (manager) => {
       const comanda = await manager.save(Comanda, {
         description: data.comandaLabel,
-        status: ComandaStatus.ABERTA,
+        status: { id: STATUS_COMANDA_IDS.ABERTA },
         total: 0,
         establishment: { id: data.establishmentId },
       }) as Comanda;
 
-      const order = await manager.save(Order, {
-        status: 'Aguardando_Preparo' as OrderStatus,
-        serviceType: ServiceType.AUTOATENDIMENTO,
+      const savedOrder = await manager.save(Order, {
+        status: { id: STATUS_PEDIDO_IDS.AGUARDANDO_PREPARO },
+        autoatendimento: true,
         comanda: comanda,
-        establishment: { id: data.establishmentId },
-        isDelivered: false,
       }) as Order;
 
-      await this.saveItens(data.itens, order, manager);
+      await this.saveItens(data.itens, savedOrder, manager);
 
-      order.comanda = comanda;
-      return order;
+      savedOrder.comanda = comanda;
+      return savedOrder;
+    }) as any;
+
+    const fullOrder = await this.getOrderWithDetails(order.id);
+    const items = this.buildMappedItems(fullOrder);
+
+    getIO().to(`kitchen_${data.establishmentId}`).emit('new_order', {
+      orderId:      order.id,
+      comandaId:    order.comanda.id,
+      comandaLabel: data.comandaLabel,
+      items,
+      createdAt:    fullOrder?.created_at ? new Date(fullOrder.created_at).toISOString() : new Date().toISOString(),
+      source:       'totem',
+      userId:       null,
+      user:         null,
     });
+
+    return order;
   }
 
   async saveItens(itens: any[], order: Order, manager: EntityManager) {
@@ -80,11 +139,9 @@ export class OrderService {
     for (const iten of itens) {
       const validated = await this.validateItens(iten, manager);
 
-      const basePrice = Number(validated.product.basePrice);
-      const addPrice = validated.productVariation
+      const finalPrice = validated.productVariation
         ? Number(validated.productVariation.addPrice)
-        : 0;
-      const finalPrice = basePrice + addPrice;
+        : Number(validated.product.basePrice);
 
       totalAcumulado += finalPrice * iten.quantity;
 
@@ -104,17 +161,16 @@ export class OrderService {
       manager,
     );
   }
-  
+
   async validateItens(iten: any, manager: EntityManager) {
     const product = await manager.findOne(Product, {
       where: { id: iten.productId },
-      lock: { mode: 'pessimistic_write' } 
     });
 
     if (!product) throw new AppError(`Produto ${iten.productId} não existe`, 400);
 
     let productVariation: ProductVariation | null = null;
-    
+
     if (iten.productVariationId) {
       productVariation = await manager.findOne(ProductVariation, {
         where: { id: iten.productVariationId },
@@ -132,18 +188,28 @@ export class OrderService {
     return await this.orderRepository.listOrdersByComanda(comandaId);
   }
 
-  async updateOrderStatus(orderId: number, status: OrderStatus, userId?: number, reason?: string, expectedComandaId?: number) {
+  async updateOrderStatus(
+    orderId: number,
+    status: OrderStatus,
+    userId?: number,
+    reason?: string,
+    expectedComandaId?: number,
+    establishmentId?: number,
+  ) {
     const order = await this.dataSource.getRepository(Order).findOne({
-      where: { id: orderId }, relations: ['comanda', 'user'] 
+      where: { id: orderId },
+      relations: ['comanda', 'createdBy', 'status', 'productOrders'],
     });
-    
+
     if (!order) throw new AppError('Pedido não encontrado', 404);
     if (!order.comanda) throw new AppError('Pedido sem comanda associada', 500);
-    if (expectedComandaId && order.comanda.id !== expectedComandaId) throw new AppError('Pedido não pertence a esta comanda', 403);
+    if (expectedComandaId && order.comanda.id !== expectedComandaId)
+      throw new AppError('Pedido não pertence a esta comanda', 403);
 
-    const orderUserId = order?.user?.id; 
+    const orderUserId = order?.createdBy?.id;
+    const comandaId = order.comanda.id;
 
-    const updateData: any = { status };
+    const updateData: any = { status: { id: ORDER_STATUS_ID[status] } };
 
     if (status === OrderStatus.CANCELADO) {
       if (userId) updateData.user = { id: userId };
@@ -152,15 +218,53 @@ export class OrderService {
 
     await this.orderRepository.update(orderId, updateData);
 
-    const comandaId = order.comanda.id;
+    const io = getIO();
 
     if (status === OrderStatus.CANCELADO) {
-      const allOrders = await this.dataSource.getRepository(Order).find({ where: { comanda: { id: comandaId } } });
-      const allCancelled = allOrders.length > 0 && allOrders.every(o => o.status === OrderStatus.CANCELADO);
+      const orderValue = order.productOrders?.reduce(
+        (sum, po) => sum + Number(po.price) * po.quantity, 0,
+      ) ?? 0;
+      if (orderValue > 0) {
+        await this.comandaService.decrementComandaTotal(comandaId, orderValue);
+      }
 
-      if (allCancelled) {
+      if (establishmentId) {
+        io.to(`kitchen_${establishmentId}`).to(`cashier_${establishmentId}`).emit('order_cancelled', {
+          orderId,
+          comandaId,
+        });
+      }
+
+      const remaining = await this.dataSource
+        .getRepository(Order)
+        .createQueryBuilder('o')
+        .innerJoin('o.status', 's')
+        .where('o.comanda = :comandaId', { comandaId })
+        .andWhere('s.nome != :cancelado', { cancelado: OrderStatus.CANCELADO })
+        .getCount();
+
+      if (remaining === 0) {
         await this.comandaService.updateComandaStatus(comandaId, ComandaStatus.CANCELADA);
+        if (establishmentId) {
+          io.to(`kitchen_${establishmentId}`).to(`cashier_${establishmentId}`).emit('comanda_cancelled', { comandaId });
+        }
         return { comandaCancelled: true, comandaId, orderUserId, comandaLabel: order.comanda.description };
+      }
+    } else {
+      if (establishmentId) {
+        io.to(`kitchen_${establishmentId}`).to(`cashier_${establishmentId}`).to(`waiter_${establishmentId}`).emit('order_status_updated', {
+          orderId,
+          comandaId,
+          status,
+          autoatendimento: order.autoatendimento,
+        });
+      }
+      if (status === OrderStatus.PRONTO && orderUserId) {
+        io.emit('user_notification', {
+          orderId,
+          comanda: order.comanda.description,
+          userId: orderUserId,
+        });
       }
     }
 
@@ -170,6 +274,7 @@ export class OrderService {
   async getOrderWithDetails(orderId: number) {
     return await this.dataSource.getRepository(Order)
       .createQueryBuilder('order')
+      .leftJoinAndSelect('order.status', 'os')
       .leftJoinAndSelect('order.productOrders', 'po')
       .leftJoinAndSelect('po.product', 'product')
       .leftJoinAndSelect('po.productVariation', 'pv')

@@ -20,6 +20,7 @@ export interface MenuItem {
   description: string;
   callToAction?: string;
   permission?: Permission;
+  managerOnly?: boolean;
 }
 
 export interface AdminMenuItem {
@@ -56,7 +57,7 @@ export const allMenuItems: MenuItem[] = [
     image: rolesImage,
     description: 'Defina quem pode acessar cada parte do sistema — cozinha, caixa ou cardápio.',
     callToAction: 'Gerenciar Cargos',
-    permission: PERMISSIONS.CONFIGURACAO
+    permission: PERMISSIONS.FUNCIONARIOS
   },
   {
     label: 'Personalização do Menu',
@@ -65,7 +66,7 @@ export const allMenuItems: MenuItem[] = [
     image: menuConfigImage,
     description: 'Deixe o cardápio com a cara do seu negócio: cores, fontes e visual dos produtos.',
     callToAction: 'Personalize',
-    permission: PERMISSIONS.CONFIGURACAO
+    permission: PERMISSIONS.CRIAR_PEDIDO
   },
   {
     label: 'Usuários',
@@ -74,7 +75,7 @@ export const allMenuItems: MenuItem[] = [
     image: rolesImage,
     description: 'Cadastre os funcionários e dê acesso ao sistema para cada um deles.',
     callToAction: 'Gerenciar',
-    permission: PERMISSIONS.CONFIGURACAO
+    permission: PERMISSIONS.FUNCIONARIOS
   },
   {
     label: 'Categorias',
@@ -83,7 +84,7 @@ export const allMenuItems: MenuItem[] = [
     image: rolesImage,
     description: 'Crie grupos no cardápio, como Entradas, Bebidas e Pratos Principais.',
     callToAction: 'Gerenciar Categorias',
-    permission: PERMISSIONS.CONFIGURACAO
+    permission: PERMISSIONS.CARDAPIO
   },
   {
     label: 'Produtos',
@@ -92,7 +93,7 @@ export const allMenuItems: MenuItem[] = [
     image: productsImage,
     description: 'Cadastre os itens do cardápio com nome, descrição, preço e variações.',
     callToAction: 'Gerenciar Produtos',
-    permission: PERMISSIONS.CONFIGURACAO
+    permission: PERMISSIONS.CARDAPIO
   },
   {
     label: 'Cupons de Desconto',
@@ -166,7 +167,7 @@ export const allMenuItems: MenuItem[] = [
     icon: Users,
     description: 'Atualize seus dados pessoais, senha de acesso e informações de contato.',
     callToAction: 'Editar Perfil',
-    permission: PERMISSIONS.CONFIGURACAO
+    managerOnly: true
   },
 ];
 

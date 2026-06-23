@@ -28,30 +28,39 @@ export const useClosedComandaStore = defineStore('closedComandas', () => {
           
           const orderPrice = items.reduce((sum: number, idx: any) => sum + (idx.price * idx.amount), 0);
           
-          return { 
-            id: p.id, 
-            price: orderPrice, 
+          const orderStatusNome = typeof p.status === 'object' && p.status !== null ? p.status.nome : p.status;
+          return {
+            id: p.id,
+            price: orderPrice,
             items,
-            status: p.status 
+            status: orderStatusNome
           };
         });
 
         const cancelledOrder = (c.pedidos || []).find((p: any) => p.cancellationDescription);
+        const comandaStatusNome = typeof c.status === 'object' && c.status !== null ? c.status.nome : c.status;
+        const discountTypeNome = c.discountType?.nome || c.coupon?.type?.nome;
+        const rawDiscountValue = Number(c.discountValue || 0) || Number(c.coupon?.value || 0);
+        const mappedDiscountType = discountTypeNome === 'Percentual' ? 'percent' : (discountTypeNome ? 'value' : null);
 
         return {
           id: c.id,
-          label: c.description || `Comanda #${c.id}`,
-          customerName: c.customerName ?? undefined,
-          isAutoatendimento: !!c.customerName || (c.description || '').startsWith('Totem #'),
-          closedAt: c.deleted_at || c.created_at || new Date(),
+          label: c.description,
+          closedAt: c.deleted_at,
           total: Number(c.total),
-          status: c.status, 
-          cancelReason: cancelledOrder?.cancellationDescription || undefined, 
+          status: comandaStatusNome,
+          cancelReason: cancelledOrder?.cancellationDescription || undefined,
           orders: mappedOrders,
           paymentDetails: {
-            discountType: c.Tipo_Desconto_Aplicado || 'percent',
-            discountValue: Number(c.Valor_Desconto_Aplicado || 0),
-            payments: [{ type: 'Liquidado', amount: Number(c.total) }] 
+            discountType: mappedDiscountType,
+            discountValue: rawDiscountValue,
+            payments: [
+              ...new Map(
+                (c.pedidos || []).flatMap((p: any) => p.paymentOrders || [])
+                  .filter((po: any) => po.payment)
+                  .map((po: any) => [po.paymentId, po.payment])
+              ).values()
+            ].map((pay: any) => ({ type: pay.paymentMethod?.name, amount: Number(pay.totalValue) }))
           }
         };
       });

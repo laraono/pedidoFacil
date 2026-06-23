@@ -1,14 +1,14 @@
 import { Router, Request, Response } from 'express';
-import { AuthController, authLimiter } from '../controller/AuthController';
+import { AuthController, authLimiter, registrationLimiter } from '../controller/AuthController';
 import { AuthService } from '../service/AuthService';
 import { MercadoPagoService } from '../service/MercadoPagoService';
 import { AppDataSource } from '../database/data-source';
-import { UserRepository, RefreshTokenRepository, EstablishmentRepository } from '../repository';
+import { UserRepository, RefreshTokenRepository, EstablishmentRepository, PlanRepository } from '../repository';
 import { catchAsync } from '../middleware/error/catchAsync';
 import { authenticate } from '../middleware/authenticate';
 import { validateRequest } from '../middleware/validateRequest';
 import { loginSchema } from '../dto/auth/LoginDTO';
-import { registerCompleteSchema } from '../dto/auth/RegisterCompleteDTO'; 
+import { registerCompleteSchema } from '../dto/auth/RegisterCompleteDTO';
 
 const userRepository = new UserRepository(AppDataSource);
 const refreshTokenRepository = new RefreshTokenRepository(AppDataSource);
@@ -26,22 +26,28 @@ const authController = new AuthController(authService);
 
 const authRouter = Router();
 
+authRouter.get('/features', (_req: Request, res: Response) => {
+  res.json({
+    emailEnabled: !!(process.env.MAIL_USER && process.env.MAIL_PASS),
+  });
+});
+
 authRouter.post(
-  '/check-email', 
-  authLimiter, 
+  '/check-email',
+  registrationLimiter,
   catchAsync((req: Request, res: Response) => authController.checkEmail(req, res))
 );
 
 authRouter.post(
-  '/check-cpf', 
-  authLimiter, 
+  '/check-cpf',
+  registrationLimiter,
   catchAsync((req: Request, res: Response) => authController.checkCpf(req, res))
 );
 
 authRouter.post(
-  '/register-complete', 
-  authLimiter, 
-  validateRequest(registerCompleteSchema), 
+  '/register-complete',
+  registrationLimiter,
+  validateRequest(registerCompleteSchema),
   catchAsync((req: Request, res: Response) => authController.registerComplete(req, res))
 );
 

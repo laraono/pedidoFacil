@@ -40,7 +40,7 @@ export const useMenuStore = defineStore("menu", () => {
     description: p.description || "",
     image: p.image || null,
     price: Number(p.basePrice || 0),
-    available: p.status === "Ativo",
+    available: p.ativo === true,
     categoryId: p.category?.id,
     deletedAt: p.deletedAt,
     sizes: p.productVariations?.map((v: any) => ({
@@ -55,8 +55,8 @@ export const useMenuStore = defineStore("menu", () => {
         categoryApi.list(),
         categoryApi.listInactive(),
       ]);
-      categories.value = active;
-      inactiveCategories.value = inactive;
+      categories.value = active.map((c: any) => ({ ...c, status: 'Ativa' }));
+      inactiveCategories.value = inactive.map((c: any) => ({ ...c, status: 'Inativa' }));
     } catch (error) {
       console.error("Erro ao carregar categorias:", error);
     }
@@ -102,8 +102,10 @@ export const useMenuStore = defineStore("menu", () => {
     try {
       await categoryApi.delete(id);
       await loadCategories();
-    } catch (error) {
-      console.error(error);
+      return { success: true };
+    } catch (error: any) {
+      const status = error?.response?.status || error?.status;
+      return { success: false, message: error?.message, status };
     }
   };
 

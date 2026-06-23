@@ -29,7 +29,7 @@
     class="rounded p-6 transition-all"
     :class="[
       order.status === 'pending'
-        ? 'border border-yellow-500/30 bg-yellow-500/5'
+        ? 'border border-yellow-300 bg-yellow-50'
         : 'border border-[#E0E0E0] bg-gray-50',
       paymentMode === 'parcial' && !isSelected ? 'opacity-50 grayscale' : '',
     ]"
@@ -55,11 +55,11 @@
         <span
           class="px-4 py-1 rounded text-[10px] font-black uppercase tracking-widest border"
           :class="{
-            'border-yellow-500/30 bg-yellow-500/10 text-yellow-500':
+            'border-yellow-300 bg-yellow-100 text-yellow-800':
               order.status === 'pending',
-            'border-blue-500/30 bg-blue-500/10 text-blue-500':
+            'border-blue-300 bg-blue-100 text-blue-700':
               order.status === 'preparing',
-            'border-accent/40 bg-accent-light text-accent':
+            'border-accent/40 bg-accent-light text-green-800':
               order.status === 'ready',
           }"
         >

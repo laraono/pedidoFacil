@@ -149,12 +149,10 @@ export const useAuthStore = defineStore('auth', {
     },
 
     hasPermission(permission: string): boolean {
-      if (this.isAdmin) return true;
-      
       const permissoes = this.user?.cargo?.permissoes;
       if (!permissoes) return false;
       
-      return permissoes.includes('ALL') || permissoes.includes(permission);
+      return permissoes.includes(permission);
     },
 
     async logout(): Promise<void> {

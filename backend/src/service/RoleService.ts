@@ -55,7 +55,8 @@ export class RoleService {
 
     async updateRole(roleId: number, establishmentId: number, data: UpdateRoleDTO) {
         const role = await this.roleRepository.findOne({
-            where: { id: roleId, establishment: { id: establishmentId } as any }
+            where: { id: roleId, establishment: { id: establishmentId } as any },
+            relations: ['permissions'],
         });
 
         if (!role) throw new AppError('Cargo não encontrado.', 404);
@@ -67,14 +68,13 @@ export class RoleService {
         if (data.permissions !== undefined && data.permissions.length === 0)
             throw new AppError('Um cargo deve ter ao menos uma permissão.', 400);
 
-        const perms = data.permissions !== undefined
-            ? await this.roleRepository.manager.findBy(Permissao, { name: In(data.permissions) })
-            : role.permissions;
+        if (data.name) role.name = data.name;
 
-        this.roleRepository.merge(role, {
-            name: data.name || role.name,
-            permissions: perms,
-        });
+        if (data.permissions !== undefined) {
+            role.permissions = await this.roleRepository.manager.findBy(
+                Permissao, { name: In(data.permissions) }
+            );
+        }
 
         return await this.roleRepository.save(role);
     }
