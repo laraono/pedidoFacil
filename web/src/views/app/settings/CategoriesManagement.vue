@@ -179,14 +179,14 @@ const tableColumns = [
 
     <div
       v-if="showInactive"
-      class="mb-8 p-4 bg-orange-500/10 border border-orange-500/20 rounded flex items-center justify-between"
+      class="mb-8 p-4 bg-orange-100 border border-orange-600/40 rounded flex items-center justify-between"
     >
-      <p class="text-orange-400 text-sm font-bold flex items-center gap-2">
+      <p class="text-orange-700 text-sm font-bold flex items-center gap-2">
         <EyeOff :size="18" /> Visualizando categorias inativas.
       </p>
       <button
         @click="showInactive = false"
-        class="text-orange-300 hover:text-orange-100 text-sm font-bold underline transition-colors"
+        class="text-orange-700 hover:text-orange-900 text-sm font-bold underline transition-colors"
       >
         Voltar para ativas
       </button>
@@ -217,7 +217,7 @@ const tableColumns = [
       <template #cell-status="{ item }">
         <span
           v-if="item.status === 'Inativa'"
-          class="px-3 py-1 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded text-[10px] font-black uppercase tracking-widest"
+          class="px-3 py-1 bg-orange-100 text-orange-600 border border-orange-600/40 rounded text-[10px] font-black uppercase tracking-widest"
         >
           Inativa
         </span>
@@ -240,7 +240,7 @@ const tableColumns = [
           </button>
           <button
             @click="handleDeactivate(item)"
-            class="p-2 text-[#757575] hover:text-orange-400 transition-colors"
+            class="p-2 text-[#757575] hover:text-orange-600 transition-colors"
             title="Inativar"
           >
             <EyeOff :size="18" />

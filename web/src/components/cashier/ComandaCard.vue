@@ -14,7 +14,7 @@
           {{ typeLabel }}
         </span>
         <span
-          class="font-black text-[#212121] text-xl tracking-tighter group-hover:text-blue-400 transition-colors block truncate"
+          class="font-black text-[#212121] text-xl tracking-tighter group-hover:text-blue-700 transition-colors block truncate"
         >
           {{ mainLabel }}
         </span>

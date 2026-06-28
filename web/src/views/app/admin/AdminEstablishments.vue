@@ -74,7 +74,7 @@ const actions = [
           <span class="text-[#757575]">{{ item.manager?.name || '—' }}</span>
         </template>
         <template #cell-plan="{ item }">
-          <span v-if="item.plan" class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border text-blue-400 bg-blue-500/10 border-blue-500/20">
+          <span v-if="item.plan" class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border text-blue-700 bg-blue-100 border-blue-700/30">
             {{ item.plan.name }}
           </span>
           <span v-else class="text-[#757575]">—</span>

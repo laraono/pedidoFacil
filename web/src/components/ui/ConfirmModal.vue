@@ -38,13 +38,13 @@
               :class="
                 confirmModal.isError
                   ? 'bg-danger-light border-danger'
-                  : 'bg-blue-500/10 border-blue-500/20'
+                  : 'bg-blue-100 border-blue-700/30'
               "
             >
               <component
                 :is="confirmModal.isError ? AlertTriangle : Info"
                 :size="20"
-                :class="confirmModal.isError ? 'text-danger' : 'text-blue-400'"
+                :class="confirmModal.isError ? 'text-danger' : 'text-blue-700'"
               />
             </div>
             <div>

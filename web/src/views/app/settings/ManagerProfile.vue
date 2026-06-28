@@ -220,7 +220,7 @@ const savePassword = async () => {
         </div>
 
         <div class="mt-8 pt-8 border-t border-[#E0E0E0] bg-amber-500/5 border border-amber-500/10 rounded p-4 flex items-start gap-3">
-          <AlertCircle :size="16" class="text-amber-400 mt-0.5 shrink-0" />
+          <AlertCircle :size="16" class="text-amber-600 mt-0.5 shrink-0" />
           <p class="text-xs text-amber-700 leading-relaxed">
             Mantenha seu E-mail e CPF sempre atualizados. Eles são as chaves
             principais para a recuperação da sua conta e emissão de notas.

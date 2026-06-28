@@ -100,7 +100,7 @@
               </div>
               <button
                 @click="emit('removeItem', index)"
-                class="text-red-400 p-2 rounded transition-colors shrink-0"
+                class="text-red-600 p-2 rounded transition-colors shrink-0"
                 :style="{ backgroundColor: theme.adaptiveButtonBg }"
               >
                 <Trash2 :size="20" />

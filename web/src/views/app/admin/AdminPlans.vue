@@ -142,7 +142,7 @@ function onPriceInput(e: Event) {
     <div v-if="loading" class="py-20 text-center text-[#757575]">Carregando...</div>
 
     <div v-else-if="loadError" class="py-20 text-center">
-      <ShieldAlert :size="40" class="mx-auto mb-4 text-red-400 opacity-60" />
+      <ShieldAlert :size="40" class="mx-auto mb-4 text-red-600 opacity-60" />
       <p class="text-[#757575] font-bold mb-1">Erro ao carregar planos</p>
       <p class="text-[#757575] text-sm mb-4">Verifique sua conexão e tente novamente.</p>
       <BaseButton variant="secondary" @click="load">Tentar Novamente</BaseButton>

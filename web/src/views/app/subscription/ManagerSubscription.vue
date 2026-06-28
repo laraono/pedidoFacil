@@ -54,11 +54,11 @@ const isActive = computed(() => statusNome.value === 'Paga');
 
 const statusConfig = computed(() => {
   const s = statusNome.value;
-  if (s === 'Paga')      return { label: 'Ativa',     color: 'text-green-800',        bg: 'bg-accent-light border-accent/30' };
-  if (s === 'Pendente')  return { label: 'Pendente',  color: 'text-amber-600',     bg: 'bg-amber-50 border-amber-400/30' };
-  if (s === 'Expirada')  return { label: 'Expirada',  color: 'text-danger',        bg: 'bg-danger-light border-danger' };
-  if (s === 'Cancelada') return { label: 'Cancelada', color: 'text-danger',        bg: 'bg-danger-light border-danger' };
-  return                        { label: 'Inativa',   color: 'text-muted',     bg: 'bg-gray-200/20 border-[#E0E0E0]' };
+  if (s === 'Paga')      return { label: 'Ativa',     color: 'text-green-700',     bg: 'bg-green-100 border-green-600/40' };
+  if (s === 'Pendente')  return { label: 'Pendente',  color: 'text-amber-700',     bg: 'bg-amber-100 border-amber-600/40' };
+  if (s === 'Expirada')  return { label: 'Expirada',  color: 'text-red-600',       bg: 'bg-red-100 border-red-500/40' };
+  if (s === 'Cancelada') return { label: 'Cancelada', color: 'text-red-600',       bg: 'bg-red-100 border-red-500/40' };
+  return                        { label: 'Inativa',   color: 'text-[#424242]',     bg: 'bg-gray-200 border-[#9E9E9E]' };
 });
 
 const daysUntilDue = computed(() => {
@@ -293,7 +293,7 @@ const closePaymentModal = () => {
             </div>
             <div class="text-right flex flex-col items-end gap-1">
               <p class="text-sm font-black text-[#212121]">{{ formatCurrency(payment.amount) }}</p>
-              <span class="text-[10px] font-black uppercase tracking-wider text-accent">{{ payment.status ?? '—' }}</span>
+              <span class="text-[11px] font-black uppercase tracking-wider text-green-700">{{ payment.status ?? '—' }}</span>
               <p v-if="payment.installments && payment.installments > 1" class="text-[10px] text-muted">
                 {{ payment.installments }}x de {{ formatCurrency(payment.amount / payment.installments) }}
               </p>

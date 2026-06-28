@@ -107,7 +107,7 @@
         Pago: {{ formatCurrency(getOrderPaid(order)) }}
       </div>
       Total Restante do Pedido:
-      <span class="text-blue-400 ml-2">{{
+      <span class="text-blue-700 ml-2">{{
         formatCurrency(getOrderTotal(order))
       }}</span>
     </div>

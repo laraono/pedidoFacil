@@ -51,7 +51,7 @@ const statusConfig = {
   autorizada: { label: 'Autorizada', cls: 'bg-accent-light text-green-800 border-accent/30' },
   erro:       { label: 'Erro',        cls: 'bg-danger-light text-danger border-danger' },
   cancelada:  { label: 'Cancelada',   cls: 'bg-gray-100 text-muted border-[#E0E0E0]' },
-  pendente:   { label: 'Pendente',    cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+  pendente:   { label: 'Pendente',    cls: 'bg-amber-100 text-amber-600 border-amber-600/40' },
 };
 
 const formatDate = (iso) => {
@@ -162,8 +162,8 @@ const nfActions = (nf) => ({
 
     <div v-if="!hasCnpj" class="flex items-center justify-center min-h-[60vh]">
       <div class="bg-white border border-[#E0E0E0] rounded p-10 max-w-md w-full text-center shadow-2xl">
-        <div class="w-16 h-16 rounded bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-5">
-          <AlertTriangle :size="28" class="text-amber-400" />
+        <div class="w-16 h-16 rounded bg-amber-100 border border-amber-600/40 flex items-center justify-center mx-auto mb-5">
+          <AlertTriangle :size="28" class="text-amber-600" />
         </div>
         <h2 class="text-xl font-black text-[#212121] mb-3">Dados fiscais não configurados</h2>
         <p class="text-sm text-muted mb-2 leading-relaxed">

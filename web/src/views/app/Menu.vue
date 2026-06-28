@@ -34,7 +34,7 @@ const establishmentName = ref("Seu Restaurante");
 
 const {
   bgColor, buttonColor, buttonTextColor, categoryColor,
-  textColor, cardBg, fontFamily, comandaUnitLabel, observacoesPermitidas,
+  textColor, cardBg, fontFamily, comandaUnitLabel, allowObservations,
   imageUrl, isSavingTheme,
   backgroundStyle, theme,
   loadConfig, saveVisuals,
@@ -234,7 +234,7 @@ function closeVisuals() {
           :quantity="currentQuantity"
           :observation="currentObservation"
           :selectedSize="selectedSize"
-          :observacoesPermitidas="observacoesPermitidas"
+          :allowObservations="allowObservations"
           :total="currentModalTotal"
           :theme="theme"
           @update:quantity="currentQuantity = $event"
@@ -275,7 +275,7 @@ function closeVisuals() {
         :buttonTextColor="buttonTextColor"
         :fontFamily="fontFamily"
         :comandaUnitLabel="comandaUnitLabel"
-        :observacoesPermitidas="observacoesPermitidas"
+        :allowObservations="allowObservations"
         :isSaving="isSavingTheme"
         @update:bgColor="bgColor = $event"
         @update:textColor="textColor = $event"
@@ -285,7 +285,7 @@ function closeVisuals() {
         @update:buttonTextColor="buttonTextColor = $event"
         @update:fontFamily="fontFamily = $event"
         @update:comandaUnitLabel="comandaUnitLabel = $event"
-        @update:observacoesPermitidas="observacoesPermitidas = $event"
+        @update:allowObservations="allowObservations = $event"
         @save="saveVisuals"
         @close="closeVisuals"
       />

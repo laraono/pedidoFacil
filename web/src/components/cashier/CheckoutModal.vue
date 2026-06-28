@@ -12,7 +12,7 @@
         >
           <div class="flex items-center gap-4">
             <div
-              class="bg-blue-500/10 p-3 rounded text-blue-500 border border-blue-500/20"
+              class="bg-blue-100 p-3 rounded text-blue-500 border border-blue-700/30"
             >
               <Receipt :size="24" />
             </div>
@@ -75,14 +75,14 @@
             v-if="hasPending"
             class="mb-4 flex items-start gap-3 p-4 rounded bg-yellow-500/10 border border-yellow-500/30"
           >
-            <AlertTriangle :size="18" class="text-yellow-400 shrink-0 mt-0.5" />
+            <AlertTriangle :size="18" class="text-yellow-600 shrink-0 mt-0.5" />
             <div>
               <p
                 class="text-amber-700 font-black text-xs uppercase tracking-widest"
               >
                 Pedidos aguardando preparo
               </p>
-              <p class="text-yellow-400/80 text-xs mt-1">
+              <p class="text-yellow-600/80 text-xs mt-1">
                 Um ou mais items ainda não foram enviados para a cozinha. Será
                 necessário cancelá-los para finalizar.
               </p>

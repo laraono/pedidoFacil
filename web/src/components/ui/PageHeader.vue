@@ -49,7 +49,7 @@
         <h1 class="text-3xl font-black text-[#212121] tracking-tight">
           {{ title }}
         </h1>
-        <p v-if="subtitle" class="text-[#757575] text-sm mt-1">
+        <p v-if="subtitle" class="text-[#424242] text-base mt-1 font-medium">
           {{ subtitle }}
         </p>
       </div>

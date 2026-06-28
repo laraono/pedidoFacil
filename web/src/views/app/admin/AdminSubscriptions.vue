@@ -106,7 +106,7 @@ function goToEstablishment(sub) {
               <span class="text-[#757575] text-sm">{{ sub.establishment?.manager?.name || '—' }}</span>
             </td>
             <td class="px-4 py-4">
-              <span class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border text-blue-400 bg-blue-500/10 border-blue-500/20">
+              <span class="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded border text-blue-700 bg-blue-100 border-blue-700/30">
                 {{ sub.plan?.name || '—' }}
               </span>
             </td>

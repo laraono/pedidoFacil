@@ -245,7 +245,7 @@ function getGroupedOrderItems(order) {
                           <span class="text-[#212121] font-black text-sm uppercase tracking-widest">Pedido {{ orderIdx + 1 }}</span>
                           <span v-if="isOrderCancelled(order)" class="text-[9px] font-black uppercase tracking-widest bg-red-100 text-red-600 border border-red-200 px-2 py-0.5 rounded">Cancelado</span>
                         </div>
-                        <span class="font-black" :class="isOrderCancelled(order) ? 'text-red-400 line-through' : 'text-accent'">
+                        <span class="font-black" :class="isOrderCancelled(order) ? 'text-red-600 line-through' : 'text-accent'">
                           {{ formatCurrency(order.price || 0) }}
                         </span>
                       </div>
@@ -286,7 +286,7 @@ function getGroupedOrderItems(order) {
                       <span class="text-[#757575] font-bold">
                         Desconto <span class="text-[#757575] text-xs">({{ comanda.paymentDetails.discountType === "percent" ? comanda.paymentDetails.discountValue + "%" : formatCurrency(comanda.paymentDetails.discountValue) }})</span>
                       </span>
-                      <span class="text-orange-400 font-black">- {{ formatCurrency(getValidSubtotal(comanda) - finalTotal(comanda)) }}</span>
+                      <span class="text-orange-600 font-black">- {{ formatCurrency(getValidSubtotal(comanda) - finalTotal(comanda)) }}</span>
                     </div>
                     <div class="flex justify-between text-sm border-t border-[#E0E0E0] pt-3">
                       <span class="text-[#212121] font-black uppercase tracking-widest text-xs">Total Pago</span>
@@ -302,7 +302,7 @@ function getGroupedOrderItems(order) {
                     <div v-else class="space-y-2">
                       <div v-for="(p, i) in paymentSummary(comanda)" :key="i" class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
-                          <XCircle v-if="isCancelled(comanda)" :size="14" class="text-red-400" />
+                          <XCircle v-if="isCancelled(comanda)" :size="14" class="text-red-600" />
                           <CreditCard v-else :size="14" class="text-[#757575]" />
                           <span class="text-sm font-bold" :class="isCancelled(comanda) ? 'text-red-500' : 'text-[#212121]'">{{ p.type }}</span>
                         </div>

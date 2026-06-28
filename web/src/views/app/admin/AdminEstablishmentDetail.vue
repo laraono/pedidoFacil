@@ -146,10 +146,10 @@ const paymentColumns = [
             <span class="font-bold text-[#212121]">{{ formatCurrency(item.amount) }}</span>
           </template>
           <template #cell-status="{ item }">
-            <span class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border"
-              :class="item.status === 'Aprovado'  ? 'text-accent bg-accent-light border-accent/25'
-                    : item.status === 'Rejeitado' ? 'text-red-400 bg-red-500/10 border-red-500/20'
-                    : 'text-amber-400 bg-amber-500/10 border-amber-500/25'">
+            <span class="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded border"
+              :class="item.status === 'Aprovado'  ? 'text-green-700 bg-green-100 border-green-600/40'
+                    : item.status === 'Rejeitado' ? 'text-red-600 bg-red-100 border-red-500/40'
+                    : 'text-amber-700 bg-amber-100 border-amber-600/40'">
               {{ item.status || '—' }}
             </span>
           </template>

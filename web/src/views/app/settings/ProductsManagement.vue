@@ -264,7 +264,7 @@ const tableColumns = computed(() => {
 
 const tableActions = computed(() => bulkMode.value ? [] : [
   { icon: Edit, tooltip: "Editar", handler: openEdit, condition: () => true },
-  { icon: EyeOff, tooltip: "Inativar", handler: handleDeactivate, condition: (p) => p.available !== false, class: "text-[#757575] hover:text-orange-400 hover:bg-orange-500/10 p-2 rounded transition-all" },
+  { icon: EyeOff, tooltip: "Inativar", handler: handleDeactivate, condition: (p) => p.available !== false, class: "text-[#757575] hover:text-orange-600 hover:bg-orange-100 p-2 rounded transition-all" },
   { icon: Eye, tooltip: "Ativar", handler: handleReactivate, condition: (p) => p.available === false, class: "text-[#757575] hover:text-accent hover:bg-primary-dark/10 p-2 rounded transition-all" },
   { icon: Trash2, tooltip: "Excluir", handler: handleDelete, condition: (p) => p.available === false, class: "text-[#757575] hover:text-red-500 hover:bg-red-500/10 p-2 rounded transition-all" },
 ]);
@@ -296,14 +296,14 @@ const tableActions = computed(() => bulkMode.value ? [] : [
 
     <div
       v-if="showInactive"
-      class="mb-8 p-4 bg-orange-500/10 border border-orange-500/20 rounded flex items-center justify-between"
+      class="mb-8 p-4 bg-orange-100 border border-orange-600/40 rounded flex items-center justify-between"
     >
-      <p class="text-orange-400 text-sm font-bold flex items-center gap-2">
+      <p class="text-orange-700 text-sm font-bold flex items-center gap-2">
         <EyeOff :size="18" /> Visualizando produtos inativos.
       </p>
       <button
         @click="showInactive = false"
-        class="text-orange-300 hover:text-orange-100 text-sm font-bold underline transition-colors"
+        class="text-orange-700 hover:text-orange-900 text-sm font-bold underline transition-colors"
       >
         Voltar para ativos
       </button>
@@ -376,7 +376,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
       <div v-else-if="bulkAction === 'availability'" class="flex items-center gap-4 flex-wrap">
         <div class="flex gap-2">
           <button @click="bulkAvailability = true" class="px-4 py-2 rounded text-sm font-bold border transition-all" :class="bulkAvailability ? 'bg-accent-light text-accent border-accent/40' : 'bg-gray-50 text-[#757575] border-[#E0E0E0]'">Disponível</button>
-          <button @click="bulkAvailability = false" class="px-4 py-2 rounded text-sm font-bold border transition-all" :class="!bulkAvailability ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-gray-50 text-[#757575] border-[#E0E0E0]'">Indisponível</button>
+          <button @click="bulkAvailability = false" class="px-4 py-2 rounded text-sm font-bold border transition-all" :class="!bulkAvailability ? 'bg-orange-100 text-orange-600 border-orange-600/40' : 'bg-gray-50 text-[#757575] border-[#E0E0E0]'">Indisponível</button>
         </div>
         <button @click="applyBulk" class="py-2.5 px-6 bg-primary text-white font-black text-sm rounded hover:opacity-90 transition-opacity">Aplicar</button>
       </div>
@@ -428,7 +428,7 @@ const tableActions = computed(() => bulkMode.value ? [] : [
         <span class="text-accent font-black">{{ formatCurrency(item.sizes?.length ? Math.min(...item.sizes.map(s => Number(s.price))) : (Number(item.price) || 0)) }}</span>
       </template>
       <template #cell-status="{ item }">
-        <span v-if="item.available === false" class="px-3 py-1 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded text-[10px] font-black uppercase tracking-widest">Inativo</span>
+        <span v-if="item.available === false" class="px-3 py-1 bg-orange-100 text-orange-600 border border-orange-600/40 rounded text-[10px] font-black uppercase tracking-widest">Inativo</span>
         <span v-else class="px-3 py-1 bg-accent-light text-accent border border-accent/30 rounded text-[10px] font-black uppercase tracking-widest">Ativo</span>
       </template>
     </DataTable>

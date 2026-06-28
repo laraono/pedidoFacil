@@ -13,7 +13,7 @@
         >
           <div class="flex items-center gap-3">
             <div
-              class="bg-blue-500/10 p-2 rounded text-blue-500 border border-blue-500/20"
+              class="bg-blue-100 p-2 rounded text-blue-500 border border-blue-700/30"
             >
               <ClipboardList :size="20" />
             </div>
@@ -141,7 +141,7 @@
       case "pending":
         return "border-yellow-500/30 bg-yellow-500/10 text-yellow-600";
       case "preparing":
-        return "border-blue-500/30 bg-blue-500/10 text-blue-600";
+        return "border-blue-500/30 bg-blue-100 text-blue-600";
       case "ready":
         return "border-accent/40 bg-accent-light text-green-800";
       case "cancelled":

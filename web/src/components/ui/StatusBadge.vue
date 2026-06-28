@@ -12,58 +12,58 @@
       paga: {
         label: "Paga",
         icon: CheckCircle2,
-        color: "text-accent",
-        bg: "bg-accent-light border-accent/25",
+        color: "text-green-700",
+        bg: "bg-green-100 border-green-600/40",
       },
       pendente: {
         label: "Pendente",
         icon: AlertTriangle,
-        color: "text-amber-400",
-        bg: "bg-amber-500/10 border-amber-500/25",
+        color: "text-amber-700",
+        bg: "bg-amber-100 border-amber-600/40",
       },
       cancelada: {
         label: "Cancelada",
         icon: XCircle,
-        color: "text-red-400",
-        bg: "bg-red-500/10 border-red-500/20",
+        color: "text-red-600",
+        bg: "bg-red-100 border-red-500/40",
       },
       expirada: {
         label: "Expirada",
         icon: AlertTriangle,
-        color: "text-[#757575]",
-        bg: "bg-gray-200/20 border-[#E0E0E0]",
+        color: "text-[#424242]",
+        bg: "bg-gray-200 border-[#9E9E9E]",
       },
     },
     frequency: {
       anual: {
         label: "Anual",
         icon: null,
-        color: "text-purple-400",
-        bg: "bg-purple-500/10 border-purple-500/20",
+        color: "text-purple-700",
+        bg: "bg-purple-100 border-purple-700/40",
       },
       annual: {
         label: "Anual",
         icon: null,
-        color: "text-purple-400",
-        bg: "bg-purple-500/10 border-purple-500/20",
+        color: "text-purple-700",
+        bg: "bg-purple-100 border-purple-700/40",
       },
       mensal: {
         label: "Mensal",
         icon: null,
-        color: "text-blue-400",
-        bg: "bg-blue-500/10 border-blue-500/20",
+        color: "text-blue-700",
+        bg: "bg-blue-100 border-blue-700/40",
       },
       months: {
         label: "Mensal",
         icon: null,
-        color: "text-blue-400",
-        bg: "bg-blue-500/10 border-blue-500/20",
+        color: "text-blue-700",
+        bg: "bg-blue-100 border-blue-700/40",
       },
       monthly: {
         label: "Mensal",
         icon: null,
-        color: "text-blue-400",
-        bg: "bg-blue-500/10 border-blue-500/20",
+        color: "text-blue-700",
+        bg: "bg-blue-100 border-blue-700/40",
       },
     },
   } as const;
@@ -71,8 +71,8 @@
   const fallback = {
     label: props.status,
     icon: null,
-    color: "text-[#757575]",
-    bg: "bg-gray-200/20 border-[#E0E0E0]",
+    color: "text-[#424242]",
+    bg: "bg-gray-200 border-[#9E9E9E]",
   };
 
   const config = computed(() => {
@@ -83,7 +83,7 @@
 
 <template>
   <div
-    class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border"
+    class="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded border"
     :class="[config.color, config.bg]"
   >
     <component v-if="config.icon" :is="config.icon" :size="10" />
